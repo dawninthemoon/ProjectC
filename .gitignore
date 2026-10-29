@@ -138,3 +138,18 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Unity
+/ProjectC.Client/Library/
+/ProjectC.Client/Temp/
+/ProjectC.Client/Obj/
+/ProjectC.Client/Build/
+/ProjectC.Client/Builds/
+/ProjectC.Client/Logs/
+/ProjectC.Client/UserSettings/
+
+# Visual Studio / CMake
+/ProjectC.Server/out/
+/ProjectC.Server/Build/
+/ProjectC.Server/.vs/
+.vs/
