@@ -16,7 +16,7 @@ target_include_directories(ProjectCGameCore
 )
 
 add_executable(ProjectCServer
-    Source/Main.cpp
+    Source/main.cpp
 )
 
 target_link_libraries(ProjectCServer

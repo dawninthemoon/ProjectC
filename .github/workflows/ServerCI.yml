@@ -1,0 +1,53 @@
+
+name: Project C Server CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  BuildAndTest:
+    name: Build and Test C++ Server
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build
+
+      - name: Configure CMake
+        run: |
+          cmake -S ProjectC.Server \
+            -B ProjectC.Server/Build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build ProjectC.Server/Build
+
+      - name: Run Tests
+        run: |
+          ctest --test-dir ProjectC.Server/Build \
+            --output-on-failure
+
+  DockerBuild:
+    name: Build Docker Image
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t projectc-server:ci \
+            ./ProjectC.Server

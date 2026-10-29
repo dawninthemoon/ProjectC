@@ -1,0 +1,9 @@
+name: projectc
+
+services:
+  server:
+    build:
+      context: ./ProjectC.Server
+      dockerfile: Dockerfile
+    image: projectc-server:dev
+    restart: "no"

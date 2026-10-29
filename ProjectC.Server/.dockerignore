@@ -1,0 +1,10 @@
+
+Build/
+build/
+out/
+.vs/
+.git/
+.gitignore
+*.exe
+*.obj
+*.pdb
