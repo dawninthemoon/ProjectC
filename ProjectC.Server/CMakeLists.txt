@@ -11,6 +11,7 @@ add_library(ProjectCGameCore STATIC
     Source/CardInstance.cpp
     Source/PlayerState.cpp
     Source/GameState.cpp
+    Source/GameCommand.cpp
 )
 
 target_include_directories(ProjectCGameCore
