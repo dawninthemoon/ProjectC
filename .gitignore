@@ -153,3 +153,6 @@ Thumbs.db
 /ProjectC.Server/Build/
 /ProjectC.Server/.vs/
 .vs/
+!ProjectC.Client/Tests/*.csproj
+/ProjectC.Client/Tests/bin/
+/ProjectC.Client/Tests/obj/

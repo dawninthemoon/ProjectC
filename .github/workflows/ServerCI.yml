@@ -1,53 +1,48 @@
-
 name: Project C Server CI
-
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
 jobs:
   BuildAndTest:
-    name: Build and Test C++ Server
-    runs-on: ubuntu-24.04
-
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build
-
-      - name: Configure CMake
-        run: |
-          cmake -S ProjectC.Server \
-            -B ProjectC.Server/Build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Configure
+        run: cmake -S ProjectC.Server -B build -DCMAKE_BUILD_TYPE=Debug
       - name: Build
-        run: cmake --build ProjectC.Server/Build
-
-      - name: Run Tests
+        run: cmake --build build --config Debug --parallel 2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test core, sessions and real WebSocket
+        run: ctest --test-dir build -C Debug --output-on-failure
+      - name: Test Unity transport source with two real C# clients
+        shell: bash
         run: |
-          ctest --test-dir ProjectC.Server/Build \
-            --output-on-failure
-
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            server="$GITHUB_WORKSPACE/build/Debug/ProjectCNetworkServer.exe"
+          else
+            server="$GITHUB_WORKSPACE/build/ProjectCNetworkServer"
+          fi
+          dotnet run --project ProjectC.Client/Tests/ClientTransportIntegration.csproj -- "$server"
   DockerBuild:
-    name: Build Docker Image
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Build Docker Image
+      - uses: actions/checkout@v4
+      - name: Build and test Docker image
+        run: docker build -t projectc-server:ci ./ProjectC.Server
+      - name: Verify container stays alive and stops gracefully
         run: |
-          docker build \
-            -t projectc-server:ci \
-            ./ProjectC.Server
+          docker run -d --name projectc -p 127.0.0.1:7777:7777 projectc-server:ci
+          sleep 2
+          test "$(docker inspect -f '{{.State.Running}}' projectc)" = true
+          docker stop -t 10 projectc
+          test "$(docker inspect -f '{{.State.ExitCode}}' projectc)" = 0

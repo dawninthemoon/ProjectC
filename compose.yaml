@@ -1,9 +1,12 @@
 name: projectc
-
 services:
   server:
     build:
       context: ./ProjectC.Server
       dockerfile: Dockerfile
     image: projectc-server:dev
+    ports:
+      - "127.0.0.1:${PROJECTC_PORT:-7777}:7777"
+    init: true
+    stop_grace_period: 10s
     restart: "no"

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UnityManagedPath Condition="'$(UnityManagedPath)' == ''">C:/Program Files/Unity/Hub/Editor/6000.0.81f1/Editor/Data/Managed/UnityEngine</UnityManagedPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Assets/Scripts/Network/*.cs" />
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(UnityManagedPath)/UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(UnityManagedPath)/UnityEngine.IMGUIModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule"><HintPath>$(UnityManagedPath)/UnityEngine.JSONSerializeModule.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

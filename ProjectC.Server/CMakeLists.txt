@@ -55,3 +55,4 @@ add_test(
     NAME GameStateTests
     COMMAND ProjectCTests
 )
+include(Network.cmake)
