@@ -12,6 +12,10 @@ add_library(ProjectCGameCore STATIC
     Source/PlayerState.cpp
     Source/GameState.cpp
     Source/GameCommand.cpp
+    Source/Zone.cpp
+    Source/GameInitializer.cpp
+    Source/GameFlow.cpp
+    Source/GameReplay.cpp
 )
 
 target_include_directories(ProjectCGameCore
@@ -30,6 +34,10 @@ enable_testing()
 
 add_executable(ProjectCTests
     Tests/GameStateTests.cpp
+    Tests/ZoneTests.cpp
+    Tests/GameFlowTests.cpp
+    Tests/GameReplayTests.cpp
+    Tests/GameIntegrationTests.cpp
 )
 
 target_link_libraries(ProjectCTests

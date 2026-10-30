@@ -11,6 +11,11 @@ namespace ProjectC::GameCore
         PlayerId Id = 0;
         int Life = 0;
         std::vector<CardInstance> Field;
+        std::vector<CardInstance> Deck;
+        std::vector<CardInstance> Hand;
+        std::vector<CardInstance> Graveyard;
+
+        bool operator==(PlayerState const&) const = default;
     };
 
     [[nodiscard]] CardInstance* FindCard(PlayerState& player, CardInstanceId cardId);

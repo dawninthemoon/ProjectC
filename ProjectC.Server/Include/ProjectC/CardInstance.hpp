@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ProjectC/CardDefinition.hpp"
+
 namespace ProjectC::GameCore
 {
     using PlayerId = int;
@@ -13,6 +15,10 @@ namespace ProjectC::GameCore
         int Hp = 0;
         int MaxHp = 0;
         bool HasAttackedThisTurn = false;
+        CardDefinitionId OriginalDefinitionId = 0;
+        CardDefinitionId CurrentDefinitionId = 0;
+
+        bool operator==(CardInstance const&) const = default;
 
         [[nodiscard]] bool IsDestroyed() const;
     };

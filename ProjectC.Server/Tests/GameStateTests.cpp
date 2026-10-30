@@ -6,6 +6,11 @@
 
 using namespace ProjectC::GameCore;
 
+void RunZoneTests(int& testCount, int& failedTests);
+void RunGameFlowTests(int& testCount, int& failedTests);
+void RunGameReplayTests(int& testCount, int& failedTests);
+void RunGameIntegrationTests(int& testCount, int& failedTests);
+
 namespace
 {
     template <typename T>
@@ -48,6 +53,7 @@ namespace
                 testName, "target card", failedTests);
             ExpectEqual(event.Damage, expectedEvent.Damage, testName, "damage", failedTests);
             ExpectEqual(event.HpAfter, expectedEvent.HpAfter, testName, "HP after", failedTests);
+            ExpectEqual(event == expectedEvent, true, testName, "all event fields", failedTests);
             if (failedTests != failuresBefore)
             {
                 std::cerr << "  Event index: " << index << '\n';
@@ -74,34 +80,7 @@ namespace
     // Compare every public state field so failed commands cannot mutate hidden details.
     bool SameState(GameState const& actual, GameState const& expected)
     {
-        if (actual.ActivePlayerId != expected.ActivePlayerId
-            || actual.TurnNumber != expected.TurnNumber || actual.Phase != expected.Phase)
-        {
-            return false;
-        }
-        for (std::size_t playerIndex = 0; playerIndex < actual.Players.size(); ++playerIndex)
-        {
-            PlayerState const& player = actual.Players[playerIndex];
-            PlayerState const& expectedPlayer = expected.Players[playerIndex];
-            if (player.Id != expectedPlayer.Id || player.Life != expectedPlayer.Life
-                || player.Field.size() != expectedPlayer.Field.size())
-            {
-                return false;
-            }
-            for (std::size_t cardIndex = 0; cardIndex < player.Field.size(); ++cardIndex)
-            {
-                CardInstance const& card = player.Field[cardIndex];
-                CardInstance const& expectedCard = expectedPlayer.Field[cardIndex];
-                if (card.Id != expectedCard.Id || card.OwnerId != expectedCard.OwnerId
-                    || card.Attack != expectedCard.Attack || card.Hp != expectedCard.Hp
-                    || card.MaxHp != expectedCard.MaxHp
-                    || card.HasAttackedThisTurn != expectedCard.HasAttackedThisTurn)
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return actual == expected;
     }
 }
 
@@ -449,6 +428,20 @@ int main()
         expectedEvents.push_back(GameEvent{ .Type = GameEventType::BattleCompleted,
             .SourcePlayerId = 1, .SourceCardId = 101, .TargetPlayerId = 2, .TargetCardId = 201 });
 
+        for (std::size_t index = 0; index < 2; ++index)
+        {
+            PlayerState& player = expectedState.Players[index];
+            if (player.Field[0].IsDestroyed())
+            {
+                CardInstance const card = player.Field[0];
+                player.Graveyard.push_back(card);
+                player.Field.erase(player.Field.begin());
+                expectedEvents.push_back(GameEvent{ .Type = GameEventType::CardMoved,
+                    .TargetPlayerId = player.Id, .TargetCardId = card.Id,
+                    .FromZone = Zone::Field, .ToZone = Zone::Graveyard });
+            }
+        }
+
         AttackCommand const command{ 1, 101, 2, 201 };
         CommandResult const result = ProcessCommand(gameState, command);
         ExpectEqual(result.Result, BattleResult::Success, testCase.Name, "result", failedTests);
@@ -491,6 +484,11 @@ int main()
         ExpectEqual(SameState(gameState, before), true,
             "CommandCannotAttackAnotherFriendlyCard", "state unchanged", failedTests);
     }
+
+    RunZoneTests(testCount, failedTests);
+    RunGameFlowTests(testCount, failedTests);
+    RunGameReplayTests(testCount, failedTests);
+    RunGameIntegrationTests(testCount, failedTests);
 
     if (failedTests > 0)
     {

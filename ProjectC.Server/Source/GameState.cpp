@@ -1,5 +1,7 @@
 #include "ProjectC/GameState.hpp"
 
+#include <limits>
+
 namespace ProjectC::GameCore
 {
     PlayerState* FindPlayer(GameState& gameState, PlayerId playerId)
@@ -28,6 +30,7 @@ namespace ProjectC::GameCore
 
     void StartTurn(GameState& gameState, PlayerId playerId)
     {
+        if (gameState.Status == GameStatus::Finished) return;
         PlayerState* player = FindPlayer(gameState, playerId);
         if (player == nullptr)
         {
@@ -35,6 +38,7 @@ namespace ProjectC::GameCore
         }
         gameState.ActivePlayerId = playerId;
         gameState.Phase = TurnPhase::Main;
+        gameState.TurnStarted = true;
         for (CardInstance& card : player->Field)
         {
             if (!card.IsDestroyed())
@@ -46,6 +50,7 @@ namespace ProjectC::GameCore
 
     void AdvancePhase(GameState& gameState)
     {
+        if (gameState.Status == GameStatus::Finished) return;
         switch (gameState.Phase)
         {
         case TurnPhase::Main:
@@ -61,6 +66,8 @@ namespace ProjectC::GameCore
 
     void EndTurn(GameState& gameState)
     {
+        if (gameState.Status == GameStatus::Finished) return;
+        if (gameState.TurnNumber == std::numeric_limits<int>::max()) return;
         PlayerState const* activePlayer = FindPlayer(gameState, gameState.ActivePlayerId);
         if (activePlayer == nullptr)
         {
@@ -84,6 +91,10 @@ namespace ProjectC::GameCore
         PlayerId defenderPlayerId,
         CardInstanceId defenderCardId)
     {
+        if (gameState.Status == GameStatus::Finished)
+        {
+            return BattleResult::GameFinished;
+        }
         if (gameState.Phase != TurnPhase::Battle)
         {
             return BattleResult::NotBattlePhase;
