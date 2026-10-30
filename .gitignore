@@ -156,3 +156,7 @@ Thumbs.db
 !ProjectC.Client/Tests/*.csproj
 /ProjectC.Client/Tests/bin/
 /ProjectC.Client/Tests/obj/
+
+# Python integration test artifacts
+__pycache__/
+*.pyc

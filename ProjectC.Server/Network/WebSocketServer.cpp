@@ -1,4 +1,4 @@
-#include "MatchSession.hpp"
+#include "MatchManager.hpp"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <deque>
@@ -19,12 +19,12 @@ class Connection : public std::enable_shared_from_this<Connection>
     beast::flat_buffer input;
     std::deque<std::string> output;
     std::size_t queuedBytes = 0;
-    MatchSession& match;
+    MatchManager& match;
     std::shared_ptr<ClientSession> client = std::make_shared<ClientSession>();
     bool stopped = false;
     std::function<void(std::shared_ptr<Connection>)> onStop;
 public:
-    Connection(Tcp::socket peer, MatchSession& session, std::function<void(std::shared_ptr<Connection>)> cleanup)
+    Connection(Tcp::socket peer, MatchManager& session, std::function<void(std::shared_ptr<Connection>)> cleanup)
         : socket(std::move(peer)), match(session), onStop(std::move(cleanup)) {}
     void Stop()
     {
@@ -79,34 +79,46 @@ private:
     }
 };
 }
-void RunServer(unsigned short port)
+void RunServer(ServerConfig const& config)
 {
     // One io_context::run thread: all callbacks and MatchSession mutations are serialized.
     // MatchSession has no socket/Beast dependency and can also be exercised directly.
     net::io_context io(1);
-    MatchSession match;
+    MatchManager match(config);
     std::set<std::shared_ptr<Connection>> connections;
-    Tcp::acceptor acceptor(io, {Tcp::v4(), port});
+    Tcp::acceptor acceptor(io, {Tcp::v4(), config.Port});
     std::function<void()> accept;
     accept = [&] {
         acceptor.async_accept([&](boost::system::error_code error, Tcp::socket peer) {
             if (!error)
             {
-                if (connections.size() >= 32) { boost::system::error_code ignored; peer.close(ignored); }
+                if (connections.size() >= config.MaxMatches * 2 + 16) { boost::system::error_code ignored; peer.close(ignored); }
                 else
                 {
                     auto connection = std::make_shared<Connection>(std::move(peer), match,
-                        [&](auto self) { connections.erase(self); });
+                        [&](auto self) { connections.erase(self); std::cout << "Clients=" << connections.size() << " activeMatches=" << match.ActiveCount() << std::endl; });
                     connections.insert(connection); connection->Start();
+                    std::cout << "Clients=" << connections.size() << " activeMatches=" << match.ActiveCount() << std::endl;
                 }
             }
             if (acceptor.is_open()) accept();
         });
     };
+    net::steady_timer maintenance(io);
+    std::function<void()> maintain;
+    maintain = [&] {
+        maintenance.expires_after(std::chrono::seconds(1));
+        maintenance.async_wait([&](boost::system::error_code error) {
+            if(error) return;
+            match.Cleanup(); maintain();
+        });
+    };
+    maintain();
     net::signal_set signals(io, SIGINT, SIGTERM);
     signals.async_wait([&](boost::system::error_code error, int) {
         if (error) return;
         boost::system::error_code ignored; acceptor.close(ignored);
+        maintenance.cancel(); match.Shutdown();
         auto copy = connections;
         for (auto const& connection : copy) connection->Stop();
     });

@@ -24,7 +24,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Test core, sessions and real WebSocket
         run: ctest --test-dir build -C Debug --output-on-failure
-      - name: Test Unity transport source with two real C# clients
+      - name: Test Unity transport source with four real C# clients
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
@@ -44,5 +44,4 @@ jobs:
           docker run -d --name projectc -p 127.0.0.1:7777:7777 projectc-server:ci
           sleep 2
           test "$(docker inspect -f '{{.State.Running}}' projectc)" = true
-          docker stop -t 10 projectc
-          test "$(docker inspect -f '{{.State.ExitCode}}' projectc)" = 0
+          python3 ProjectC.Server/Tests/ContainerLifecycle.py 7777 projectc

@@ -16,6 +16,11 @@ namespace ProjectC::GameCore
         bool AllowRemanifestation = false;
         std::size_t TriggerResolutionLimit = 64;
 
+        // Provisional deck-building constraints; enforced by the server data catalog.
+        std::size_t MinDeckSize = 1;
+        std::size_t MaxDeckSize = 128;
+        std::size_t MaxCardCopies = 4;
+
         bool operator==(GameConfig const&) const = default;
     };
 }

@@ -1,70 +1,13 @@
 #include "MatchSession.hpp"
-#include "ProjectC/GameInitializer.hpp"
 #include "ProjectC/CardEffects.hpp"
 #include <stdexcept>
 #include <limits>
-#include <set>
-#ifdef _WIN32
-#include <windows.h>
-#include <bcrypt.h>
-#else
-#include <sys/random.h>
-#include <cerrno>
-#endif
+#include <iostream>
 namespace ProjectC::Network
 {
 using namespace GameCore;
 namespace
 {
-void Fields(Json const& value, std::initializer_list<char const*> allowed)
-{
-    if (!value.is_object()) throw std::runtime_error("ExpectedObject");
-    for (auto const& item : value.items())
-    {
-        bool found = false;
-        for (auto key : allowed) if (item.key() == key) found = true;
-        if (!found) throw std::runtime_error("UnexpectedField");
-    }
-}
-std::string String(Json const& value, char const* key, std::size_t limit = 128)
-{
-    auto const& field = value.at(key);
-    if (!field.is_string()) throw std::runtime_error("ExpectedString");
-    auto result = field.get<std::string>();
-    if (result.empty() || result.size() > limit) throw std::runtime_error("StringRange");
-    for (unsigned char c : result) if (c < 32 || c > 126) throw std::runtime_error("StringCharacters");
-    return result;
-}
-std::uint64_t Number(Json const& value, char const* key, std::uint64_t max)
-{
-    auto const& field = value.at(key);
-    if (!(field.is_number_unsigned() || field.is_number_integer()) ||
-        (field.is_number_integer() && !field.is_number_unsigned() && field.get<std::int64_t>() < 0))
-        throw std::runtime_error("ExpectedUnsignedInteger");
-    auto n = field.get<std::uint64_t>();
-    if (n > max) throw std::runtime_error("IntegerRange");
-    return n;
-}
-std::string Token()
-{
-    unsigned char bytes[32];
-#ifdef _WIN32
-    if (BCryptGenRandom(nullptr, bytes, sizeof(bytes), BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0)
-        throw std::runtime_error("EntropyFailure");
-#else
-    std::size_t offset = 0;
-    while (offset < sizeof(bytes))
-    {
-        auto count = getrandom(bytes + offset, sizeof(bytes) - offset, 0);
-        if (count < 0 && errno == EINTR) continue;
-        if (count <= 0) throw std::runtime_error("EntropyFailure");
-        offset += static_cast<std::size_t>(count);
-    }
-#endif
-    std::string result;
-    for (auto byte : bytes) { result += "0123456789abcdef"[byte >> 4]; result += "0123456789abcdef"[byte & 15]; }
-    return result;
-}
 bool VisibleCard(GameState const& state, int viewer, CardInstanceId id)
 {
     if (id == 0) return false;
@@ -88,204 +31,366 @@ std::string RuleReason(CommandError error)
         "InvalidEffect", "InvalidTransformation", "TriggerLimitReached"};
     return names[static_cast<int>(error)];
 }
-Json Cards(GameState const& state, std::vector<CardInstance> const& cards)
+char const* StatusName(MatchStatus status)
 {
-    Json result = Json::array();
-    for (auto const& card : cards)
+    switch(status) {
+    case MatchStatus::WaitingForPlayers:return "WaitingForPlayers";
+    case MatchStatus::Ready:return "Ready";
+    case MatchStatus::Playing:return "Playing";
+    case MatchStatus::Finished:return "Finished";
+    default:return "Closed";
+    }
+}
+// Descriptions come from the visible definition, never from an opponent's deck.
+std::string RulesText(CardDefinition const& definition)
+{
+    static char const* const triggers[]={"Activated", "On summon", "On destruction", "On damage", "On turn start", "On turn end"};
+    static char const* const operations[]={"Draw", "Mill", "Salvage", "Search", "Summon from deck", "Summon from graveyard", "Return to hand", "Destroy", "Deal damage", "Heal", "Modify stats", "Transform"};
+    static char const* const targets[]={"self", "friendly monster", "enemy monster", "any monster", "friendly player", "enemy player", "friendly deck", "friendly hand", "friendly graveyard", "enemy graveyard"};
+    std::string text;
+    for(auto const& effect:definition.Effects)
     {
-        auto definition = FindDefinition(state, card.CurrentDefinitionId);
-        result.push_back({{"Id", card.Id}, {"DefinitionId", card.CurrentDefinitionId},
-            {"Name", definition ? definition->Name : ""}, {"Attack", card.Attack}, {"Hp", card.Hp},
-            {"MaxHp", card.MaxHp}, {"HasAttacked", card.HasAttackedThisTurn}});
+        if(!text.empty()) text+="\n";
+        text+=triggers[static_cast<int>(effect.Trigger)]; text+=": ";
+        for(auto const& action:effect.Actions)
+        {
+            text+=operations[static_cast<int>(action.Operation)]; text+=" (";
+            text+=targets[static_cast<int>(action.Targets.Category)]; text+=")";
+            if(action.Operation==EffectOperation::ModifyStats)
+                text+=" ATK "+std::to_string(action.AttackDelta)+", max HP "+std::to_string(action.MaxHpDelta);
+            else if(action.Operation==EffectOperation::Transform) text+=" definition #"+std::to_string(action.TransformDefinitionId);
+            else text+=" x"+std::to_string(action.Amount);
+            text+=". ";
+        }
+    }
+    return text.empty()?"No card effects.":text;
+}
+std::string Manifestations(GameState const& state, CardDefinition const& definition)
+{
+    std::string text;
+    for(auto id:definition.AllowedManifestations) if(auto form=FindDefinition(state,id))
+    {
+        if(!text.empty()) text+=", ";
+        text+=form->Name+" ("+std::to_string(form->Attack)+"/"+std::to_string(form->MaxHp)+")";
+    }
+    return text.empty()?"No manifestation forms.":"Forms: "+text+". Effect-driven only.";
+}
+Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int viewer, Zone zone)
+{
+    Json result=Json::array();
+    auto owner=FindPlayer(state,viewer);
+    for(auto const& card:cards)
+    {
+        auto definition=FindDefinition(state,card.CurrentDefinitionId);
+        bool summon=zone==Zone::Hand && card.OwnerId==viewer && state.ActivePlayerId==viewer
+            && state.TurnStarted && state.Phase==TurnPhase::Main && state.Status==GameStatus::Running
+            && owner && owner->NormalSummonsThisTurn<1 && owner->Field.size()<state.Config.FieldLimit;
+        bool attack=zone==Zone::Field && card.OwnerId==viewer && state.TurnStarted
+            && ValidateAttackSource(state,viewer,card.Id)==BattleResult::Success
+            && ValidateAttackReadiness(state,card)==BattleResult::Success;
+        result.push_back({{"Id",card.Id},{"DefinitionId",card.CurrentDefinitionId},{"Name",definition?definition->Name:""},
+            {"Attack",card.Attack},{"Hp",card.Hp},{"MaxHp",card.MaxHp},{"HasAttacked",card.HasAttackedThisTurn},
+            {"RulesText",definition?RulesText(*definition):""},{"ManifestationText",definition?Manifestations(state,*definition):""},
+            {"SummoningSick",zone==Zone::Field && IsSummoningSick(state,card)},
+            {"CanSummon",summon},{"CanAttack",attack},{"EffectCount",definition?definition->Effects.size():0}});
     }
     return result;
 }
 }
+std::array<int,2> IdentityAllocator::Players()
+{
+    if(NextPlayer>std::numeric_limits<int>::max()-2) throw std::runtime_error("Player IDs exhausted");
+    std::array<int,2> result{NextPlayer,NextPlayer+1}; NextPlayer+=2;return result;
+}
+int IdentityAllocator::Cards(std::size_t count)
+{
+    if(count>static_cast<std::size_t>(std::numeric_limits<int>::max()-NextCard)) throw std::runtime_error("Card IDs exhausted");
+    int first=NextCard;NextCard+=static_cast<int>(count);return first;
+}
+bool ReplayRecord::Verify() const
+{
+    auto replay=ReplayCommands(InitialState,Commands);
+    return replay.FinalState==FinalState && replay.Results==Results;
+}
+MatchSession::MatchSession(std::string id, std::shared_ptr<CardCatalog const> catalog,
+    std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive)
+    : id(std::move(id)),catalog(std::move(catalog)),identities(std::move(identities)),archive(std::move(archive))
+{
+    auto players=this->identities->Players();
+    for(int i=0;i<2;++i) {seats[i].Player=players[i];seats[i].DeckId=this->catalog->Decks[i%this->catalog->Decks.size()].Id;}
+    hostPlayer=players[0];
+}
+int MatchSession::SeatIndex(int player) const
+{
+    for(int i=0;i<2;++i) if(seats[i].Player==player) return i;
+    return -1;
+}
 Json MatchSession::Message(std::string const& type, std::string const& request) const
 {
-    return {{"Type", type}, {"ProtocolVersion", 1}, {"MatchId", "local-1"},
-        {"RequestId", request}, {"SequenceNumber", sequence}};
+    return Envelope(type,request,id,sequence,gameNumber);
 }
 Json MatchSession::Snapshot(int viewer) const
 {
-    Json players = Json::array();
-    if (started) for (auto const& player : state.Players)
-        players.push_back({{"PlayerId", player.Id}, {"Life", player.Life},
-            {"HandCount", player.Hand.size()}, {"DeckCount", player.Deck.size()},
-            {"Hand", player.Id == viewer ? Cards(state, player.Hand) : Json::array()},
-            {"Field", Cards(state, player.Field)}, {"Graveyard", Cards(state, player.Graveyard)}});
-    return {{"Started", started}, {"Players", players}, {"ActivePlayerId", state.ActivePlayerId},
-        {"TurnNumber", state.TurnNumber}, {"TurnStarted", state.TurnStarted}, {"Phase", static_cast<int>(state.Phase)},
-        {"Finished", state.Status == GameStatus::Finished}, {"WinnerPlayerId", state.WinnerPlayerId}};
+    Json players=Json::array();
+    if(gameNumber>0) for(auto const& player:state.Players)
+        players.push_back({{"PlayerId",player.Id},{"Life",player.Life},{"HandCount",player.Hand.size()},
+            {"DeckCount",player.Deck.size()},{"Hand",player.Id==viewer?Cards(state,player.Hand,viewer,Zone::Hand):Json::array()},
+            {"Field",Cards(state,player.Field,viewer,Zone::Field)},{"Graveyard",Cards(state,player.Graveyard,viewer,Zone::Graveyard)}});
+    return {{"FieldLimit",state.Config.FieldLimit},{"Started",gameNumber>0},{"MatchStatus",StatusName(status)},{"Players",players},
+        {"ActivePlayerId",state.ActivePlayerId},{"TurnNumber",state.TurnNumber},{"TurnStarted",state.TurnStarted},
+        {"Phase",static_cast<int>(state.Phase)},{"Finished",status==MatchStatus::Finished},{"WinnerPlayerId",state.WinnerPlayerId}};
 }
-void MatchSession::SendSnapshot(std::shared_ptr<ClientSession> const& client, std::string const& request) const
+void MatchSession::SendSnapshot(std::shared_ptr<ClientSession> const& client,std::string const& request) const
 {
-    auto message = Message("StateSnapshot", request);
-    message["Payload"] = Snapshot(client->Player);
-    client->Send(message);
+    auto message=Message("StateSnapshot",request); message["Payload"]=Snapshot(client->Player);client->Send(message);
+}
+void MatchSession::Lobby() const
+{
+    auto message=Message("LobbyState");
+    Json players=Json::array();
+    for(auto const& seat:seats) players.push_back({{"PlayerId",seat.Player},{"Occupied",!seat.Token.empty() || !seat.Client.expired()},
+        {"Connected",!seat.Client.expired()},{"Ready",seat.Ready},{"Rematch",seat.Rematch}});
+    // Opponents see readiness, never the selected deck ID/composition.
+    message["Payload"]={{"Status",StatusName(status)},{"HostPlayerId",hostPlayer},{"Players",players}};
+    for(auto const& seat:seats) if(auto client=seat.Client.lock())
+    {
+        auto personal=message;personal["DeckId"]=seat.DeckId;client->Send(personal);
+    }
 }
 void MatchSession::Broadcast(std::vector<GameEvent> const& events)
 {
-    for (int i = 0; i < 2; ++i) if (auto client = seats[i].Client.lock())
+    for(auto const& seat:seats) if(auto client=seat.Client.lock())
     {
-        auto message = Message("GameEvents");
-        Json visible = Json::array();
-        // Only explicitly public fields leave the server. Core event objects are never serialized wholesale.
-        for (auto e : EventsForPlayer(events, i + 1))
+        auto message=Message("GameEvents");Json visible=Json::array();
+        for(auto e:EventsForPlayer(events,seat.Player))
         {
-            if (!VisibleCard(state, i + 1, e.SourceCardId)) e.SourceCardId = 0;
-            if (!VisibleCard(state, i + 1, e.TargetCardId)) e.TargetCardId = 0;
-            if (e.SourceCardId == 0 && e.TargetCardId == 0) e.CurrentDefinitionId = 0;
-            visible.push_back({{"Type", static_cast<int>(e.Type)}, {"SourcePlayerId", e.SourcePlayerId},
-                {"SourceCardId", e.SourceCardId}, {"TargetPlayerId", e.TargetPlayerId},
-                {"TargetCardId", e.TargetCardId}, {"DefinitionId", e.CurrentDefinitionId},
-                {"Damage", e.Damage}, {"HpAfter", e.HpAfter}, {"LifeAfter", e.LifeAfter}});
+            if(!VisibleCard(state,seat.Player,e.SourceCardId)) e.SourceCardId=0;
+            if(!VisibleCard(state,seat.Player,e.TargetCardId)) e.TargetCardId=0;
+            if(e.SourceCardId==0 && e.TargetCardId==0) e.CurrentDefinitionId=0;
+            visible.push_back({{"Type",static_cast<int>(e.Type)},{"SourcePlayerId",e.SourcePlayerId},{"SourceCardId",e.SourceCardId},
+                {"TargetPlayerId",e.TargetPlayerId},{"TargetCardId",e.TargetCardId},{"DefinitionId",e.CurrentDefinitionId},
+                {"FromZone",static_cast<int>(e.FromZone)},{"ToZone",static_cast<int>(e.ToZone)},
+                {"Damage",e.Damage},{"HpAfter",e.HpAfter},{"LifeAfter",e.LifeAfter},{"AttackAfter",e.AttackAfter},
+                {"Phase",static_cast<int>(e.Phase)},{"TurnNumber",e.TurnNumber}});
         }
-        message["Payload"] = visible;
-        client->Send(message);
-        SendSnapshot(client);
-        if (state.Status == GameStatus::Finished)
+        message["Payload"]=visible;client->Send(message);SendSnapshot(client);
+        if(status==MatchStatus::Finished)
         {
-            auto ended = Message("MatchEnded");
-            ended["WinnerPlayerId"] = state.WinnerPlayerId;
-            ended["EndReason"] = static_cast<int>(state.EndReason);
-            client->Send(ended);
+            auto ended=Message("MatchEnded");ended["WinnerPlayerId"]=state.WinnerPlayerId;
+            ended["EndReason"]=static_cast<int>(state.EndReason);ended["SessionTokenRevoked"]=true;client->Send(ended);
         }
     }
+}
+void MatchSession::Archive()
+{
+    if(archived) return;
+    journal.FinalState=state;journal.StoredAt=Clock::now();
+    archive(journal);archived=true;
+}
+void MatchSession::StartGame()
+{
+    if(seats[0].Client.expired() || seats[1].Client.expired() || !seats[0].Ready || !seats[1].Ready)
+        throw std::runtime_error("Players not ready");
+    if(gameNumber>=1000000) throw std::runtime_error("Game limit");
+    std::uint64_t seed=std::stoull(Token().substr(0,16),nullptr,16);
+    auto count=catalog->FindDeck(seats[0].DeckId)->Cards.size()+catalog->FindDeck(seats[1].DeckId)->Cards.size();
+    auto fresh=catalog->Initialize({seats[0].Player,seats[1].Player},{seats[0].DeckId,seats[1].DeckId},seed,identities->Cards(count));
+    std::array<std::string,2> tokens{Token(),Token()};
+    auto initial=fresh;
+    GameCommand command=StartTurnCommand{fresh.ActivePlayerId};
+    auto result=ProcessCommand(fresh,command);
+    if(result.Code!=CommandError::Success) throw std::runtime_error("Start game failed");
+    state=std::move(fresh);sequence=0;++gameNumber;status=MatchStatus::Playing;lastActivity=Clock::now();
+    journal={};journal.MatchId=id;journal.GameNumber=gameNumber;journal.Seed=seed;journal.InitialState=std::move(initial);archived=false;
+    journal.Commands.push_back(command);journal.Results.push_back(result);++sequence;
+    if(state.Status==GameStatus::Finished) {status=MatchStatus::Finished;Archive();}
+    for(int i=0;i<2;++i)
+    {
+        seats[i].Token=status==MatchStatus::Finished?"":tokens[i];seats[i].Ready=status==MatchStatus::Playing;seats[i].Requests.clear();seats[i].Rematch=false;
+        if(auto client=seats[i].Client.lock())
+        {
+            auto updated=Message("SessionUpdated");updated["SessionToken"]=seats[i].Token;updated["PlayerId"]=client->Player;client->Send(updated);
+            client->Send(Message("MatchStarted"));
+        }
+    }
+    std::cout << "Match " << id << " started game=" << gameNumber << std::endl;
+    Lobby();Broadcast(result.Events);
 }
 void MatchSession::Disconnect(std::shared_ptr<ClientSession> const& client)
 {
-    if (client->Player > 0 && seats[client->Player - 1].Client.lock() == client)
-        seats[client->Player - 1].Client.reset();
-    client->Player = 0;
-}
-void MatchSession::Receive(std::shared_ptr<ClientSession> const& client, std::string const& message)
-{
-    std::string request;
-    try
+    auto index=SeatIndex(client->Player);
+    if(index>=0 && seats[index].Client.lock()==client)
     {
-        if (message.size() > 16384) throw std::runtime_error("MessageTooLarge");
-        std::map<int, std::set<std::string>> keys;
-        auto input = Json::parse(message, [&](int depth, Json::parse_event_t event, Json& value) {
-            if (depth > 32) throw std::runtime_error("JsonDepth");
-            if (event == Json::parse_event_t::object_start) keys[depth + 1].clear();
-            if (event == Json::parse_event_t::key && !keys[depth].insert(value.get<std::string>()).second)
-                throw std::runtime_error("DuplicateField");
-            return true;
-        });
-        if (input.contains("RequestId")) request = String(input, "RequestId", 64);
-        Handle(client, input);
+        seats[index].Client.reset();
+        if(status==MatchStatus::WaitingForPlayers || status==MatchStatus::Ready) {seats[index].Ready=false;status=MatchStatus::WaitingForPlayers;}
+        seats[index].Rematch=false;
     }
-    catch (std::exception const& error)
-    {
-        auto response = Message("ServerError", request);
-        // No incoming JSON, tokens, parser diagnostics or private state in error output.
-        response["Reason"] = "InvalidRequest";
-        client->Send(response);
-        (void)error;
-    }
+    client->Player=0;client->MatchId.clear();Lobby();
 }
-void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json const& input)
+void MatchSession::Close(std::string const& reason)
 {
-    Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "PlayerId", "SequenceNumber", "Command", "SessionToken"});
-    if (Number(input, "ProtocolVersion", 1) != 1) throw std::runtime_error("ProtocolVersion");
-    auto type = String(input, "Type");
-    auto request = String(input, "RequestId", 64);
-    auto reject = [&](std::string const& reason) {
-        auto response = Message(type == "SubmitCommand" ? "CommandRejected" : "ServerError", request);
-        response["Reason"] = reason; client->Send(response);
-    };
-    if (type == "JoinMatch")
+    if(status==MatchStatus::Closed) return;
+    Archive();status=MatchStatus::Closed;
+    for(auto& seat:seats)
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "SessionToken"});
-        if (input.contains("MatchId") && String(input, "MatchId") != "local-1") { reject("WrongMatch"); return; }
-        if (client->Player) { reject("AlreadyJoined"); return; }
-        int seat = -1;
-        if (input.contains("SessionToken"))
+        if(auto client=seat.Client.lock())
         {
-            auto token = String(input, "SessionToken", 64);
-            for (int i = 0; i < 2; ++i) if (!seats[i].Token.empty() && seats[i].Token == token) seat = i;
-            if (seat < 0) { reject("InvalidSession"); return; }
-            if (!seats[seat].Client.expired()) { reject("SessionConnected"); return; }
+            auto closed=Message("MatchClosed");closed["Reason"]=reason;client->Send(closed);
+            client->Player=0;client->MatchId.clear();
+        }
+        seat.Token.clear();seat.Client.reset();seat.Requests.clear();
+    }
+    std::cout << "Match " << id << " closed reason=" << reason << std::endl;
+}
+void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json const& input)
+{
+    auto type=String(input,"Type");auto request=String(input,"RequestId",64);
+    auto reject=[&](std::string const& reason){auto response=Message(type=="SubmitCommand"?"CommandRejected":"ServerError",request);response["Reason"]=reason;client->Send(response);};
+    if(status==MatchStatus::Closed) {reject("MatchClosed");return;}
+    if(type=="JoinMatch" || type=="CreateMatch")
+    {
+        if(type=="JoinMatch") Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","SessionToken","DeckId"});
+        else Fields(input,{"Type","ProtocolVersion","RequestId","DeckId"});
+        if(!client->MatchId.empty()) {reject("AlreadyJoined");return;}
+        std::string deck=input.contains("DeckId")?String(input,"DeckId",64):"";
+        if(!deck.empty() && !catalog->FindDeck(deck)) {reject("InvalidDeck");return;}
+        int index=-1;
+        if(input.contains("SessionToken"))
+        {
+            auto token=String(input,"SessionToken",64);
+            for(int i=0;i<2;++i) if(!seats[i].Token.empty() && seats[i].Token==token) index=i;
+            if(index<0) {reject("InvalidSession");return;}
+            if(!seats[index].Client.expired()) {reject("SessionConnected");return;}
         }
         else
         {
-            for (int i = 0; i < 2; ++i) if (seats[i].Token.empty()) { seat = i; break; }
-            if (seat < 0) { reject("MatchFull"); return; }
-            seats[seat].Token = Token();
+            if(status!=MatchStatus::WaitingForPlayers) {reject("MatchNotWaiting");return;}
+            for(int i=0;i<2;++i) if(seats[i].Token.empty() && seats[i].Client.expired()) {index=i;break;}
+            if(index<0) {reject("MatchFull");return;}
+            seats[index].Token=Token();
         }
-        client->Player = seat + 1;
-        seats[seat].Client = client;
-        auto joined = Message("MatchJoined", request);
-        joined["PlayerId"] = client->Player; joined["SessionToken"] = seats[seat].Token;
-        client->Send(joined);
-        if (!started && !seats[0].Token.empty() && !seats[1].Token.empty())
-        {
-            GameConfig config; config.InitialLife = 3; config.InitialHandSize = 1; config.AllowManualDraw = false;
-            std::vector<CardDefinition> definitions{
-                {.Id = 10, .Name = "Test Attacker", .Attack = 3, .MaxHp = 5},
-                {.Id = 20, .Name = "Test Defender", .Attack = 4, .MaxHp = 3}};
-            std::array<PlayerSetup, 2> players{PlayerSetup{1, {10,10}}, PlayerSetup{2, {20,20}}};
-            if (InitializeGame(state, config, definitions, players, 1) != InitializationResult::Success)
-                throw std::runtime_error("Initialization");
-            auto result = ProcessCommand(state, StartTurnCommand{1});
-            if (result.Code != CommandError::Success) throw std::runtime_error("Initialization");
-            started = true; ++sequence;
-            for (auto& entry : seats) if (auto c = entry.Client.lock()) c->Send(Message("MatchStarted"));
-            Broadcast(result.Events);
-        }
-        else SendSnapshot(client, request);
+        client->Player=seats[index].Player;client->MatchId=id;seats[index].Client=client;
+        if(!deck.empty() && status==MatchStatus::WaitingForPlayers) {seats[index].DeckId=deck;seats[index].Ready=false;}
+        auto joined=Message(type=="CreateMatch"?"MatchCreated":"MatchJoined",request);
+        joined["PlayerId"]=client->Player;joined["SessionToken"]=seats[index].Token;joined["DeckId"]=seats[index].DeckId;client->Send(joined);
+        lastActivity=Clock::now();Lobby();SendSnapshot(client,request);return;
+    }
+    int index=SeatIndex(client->Player);
+    if(index<0 || seats[index].Client.lock()!=client || client->MatchId!=id) {reject("NotJoined");return;}
+    if(input.contains("PlayerId") && Number(input,"PlayerId",2147483647)!=static_cast<unsigned>(client->Player)) {reject("PlayerMismatch");return;}
+    if(type=="StateResyncRequest")
+    {
+        Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","PlayerId"});Lobby();SendSnapshot(client,request);return;
+    }
+    if(type=="SubmitCommand") {Submit(client,input);return;}
+    if(type=="SetReady") Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber","Ready","DeckId"});
+    else if(type=="Rematch") Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber","DeckId"});
+    else Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber"});
+    if(Number(input,"GameNumber",1000000)!=static_cast<unsigned>(gameNumber)) {reject("StaleGame");return;}
+    auto accepted=[&]{client->Send(Message("LobbyAccepted",request));};
+    auto& seat=seats[index];
+    if(type=="SetReady")
+    {
+        if(status!=MatchStatus::WaitingForPlayers && status!=MatchStatus::Ready) {reject("MatchNotWaiting");return;}
+        auto ready=Boolean(input,"Ready");auto deck=input.contains("DeckId")?String(input,"DeckId",64):seat.DeckId;
+        if(!catalog->FindDeck(deck)) {reject("InvalidDeck");return;}
+        seat.DeckId=deck;seat.Ready=ready;lastActivity=Clock::now();accepted();
+        status=MatchStatus::WaitingForPlayers;
+        if(seats[0].Ready && seats[1].Ready && !seats[0].Client.expired() && !seats[1].Client.expired()) status=MatchStatus::Ready;
+        Lobby();if(status==MatchStatus::Ready) StartGame();return;
+    }
+    if(type=="StartMatch")
+    {
+        if(client->Player!=hostPlayer) {reject("HostOnly");return;}
+        if(status!=MatchStatus::Ready) {reject("NotReady");return;}
+        accepted();StartGame();return;
+    }
+    if(type=="Rematch")
+    {
+        if(status!=MatchStatus::Finished) {reject("MatchNotFinished");return;}
+        if(seats[0].Client.expired() || seats[1].Client.expired()) {reject("PlayersDisconnected");return;}
+        auto deck=input.contains("DeckId")?String(input,"DeckId",64):seat.DeckId;
+        if(!catalog->FindDeck(deck)) {reject("InvalidDeck");return;}
+        seat.DeckId=deck;seat.Rematch=true;lastActivity=Clock::now();accepted();Lobby();
+        if(seats[0].Rematch && seats[1].Rematch) {for(auto& entry:seats) entry.Ready=true;StartGame();}
         return;
     }
-    if (client->Player < 1 || seats[client->Player - 1].Client.lock() != client) { reject("NotJoined"); return; }
-    if (String(input, "MatchId") != "local-1") { reject("WrongMatch"); return; }
-    if (input.contains("PlayerId") && Number(input, "PlayerId", 2) != static_cast<unsigned>(client->Player))
-    { reject("PlayerMismatch"); return; }
-    if (type == "StateResyncRequest")
+    if(type=="CloseMatch")
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "PlayerId"});
-        SendSnapshot(client, request); return;
+        if(client->Player!=hostPlayer) {reject("HostOnly");return;}
+        accepted();Close("HostClosed");return;
     }
-    if (type != "SubmitCommand") { reject("UnknownMessage"); return; }
-    Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "PlayerId", "SequenceNumber", "Command"});
-    auto& requests = seats[client->Player - 1].Requests;
-    auto fingerprint = input.dump();
-    if (auto previous = requests.find(request); previous != requests.end())
+    if(type=="LeaveMatch")
     {
-        if (previous->second.first != fingerprint) { reject("RequestIdConflict"); return; }
-        client->Send(previous->second.second); SendSnapshot(client); return;
+        auto left=Message("MatchLeft",request);client->Send(left);
+        if(status==MatchStatus::Playing || status==MatchStatus::Finished) {Close("PlayerLeft");return;}
+        client->Player=0;client->MatchId.clear();seat.Client.reset();seat.Token.clear();seat.Ready=false;seat.Rematch=false;seat.Requests.clear();
+        auto const& other=seats[1-index];
+        if(other.Token.empty()) Close("EmptyLobby");
+        else {if(hostPlayer==seat.Player) hostPlayer=other.Player;lastActivity=Clock::now();status=MatchStatus::WaitingForPlayers;Lobby();}
+        return;
     }
-    if (requests.size() >= 4096) { reject("RequestLimit"); return; }
-    auto cacheReject = [&](std::string const& reason) {
-        auto response = Message("CommandRejected", request); response["Reason"] = reason;
-        requests.emplace(request, std::make_pair(fingerprint, response)); client->Send(response);
-    };
-    if (!started) { cacheReject("MatchNotStarted"); return; }
-    if (Number(input, "SequenceNumber", 9007199254740991ULL) != sequence) { cacheReject("StaleSequence"); return; }
-    auto const& command = input.at("Command");
-    auto name = String(command, "Type");
-    PlayerId player = client->Player;
-    PlayerId opponent = player == 1 ? 2 : 1;
+    reject("UnknownMessage");
+}
+void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json const& input)
+{
+    Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","PlayerId","GameNumber","SequenceNumber","Command"});
+    auto request=String(input,"RequestId",64);
+    auto reject=[&](std::string const& reason){auto response=Message("CommandRejected",request);response["Reason"]=reason;client->Send(response);};
+    if(Number(input,"GameNumber",1000000)!=static_cast<unsigned>(gameNumber)) {reject("StaleGame");return;}
+    auto& requests=seats[SeatIndex(client->Player)].Requests;auto fingerprint=input.dump();
+    if(auto previous=requests.find(request);previous!=requests.end())
+    {
+        if(previous->second.first!=fingerprint) {reject("RequestIdConflict");return;}
+        client->Send(previous->second.second);SendSnapshot(client);return;
+    }
+    if(requests.size()>=4096) {reject("RequestLimit");return;}
+    auto cacheReject=[&](std::string const& reason){auto response=Message("CommandRejected",request);response["Reason"]=reason;requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);};
+    if(status!=MatchStatus::Playing) {cacheReject("MatchNotPlaying");return;}
+    if(Number(input,"SequenceNumber",9007199254740991ULL)!=sequence) {cacheReject("StaleSequence");return;}
+    auto const& command=input.at("Command");auto name=String(command,"Type");
+    int player=client->Player;int opponent=seats[1-SeatIndex(player)].Player;
     GameCommand parsed;
-    if (name == "PlayCard") { Fields(command, {"Type", "CardId"}); parsed = PlayCardCommand{player, static_cast<CardInstanceId>(Number(command, "CardId", 2147483647))}; }
-    else if (name == "StartTurn") { Fields(command, {"Type"}); parsed = StartTurnCommand{player}; }
-    else if (name == "EndTurn") { Fields(command, {"Type"}); parsed = EndTurnCommand{player}; }
-    else if (name == "AdvancePhase") { Fields(command, {"Type"}); parsed = AdvancePhaseCommand{player}; }
-    else if (name == "Attack" || name == "DirectAttack")
+    if(name=="PlayCard") {Fields(command,{"Type","CardId"});parsed=PlayCardCommand{player,static_cast<int>(Number(command,"CardId",2147483647))};}
+    else if(name=="EndTurn") {Fields(command,{"Type"});parsed=EndTurnCommand{player};}
+    else if(name=="AdvancePhase") {Fields(command,{"Type"});parsed=AdvancePhaseCommand{player};}
+    else if(name=="Attack" || name=="DirectAttack")
     {
-        Fields(command, name == "Attack" ? std::initializer_list<char const*>{"Type", "CardId", "TargetCardId"} : std::initializer_list<char const*>{"Type", "CardId"});
-        auto card = static_cast<CardInstanceId>(Number(command, "CardId", 2147483647));
-        if (name == "Attack") parsed = AttackCommand{player, card, opponent, static_cast<CardInstanceId>(Number(command, "TargetCardId", 2147483647))};
-        else parsed = DirectAttackCommand{player, card, opponent};
+        Fields(command,name=="Attack"?std::initializer_list<char const*>{"Type","CardId","TargetCardId"}:std::initializer_list<char const*>{"Type","CardId"});
+        auto card=static_cast<int>(Number(command,"CardId",2147483647));
+        if(name=="Attack") parsed=AttackCommand{player,card,opponent,static_cast<int>(Number(command,"TargetCardId",2147483647))};
+        else parsed=DirectAttackCommand{player,card,opponent};
     }
-    else { cacheReject("CommandNotAllowed"); return; }
-    auto result = ProcessCommand(state, parsed);
-    if (result.Code != CommandError::Success)
-    { cacheReject("GameRule:" + RuleReason(result.Code) + ":Battle:" + std::to_string(static_cast<int>(result.Result))); return; }
-    ++sequence;
-    auto response = Message("CommandAccepted", request);
-    requests.emplace(request, std::make_pair(fingerprint, response));
-    client->Send(response);
-    Broadcast(result.Events);
+    else {cacheReject("CommandNotAllowed");return;}
+    GameState candidate=state;
+    std::vector<GameCommand> commands;std::vector<CommandResult> results;std::vector<GameEvent> events;
+    auto apply=[&](GameCommand const& cmd){
+        auto result=ProcessCommand(candidate,cmd);commands.push_back(cmd);results.push_back(result);
+        events.insert(events.end(),result.Events.begin(),result.Events.end());return result.Code==CommandError::Success;
+    };
+    bool success=true;
+    if(name=="EndTurn")
+    {
+        while(success && candidate.Status==GameStatus::Running && candidate.Phase!=TurnPhase::End) success=apply(AdvancePhaseCommand{player});
+        if(success && candidate.Status==GameStatus::Running) success=apply(parsed);
+        if(success && candidate.Status==GameStatus::Running) success=apply(StartTurnCommand{candidate.ActivePlayerId});
+    }
+    else success=apply(parsed);
+    if(!success)
+    {
+        if(commands.size()==1) {journal.Commands.push_back(commands[0]);journal.Results.push_back(results[0]);}
+        auto const& result=results.back();cacheReject("GameRule:"+RuleReason(result.Code)+":Battle:"+std::to_string(static_cast<int>(result.Result)));return;
+    }
+    state=std::move(candidate);
+    journal.Commands.insert(journal.Commands.end(),commands.begin(),commands.end());journal.Results.insert(journal.Results.end(),results.begin(),results.end());
+    ++sequence;lastActivity=Clock::now();
+    if(state.Status==GameStatus::Finished)
+    {
+        status=MatchStatus::Finished;Archive();
+        for(auto& seat:seats) {seat.Token.clear();seat.Ready=false;seat.Rematch=false;}
+        std::cout << "Match " << id << " finished game=" << gameNumber << " winner=" << state.WinnerPlayerId << std::endl;
+    }
+    auto response=Message("CommandAccepted",request);requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);
+    Broadcast(events);if(status==MatchStatus::Finished) Lobby();
 }
 }

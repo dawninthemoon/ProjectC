@@ -1,58 +1,81 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+[assembly: InternalsVisibleTo("ProjectC.Client.PlayModeTests")]
 
 namespace ProjectC.Client
 {
     public sealed class MultiplayerDebugScreen : MonoBehaviour
     {
-        string address = "ws://127.0.0.1:7777";
+        string address = "ws://127.0.0.1:7777", boundAddress, selectedDeck = "Strikers";
         WebSocketTransport transport;
-        string token, matchId;
-        int playerId, cardId, targetId;
+        string token, matchId = "";
+        int playerId, gameNumber, cardId, targetId;
         long sequence, lastEvents;
         bool connecting, pending, resyncing;
         StateView state;
-        Vector2 scroll;
+        LobbyView lobby;
+        DeckView[] decks = Array.Empty<DeckView>();
+        CardView selectedCard;
         readonly Queue<string> log = new Queue<string>();
+        // Transport/controller only. The scene-authored BattleScreen prefab owns all rendering.
+        public event Action<EventView> EventReceived;
+        public event Action<string> NoticeReceived;
+        public int PlayerId => playerId;
+        public LobbyView Lobby => lobby;
+        public DeckView[] Decks => decks;
+        public string SelectedDeck { get => selectedDeck; set => selectedDeck = value; }
+        public bool Busy => pending || resyncing || connecting;
+        public void LeaveMatch() => LobbyAction("LeaveMatch");
+        public void CloseMatch() => LobbyAction("CloseMatch");
+        public void RequestSnapshot() => Resync();
+        public StateView State => state;
+        public string CurrentMatch => matchId;
+        public int GameNumber => gameNumber;
+        public long Sequence => sequence;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Bootstrap()
+        void Awake() { Application.runInBackground = true; }
+        void Note(string text) { log.Enqueue(text); while (log.Count > 100) log.Dequeue(); NoticeReceived?.Invoke(text); }
+        void ResetEpoch(int game)
         {
-            if (FindFirstObjectByType<MultiplayerDebugScreen>() != null) return;
-            var screen = new GameObject("Project C Multiplayer Debug");
-            DontDestroyOnLoad(screen);
-            screen.AddComponent<MultiplayerDebugScreen>();
+            gameNumber = game; sequence = lastEvents = 0; state = null;
+            cardId = targetId = 0; selectedCard = null; pending = resyncing = false;
         }
-        void Note(string text)
+        void ClearMatch()
         {
-            log.Enqueue(text);
-            while (log.Count > 12) log.Dequeue();
+            token = null; matchId = ""; playerId = 0; lobby = null; ResetEpoch(0);
         }
+        internal bool Connected => transport != null && transport.Connected;
+        internal void ConnectTo(string serverAddress) { address = serverAddress; Connect(); }
+        internal void DisconnectNetwork() { transport?.Dispose(); connecting = pending = resyncing = false; }
+        internal void CreateMatch() { pending = true; Send(Request("CreateMatch") + ",\"DeckId\":" + Quote(selectedDeck)); }
+        internal void JoinMatch(string id) { pending = true; Send(Request("JoinMatch") + ",\"MatchId\":" + Quote(id) + ",\"DeckId\":" + Quote(selectedDeck)); }
+        internal void SetReady(string deck, bool ready = true) { selectedDeck = deck; LobbyAction("SetReady", ",\"Ready\":" + (ready ? "true" : "false") + ",\"DeckId\":" + Quote(deck)); }
+        internal void RequestRematch() { LobbyAction("Rematch", ",\"DeckId\":" + Quote(selectedDeck)); }
+        internal void SendGameCommand(string type, int card = 0, int target = 0) { cardId = card; targetId = target; Submit(type); }
         void Connect()
         {
             transport?.Dispose();
+            if (boundAddress != address || string.IsNullOrEmpty(token)) ClearMatch();
+            boundAddress = address;
             transport = new WebSocketTransport();
-            connecting = true; pending = false; resyncing = false;
-            sequence = lastEvents = 0; state = null;
+            connecting = true; pending = resyncing = false;
             _ = transport.ConnectAsync(address);
         }
-        static string Quote(string text) { return "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""; }
-        string Request(string type)
+        static string Quote(string text) => "\"" + (text ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        string Request(string type) => "{\"Type\":" + Quote(type) + ",\"ProtocolVersion\":2,\"RequestId\":" + Quote(Guid.NewGuid().ToString("N"));
+        void Send(string json) { if (transport != null && transport.Connected) _ = transport.SendAsync(json + "}"); }
+        void LobbyAction(string type, string extra = "")
         {
-            return "{\"Type\":" + Quote(type) + ",\"ProtocolVersion\":1,\"RequestId\":" + Quote(Guid.NewGuid().ToString("N"));
-        }
-        void Join()
-        {
-            string json = Request("JoinMatch");
-            if (!string.IsNullOrEmpty(token)) json += ",\"MatchId\":" + Quote(matchId) + ",\"SessionToken\":" + Quote(token);
-            _ = transport.SendAsync(json + "}");
+            pending = true;
+            Send(Request(type) + ",\"MatchId\":" + Quote(matchId) + ",\"GameNumber\":" + gameNumber + extra);
         }
         void Resync()
         {
-            if (playerId == 0 || string.IsNullOrEmpty(matchId) || transport == null || !transport.Connected) return;
+            if (string.IsNullOrEmpty(matchId) || transport == null || !transport.Connected) return;
             resyncing = true;
-            _ = transport.SendAsync(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId) + "}");
+            Send(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId));
         }
         void Submit(string type)
         {
@@ -61,8 +84,8 @@ namespace ProjectC.Client
             if (type == "PlayCard" || type == "Attack" || type == "DirectAttack") command += ",\"CardId\":" + cardId;
             if (type == "Attack") command += ",\"TargetCardId\":" + targetId;
             pending = true;
-            _ = transport.SendAsync(Request("SubmitCommand") + ",\"MatchId\":" + Quote(matchId) +
-                ",\"SequenceNumber\":" + sequence + ",\"Command\":" + command + "}}");
+            Send(Request("SubmitCommand") + ",\"MatchId\":" + Quote(matchId) + ",\"GameNumber\":" + gameNumber +
+                ",\"SequenceNumber\":" + sequence + ",\"Command\":" + command + "}");
         }
         void Update()
         {
@@ -70,96 +93,130 @@ namespace ProjectC.Client
             while (transport.Notices.TryDequeue(out var notice))
             {
                 Note(notice);
-                if (notice == "Connected") { connecting = false; Join(); }
-                if (notice == "Disconnected") { connecting = false; pending = false; }
+                if (notice == "Connected")
+                {
+                    connecting = false;
+                    Send(Request("ListDecks"));
+                    if (!string.IsNullOrEmpty(token))
+                        Send(Request("JoinMatch") + ",\"MatchId\":" + Quote(matchId) + ",\"SessionToken\":" + Quote(token));
+                }
+                if (notice == "Disconnected")
+                {
+                    connecting = pending = resyncing = false;
+                    if (string.IsNullOrEmpty(token)) ClearMatch();
+                }
+                if (notice.StartsWith("Send failed")) pending = false;
             }
             while (transport.Messages.TryDequeue(out var json))
             {
-                try
-                {
-                    var message = JsonUtility.FromJson<MessageView>(json);
-                    if (message.ProtocolVersion != 1) throw new InvalidOperationException("Unsupported protocol");
-                    if (message.Type == "MatchJoined")
-                    {
-                        playerId = message.PlayerId; matchId = message.MatchId; token = message.SessionToken;
-                        Note("Joined " + matchId + " as Player " + playerId);
-                    }
-                    else if (message.Type == "GameEvents")
-                    {
-                        if (message.SequenceNumber <= lastEvents) continue;
-                        if (lastEvents != 0 && message.SequenceNumber != lastEvents + 1) { Resync(); continue; }
-                        lastEvents = message.SequenceNumber;
-                        var events = JsonUtility.FromJson<EventsMessage>(json).Payload;
-                        foreach (var e in events) Note("Event " + e.Type + " P" + e.SourcePlayerId + ":" + e.SourceCardId + " -> P" + e.TargetPlayerId + ":" + e.TargetCardId);
-                        // Snapshots follow every accepted command and atomically apply all event results.
-                    }
-                    else if (message.Type == "StateSnapshot")
-                    {
-                        if (message.SequenceNumber < sequence) continue;
-                        state = JsonUtility.FromJson<SnapshotMessage>(json).Payload;
-                        sequence = lastEvents = message.SequenceNumber; pending = false; resyncing = false;
-                    }
-                    else if (message.Type == "CommandRejected" || message.Type == "ServerError")
-                    {
-                        pending = false; Note(message.Type + ": " + message.Reason);
-                        if (message.Reason == "StaleSequence") Resync();
-                    }
-                    else if (message.Type == "MatchEnded") Note(message.WinnerPlayerId == playerId ? "VICTORY" : "DEFEAT");
-                }
+                try { ApplyMessage(json); }
                 catch (Exception error) { pending = false; Note("Protocol error: " + error.Message); Resync(); }
             }
         }
-        void OnGUI()
+        internal void ApplyMessage(string json)
         {
-            GUILayout.BeginArea(new Rect(10, 10, Mathf.Min(Screen.width - 20, 1000), Screen.height - 20), GUI.skin.box);
-            scroll = GUILayout.BeginScrollView(scroll);
-            GUILayout.Label("Project C — Local WebSocket Multiplayer (fixed test rules)");
-            GUILayout.BeginHorizontal();
-            address = GUILayout.TextField(address);
-            GUI.enabled = !connecting && (transport == null || !transport.Connected);
-            if (GUILayout.Button(string.IsNullOrEmpty(token) ? "Connect + Join" : "Reconnect")) Connect();
-            if (GUILayout.Button("Forget session")) { token = matchId = null; playerId = 0; state = null; }
-            GUI.enabled = true;
-            if (GUILayout.Button("Disconnect")) { transport?.Dispose(); connecting = false; pending = false; }
-            GUILayout.EndHorizontal();
-            GUILayout.Label("Player " + playerId + " | Match " + matchId + " | Sequence " + sequence + " | " + (transport != null && transport.Connected ? "Connected" : "Offline"));
-            if (state != null && state.Started)
+            var message = JsonUtility.FromJson<MessageView>(json);
+            if (message.ProtocolVersion != 2) throw new InvalidOperationException("Server/client protocol mismatch; rebuild both");
+            if (message.Type == "DeckCatalog") { decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; return; }
+            if (message.Type == "MatchCreated" || message.Type == "MatchJoined")
             {
-                GUILayout.Label("Turn " + state.TurnNumber + " | Active P" + state.ActivePlayerId + " | " + new[] { "Main", "Battle", "End" }[state.Phase] + " | Started: " + state.TurnStarted);
-                if (state.Finished) GUILayout.Label(state.WinnerPlayerId == playerId ? "VICTORY" : "DEFEAT");
-                foreach (var p in state.Players)
-                {
-                    GUILayout.Label("P" + p.PlayerId + " Life=" + p.Life + " Hand=" + p.HandCount + " Deck=" + p.DeckCount);
-                    if (p.PlayerId == playerId) DrawCards("Your hand (click to select)", p.Hand, false);
-                    DrawCards("Field (click yours as attacker; opponent as target)", p.Field, p.PlayerId != playerId);
-                    DrawCards("Graveyard", p.Graveyard, false);
-                }
-                GUILayout.Label("Selected card=" + cardId + " | Target=" + targetId);
-                GUI.enabled = transport != null && transport.Connected && !pending && !resyncing && !state.Finished && state.ActivePlayerId == playerId;
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Summon")) Submit("PlayCard");
-                if (GUILayout.Button("Start turn")) Submit("StartTurn");
-                if (GUILayout.Button("Next phase")) Submit("AdvancePhase");
-                if (GUILayout.Button("End turn (End phase)")) Submit("EndTurn");
-                if (GUILayout.Button("Attack target")) Submit("Attack");
-                if (GUILayout.Button("Direct attack")) Submit("DirectAttack");
-                GUILayout.EndHorizontal();
-                GUI.enabled = true;
+                matchId = message.MatchId; playerId = message.PlayerId; token = message.SessionToken;
+                if (!string.IsNullOrEmpty(message.DeckId)) selectedDeck = message.DeckId;
+                ResetEpoch(message.GameNumber); Note("Joined " + matchId + " as Player " + playerId); return;
             }
-            if (GUILayout.Button("Resync snapshot")) Resync();
-            GUILayout.Label("Summoning sickness: attack on your next turn. Advance Main -> Battle -> End before End turn; then the opponent presses Start turn.");
-            foreach (var line in log) GUILayout.Label(line);
-            GUILayout.EndScrollView(); GUILayout.EndArea();
+            if (message.Type == "ServerError" || message.Type == "CommandRejected")
+            {
+                if (!string.IsNullOrEmpty(message.MatchId) && !string.IsNullOrEmpty(matchId) && message.MatchId != matchId) return;
+                if (message.GameNumber > 0 && message.GameNumber < gameNumber) return;
+                pending = resyncing = false; Note("Rejected: " + Reason(message.Reason));
+                if (message.Reason == "InvalidSession" || message.Reason == "MatchNotFound") { ClearMatch(); return; }
+                if (message.Reason == "StaleSequence" || message.Reason == "StaleGame") Resync();
+                return;
+            }
+            // A late message from a departed match must never populate the current screen.
+            if (message.MatchId != matchId || string.IsNullOrEmpty(matchId)) return;
+            if (message.GameNumber < gameNumber) return;
+            if (message.GameNumber > gameNumber) ResetEpoch(message.GameNumber);
+            switch (message.Type)
+            {
+                case "SessionUpdated": token = message.SessionToken; break;
+                case "LobbyState": lobby = JsonUtility.FromJson<LobbyMessage>(json).Payload; pending = false; break;
+                case "LobbyAccepted": pending = false; break;
+                case "MatchStarted": Note("Game " + gameNumber + " started"); break;
+                case "GameEvents":
+                    if (message.SequenceNumber <= lastEvents) return;
+                    if (lastEvents != 0 && message.SequenceNumber != lastEvents + 1) { Resync(); return; }
+                    lastEvents = message.SequenceNumber;
+                    foreach (var e in JsonUtility.FromJson<EventsMessage>(json).Payload) { Note(EventText(e)); EventReceived?.Invoke(e); }
+                    break;
+                case "StateSnapshot":
+                    if (message.SequenceNumber < sequence) return;
+                    state = JsonUtility.FromJson<SnapshotMessage>(json).Payload;
+                    sequence = lastEvents = message.SequenceNumber; pending = resyncing = false;
+                    // Selection is a view hint; discard it if its old card no longer exists in our visible zones.
+                    RefreshSelection();
+                    break;
+                case "MatchEnded":
+                    token = null; pending = false;
+                    Note(message.WinnerPlayerId == playerId ? "VICTORY - choose Rematch or Return to lobby" : "DEFEAT - choose Rematch or Return to lobby");
+                    break;
+                case "MatchLeft": ClearMatch(); Note("Returned to lobby"); break;
+                case "MatchClosed": ClearMatch(); Note("Match closed: " + message.Reason); break;
+            }
         }
-        void DrawCards(string title, CardView[] cards, bool target)
+        void RefreshSelection()
         {
-            GUILayout.Label(title);
-            if (cards == null) return;
-            GUILayout.BeginHorizontal();
-            foreach (var card in cards)
-                if (GUILayout.Button("#" + card.Id + " " + card.Name + " ATK " + card.Attack + " HP " + card.Hp + "/" + card.MaxHp + (card.HasAttacked ? " [used]" : "")))
-                { if (target) targetId = card.Id; else cardId = card.Id; }
-            GUILayout.EndHorizontal();
+            selectedCard = null;
+            if (state?.Players == null) return;
+            bool targetExists = false;
+            foreach (var player in state.Players)
+            {
+                foreach (var zone in new[] { player.Hand, player.Field, player.Graveyard })
+                    if (zone != null) foreach (var card in zone) if (card.Id == cardId) selectedCard = card;
+                if (player.PlayerId != playerId && player.Field != null)
+                    foreach (var card in player.Field) if (card.Id == targetId) targetExists = true;
+            }
+            if (selectedCard == null) cardId = 0;
+            if (!targetExists) targetId = 0;
+        }
+        static string Reason(string reason)
+        {
+            if (reason == null) return "Unknown reason";
+            if (reason.Contains("WrongPhase")) return "This action is unavailable in the current phase.";
+            if (reason.Contains("NotActivePlayer")) return "Wait for your turn.";
+            if (reason.Contains("NormalSummonLimit")) return "One normal summon per turn.";
+            if (reason.Contains("BattleRejected"))
+            {
+                if (reason.EndsWith(":9")) return "Summoning sickness: attack on your next turn.";
+                if (reason.EndsWith(":7")) return "This monster already attacked this turn.";
+                return "Attack unavailable. Select your ready monster and a valid target.";
+            }
+            return reason;
+        }
+        static string Phase(int phase) => phase == 0 ? "Main" : phase == 1 ? "Battle" : "End";
+        static string EventText(EventView e)
+        {
+            switch (e.Type)
+            {
+                case 0: return "Battle started: #" + e.SourceCardId + " vs #" + e.TargetCardId;
+                case 1: return "Card #" + e.TargetCardId + " took " + e.Damage + " damage (HP " + e.HpAfter + ")";
+                case 2: return "Card #" + e.TargetCardId + " destroyed";
+                case 3: return "Battle completed";
+                case 4: return e.TargetCardId == 0 ? "Opponent moved a hidden card" : "Card #" + e.TargetCardId + " changed zone";
+                case 5: return "Player " + e.TargetPlayerId + " turn " + e.TurnNumber + " started";
+                case 6: return "Player " + e.TargetPlayerId + " turn ended";
+                case 7: return "Phase: " + Phase(e.Phase);
+                case 8: return "Player " + e.TargetPlayerId + " Life: " + e.LifeAfter;
+                case 9: return "Game finished";
+                case 10: return "Player " + e.TargetPlayerId + " took " + e.Damage + " damage";
+                case 11: return "Player " + e.TargetPlayerId + " summoned #" + e.TargetCardId;
+                case 13: return "Card effect activated";
+                case 14: return "Card effect resolved";
+                case 15: return "Card manifested";
+                case 16: return "Card healed";
+                case 17: return "Card #" + e.TargetCardId + " stats changed (ATK " + e.AttackAfter + ")";
+                default: return "Game event " + e.Type;
+            }
         }
         void OnDestroy() { transport?.Dispose(); }
     }

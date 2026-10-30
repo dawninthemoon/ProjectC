@@ -5,6 +5,7 @@ services:
       context: ./ProjectC.Server
       dockerfile: Dockerfile
     image: projectc-server:dev
+    command: ["--port", "7777", "--max-matches", "${PROJECTC_MAX_MATCHES:-64}", "--waiting-timeout", "${PROJECTC_WAITING_TIMEOUT:-900}", "--playing-timeout", "${PROJECTC_PLAYING_TIMEOUT:-1800}", "--finished-timeout", "${PROJECTC_FINISHED_TIMEOUT:-300}"]
     ports:
       - "127.0.0.1:${PROJECTC_PORT:-7777}:7777"
     init: true

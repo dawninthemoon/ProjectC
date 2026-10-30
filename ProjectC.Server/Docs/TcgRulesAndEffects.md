@@ -1,7 +1,7 @@
 # Project C — 현재 TCG 규칙과 효과 실행 계약
 
 현재 GameCore는 기존 카드/Zone/Command/Event/Replay 구조 위에 확정 TCG 규칙을 추가한다.
-네트워크 서버, Unity 연결, RP/응전 스택, Continuous/Replacement 실행, 귀화/RP 자원은 이번 범위에 포함하지 않는다.
+이 문서는 GameCore 규칙 계약을 다룬다. 현재 네트워크·Unity 구현은 [OnlineMultiplayer.md](OnlineMultiplayer.md)에 별도로 문서화한다. RP/응전 스택, Continuous/Replacement 실행, 귀화/RP 자원은 여전히 제외한다.
 
 ## 확정 소환 규칙
 
@@ -182,12 +182,10 @@ Replay는 신뢰된 전체 입력 기록을 순서대로 실행하고 실패 명
 현재 총 **284개 테스트 그룹**이 Windows MSVC Debug 빌드에서 통과했다.
 Linux Docker GCC Release 빌드 및 내부 CTest도 통과했으며 컨테이너 실행은
 몬스터 전투 → 묘지 이동 → 다음 자기 턴의 직접 공격 승리 → Replay 일치를 확인한다.
-기존 Dockerfile 스테이지 이름의 대소문자 경고 2건은 기능과 관계없는 기존 경고로 남아 있다.
+Docker 빌드의 최신 네트워크/매치 검증 결과는 OnlineMultiplayer.md를 기준으로 한다.
 
-## 다음 개발 단계
+## 네트워크 계층과 현재 개발 상태
 
-효과 종류를 계속 늘리기 전에 C++ 네트워크 서버와 Unity 클라이언트 두 개를 연결하는 단계로 진행한다.
-먼저 플레이어 입력 Command 허용 목록, 세션의 플레이어 ID 바인딩, viewer별 공개 DTO,
-명령 순번·이벤트 순번, 초기 스냅샷과 재접속 동기화를 구현하는 것이 적절하다.
-현재 ProjectCServer는 GameCore 실행 예제이며 실제 소켓 서버가 아니다.
-이번 작업에서는 네트워크/Unity 연결을 구현하지 않는다.
+다중 MatchManager, 로비/준비/재대전, 외부 카드·덱 정의, 서버 셔플, 매치별 Replay/재접속, Unity 클라이언트를 별도 계층으로 구현했다. 기존 GameCore Command와 규칙 처리는 유지한다. GameConfig의 MinDeckSize/MaxDeckSize/MaxCardCopies는 현재 임시 서버 덱 구성 제약이며 CardCatalog에서 검사한다.
+
+온라인 EndTurn 요청은 기존 AdvancePhase/EndTurn/StartTurn 명령을 순서대로 실행해 상대 턴을 자동 시작한다. 원격 플레이어의 Transform/ChangeLife 직접 호출은 계속 차단한다. 소환 Trigger는 기존 자동 처리 경로를 사용한다. 구체적인 API·토큰/수명 정책·테스트 결과는 [OnlineMultiplayer.md](OnlineMultiplayer.md)를 참조한다.
