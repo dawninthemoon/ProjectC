@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72e736df317d70442858ada3b86eee41, type: 3}
+  m_Name: BattleVisualSettings
+  m_EditorClassIdentifier: 
+  HoverDelay: 0.2
+  LayoutMove: 0.22
+  Rollback: 0.22
+  TurnFadeIn: 0.2
+  TurnHold: 0.7
+  TurnFadeOut: 0.3
+  DrawDuration: 0.45
+  PopupDuration: 1.35
+  DrawerDuration: 0.25
+  SettleDuration: 0.35

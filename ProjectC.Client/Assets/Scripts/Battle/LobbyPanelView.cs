@@ -1,4 +1,5 @@
 using System.Text;
+using Game.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 namespace ProjectC.Client
@@ -11,6 +12,11 @@ namespace ProjectC.Client
         MultiplayerDebugScreen client;
         public void Bind(MultiplayerDebugScreen value)
         {
+            this.Bind("ServerAddress",out Address);this.Bind("MatchId",out MatchId);
+            this.Bind("Status",out Connection);this.Bind("Seats",out Seats);
+            this.Bind("Connect",out Connect);this.Bind("Disconnect",out Disconnect);this.Bind("Create",out Create);this.Bind("Join",out Join);
+            this.Bind("Ready",out Ready);this.Bind("Deck",out Deck);this.Bind("Rematch",out Rematch);this.Bind("Leave",out Leave);this.Bind("Close",out Close);
+            Deck.transform.Bind("Label",out DeckLabel);Ready.transform.Bind("Label",out ReadyLabel);
             client = value;
             Connect.onClick.AddListener(() => client.ConnectTo(Address.text.Trim()));
             Disconnect.onClick.AddListener(client.DisconnectNetwork);

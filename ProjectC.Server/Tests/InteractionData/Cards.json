@@ -1,0 +1,70 @@
+{
+  "Cards": [
+    {
+      "Id": 100,
+      "Name": "Interaction fixture mage",
+      "Attack": 1,
+      "MaxHp": 5,
+      "AllowedManifestations": [
+        101
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "DealDamage",
+              "Amount": 1,
+              "Targets": {
+                "Category": "EnemyMonster",
+                "Zones": [
+                  "Field"
+                ],
+                "MinCount": 1,
+                "MaxCount": 2
+              }
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Transform",
+              "TransformDefinitionId": 101,
+              "Targets": {
+                "Category": "Self",
+                "Zones": [
+                  "Field"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Search",
+              "Targets": {
+                "Category": "FriendlyDeck",
+                "Zones": [
+                  "Deck"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": 101,
+      "Name": "Interaction fixture form",
+      "Attack": 2,
+      "MaxHp": 7
+    }
+  ]
+}

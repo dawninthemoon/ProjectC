@@ -75,6 +75,44 @@ std::string Manifestations(GameState const& state, CardDefinition const& definit
     }
     return text.empty()?"No manifestation forms.":"Forms: "+text+". Effect-driven only.";
 }
+// Public action metadata is viewer-specific. Deck identities never become target candidates.
+Json Activations(GameState const& state, CardInstance const& card, int viewer, Zone zone)
+{
+    Json actions=Json::array();
+    auto definition=FindDefinition(state,card.CurrentDefinitionId);
+    if(!definition || zone!=Zone::Field || card.OwnerId!=viewer) return actions;
+    for(auto const& effect:definition->Effects)
+    {
+        if(effect.Type!=EffectType::Activated) continue;
+        Json selections=Json::array();bool manifest=false,supported=true;
+        bool allowed=state.Status==GameStatus::Running && state.ActivePlayerId==viewer
+            && state.TurnStarted && state.Phase==TurnPhase::Main && !card.IsDestroyed();
+        for(auto const& action:effect.Actions)
+        {
+            manifest|=action.Operation==EffectOperation::Transform;
+            auto single=action.Targets;single.MinCount=0;single.MaxCount=1;
+            if(action.Targets.Category==TargetCategory::FriendlyDeck) supported=false;
+            Json candidates=Json::array();
+            auto add=[&](EffectTarget const& target) {
+                if(ValidateTargets(state,viewer,card.Id,single,{target})==CommandError::Success)
+                    candidates.push_back({{"PlayerId",target.Player},{"CardId",target.Card},{"Zone",static_cast<int>(target.Location)}});
+            };
+            for(auto const& player:state.Players)
+            {
+                add({player.Id,0,Zone::Field});
+                for(auto location:{Zone::Hand,Zone::Field,Zone::Graveyard})
+                {
+                    if(location==Zone::Hand && player.Id!=viewer) continue;
+                    for(auto const& target:*GetZone(player,location)) add({player.Id,target.Id,location});
+                }
+            }
+            allowed &= candidates.size()>=action.Targets.MinCount;
+            selections.push_back({{"MinCount",action.Targets.MinCount},{"MaxCount",action.Targets.MaxCount},{"Candidates",candidates}});
+        }
+        if(supported) actions.push_back({{"EffectId",effect.Id},{"IsManifest",manifest},{"CanActivate",allowed},{"Selections",selections}});
+    }
+    return actions;
+}
 Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int viewer, Zone zone)
 {
     Json result=Json::array();
@@ -92,7 +130,8 @@ Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int v
             {"Attack",card.Attack},{"Hp",card.Hp},{"MaxHp",card.MaxHp},{"HasAttacked",card.HasAttackedThisTurn},
             {"RulesText",definition?RulesText(*definition):""},{"ManifestationText",definition?Manifestations(state,*definition):""},
             {"SummoningSick",zone==Zone::Field && IsSummoningSick(state,card)},
-            {"CanSummon",summon},{"CanAttack",attack},{"EffectCount",definition?definition->Effects.size():0}});
+            {"CanSummon",summon},{"CanAttack",attack},{"EffectCount",definition?definition->Effects.size():0},
+            {"Activations",Activations(state,card,viewer,zone)}});
     }
     return result;
 }
@@ -360,6 +399,30 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
         auto card=static_cast<int>(Number(command,"CardId",2147483647));
         if(name=="Attack") parsed=AttackCommand{player,card,opponent,static_cast<int>(Number(command,"TargetCardId",2147483647))};
         else parsed=DirectAttackCommand{player,card,opponent};
+    }
+    else if(name=="ActivateEffect")
+    {
+        Fields(command,{"Type","CardId","EffectId","Targets"});
+        ActivateEffectCommand activation{player,static_cast<int>(Number(command,"CardId",2147483647)),
+            static_cast<int>(Number(command,"EffectId",2147483647)),{}};
+        auto const& groups=command.at("Targets");
+        if(!groups.is_array() || groups.size()>16) {cacheReject("InvalidTargets");return;}
+        for(auto const& group:groups)
+        {
+            if(!group.is_array() || group.size()>128) {cacheReject("InvalidTargets");return;}
+            std::vector<EffectTarget> targets;
+            for(auto const& target:group)
+            {
+                Fields(target,{"PlayerId","CardId","Zone"});
+                int owner=static_cast<int>(Number(target,"PlayerId",2147483647));
+                int card=static_cast<int>(Number(target,"CardId",2147483647));
+                auto zone=static_cast<Zone>(Number(target,"Zone",3));
+                if(zone==Zone::Deck || (card!=0 && !VisibleCard(state,player,card))) {cacheReject("InvalidTarget");return;}
+                targets.push_back({owner,card,zone});
+            }
+            activation.Targets.push_back(std::move(targets));
+        }
+        parsed=std::move(activation);
     }
     else {cacheReject("CommandNotAllowed");return;}
     GameState candidate=state;

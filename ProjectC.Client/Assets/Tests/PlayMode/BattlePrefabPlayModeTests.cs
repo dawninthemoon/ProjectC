@@ -40,10 +40,12 @@ namespace ProjectC.Tests
             Assert.IsTrue(hits[0].gameObject.transform.IsChildOf(own.transform),"Cosmetic overlays must not intercept card input");
             UnityEngine.EventSystems.ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler);
             yield return null;
-            Assert.AreEqual(4,ui.SelectedCardId); Assert.AreEqual("ATTACK TARGET",ui.EnemyField.Widgets[0].Status.text);
-            ui.EnemyField.Widgets[0].OnPointerClick(null); yield return null; Assert.AreEqual(6,ui.TargetCardId);
-            var hand=ui.Hand.Widgets[0]; hand.OnPointerEnter(null); Assert.AreEqual(hand.Card.Name,ui.Detail.Title.text);
-            Assert.Greater(hand.Face.localScale.x,1); hand.OnPointerExit(null); Assert.AreEqual(own.Card.Name,ui.Detail.Title.text);
+            Assert.AreEqual(4,ui.SelectedCardId);
+            Assert.IsFalse(ui.Summon.gameObject.activeInHierarchy);Assert.IsFalse(ui.Attack.gameObject.activeInHierarchy);
+            Assert.IsFalse(ui.DirectAttack.gameObject.activeInHierarchy);
+            var hand=ui.Hand.Widgets[0]; hand.OnPointerEnter(null); yield return new WaitForSecondsRealtime(.3f);
+            Assert.AreEqual(hand.Card.Name,ui.Detail.Title.text);Assert.IsTrue(ui.Detail.gameObject.activeSelf);
+            Assert.Greater(hand.Face.localScale.x,1); hand.OnPointerExit(null); Assert.IsFalse(ui.Detail.gameObject.activeSelf);
             Assert.AreEqual("SUMMONING SICKNESS",ui.OwnField.Widgets[1].Status.text);
             ui.ClearSelection(); yield return null; Assert.AreEqual(0,ui.TargetCardId);
             // Cosmetic queues must not block snapshot state, and hidden draws carry no card identity.
@@ -51,11 +53,20 @@ namespace ProjectC.Tests
                 new EventView {Type=4,FromZone=0,ToZone=1,TargetPlayerId=2},
                 new EventView {Type=11,TargetCardId=4},new EventView {Type=13,SourceCardId=4}}}));
             yield return null; yield return null;
-            Assert.Greater(ui.Effects.DrawsPresented,0); Assert.Greater(ui.Effects.PopupsPresented,0);
+            yield return new WaitForSecondsRealtime(2);
+            Assert.Greater(ui.Effects.DrawsPresented,0);
             Assert.AreEqual("HIDDEN",ui.Effects.DrawLabel.text); Assert.IsFalse(ui.Effects.TurnGroup.blocksRaycasts);
             yield return new WaitForSecondsRealtime(3);
             Assert.AreEqual(2,ui.Effects.PopupsPresented);
             ui.Effects.ResetFeedback();
+            for(int i=0;i<80;++i) ui.Log.Add("Log entry "+i);
+            Assert.Less(ui.Log.Scroll.verticalNormalizedPosition,.04f);
+            ui.Log.Toggle();yield return new WaitForSecondsRealtime(.3f);
+            ui.Log.Scroll.verticalNormalizedPosition=1;yield return null;
+            var scrollPosition=ui.Log.Scroll.content.anchoredPosition;
+            ui.Log.Add("Newest at bottom");Assert.AreEqual(scrollPosition,ui.Log.Scroll.content.anchoredPosition);
+            ui.Log.Close();Assert.IsFalse(ui.Log.History.GetComponent<CanvasGroup>().blocksRaycasts);
+            yield return new WaitForSecondsRealtime(.3f);
             yield return Capture(ui,1920,1080,"Battle-1920.png");
             yield return Capture(ui,1280,720,"Battle-1280.png");
             // Maximum configured hand fits without hiding information outside its region.
@@ -67,7 +78,7 @@ namespace ProjectC.Tests
             client.ApplyMessage("{\"Type\":\"CommandRejected\",\"ProtocolVersion\":2,\"MatchId\":\"UI-test\",\"GameNumber\":1,\"Reason\":\"GameRule:WrongPhase\"}");
             StringAssert.Contains("current phase",ui.Log.Feedback.text);
         }
-        static IEnumerator Capture(BattlePresenter ui,int width,int height,string name)
+        internal static IEnumerator Capture(BattlePresenter ui,int width,int height,string name)
         {
             if(SystemInfo.graphicsDeviceType==UnityEngine.Rendering.GraphicsDeviceType.Null) yield break;
             var cameraObject=new GameObject("UI capture camera"); var camera=cameraObject.AddComponent<Camera>(); camera.enabled=false;

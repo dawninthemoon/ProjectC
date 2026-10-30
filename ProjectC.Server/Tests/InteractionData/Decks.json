@@ -1,0 +1,38 @@
+{
+  "Config": {
+    "InitialLife": 10,
+    "InitialHandSize": 4,
+    "DrawPerTurn": 0,
+    "FieldLimit": 5,
+    "HandLimit": 10,
+    "MinDeckSize": 4,
+    "MaxDeckSize": 40,
+    "MaxCardCopies": 6
+  },
+  "Decks": [
+    {
+      "Id": "Interaction",
+      "Name": "TEST ONLY - effect validation",
+      "Cards": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "Id": "Interaction2",
+      "Name": "TEST ONLY - effect validation",
+      "Cards": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
+    }
+  ]
+}

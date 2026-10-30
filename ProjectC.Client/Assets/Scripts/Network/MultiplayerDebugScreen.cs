@@ -22,6 +22,10 @@ namespace ProjectC.Client
         // Transport/controller only. The scene-authored BattleScreen prefab owns all rendering.
         public event Action<EventView> EventReceived;
         public event Action<string> NoticeReceived;
+        public event Action<bool,string> CommandFinished;
+        public event Action ViewInvalidated;
+        string commandRequestId;
+        long acceptedSequence = -1;
         public int PlayerId => playerId;
         public LobbyView Lobby => lobby;
         public DeckView[] Decks => decks;
@@ -39,6 +43,7 @@ namespace ProjectC.Client
         void Note(string text) { log.Enqueue(text); while (log.Count > 100) log.Dequeue(); NoticeReceived?.Invoke(text); }
         void ResetEpoch(int game)
         {
+            commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
             gameNumber = game; sequence = lastEvents = 0; state = null;
             cardId = targetId = 0; selectedCard = null; pending = resyncing = false;
         }
@@ -48,12 +53,12 @@ namespace ProjectC.Client
         }
         internal bool Connected => transport != null && transport.Connected;
         internal void ConnectTo(string serverAddress) { address = serverAddress; Connect(); }
-        internal void DisconnectNetwork() { transport?.Dispose(); connecting = pending = resyncing = false; }
+        internal void DisconnectNetwork() { commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke(); transport?.Dispose(); connecting = pending = resyncing = false; }
         internal void CreateMatch() { pending = true; Send(Request("CreateMatch") + ",\"DeckId\":" + Quote(selectedDeck)); }
         internal void JoinMatch(string id) { pending = true; Send(Request("JoinMatch") + ",\"MatchId\":" + Quote(id) + ",\"DeckId\":" + Quote(selectedDeck)); }
         internal void SetReady(string deck, bool ready = true) { selectedDeck = deck; LobbyAction("SetReady", ",\"Ready\":" + (ready ? "true" : "false") + ",\"DeckId\":" + Quote(deck)); }
         internal void RequestRematch() { LobbyAction("Rematch", ",\"DeckId\":" + Quote(selectedDeck)); }
-        internal void SendGameCommand(string type, int card = 0, int target = 0) { cardId = card; targetId = target; Submit(type); }
+        internal bool SendGameCommand(string type, int card = 0, int target = 0) { cardId = card; targetId = target; return Submit(type); }
         void Connect()
         {
             transport?.Dispose();
@@ -64,7 +69,7 @@ namespace ProjectC.Client
             _ = transport.ConnectAsync(address);
         }
         static string Quote(string text) => "\"" + (text ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
-        string Request(string type) => "{\"Type\":" + Quote(type) + ",\"ProtocolVersion\":2,\"RequestId\":" + Quote(Guid.NewGuid().ToString("N"));
+        string Request(string type, string requestId = null) => "{\"Type\":" + Quote(type) + ",\"ProtocolVersion\":2,\"RequestId\":" + Quote(requestId ?? Guid.NewGuid().ToString("N"));
         void Send(string json) { if (transport != null && transport.Connected) _ = transport.SendAsync(json + "}"); }
         void LobbyAction(string type, string extra = "")
         {
@@ -74,18 +79,34 @@ namespace ProjectC.Client
         void Resync()
         {
             if (string.IsNullOrEmpty(matchId) || transport == null || !transport.Connected) return;
+            commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
             resyncing = true;
             Send(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId));
         }
-        void Submit(string type)
+        bool Submit(string type)
         {
-            if (pending || resyncing) return;
             string command = "{\"Type\":" + Quote(type);
             if (type == "PlayCard" || type == "Attack" || type == "DirectAttack") command += ",\"CardId\":" + cardId;
             if (type == "Attack") command += ",\"TargetCardId\":" + targetId;
-            pending = true;
-            Send(Request("SubmitCommand") + ",\"MatchId\":" + Quote(matchId) + ",\"GameNumber\":" + gameNumber +
-                ",\"SequenceNumber\":" + sequence + ",\"Command\":" + command + "}");
+            return SubmitJson(command + "}");
+        }
+        internal bool SendEffect(int source, int effect, List<List<EffectTargetView>> targets)
+        {
+            var groups = new List<string>();
+            foreach (var group in targets)
+            {
+                var entries = new List<string>(); foreach (var target in group) entries.Add(JsonUtility.ToJson(target));
+                groups.Add("[" + string.Join(",",entries) + "]");
+            }
+            return SubmitJson("{\"Type\":\"ActivateEffect\",\"CardId\":" + source + ",\"EffectId\":" + effect + ",\"Targets\":[" + string.Join(",",groups) + "]}");
+        }
+        bool SubmitJson(string command)
+        {
+            if (!Connected || Busy || string.IsNullOrEmpty(matchId)) return false;
+            commandRequestId = Guid.NewGuid().ToString("N"); acceptedSequence = -1; pending = true;
+            Send(Request("SubmitCommand",commandRequestId) + ",\"MatchId\":" + Quote(matchId) + ",\"GameNumber\":" + gameNumber +
+                ",\"SequenceNumber\":" + sequence + ",\"Command\":" + command);
+            return true;
         }
         void Update()
         {
@@ -102,10 +123,10 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
-                    connecting = pending = resyncing = false;
+                    connecting = pending = resyncing = false; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
                     if (string.IsNullOrEmpty(token)) ClearMatch();
                 }
-                if (notice.StartsWith("Send failed")) pending = false;
+                if (notice.StartsWith("Send failed")) { pending=false; commandRequestId=null; CommandFinished?.Invoke(false,notice); }
             }
             while (transport.Messages.TryDequeue(out var json))
             {
@@ -128,7 +149,9 @@ namespace ProjectC.Client
             {
                 if (!string.IsNullOrEmpty(message.MatchId) && !string.IsNullOrEmpty(matchId) && message.MatchId != matchId) return;
                 if (message.GameNumber > 0 && message.GameNumber < gameNumber) return;
-                pending = resyncing = false; Note("Rejected: " + Reason(message.Reason));
+                if(commandRequestId==null || message.RequestId==commandRequestId || message.Type=="ServerError") pending = resyncing = false; Note("Rejected: " + Reason(message.Reason));
+                if(commandRequestId!=null && (message.RequestId==commandRequestId || message.Type=="ServerError"))
+                { commandRequestId=null; acceptedSequence=-1; CommandFinished?.Invoke(false,Reason(message.Reason)); }
                 if (message.Reason == "InvalidSession" || message.Reason == "MatchNotFound") { ClearMatch(); return; }
                 if (message.Reason == "StaleSequence" || message.Reason == "StaleGame") Resync();
                 return;
@@ -140,8 +163,8 @@ namespace ProjectC.Client
             switch (message.Type)
             {
                 case "SessionUpdated": token = message.SessionToken; break;
-                case "LobbyState": lobby = JsonUtility.FromJson<LobbyMessage>(json).Payload; pending = false; break;
-                case "LobbyAccepted": pending = false; break;
+                case "LobbyState": lobby = JsonUtility.FromJson<LobbyMessage>(json).Payload; if(commandRequestId==null) pending = false; break;
+                case "LobbyAccepted": if(commandRequestId==null) pending = false; break;
                 case "MatchStarted": Note("Game " + gameNumber + " started"); break;
                 case "GameEvents":
                     if (message.SequenceNumber <= lastEvents) return;
@@ -149,10 +172,16 @@ namespace ProjectC.Client
                     lastEvents = message.SequenceNumber;
                     foreach (var e in JsonUtility.FromJson<EventsMessage>(json).Payload) { Note(EventText(e)); EventReceived?.Invoke(e); }
                     break;
+                case "CommandAccepted":
+                    if(message.RequestId==commandRequestId) acceptedSequence=message.SequenceNumber;
+                    break;
                 case "StateSnapshot":
                     if (message.SequenceNumber < sequence) return;
                     state = JsonUtility.FromJson<SnapshotMessage>(json).Payload;
-                    sequence = lastEvents = message.SequenceNumber; pending = resyncing = false;
+                    sequence = lastEvents = message.SequenceNumber; resyncing=false;
+                    if(commandRequestId!=null && acceptedSequence>=0 && sequence>=acceptedSequence)
+                    { commandRequestId=null; acceptedSequence=-1; pending=false; CommandFinished?.Invoke(true,""); }
+                    else if(commandRequestId==null) pending=false;
                     // Selection is a view hint; discard it if its old card no longer exists in our visible zones.
                     RefreshSelection();
                     break;

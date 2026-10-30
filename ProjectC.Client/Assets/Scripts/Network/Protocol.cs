@@ -6,7 +6,11 @@ namespace ProjectC.Client
         public int Id, DefinitionId, Attack, Hp, MaxHp, EffectCount;
         public string Name, RulesText, ManifestationText;
         public bool HasAttacked, CanSummon, CanAttack, SummoningSick;
+        public ActivationView[] Activations;
     }
+    [Serializable] public class EffectTargetView { public int PlayerId, CardId, Zone; }
+    [Serializable] public class EffectSelectionView { public int MinCount, MaxCount; public EffectTargetView[] Candidates; }
+    [Serializable] public class ActivationView { public int EffectId; public bool CanActivate, IsManifest; public EffectSelectionView[] Selections; }
     [Serializable] public class PlayerView
     {
         public int PlayerId, Life, HandCount, DeckCount;

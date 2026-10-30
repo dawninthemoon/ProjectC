@@ -13,7 +13,7 @@ namespace ProjectC.Client
         public void Render(CardView[] cards, int slots, bool hidden, int selected, bool targets,
             Action<CardWidget> click, Action<CardWidget> hover, Action leave)
         {
-            int count = Mathf.Max(slots, cards?.Length ?? 0);
+            int count = hidden ? slots : (cards?.Length ?? 0);
             while (Widgets.Count < count) Widgets.Add(Instantiate(CardPrefab, Content));
             for (int i = 0; i < Widgets.Count; ++i)
             {
@@ -23,6 +23,7 @@ namespace ProjectC.Client
                 widget.Clicked = click; widget.Hovered = hover; widget.HoverLeft = leave;
                 widget.Bind(card, hidden, card != null && card.Id == selected, targets && card != null, Hand);
             }
+            GetComponent<CardTableLayout>()?.Arrange(Widgets);
         }
     }
 }

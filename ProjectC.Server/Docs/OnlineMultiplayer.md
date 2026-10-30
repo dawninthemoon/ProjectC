@@ -128,9 +128,13 @@ UTF-8 JSON WebSocket text를 쓴다. 응답 봉투에는 `Type`, `ProtocolVersio
 
 카드 ID는 스냅샷에서 읽는다. 위의 1은 예시이며 두 번째 매치/재대전에서 재사용하면 안 된다.
 
-허용 Command.Type은 `PlayCard(CardId)`, `AdvancePhase`, `EndTurn`, `Attack(CardId,TargetCardId)`, `DirectAttack(CardId)`다. `EndTurn`은 남은 페이즈 진행 + EndTurnCommand + 상대 StartTurnCommand를 하나의 서버 트랜잭션으로 처리한다. 명령 적용 실패 시 전체 상태 변경을 버린다. 성공한 내부 명령/이벤트 순서는 Replay에 그대로 기록한다. 클라이언트가 StartTurn을 따로 누를 필요가 없다.
+허용 Command.Type은 `PlayCard(CardId)`, `AdvancePhase`, `EndTurn`, `Attack(CardId,TargetCardId)`, `DirectAttack(CardId)`, `ActivateEffect(CardId,EffectId,Targets)`다. `EndTurn`은 남은 페이즈 진행 + EndTurnCommand + 상대 StartTurnCommand를 하나의 서버 트랜잭션으로 처리한다. 명령 적용 실패 시 전체 상태 변경을 버린다. 성공한 내부 명령/이벤트 순서는 Replay에 그대로 기록한다. 클라이언트가 StartTurn을 따로 누를 필요가 없다.
 
-Transform/ChangeLife/Draw/StartTurn/ActivateEffect를 일반 네트워크 요청으로 노출하지 않는다. 데이터에 정의된 소환 Trigger 등은 기존 GameCore가 자동 실행한다. 수동 Activated 효과 선택 UI/스키마는 후속 범위다. 예제 덱은 자동 Trigger만 사용하므로 제공된 카드로 실제 게임을 완료할 수 있다.
+ActivateEffect의 Targets는 효과 동작별 배열이며 각 대상은 `{PlayerId,CardId,Zone}`이다. 주체 PlayerId는 ClientSession에서 결정한다. 대상 PlayerId를 보내도 타인의 카드 발동 권한이 생기지 않는다. 동작 배열 최대 16, 동작별 대상 최대 128, 정수 타입/범위/알 수 없는 필드를 엄격히 검사하고 GameCore가 대상 규칙·최소/최대 수·중복·순차 유효성을 다시 검증한다. Operation/Amount/TransformDefinitionId 주입은 거부한다.
+
+자기 필드의 공개 CardView에는 `Activations[{EffectId,CanActivate,IsManifest,Selections:[{MinCount,MaxCount,Candidates:[{PlayerId,CardId,Zone}]}]}]`를 제공한다. 후보는 ValidateTargets에서 얻으며 상대 손패·모든 덱의 카드 ID는 포함하지 않는다. 상대 필드의 Activations는 빈 배열이다. FriendlyDeck 선택이 필요한 효과 UI와 Deck 타깃 요청은 현재 지원하지 않는다. 자유 현현 규칙은 추가하지 않았으며 AllowedManifestations만으로 액션을 생성하지 않는다. 별도 `Tests/InteractionData`의 Activated 효과로 대상 선택·현현·Replay를 검증한다.
+
+Transform/ChangeLife/Draw/StartTurn은 일반 네트워크 요청으로 노출하지 않는다. 데이터에 정의된 소환 Trigger는 기존 GameCore가 자동 실행한다. 2026-10-30 카드 인터랙션 확장으로 `ActivateEffect(CardId,EffectId,Targets)`를 허용한다. 효과 자체는 서버 정의만 사용하며, 아래 추가 설명과 [BattleUI.md](../../ProjectC.Client/Docs/BattleUI.md)를 따른다. 기본 예제 덱과 GameCore 규칙은 변경하지 않았다.
 
 ## 격리, 권한과 비공개 상태
 

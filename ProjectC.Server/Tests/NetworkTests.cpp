@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <source_location>
+#include <filesystem>
 using namespace ProjectC::Network;
 void Check(bool value, std::source_location where=std::source_location::current()) {if(!value) throw std::runtime_error("Network assertion at line "+std::to_string(where.line()));}
 struct Peer
@@ -21,10 +22,45 @@ struct Peer
         throw std::runtime_error("Missing message "+type);
     }
 };
+void InteractionTests()
+{
+    ServerConfig config;config.DataDirectory=(std::filesystem::path(DefaultDataDirectory()).parent_path()/"Tests"/"InteractionData").string();
+    MatchManager manager(config);Peer a(manager),b(manager);
+    a.Send("CreateMatch",{{"DeckId","Interaction"}});auto id=a.Client->MatchId;
+    b.Send("JoinMatch",{{"MatchId",id},{"DeckId","Interaction"}});
+    for(auto* p:{&a,&b}) p->Send("SetReady",{{"MatchId",id},{"GameNumber",0},{"Ready",true}});
+    auto submit=[&](Peer& p,Json command) {p.Send("SubmitCommand",{{"MatchId",id},{"GameNumber",1},{"SequenceNumber",p.Last("StateSnapshot")["SequenceNumber"]},{"Command",command}});};
+    int source=a.Last("StateSnapshot")["Payload"]["Players"][0]["Hand"][0]["Id"];
+    int enemy=b.Last("StateSnapshot")["Payload"]["Players"][1]["Hand"][0]["Id"];
+    int enemy2=b.Last("StateSnapshot")["Payload"]["Players"][1]["Hand"][1]["Id"];
+    submit(a,{{"Type","PlayCard"},{"CardId",source}});submit(a,{{"Type","EndTurn"}});
+    submit(b,{{"Type","PlayCard"},{"CardId",enemy}});submit(b,{{"Type","EndTurn"}});
+    submit(a,{{"Type","EndTurn"}});submit(b,{{"Type","PlayCard"},{"CardId",enemy2}});submit(b,{{"Type","EndTurn"}});
+    auto before=manager.Find(id)->Snapshot(a.Client->Player);
+    auto options=before["Players"][0]["Field"][0]["Activations"];
+    Check(options.size()==2 && options[0]["Selections"][0]["Candidates"].size()==2);
+    Check(options[1]["IsManifest"]==true && options[1]["CanActivate"]==true);
+    Check(manager.Find(id)->Snapshot(b.Client->Player)["Players"][0]["Field"][0]["Activations"].empty());
+    Json targets=Json::array({Json::array({Json{{"PlayerId",b.Client->Player},{"CardId",enemy},{"Zone",2}},Json{{"PlayerId",b.Client->Player},{"CardId",enemy2},{"Zone",2}}})});
+    Json command{{"Type","ActivateEffect"},{"CardId",source},{"EffectId",1},{"Targets",targets}};
+    auto wrong=command;wrong["Targets"][0][0]["Zone"]=0;submit(a,wrong);Check(a.Last("CommandRejected")["Reason"]=="InvalidTarget");
+    wrong=command;wrong["Targets"][0][1]=wrong["Targets"][0][0];submit(a,wrong);Check(a.Last("CommandRejected")["Reason"].get<std::string>().find("InvalidTarget")!=std::string::npos);
+    wrong=command;wrong["CardId"]=enemy;submit(a,wrong);Check(a.Last("CommandRejected")["Reason"].get<std::string>().find("CardNotFound")!=std::string::npos);
+    wrong=command;wrong["Amount"]=100;submit(a,wrong);Check(a.Last("ServerError")["Reason"]=="InvalidRequest");
+    Check(manager.Find(id)->Snapshot(a.Client->Player)==before);
+    submit(a,command);
+    auto after=manager.Find(id)->Snapshot(a.Client->Player);
+    Check(after["Players"][1]["Field"][0]["Hp"]==4 && after["Players"][1]["Field"][1]["Hp"]==4);
+    submit(a,{{"Type","ActivateEffect"},{"CardId",source},{"EffectId",2},{"Targets",Json::array({Json::array({Json{{"PlayerId",a.Client->Player},{"CardId",source},{"Zone",2}}})})}});
+    Check(manager.Find(id)->Snapshot(a.Client->Player)["Players"][0]["Field"][0]["DefinitionId"]==101);
+    a.Send("CloseMatch",{{"MatchId",id},{"GameNumber",1}});Check(manager.Replays().front().Verify());
+    std::cout<<"Activated effects: candidates, privacy, multi-target, tampering, manifestation and replay passed\n";
+}
 int main()
 {
 try
 {
+    InteractionTests();
     MatchManager manager;
     Peer a(manager),b(manager),c(manager),d(manager),outsider(manager);
     a.Send("CreateMatch");auto id=a.Client->MatchId;auto token=a.Last("MatchCreated")["SessionToken"];

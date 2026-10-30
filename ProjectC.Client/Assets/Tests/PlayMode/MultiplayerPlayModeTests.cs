@@ -22,7 +22,7 @@ namespace ProjectC.Tests
             {
                 var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab");
                 Assert.IsNotNull(prefab, "Authored BattleScreen prefab is required");
-                var ui = UnityEngine.Object.Instantiate(prefab); objects.Add(ui); return ui.GetComponent<MultiplayerDebugScreen>();
+                var ui = UnityEngine.Object.Instantiate(prefab); objects.Add(ui); if(UnityEngine.EventSystems.EventSystem.current==null) { var input=new GameObject("Test EventSystem",typeof(UnityEngine.EventSystems.EventSystem));objects.Add(input); } return ui.GetComponent<MultiplayerDebugScreen>();
             }
 #endif
             var obj = new GameObject("Multiplayer test client"); objects.Add(obj); return obj.AddComponent<MultiplayerDebugScreen>();
@@ -46,13 +46,31 @@ namespace ProjectC.Tests
                 yield return null; // snapshot bindings are applied by LateUpdate
                 if (card != 0)
                 {
-                    var zone = type == "PlayCard" ? ui.Hand : ui.OwnField;
-                    var widget = zone.Widgets.Find(w => w.Card != null && w.Card.Id == card);
-                    Assert.IsNotNull(widget); widget.OnPointerClick(null); yield return null;
+                    if(UnityEngine.EventSystems.EventSystem.current==null) throw new Exception("Test EventSystem required");
+                    var widget=(type=="PlayCard"?ui.Hand:ui.OwnField).Widgets.Find(w=>w.Card?.Id==card);
+                    Assert.IsNotNull(widget);
+                    var pointer=new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+                    pointer.position=RectTransformUtility.WorldToScreenPoint(null,widget.WorldCenter);
+                    var original=widget.transform.position;widget.OnBeginDrag(pointer);
+                    Vector3 destination=type=="PlayCard"?ui.OwnField.transform.TransformPoint(((RectTransform)ui.OwnField.transform).rect.center):
+                        type=="Attack"?ui.EnemyField.Widgets.Find(w=>w.Card?.Id==target).WorldCenter:
+                        ui.EnemyPlayer.transform.TransformPoint(((RectTransform)ui.EnemyPlayer.transform).rect.center);
+                    pointer.position=RectTransformUtility.WorldToScreenPoint(null,destination);widget.OnDrag(pointer);
+                    Assert.AreEqual(type=="PlayCard"?BattleInputState.DraggingHandCard:BattleInputState.DraggingAttackTarget,ui.Interaction.State);
+                    Assert.AreEqual(sequence,client.Sequence,"Dragging must not mutate game state");
+                    if(type=="Attack") { Assert.AreEqual(original,widget.transform.position); Assert.IsTrue(ui.Interaction.Arrow.gameObject.activeSelf); }
+#if UNITY_EDITOR
+                    if(type=="Attack" || type=="PlayCard") yield return BattlePrefabPlayModeTests.Capture(ui,1920,1080,"Interaction-"+type+".png");
+#endif
+                    Canvas.ForceUpdateCanvases();
+                    destination=type=="PlayCard"?ui.OwnField.transform.TransformPoint(((RectTransform)ui.OwnField.transform).rect.center):type=="Attack"?ui.EnemyField.Widgets.Find(w=>w.Card?.Id==target).WorldCenter:ui.EnemyPlayer.transform.TransformPoint(((RectTransform)ui.EnemyPlayer.transform).rect.center);
+                    pointer.position=RectTransformUtility.WorldToScreenPoint(null,destination);
+                    widget.OnEndDrag(pointer);
+                    Assert.AreEqual(BattleInputState.AwaitingServerResponse,ui.Interaction.State,type+" valid raycast drop must submit / "+ui.Log.Feedback.text);
+                    Assert.IsFalse(client.SendGameCommand(type,card,target),"Duplicate input must be gated");
                 }
-                if (target != 0) { ui.EnemyField.Widgets.Find(w => w.Card != null && w.Card.Id == target).OnPointerClick(null); yield return null; }
-                var button = type == "PlayCard" ? ui.Summon : type == "AdvancePhase" ? ui.BattlePhase : type == "EndTurn" ? ui.EndTurn : type == "Attack" ? ui.Attack : ui.DirectAttack;
-                Assert.IsTrue(button.interactable, type + " button must be usable"); button.onClick.Invoke();
+                else { var button=type=="AdvancePhase"?ui.BattlePhase:ui.EndTurn;Assert.IsTrue(button.interactable);button.onClick.Invoke(); }
+
             }
             yield return Until(() => client.Sequence == sequence + 1);
         }
@@ -88,11 +106,11 @@ namespace ProjectC.Tests
             yield return Until(() => a.State != null && a.State.Started && b.State != null && b.State.Started && c.State != null && c.State.Started && d.State != null && d.State.Started);
             yield return null;
             var ui = a.GetComponent<BattlePresenter>();
-            Assert.AreEqual(5, ui.OwnField.Widgets.Count);
+            Assert.AreEqual(0, ui.OwnField.Widgets.Count);
             Assert.IsFalse(ui.LobbyOverlay.activeSelf);
             Assert.AreEqual("YOUR TURN", ui.TurnLabel.text);
             foreach (var back in ui.EnemyHand.Widgets) { Assert.IsTrue(back.Hidden); Assert.IsNull(back.Card); }
-            var handCard = ui.Hand.Widgets[0]; handCard.OnPointerEnter(null);
+            var handCard = ui.Hand.Widgets[0]; handCard.OnPointerEnter(null); yield return new WaitForSecondsRealtime(.3f);
             Assert.AreEqual(handCard.Card.Name, ui.Detail.Title.text);
             handCard.OnPointerExit(null);
             Assert.AreEqual(0, a.State.Players[1].Hand.Length); Assert.AreEqual(0, c.State.Players[1].Hand.Length);
@@ -100,7 +118,20 @@ namespace ProjectC.Tests
             yield return Command(c, "PlayCard", cCard);
             Assert.AreEqual(3, c.State.Players[0].Field[0].Attack);
             Assert.AreEqual(1, a.Sequence);
-            yield return Command(a, "PlayCard", aCard); yield return Command(a, "EndTurn");
+            // Invalid drop and Escape-equivalent cancellation never reach the server.
+            var drag=ui.Hand.Widgets[0];var pointer=new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+            pointer.position=RectTransformUtility.WorldToScreenPoint(null,drag.WorldCenter);drag.OnBeginDrag(pointer);
+            pointer.position=new Vector2(-100,-100);drag.OnDrag(pointer);drag.OnEndDrag(pointer);
+            yield return new WaitForSecondsRealtime(.3f);Assert.AreEqual(1,a.Sequence);Assert.IsNull(ui.Interaction.Ghost);
+            yield return Command(a, "PlayCard", aCard);
+            // Simulate a stale hint: server rejects the second normal summon and the ghost returns.
+            yield return null;var stale=ui.Hand.Widgets.Find(w=>w.gameObject.activeSelf);stale.Card.CanSummon=true;
+            pointer.position=RectTransformUtility.WorldToScreenPoint(null,stale.WorldCenter);stale.OnBeginDrag(pointer);
+            pointer.position=RectTransformUtility.WorldToScreenPoint(null,ui.OwnField.transform.TransformPoint(((RectTransform)ui.OwnField.transform).rect.center));stale.OnDrag(pointer);stale.OnEndDrag(pointer);
+            yield return Until(()=>!a.Busy);yield return new WaitForSecondsRealtime(.3f);
+            Assert.AreEqual(2,a.Sequence);Assert.AreEqual(1,a.State.Players[0].Field.Length);Assert.IsNull(ui.Interaction.Ghost);
+            a.RequestSnapshot();yield return Until(()=>!a.Busy);yield return null;
+            yield return Command(a, "EndTurn");
             yield return Until(() => b.Sequence == a.Sequence);
             Assert.IsTrue(b.State.TurnStarted);
             yield return Command(b, "PlayCard", bCard); yield return Command(b, "EndTurn");
@@ -149,11 +180,43 @@ namespace ProjectC.Tests
             Assert.AreEqual(3,ui.EnemyHand.Widgets.Count); foreach(var back in ui.EnemyHand.Widgets) Assert.IsNull(back.Card);
             yield return Command(b,"EndTurn"); yield return Until(()=>a.Sequence==b.Sequence); yield return null;
             Assert.AreEqual(3,a.State.Players[0].HandCount);
-            yield return new WaitForSecondsRealtime(2);
+            yield return new WaitForSecondsRealtime(15);
             Assert.GreaterOrEqual(ui.Effects.DrawsPresented,2); Assert.Greater(ui.Effects.PopupsPresented,0);
             Assert.AreEqual(3,ui.OwnField.Widgets[0].Card.Attack);
             // Only generated fixture files are removed; no recursive directory operations.
             File.Delete(Path.Combine(data,"Cards.json")); File.Delete(Path.Combine(data,"Decks.json")); Directory.Delete(data);
+        }
+        [UnityTest] public IEnumerator ServerDefinedEffectsUseClickTargetsAndManifestContext()
+        {
+            string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../build/Debug/ProjectCNetworkServer.exe"));
+            string data=Path.GetFullPath(Path.Combine(Application.dataPath,"../../ProjectC.Server/Tests/InteractionData"));
+            var args=Environment.GetCommandLineArgs();for(int i=0;i+1<args.Length;++i) { if(args[i]=="-projectcServerPath") path=args[i+1];if(args[i]=="-projectcInteractionData") data=args[i+1]; }
+            var listener=new TcpListener(IPAddress.Loopback,0);listener.Start();int port=((IPEndPoint)listener.LocalEndpoint).Port;listener.Stop();
+            server=Process.Start(new ProcessStartInfo(path,"--port "+port+" --data \""+data+"\""){UseShellExecute=false,RedirectStandardOutput=true,CreateNoWindow=true});
+            var startup=server.StandardOutput.ReadLineAsync();yield return Until(()=>startup.IsCompleted);StringAssert.Contains("listening",startup.Result);
+            var a=Screen(true);var b=Screen();a.ConnectTo("ws://127.0.0.1:"+port);b.ConnectTo("ws://127.0.0.1:"+port);
+            yield return Until(()=>a.Connected && b.Connected);yield return null;
+            a.SelectedDeck="Interaction";a.CreateMatch();yield return Until(()=>a.State!=null);b.SelectedDeck="Interaction";b.JoinMatch(a.CurrentMatch);yield return Until(()=>b.State!=null);
+            a.SetReady("Interaction");b.SetReady("Interaction");yield return Until(()=>a.State!=null && a.State.Started && b.State!=null && b.State.Started);yield return null;
+            int source=a.State.Players[0].Hand[0].Id, target=b.State.Players[1].Hand[0].Id;
+            yield return Command(a,"PlayCard",source);yield return Command(a,"EndTurn");yield return Until(()=>b.Sequence==a.Sequence);
+            yield return Command(b,"PlayCard",target);yield return Command(b,"EndTurn");yield return Until(()=>a.Sequence==b.Sequence);yield return null;
+            var ui=a.GetComponent<BattlePresenter>();var own=ui.OwnField.Widgets[0];own.OnPointerDown(null);own.OnPointerClick(null);
+            var context=ui.GetComponentInChildren<ContextActionView>();Assert.IsNotNull(context);
+            var actions=context.GetComponentsInChildren<UnityEngine.UI.Button>();Assert.AreEqual(2,actions.Length);
+            actions[0].onClick.Invoke();Assert.AreEqual(BattleInputState.SelectingEffectTarget,ui.Interaction.State);
+            var enemy=ui.EnemyField.Widgets[0];Assert.AreEqual("VALID TARGET",enemy.Status.text);enemy.OnPointerClick(null);
+            Assert.AreEqual("TARGET SELECTED",enemy.Status.text);
+            var picker=ui.GetComponentInChildren<EffectTargetPicker>();var confirm=picker.transform.Find("Confirm").GetComponent<UnityEngine.UI.Button>();Assert.IsTrue(confirm.interactable);
+            long seq=a.Sequence;confirm.onClick.Invoke();Assert.AreEqual(BattleInputState.AwaitingServerResponse,ui.Interaction.State);
+            yield return Until(()=>a.Sequence==seq+1);yield return null;Assert.AreEqual(4,a.State.Players[1].Field[0].Hp);
+            own=ui.OwnField.Widgets[0];own.OnPointerDown(null);own.OnPointerClick(null);
+            context=ui.GetComponentInChildren<ContextActionView>();actions=context.GetComponentsInChildren<UnityEngine.UI.Button>();
+            var manifest=Array.Find(actions,x=>x.GetComponentInChildren<UnityEngine.UI.Text>().text=="\uD604\uD604");Assert.IsNotNull(manifest);
+            seq=a.Sequence;manifest.onClick.Invoke();Assert.AreEqual(100,own.Card.DefinitionId,"Only the server snapshot can change the card form");
+            yield return Until(()=>a.Sequence==seq+1);yield return null;Assert.AreEqual(101,ui.OwnField.Widgets[0].Card.DefinitionId);
+            Assert.IsFalse(ui.Interaction.Arrow.gameObject.activeSelf);Assert.IsNull(ui.Interaction.Ghost);
+            ui.OwnField.Widgets[0].OnPointerClick(null);Assert.IsNull(ui.GetComponentInChildren<ContextActionView>(),"Form without an activated effect exposes no action");
         }
         [UnityTest] public IEnumerator OldEpochAndForeignMatchSnapshotsAreIgnored()
         {
