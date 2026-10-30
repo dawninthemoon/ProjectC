@@ -1,4 +1,10 @@
-# GameCore 확장 설계 및 구현 계약
+# GameCore 1차 확장 기록 — TCG 규칙 추가 전
+
+이 문서는 187개 테스트 시점의 1차 확장 기록이다. **현재 실행 계약은
+[TcgRulesAndEffects.md](TcgRulesAndEffects.md)를 따른다.** 아래의 임시 소환 설정,
+덱 부족 시 거부 정책, 직접 공격/현현/효과 미구현 설명은 이후 구현으로 대체되었다.
+현재는 일반 소환 턴당 1회, 별도의 소환 후유증, 직접 공격, 드로우 부족 패배,
+Activated/기본 Triggered 효과 및 현현을 구현한다. Continuous/Replacement는 실행하지 않는다.
 
 이 문서는 현재 C++20 GameCore의 실행 계약과 이후 효과 시스템의 확장 지점을 기록한다.
 게임 상태의 기준은 `GameState`이며, 일반 게임 진행은 `ProcessCommand`를 사용한다.

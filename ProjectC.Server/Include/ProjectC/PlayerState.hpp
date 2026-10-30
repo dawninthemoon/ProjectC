@@ -14,6 +14,8 @@ namespace ProjectC::GameCore
         std::vector<CardInstance> Deck;
         std::vector<CardInstance> Hand;
         std::vector<CardInstance> Graveyard;
+        std::uint64_t TurnsStarted = 0;
+        int NormalSummonsThisTurn = 0;
 
         bool operator==(PlayerState const&) const = default;
     };

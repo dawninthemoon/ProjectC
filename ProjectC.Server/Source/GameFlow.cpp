@@ -1,5 +1,6 @@
 #include "ProjectC/GameCommand.hpp"
 #include "ProjectC/GameInitializer.hpp"
+#include "GameOperations.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -20,8 +21,7 @@ namespace ProjectC::GameCore
                 return Reject(CommandError::InvalidState);
             GameState candidate = state;
             CommandResult result = action(candidate);
-            if (result.Code == CommandError::Success) state = std::move(candidate);
-            return result;
+            return Detail::CommitCommand(state, std::move(candidate), std::move(result));
         }
 
         CommandError CheckPlayer(GameState const& state, PlayerId id, bool requireStarted = true)
@@ -44,23 +44,12 @@ namespace ProjectC::GameCore
         CommandError CheckDraw(GameState const& state, PlayerState const& player, std::size_t count)
         {
             if (count == 0) return CommandError::Success;
-            if (player.Deck.empty()) return CommandError::DeckEmpty;
-            if (count > player.Deck.size()) return CommandError::InsufficientCards;
+            count = std::min(count, player.Deck.size());
             if (player.Hand.size() > state.Config.HandLimit
                 || count > state.Config.HandLimit - player.Hand.size()) return CommandError::HandFull;
             return CommandError::Success;
         }
 
-        void DrawCards(PlayerState& player, std::size_t count, std::vector<GameEvent>& events)
-        {
-            for (std::size_t index = 0; index < count; ++index)
-            {
-                CardInstance const card = player.Deck.front();
-                player.Hand.push_back(card);
-                player.Deck.erase(player.Deck.begin());
-                events.push_back(Movement(card, Zone::Deck, Zone::Hand));
-            }
-        }
     }
 
     CommandResult ProcessCommand(GameState& state, DrawCommand const& command)
@@ -76,7 +65,7 @@ namespace ProjectC::GameCore
             CommandError const drawError = CheckDraw(candidate, player, static_cast<std::size_t>(command.Count));
             if (drawError != CommandError::Success) return Reject(drawError);
             CommandResult result;
-            DrawCards(player, static_cast<std::size_t>(command.Count), result.Events);
+            result.Code = Detail::DrawCards(candidate, player.Id, static_cast<std::size_t>(command.Count), result.Events);
             return result;
         });
     }
@@ -105,11 +94,16 @@ namespace ProjectC::GameCore
             if (definition == nullptr || definition->Type != CardType::Monster || card->IsDestroyed())
                 return Reject(CommandError::InvalidDefinition);
             if (player.Field.size() >= candidate.Config.FieldLimit) return Reject(CommandError::FieldFull);
+            if (player.NormalSummonsThisTurn >= 1) return Reject(CommandError::NormalSummonLimit);
             CardInstance summoned = *card;
-            summoned.HasAttackedThisTurn = !candidate.Config.CanAttackOnSummon;
+            Detail::MarkFieldEntry(candidate, player, summoned);
             player.Field.push_back(summoned);
             player.Hand.erase(card);
-            return CommandResult{ .Events = { Movement(summoned, Zone::Hand, Zone::Field) } };
+            ++player.NormalSummonsThisTurn;
+            return CommandResult{ .Events = { Movement(summoned, Zone::Hand, Zone::Field),
+                GameEvent{ .Type = GameEventType::CardSummoned,
+                    .TargetPlayerId = player.Id, .TargetCardId = summoned.Id,
+                    .CurrentDefinitionId = summoned.CurrentDefinitionId } } };
         });
     }
 
@@ -121,13 +115,15 @@ namespace ProjectC::GameCore
             if (playerError != CommandError::Success) return Reject(playerError);
             if (candidate.TurnStarted) return Reject(CommandError::TurnAlreadyStarted);
             PlayerState& player = *FindPlayer(candidate, command.Player);
+            if (player.TurnsStarted == std::numeric_limits<std::uint64_t>::max())
+                return Reject(CommandError::TurnOverflow);
             CommandError const drawError = CheckDraw(candidate, player, candidate.Config.DrawPerTurn);
             if (drawError != CommandError::Success) return Reject(drawError);
             StartTurn(candidate, command.Player);
             CommandResult result{ .Events = { GameEvent{ .Type = GameEventType::TurnStarted,
                 .TargetPlayerId = command.Player, .TurnNumber = candidate.TurnNumber,
                 .Phase = candidate.Phase } } };
-            DrawCards(player, candidate.Config.DrawPerTurn, result.Events);
+            result.Code = Detail::DrawCards(candidate, player.Id, candidate.Config.DrawPerTurn, result.Events);
             return result;
         });
     }
@@ -170,23 +166,8 @@ namespace ProjectC::GameCore
     {
         return ApplyCommand(state, [&](GameState& candidate)
         {
-            PlayerState* player = FindPlayer(candidate, command.Player);
-            if (player == nullptr) return Reject(CommandError::PlayerNotFound);
-            std::int64_t const total = static_cast<std::int64_t>(player->Life) + command.Delta;
-            if (total > std::numeric_limits<int>::max()) return Reject(CommandError::InvalidLifeChange);
-            int const before = player->Life;
-            player->Life = static_cast<int>(std::max<std::int64_t>(0, total));
-            CommandResult result{ .Events = { GameEvent{ .Type = GameEventType::LifeChanged,
-                .TargetPlayerId = command.Player, .LifeBefore = before, .LifeAfter = player->Life } } };
-            if (player->Life == 0)
-            {
-                candidate.Status = GameStatus::Finished;
-                candidate.WinnerPlayerId = 0;
-                for (PlayerState const& other : candidate.Players)
-                    if (other.Id != player->Id && other.Life > 0) candidate.WinnerPlayerId = other.Id;
-                result.Events.push_back(GameEvent{ .Type = GameEventType::GameEnded,
-                    .WinnerPlayerId = candidate.WinnerPlayerId });
-            }
+            CommandResult result;
+            result.Code = Detail::ChangeLife(candidate, command.Player, command.Delta, result.Events);
             return result;
         });
     }
@@ -194,5 +175,34 @@ namespace ProjectC::GameCore
     CommandResult ChangePlayerLife(GameState& gameState, PlayerId playerId, int delta)
     {
         return ProcessCommand(gameState, ChangeLifeCommand{ playerId, delta });
+    }
+
+    CommandResult ProcessCommand(GameState& state, DirectAttackCommand const& command)
+    {
+        return ApplyCommand(state, [&](GameState& candidate)
+        {
+            if (!candidate.TurnStarted) return Reject(CommandError::TurnNotStarted);
+            BattleResult battle = ValidateAttackSource(candidate, command.AttackerPlayerId, command.AttackerCardId);
+            if (battle != BattleResult::Success)
+                return CommandResult{ .Result = battle, .Code = CommandError::BattleRejected };
+            PlayerState* defender = FindPlayer(candidate, command.DefenderPlayerId);
+            if (defender == nullptr || defender->Id == command.AttackerPlayerId)
+                return CommandResult{ .Result = BattleResult::DefenderNotFound, .Code = CommandError::BattleRejected };
+            CardInstance& attacker = *FindCard(*FindPlayer(candidate, command.AttackerPlayerId), command.AttackerCardId);
+            battle = ValidateAttackReadiness(candidate, attacker);
+            if (battle != BattleResult::Success)
+                return CommandResult{ .Result = battle, .Code = CommandError::BattleRejected };
+            for (CardInstance const& card : defender->Field)
+                if (!card.IsDestroyed()) return Reject(CommandError::DefenderHasMonsters);
+            int const damage = std::max(0, attacker.Attack);
+            int const lifeAfter = std::max(0, defender->Life - damage);
+            attacker.HasAttackedThisTurn = true;
+            CommandResult result{ .Events = { GameEvent{ .Type = GameEventType::PlayerDamaged,
+                .SourcePlayerId = command.AttackerPlayerId, .SourceCardId = command.AttackerCardId,
+                .TargetPlayerId = defender->Id, .Damage = damage,
+                .LifeBefore = defender->Life, .LifeAfter = lifeAfter } } };
+            result.Code = Detail::ChangeLife(candidate, defender->Id, -damage, result.Events);
+            return result;
+        });
     }
 }

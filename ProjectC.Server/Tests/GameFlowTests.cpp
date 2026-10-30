@@ -55,6 +55,14 @@ void RunGameFlowTests(int& testCount, int& failedTests)
         CommandResult const result = ProcessCommand(state, command);
         check(result.Code == expected && result.Events.empty() && state == before, name);
     };
+    auto deckLoss = [&](GameState state, auto command, char const* name)
+    {
+        CommandResult const result = ProcessCommand(state, command);
+        check(result.Code == CommandError::Success && state.Status == GameStatus::Finished
+            && state.EndReason == GameEndReason::DeckExhausted && state.WinnerPlayerId == 2
+            && result.Events.back().Type == GameEventType::GameFinished
+            && state.Players[0].Deck.empty() && ValidateGameState(state), name);
+    };
     GameState state = MakeGame();
     check(state == MakeGame() && ValidateCardIntegrity(state), "DeterministicInitialization");
     check(state.Players[0].Hand[0].OriginalDefinitionId == 10
@@ -110,7 +118,7 @@ void RunGameFlowTests(int& testCount, int& failedTests)
     rejected(state, StartTurnCommand{ 1 }, CommandError::TurnAlreadyStarted, "RepeatedStartRejected");
     rejected(state, DrawCommand{ 1, 0 }, CommandError::InvalidCount, "ZeroDrawRejected");
     rejected(state, DrawCommand{ 1, -1 }, CommandError::InvalidCount, "NegativeDrawRejected");
-    rejected(state, DrawCommand{ 1, 4 }, CommandError::InsufficientCards, "PartialDrawRejectedAtomically");
+    deckLoss(state, DrawCommand{ 1, 4 }, "PartialDrawCommitsThenDeckLoss");
     rejected(state, DrawCommand{ 2 }, CommandError::NotActivePlayer, "InactiveDraw");
     rejected(state, DrawCommand{ 99 }, CommandError::PlayerNotFound, "MissingDrawPlayer");
     rejected(state, PlayCardCommand{ 1, 5 }, CommandError::NotOwner, "EnemyHandPlay");
@@ -129,12 +137,18 @@ void RunGameFlowTests(int& testCount, int& failedTests)
         "MultiDrawOrderPayloadAndFullState");
 
     expected = state;
-    CardInstance const card = expected.Players[0].Hand[0];
+    CardInstance card = expected.Players[0].Hand[0];
+    card.EnteredFieldTurnNumber = 1;
+    card.EnteredFieldActivePlayerId = 1;
+    card.OwnerTurnAtEntry = 1;
     expected.Players[0].Field.push_back(card);
     expected.Players[0].Hand.erase(expected.Players[0].Hand.begin());
+    ++expected.Players[0].NormalSummonsThisTurn;
     result = ProcessCommand(state, PlayCardCommand{ 1, card.Id });
     check(result.Code == CommandError::Success && state == expected
-        && result.Events == std::vector<GameEvent>{ Moved(card, Zone::Hand, Zone::Field) },
+        && result.Events == std::vector<GameEvent>{ Moved(card, Zone::Hand, Zone::Field),
+            GameEvent{ .Type = GameEventType::CardSummoned, .TargetPlayerId = 1,
+                .TargetCardId = card.Id, .CurrentDefinitionId = card.CurrentDefinitionId } },
         "PlayCardFullStateAndPayload");
     rejected(state, PlayCardCommand{ 1, card.Id }, CommandError::WrongZone, "ReplayPlayFromField");
     result = ProcessCommand(state, AdvancePhaseCommand{ 1 });
@@ -166,14 +180,14 @@ void RunGameFlowTests(int& testCount, int& failedTests)
         "ConfiguredTurnDraw");
     state = MakeGame();
     state.Config.DrawPerTurn = 4;
-    rejected(state, StartTurnCommand{ 1 }, CommandError::InsufficientCards, "AtomicStartDrawFailure");
+    deckLoss(state, StartTurnCommand{ 1 }, "StartDrawDeckLoss");
     state.Config.DrawPerTurn = 1;
     state.Config.HandLimit = 1;
     rejected(state, StartTurnCommand{ 1 }, CommandError::HandFull, "StartDrawHandFull");
     state = MakeGame();
     state.Players[0].Deck.clear();
     state.Config.DrawPerTurn = 1;
-    rejected(state, StartTurnCommand{ 1 }, CommandError::DeckEmpty, "StartDrawEmptyDeck");
+    deckLoss(state, StartTurnCommand{ 1 }, "StartDrawEmptyDeckLoss");
     state = MakeGame();
     result = ProcessCommand(state, StartTurnCommand{ 1 });
     state.Config.HandLimit = 1;
@@ -183,11 +197,10 @@ void RunGameFlowTests(int& testCount, int& failedTests)
     state.Config.FieldLimit = 0;
     rejected(state, PlayCardCommand{ 1, 1 }, CommandError::FieldFull, "FieldLimit");
     state = MakeGame();
-    state.Config.CanAttackOnSummon = false;
     result = ProcessCommand(state, StartTurnCommand{ 1 });
     result = ProcessCommand(state, PlayCardCommand{ 1, 1 });
-    check(result.Code == CommandError::Success && state.Players[0].Field[0].HasAttackedThisTurn,
-        "ConfiguredSummonAttackRestriction");
+    check(result.Code == CommandError::Success && !state.Players[0].Field[0].HasAttackedThisTurn
+        && IsSummoningSick(state, state.Players[0].Field[0]), "SummonSicknessSeparateFromAttackFlag");
     state.Players[0].Hand.push_back(state.Players[0].Field[0]);
     rejected(state, DrawCommand{ 1 }, CommandError::InvalidState, "CommandDuplicateIds");
     state = MakeGame();
@@ -228,7 +241,7 @@ void RunGameFlowTests(int& testCount, int& failedTests)
     state = MakeGame();
     state.TurnStarted = true;
     state.Players[0].Deck.clear();
-    rejected(state, DrawCommand{ 1 }, CommandError::DeckEmpty, "ManualDrawEmptyDeck");
+    deckLoss(state, DrawCommand{ 1 }, "ManualDrawEmptyDeckLoss");
     state = MakeGame();
     state.TurnStarted = true;
     state.Players[0].Hand[0].Hp = 0;

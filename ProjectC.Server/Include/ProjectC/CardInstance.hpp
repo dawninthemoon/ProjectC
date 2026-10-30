@@ -1,12 +1,10 @@
 #pragma once
 
 #include "ProjectC/CardDefinition.hpp"
+#include <cstdint>
 
 namespace ProjectC::GameCore
 {
-    using PlayerId = int;
-    using CardInstanceId = int;
-
     struct CardInstance
     {
         CardInstanceId Id = 0;
@@ -17,6 +15,11 @@ namespace ProjectC::GameCore
         bool HasAttackedThisTurn = false;
         CardDefinitionId OriginalDefinitionId = 0;
         CardDefinitionId CurrentDefinitionId = 0;
+        int EnteredFieldTurnNumber = 0;
+        PlayerId EnteredFieldActivePlayerId = 0;
+        std::uint64_t OwnerTurnAtEntry = 0;
+        bool IgnoreSummoningSickness = false;
+        bool HasManifested = false;
 
         bool operator==(CardInstance const&) const = default;
 

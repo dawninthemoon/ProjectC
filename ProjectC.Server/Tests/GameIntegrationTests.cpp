@@ -60,11 +60,12 @@ void RunGameIntegrationTests(int& testCount, int& failedTests)
             .SourcePlayerId = 1, .SourceCardId = 1, .TargetPlayerId = 2, .TargetCardId = 3 },
         { .Type = GameEventType::CardDamaged,
             .SourcePlayerId = 2, .SourceCardId = 3, .TargetPlayerId = 1, .TargetCardId = 1,
-            .Damage = 4, .HpAfter = 1 },
+            .Damage = 4, .HpAfter = 1, .CurrentDefinitionId = 10 },
         { .Type = GameEventType::CardDamaged,
             .SourcePlayerId = 1, .SourceCardId = 1, .TargetPlayerId = 2, .TargetCardId = 3,
-            .Damage = 3, .HpAfter = 0 },
-        { .Type = GameEventType::CardDestroyed, .TargetPlayerId = 2, .TargetCardId = 3 },
+            .Damage = 3, .HpAfter = 0, .CurrentDefinitionId = 20 },
+        { .Type = GameEventType::CardDestroyed, .TargetPlayerId = 2, .TargetCardId = 3,
+            .CurrentDefinitionId = 20 },
         { .Type = GameEventType::BattleCompleted,
             .SourcePlayerId = 1, .SourceCardId = 1, .TargetPlayerId = 2, .TargetCardId = 3 },
         { .Type = GameEventType::CardMoved, .TargetPlayerId = 2, .TargetCardId = 3,
@@ -88,6 +89,7 @@ void RunGameIntegrationTests(int& testCount, int& failedTests)
     expected.Players[1].Life = 0;
     expected.Status = GameStatus::Finished;
     expected.WinnerPlayerId = 1;
+    expected.EndReason = GameEndReason::LifeDepleted;
     check(state == expected && results.back().Code == CommandError::Success
         && ValidateGameState(state), "IntegrationLifeScenarioEndsGame");
     ReplayResult const replay = ReplayCommands(initial, commands);

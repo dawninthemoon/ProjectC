@@ -17,7 +17,16 @@ namespace ProjectC::GameCore
         TurnEnded,
         PhaseChanged,
         LifeChanged,
-        GameEnded
+        GameEnded,
+        GameFinished = GameEnded,
+        PlayerDamaged,
+        CardSummoned,
+        CardDrawn,
+        EffectActivated,
+        EffectResolved,
+        CardTransformed,
+        CardHealed,
+        StatsModified
     };
 
     struct GameEvent
@@ -39,6 +48,11 @@ namespace ProjectC::GameCore
         int TurnNumber = 0;
         TurnPhase Phase = TurnPhase::Main;
         PlayerId WinnerPlayerId = 0;
+        GameEndReason EndReason = GameEndReason::None;
+        int EffectId = 0;
+        int AttackAfter = 0;
+        int MaxHpAfter = 0;
+        int EffectOutcome = 0; // CommandError numeric value; nonzero means an automatic effect fizzled.
 
         bool operator==(GameEvent const&) const = default;
     };

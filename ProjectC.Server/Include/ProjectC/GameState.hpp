@@ -25,10 +25,12 @@ namespace ProjectC::GameCore
         AttackerDestroyed,
         DefenderDestroyed,
         AlreadyAttacked,
-        GameFinished
+        GameFinished,
+        SummoningSickness
     };
 
     enum class GameStatus { Running, Finished };
+    enum class GameEndReason { None, LifeDepleted, DeckExhausted };
 
     struct GameState
     {
@@ -41,6 +43,7 @@ namespace ProjectC::GameCore
         GameStatus Status = GameStatus::Running;
         PlayerId WinnerPlayerId = 0;
         bool TurnStarted = false;
+        GameEndReason EndReason = GameEndReason::None;
 
         bool operator==(GameState const&) const = default;
     };
@@ -53,6 +56,11 @@ namespace ProjectC::GameCore
     void StartTurn(GameState& gameState, PlayerId playerId);
     void AdvancePhase(GameState& gameState);
     void EndTurn(GameState& gameState);
+
+    [[nodiscard]] bool IsSummoningSick(GameState const& gameState, CardInstance const& card);
+    [[nodiscard]] BattleResult ValidateAttackSource(GameState const& gameState,
+        PlayerId playerId, CardInstanceId cardId);
+    [[nodiscard]] BattleResult ValidateAttackReadiness(GameState const& gameState, CardInstance const& card);
 
     // Low-level battle primitive: retains destroyed cards until command-level cleanup.
     // Missing players, ownership mismatches and friendly targets are reported

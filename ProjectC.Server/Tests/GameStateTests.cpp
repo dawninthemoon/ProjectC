@@ -10,6 +10,8 @@ void RunZoneTests(int& testCount, int& failedTests);
 void RunGameFlowTests(int& testCount, int& failedTests);
 void RunGameReplayTests(int& testCount, int& failedTests);
 void RunGameIntegrationTests(int& testCount, int& failedTests);
+void RunCardRulesTests(int& testCount, int& failedTests);
+void RunEffectTests(int& testCount, int& failedTests);
 
 namespace
 {
@@ -489,6 +491,8 @@ int main()
     RunGameFlowTests(testCount, failedTests);
     RunGameReplayTests(testCount, failedTests);
     RunGameIntegrationTests(testCount, failedTests);
+    RunCardRulesTests(testCount, failedTests);
+    RunEffectTests(testCount, failedTests);
 
     if (failedTests > 0)
     {

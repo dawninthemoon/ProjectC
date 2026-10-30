@@ -9,6 +9,7 @@ int main()
     using namespace ProjectC::GameCore;
 
     GameConfig config;
+    config.InitialLife = 3;
     config.InitialHandSize = 1;
     GameState state;
     std::vector<CardDefinition> const definitions{
@@ -30,8 +31,9 @@ int main()
         StartTurnCommand{ 2 }, PlayCardCommand{ 2, 3 },
         AdvancePhaseCommand{ 2 }, AdvancePhaseCommand{ 2 }, EndTurnCommand{ 2 },
         StartTurnCommand{ 1 }, AdvancePhaseCommand{ 1 }, AttackCommand{ 1, 1, 2, 3 },
-        // Separate trusted server inputs; monster combat does not damage player Life.
-        ChangeLifeCommand{ 2, -7 }, ChangeLifeCommand{ 2, -13 }
+        AdvancePhaseCommand{ 1 }, EndTurnCommand{ 1 },
+        StartTurnCommand{ 2 }, AdvancePhaseCommand{ 2 }, AdvancePhaseCommand{ 2 }, EndTurnCommand{ 2 },
+        StartTurnCommand{ 1 }, AdvancePhaseCommand{ 1 }, DirectAttackCommand{ 1, 1, 2 }
     };
     std::vector<CommandResult> results;
     for (GameCommand const& command : commands)
@@ -49,7 +51,7 @@ int main()
     std::cout << "GameCore scenario complete\n"
         << "Attacker HP: " << state.Players[0].Field[0].Hp << '\n'
         << "Defender graveyard cards: " << state.Players[1].Graveyard.size() << '\n'
-        << "Player 2 Life (server Life API): " << state.Players[1].Life << '\n'
+        << "Player 2 Life (direct attack): " << state.Players[1].Life << '\n'
         << "Winner: " << state.WinnerPlayerId << '\n'
         << "Replay matches: " << std::boolalpha << matches << '\n';
     return matches ? 0 : 1;

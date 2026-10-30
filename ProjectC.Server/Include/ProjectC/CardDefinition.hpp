@@ -1,13 +1,11 @@
 #pragma once
 
+#include "ProjectC/EffectDefinition.hpp"
+
 #include <string>
 
 namespace ProjectC::GameCore
 {
-    using CardDefinitionId = int;
-
-    enum class CardType { Monster };
-
     // Immutable printed data. Runtime damage and modifiers belong to CardInstance.
     struct CardDefinition
     {
@@ -16,6 +14,9 @@ namespace ProjectC::GameCore
         CardType Type = CardType::Monster;
         int Attack = 0;
         int MaxHp = 1;
+        std::vector<std::string> Traits;
+        std::vector<CardDefinitionId> AllowedManifestations;
+        std::vector<EffectDefinition> Effects;
 
         bool operator==(CardDefinition const&) const = default;
     };

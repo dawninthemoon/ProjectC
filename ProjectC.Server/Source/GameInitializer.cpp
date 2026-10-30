@@ -10,7 +10,8 @@ namespace ProjectC::GameCore
 {
     bool ValidateConfig(GameConfig const& config)
     {
-        return config.InitialLife > 0 && config.InitialHandSize <= config.HandLimit;
+        return config.InitialLife > 0 && config.InitialHandSize <= config.HandLimit
+            && config.TriggerResolutionLimit > 0;
     }
 
     bool ValidateGameState(GameState const& gameState)
@@ -26,13 +27,28 @@ namespace ProjectC::GameCore
         for (PlayerState const& player : gameState.Players)
         {
             if (player.Field.size() > gameState.Config.FieldLimit
-                || player.Hand.size() > gameState.Config.HandLimit || player.Life < 0) return false;
+                || player.Hand.size() > gameState.Config.HandLimit || player.Life < 0
+                || player.NormalSummonsThisTurn < 0 || player.NormalSummonsThisTurn > 1) return false;
             if (player.Life > 0) { ++livingPlayers; survivor = player.Id; }
+            if (!gameState.Definitions.empty())
+                for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard })
+                    for (CardInstance const& card : *GetZone(player, zone))
+                        if (card.MaxHp < 0 || card.Hp < 0 || card.Hp > card.MaxHp) return false;
         }
         if (gameState.Status == GameStatus::Running)
-            return livingPlayers == 2 && gameState.WinnerPlayerId == 0;
+            return livingPlayers == 2 && gameState.WinnerPlayerId == 0 && gameState.EndReason == GameEndReason::None;
         if (gameState.Status == GameStatus::Finished)
-            return livingPlayers < 2 && gameState.WinnerPlayerId == (livingPlayers == 1 ? survivor : 0);
+        {
+            if (gameState.EndReason == GameEndReason::DeckExhausted)
+            {
+                if (livingPlayers != 2 || FindPlayer(gameState, gameState.WinnerPlayerId) == nullptr) return false;
+                for (PlayerState const& player : gameState.Players)
+                    if (player.Id != gameState.WinnerPlayerId) return player.Deck.empty();
+                return false;
+            }
+            return gameState.EndReason == GameEndReason::LifeDepleted && livingPlayers < 2
+                && gameState.WinnerPlayerId == (livingPlayers == 1 ? survivor : 0);
+        }
         return false;
     }
 

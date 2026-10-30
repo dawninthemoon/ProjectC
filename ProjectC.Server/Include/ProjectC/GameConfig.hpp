@@ -13,7 +13,8 @@ namespace ProjectC::GameCore
         std::size_t HandLimit = 10;
         std::size_t DrawPerTurn = 0;
         bool AllowManualDraw = true;
-        bool CanAttackOnSummon = true;
+        bool AllowRemanifestation = false;
+        std::size_t TriggerResolutionLimit = 64;
 
         bool operator==(GameConfig const&) const = default;
     };

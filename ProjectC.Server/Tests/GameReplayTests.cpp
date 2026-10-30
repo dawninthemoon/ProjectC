@@ -52,11 +52,13 @@ void RunGameReplayTests(int& testCount, int& failedTests)
     expected.Players[1].Life = 0;
     expected.Status = GameStatus::Finished;
     expected.WinnerPlayerId = 1;
+    expected.EndReason = GameEndReason::LifeDepleted;
     check(result.Code == CommandError::Success && state == expected
         && result.Events == std::vector<GameEvent>{
             GameEvent{ .Type = GameEventType::LifeChanged, .TargetPlayerId = 2,
                 .LifeBefore = 19, .LifeAfter = 0 },
-            GameEvent{ .Type = GameEventType::GameEnded, .WinnerPlayerId = 1 } },
+            GameEvent{ .Type = GameEventType::GameEnded, .WinnerPlayerId = 1,
+                .EndReason = GameEndReason::LifeDepleted } },
         "LethalLifeChangeClampAndVictoryOrder");
     for (GameCommand const& command : std::vector<GameCommand>{
         AttackCommand{ 1, 1, 2, 3 }, DrawCommand{ 1 }, PlayCardCommand{ 1, 1 },

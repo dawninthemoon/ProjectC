@@ -1,5 +1,7 @@
 #include "ProjectC/Zone.hpp"
 #include "ProjectC/GameState.hpp"
+#include "GameOperations.hpp"
+#include "ProjectC/CardEffects.hpp"
 
 #include <algorithm>
 #include <set>
@@ -41,6 +43,7 @@ namespace ProjectC::GameCore
                 return false;
             }
         }
+        if (!ValidateEffectDefinitions(gameState)) return false;
         std::set<PlayerId> players;
         std::set<CardInstanceId> cards;
         for (PlayerState const& player : gameState.Players)
@@ -92,6 +95,7 @@ namespace ProjectC::GameCore
         }
         if (to == Zone::Field && card->IsDestroyed()) return ZoneResult::DestroyedCard;
         CardInstance moved = *card;
+        if (to == Zone::Field) Detail::MarkFieldEntry(gameState, *player, moved);
         if (to == Zone::Graveyard) moved.CurrentDefinitionId = moved.OriginalDefinitionId;
         destination->push_back(moved);
         source->erase(card);

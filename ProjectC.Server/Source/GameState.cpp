@@ -32,13 +32,19 @@ namespace ProjectC::GameCore
     {
         if (gameState.Status == GameStatus::Finished) return;
         PlayerState* player = FindPlayer(gameState, playerId);
-        if (player == nullptr)
+        if (player == nullptr || player->TurnsStarted == std::numeric_limits<std::uint64_t>::max())
         {
             return;
         }
+        bool const newTurn = !gameState.TurnStarted || gameState.ActivePlayerId != playerId;
         gameState.ActivePlayerId = playerId;
         gameState.Phase = TurnPhase::Main;
         gameState.TurnStarted = true;
+        if (newTurn)
+        {
+            ++player->TurnsStarted;
+            player->NormalSummonsThisTurn = 0;
+        }
         for (CardInstance& card : player->Field)
         {
             if (!card.IsDestroyed())
@@ -84,6 +90,32 @@ namespace ProjectC::GameCore
         }
     }
 
+    bool IsSummoningSick(GameState const& gameState, CardInstance const& card)
+    {
+        PlayerState const* owner = FindPlayer(gameState, card.OwnerId);
+        return !card.IgnoreSummoningSickness && card.EnteredFieldTurnNumber != 0
+            && (owner == nullptr || owner->TurnsStarted <= card.OwnerTurnAtEntry);
+    }
+
+    BattleResult ValidateAttackSource(GameState const& gameState, PlayerId playerId, CardInstanceId cardId)
+    {
+        if (gameState.Status == GameStatus::Finished) return BattleResult::GameFinished;
+        if (gameState.Phase != TurnPhase::Battle) return BattleResult::NotBattlePhase;
+        if (playerId != gameState.ActivePlayerId) return BattleResult::NotActivePlayer;
+        PlayerState const* player = FindPlayer(gameState, playerId);
+        CardInstance const* card = player == nullptr ? nullptr : FindCard(*player, cardId);
+        if (card == nullptr || card->OwnerId != playerId) return BattleResult::AttackerNotFound;
+        return BattleResult::Success;
+    }
+
+    BattleResult ValidateAttackReadiness(GameState const& gameState, CardInstance const& card)
+    {
+        if (card.IsDestroyed()) return BattleResult::AttackerDestroyed;
+        if (card.HasAttackedThisTurn) return BattleResult::AlreadyAttacked;
+        if (IsSummoningSick(gameState, card)) return BattleResult::SummoningSickness;
+        return BattleResult::Success;
+    }
+
     BattleResult ResolveBattle(
         GameState& gameState,
         PlayerId attackerPlayerId,
@@ -91,18 +123,8 @@ namespace ProjectC::GameCore
         PlayerId defenderPlayerId,
         CardInstanceId defenderCardId)
     {
-        if (gameState.Status == GameStatus::Finished)
-        {
-            return BattleResult::GameFinished;
-        }
-        if (gameState.Phase != TurnPhase::Battle)
-        {
-            return BattleResult::NotBattlePhase;
-        }
-        if (attackerPlayerId != gameState.ActivePlayerId)
-        {
-            return BattleResult::NotActivePlayer;
-        }
+        BattleResult const sourceResult = ValidateAttackSource(gameState, attackerPlayerId, attackerCardId);
+        if (sourceResult != BattleResult::Success) return sourceResult;
         PlayerState* attackerPlayer = FindPlayer(gameState, attackerPlayerId);
         CardInstance* attacker = attackerPlayer == nullptr
             ? nullptr : FindCard(*attackerPlayer, attackerCardId);
@@ -126,10 +148,8 @@ namespace ProjectC::GameCore
         {
             return BattleResult::DefenderDestroyed;
         }
-        if (attacker->HasAttackedThisTurn)
-        {
-            return BattleResult::AlreadyAttacked;
-        }
+        BattleResult const readiness = ValidateAttackReadiness(gameState, *attacker);
+        if (readiness != BattleResult::Success) return readiness;
 
         int const attackerDamage = attacker->Attack;
         int const defenderDamage = defender->Attack;

@@ -1,5 +1,6 @@
 #include "ProjectC/GameCommand.hpp"
 #include "ProjectC/GameInitializer.hpp"
+#include "GameOperations.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -50,7 +51,8 @@ namespace ProjectC::GameCore
             .TargetPlayerId = command.AttackerPlayerId,
             .TargetCardId = command.AttackerCardId,
             .Damage = defenderDamage,
-            .HpAfter = attacker->Hp });
+            .HpAfter = attacker->Hp,
+            .CurrentDefinitionId = attacker->CurrentDefinitionId });
         events.push_back(GameEvent{
             .Type = GameEventType::CardDamaged,
             .SourcePlayerId = command.AttackerPlayerId,
@@ -58,14 +60,16 @@ namespace ProjectC::GameCore
             .TargetPlayerId = command.DefenderPlayerId,
             .TargetCardId = command.DefenderCardId,
             .Damage = attackerDamage,
-            .HpAfter = defender->Hp });
+            .HpAfter = defender->Hp,
+            .CurrentDefinitionId = defender->CurrentDefinitionId });
         if (attacker->IsDestroyed())
         {
             events.push_back(GameEvent{
                 .Type = GameEventType::CardDestroyed,
                 .TargetPlayerId = command.AttackerPlayerId,
                 .TargetCardId = command.AttackerCardId,
-                .HpAfter = attacker->Hp });
+                .HpAfter = attacker->Hp,
+                .CurrentDefinitionId = attacker->CurrentDefinitionId });
         }
         if (defender->IsDestroyed())
         {
@@ -73,7 +77,8 @@ namespace ProjectC::GameCore
                 .Type = GameEventType::CardDestroyed,
                 .TargetPlayerId = command.DefenderPlayerId,
                 .TargetCardId = command.DefenderCardId,
-                .HpAfter = defender->Hp });
+                .HpAfter = defender->Hp,
+                .CurrentDefinitionId = defender->CurrentDefinitionId });
         }
         events.push_back(GameEvent{
             .Type = GameEventType::BattleCompleted,
@@ -109,7 +114,6 @@ namespace ProjectC::GameCore
     {
         GameState candidate = gameState;
         CommandResult result = ExecuteAttack(candidate, command);
-        if (result.Code == CommandError::Success) gameState = std::move(candidate);
-        return result;
+        return Detail::CommitCommand(gameState, std::move(candidate), std::move(result));
     }
 }

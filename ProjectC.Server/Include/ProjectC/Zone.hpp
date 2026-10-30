@@ -5,7 +5,6 @@
 namespace ProjectC::GameCore
 {
     struct GameState;
-    enum class Zone { Deck, Hand, Field, Graveyard };
     enum class ZoneResult
     {
         Success, InvalidState, PlayerNotFound, CardNotFound, SameZone,

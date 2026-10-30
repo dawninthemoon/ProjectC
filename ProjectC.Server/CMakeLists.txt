@@ -16,6 +16,11 @@ add_library(ProjectCGameCore STATIC
     Source/GameInitializer.cpp
     Source/GameFlow.cpp
     Source/GameReplay.cpp
+    Source/GameOperations.cpp
+    Source/TargetSelection.cpp
+    Source/CardEffects.cpp
+    Source/CardMutations.cpp
+    Source/TriggeredEffects.cpp
 )
 
 target_include_directories(ProjectCGameCore
@@ -38,6 +43,8 @@ add_executable(ProjectCTests
     Tests/GameFlowTests.cpp
     Tests/GameReplayTests.cpp
     Tests/GameIntegrationTests.cpp
+    Tests/CardRulesTests.cpp
+    Tests/EffectTests.cpp
 )
 
 target_link_libraries(ProjectCTests
