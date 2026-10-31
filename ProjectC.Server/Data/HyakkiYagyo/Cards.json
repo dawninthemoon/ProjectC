@@ -1,0 +1,595 @@
+{
+  "Cards": [
+    {
+      "Id": 1001,
+      "Name": "백귀야행－등불동자",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Bronze",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "Search",
+              "Targets": {
+                "Category": "FriendlyDeck",
+                "Zones": [
+                  "Deck"
+                ],
+                "CardType": "Spell",
+                "RequiredArchetype": "HyakkiYagyo"
+              }
+            }
+          ],
+          "Trigger": "OnNormalSummoned",
+          "PerTurnLimit": 1
+        }
+      ]
+    },
+    {
+      "Id": 1002,
+      "Name": "백귀야행－망령 수집가",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 3,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Bronze",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "SendToGraveyard",
+              "Targets": {
+                "Category": "FriendlyDeck",
+                "Zones": [
+                  "Deck"
+                ],
+                "RequiredArchetype": "HyakkiYagyo"
+              }
+            }
+          ],
+          "Trigger": "OnSummoned"
+        }
+      ]
+    },
+    {
+      "Id": 1003,
+      "Name": "백귀야행－여우불 길잡이",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Silver",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "SummonFromHand",
+              "Targets": {
+                "Category": "Self",
+                "Zones": [
+                  "Hand"
+                ]
+              }
+            }
+          ],
+          "ActivationZone": "Hand",
+          "PerTurnLimit": 1,
+          "RequireGraveyardEntryThisTurn": "HyakkiYagyo"
+        }
+      ]
+    },
+    {
+      "Id": 1004,
+      "Name": "백귀야행－야행승",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 3,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Silver",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "Salvage",
+              "Targets": {
+                "Category": "FriendlyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ],
+                "CardType": "Spell",
+                "RequiredArchetype": "HyakkiYagyo"
+              }
+            }
+          ],
+          "Trigger": "OnRevived",
+          "PerTurnLimit": 1
+        }
+      ]
+    },
+    {
+      "Id": 1005,
+      "Name": "백귀야행－오니 문지기",
+      "Type": "Monster",
+      "Attack": 4,
+      "MaxHp": 5,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Silver",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "DealDamage",
+              "Targets": {
+                "Category": "EnemyMonster",
+                "Zones": [
+                  "Field"
+                ]
+              },
+              "Amount": 1
+            }
+          ],
+          "Trigger": "OnRevived"
+        },
+        {
+          "Id": 2,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "ModifyStats",
+              "Targets": {
+                "Category": "Self",
+                "Zones": [
+                  "Field"
+                ]
+              },
+              "AttackDelta": 1,
+              "TemporaryStats": true
+            }
+          ],
+          "Trigger": "OnRevived"
+        }
+      ]
+    },
+    {
+      "Id": 1006,
+      "Name": "백귀야행－월하의 요호",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 4,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Gold",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Transform",
+              "Targets": {
+                "Category": "Self",
+                "Zones": [
+                  "Field"
+                ]
+              },
+              "TransformDefinitionId": 1007
+            }
+          ],
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 2
+            }
+          ]
+        }
+      ],
+      "AllowedManifestations": [
+        1007
+      ]
+    },
+    {
+      "Id": 1007,
+      "Name": "백귀야행－구미호 현현",
+      "Type": "Monster",
+      "Attack": 5,
+      "MaxHp": 6,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Legendary",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "DealDamage",
+              "Targets": {
+                "Category": "EnemyMonster",
+                "Zones": [
+                  "Field"
+                ],
+                "MinCount": 0,
+                "MaxCount": 1
+              },
+              "Amount": 2
+            }
+          ],
+          "Trigger": "OnManifested"
+        }
+      ],
+      "MainDeckEligible": false
+    },
+    {
+      "Id": 1008,
+      "Name": "백귀야행－행렬의 인도자",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 5,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Rarity": "Gold",
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Actions": [
+            {
+              "Operation": "SummonFromGraveyard",
+              "Targets": {
+                "Category": "FriendlyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ],
+                "RequiredArchetype": "HyakkiYagyo",
+                "MaxAttack": 3
+              }
+            }
+          ],
+          "Trigger": "OnNormalSummoned",
+          "RequiredGraveyardArchetype": "HyakkiYagyo",
+          "MinGraveyardCount": 3
+        }
+      ]
+    },
+    {
+      "Id": 1101,
+      "Name": "황천의 초혼부",
+      "Type": "Spell",
+      "Rarity": "Bronze",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "SummonFromGraveyard",
+              "Targets": {
+                "Category": "FriendlyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ],
+                "RequiredArchetype": "HyakkiYagyo",
+                "MaxAttack": 3
+              }
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": 1102,
+      "Name": "행렬의 서찰",
+      "Type": "Spell",
+      "Rarity": "Silver",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Draw",
+              "Targets": {
+                "Category": "FriendlyPlayer",
+                "Zones": [
+                  "Field"
+                ]
+              }
+            },
+            {
+              "Operation": "Discard",
+              "Targets": {
+                "Category": "FriendlyHand",
+                "Zones": [
+                  "Hand"
+                ],
+                "CardType": "Any"
+              },
+              "YokaiGainArchetype": "HyakkiYagyo",
+              "YokaiGainAmount": 1
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": []
+        }
+      ]
+    },
+    {
+      "Id": 1103,
+      "Name": "백귀야행",
+      "Type": "Spell",
+      "Rarity": "Legendary",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "SummonFromGraveyard",
+              "Targets": {
+                "Category": "FriendlyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ],
+                "RequiredArchetype": "HyakkiYagyo",
+                "MinCount": 1,
+                "MaxCount": 2
+              },
+              "PreventDirectAttackThisTurn": true
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 2
+            },
+            {
+              "Kind": "Tribute",
+              "Targets": {
+                "Category": "FriendlyMonster",
+                "Zones": [
+                  "Field"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": 1104,
+      "Name": "밤길의 호각",
+      "Type": "Spell",
+      "Rarity": "Gold",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Search",
+              "Targets": {
+                "Category": "FriendlyDeck",
+                "Zones": [
+                  "Deck"
+                ],
+                "RequiredArchetype": "HyakkiYagyo",
+                "MaxAttack": 3
+              }
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [],
+          "PerTurnLimit": 1
+        }
+      ]
+    },
+    {
+      "Id": 2001,
+      "Name": "천뢰",
+      "Type": "Spell",
+      "Rarity": "Legendary",
+      "Archetypes": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Destroy",
+              "Targets": {
+                "Category": "EnemyMonster",
+                "Zones": [
+                  "Field"
+                ],
+                "MinCount": 0,
+                "MaxCount": 32
+              },
+              "AllTargets": true
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": 2002,
+      "Name": "파사의 벼락",
+      "Type": "Spell",
+      "Rarity": "Silver",
+      "Archetypes": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "DealDamage",
+              "Targets": {
+                "Category": "EnemyMonster",
+                "Zones": [
+                  "Field"
+                ]
+              },
+              "Amount": 4
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": 2003,
+      "Name": "금단의 두루마리",
+      "Type": "Spell",
+      "Rarity": "Gold",
+      "Archetypes": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Draw",
+              "Targets": {
+                "Category": "FriendlyPlayer",
+                "Zones": [
+                  "Field"
+                ]
+              },
+              "Amount": 2
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 1
+            },
+            {
+              "Kind": "HiddenExileTop",
+              "Amount": 5
+            }
+          ],
+          "PerTurnLimit": 1
+        }
+      ]
+    },
+    {
+      "Id": 2004,
+      "Name": "망각의 인",
+      "Type": "Spell",
+      "Rarity": "Bronze",
+      "Archetypes": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "Exile",
+              "Targets": {
+                "Category": "EnemyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ],
+                "CardType": "Any"
+              }
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": []
+        }
+      ]
+    },
+    {
+      "Id": 2005,
+      "Name": "귀환의 부적",
+      "Type": "Spell",
+      "Rarity": "Gold",
+      "Archetypes": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Activated",
+          "Actions": [
+            {
+              "Operation": "SummonFromGraveyard",
+              "Targets": {
+                "Category": "FriendlyGraveyard",
+                "Zones": [
+                  "Graveyard"
+                ]
+              },
+              "PreventDirectAttackThisTurn": true
+            }
+          ],
+          "ActivationZone": "Hand",
+          "Costs": [
+            {
+              "Kind": "YokaiPower",
+              "Amount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

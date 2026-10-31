@@ -1,0 +1,54 @@
+{
+  "Config": {
+    "InitialLife": 20,
+    "InitialHandSize": 5,
+    "DrawPerTurn": 1,
+    "FieldLimit": 5,
+    "HandLimit": 10,
+    "MinDeckSize": 30,
+    "MaxDeckSize": 30,
+    "MaxCardCopies": 3,
+    "InitialYokaiPower": 2,
+    "YokaiPowerPerTurn": 1,
+    "MaxYokaiPower": 10,
+    "SummoningSickness": false
+  },
+  "Decks": [
+    {
+      "Id": "HyakkiYagyo",
+      "Name": "백귀야행 — 실험용 30장",
+      "Cards": [
+        1001,
+        1001,
+        1001,
+        1002,
+        1002,
+        1002,
+        1003,
+        1003,
+        1003,
+        1004,
+        1004,
+        1005,
+        1005,
+        1006,
+        1006,
+        1008,
+        1008,
+        1101,
+        1101,
+        1102,
+        1102,
+        1103,
+        1104,
+        2001,
+        2002,
+        2002,
+        2003,
+        2004,
+        2005,
+        2005
+      ]
+    }
+  ]
+}

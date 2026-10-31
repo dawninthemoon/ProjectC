@@ -83,7 +83,7 @@ namespace ProjectC::GameCore
             if (card == player.Hand.end())
             {
                 for (PlayerState const& owner : candidate.Players)
-                    for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard })
+                    for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard, Zone::Exile, Zone::HiddenExile })
                         for (CardInstance const& entry : *GetZone(owner, zone))
                             if (entry.Id == command.Card)
                                 return Reject(owner.Id != command.Player
@@ -123,7 +123,9 @@ namespace ProjectC::GameCore
             CommandResult result{ .Events = { GameEvent{ .Type = GameEventType::TurnStarted,
                 .TargetPlayerId = command.Player, .TurnNumber = candidate.TurnNumber,
                 .Phase = candidate.Phase } } };
-            result.Code = Detail::DrawCards(candidate, player.Id, candidate.Config.DrawPerTurn, result.Events);
+            if(player.TurnsStarted>1 && candidate.Config.YokaiPowerPerTurn>0)
+                result.Code=Detail::ChangeYokaiPower(candidate,player.Id,candidate.Config.YokaiPowerPerTurn,result.Events);
+            if(result.Code==CommandError::Success) result.Code = Detail::DrawCards(candidate, player.Id, candidate.Config.DrawPerTurn, result.Events);
             return result;
         });
     }
@@ -153,6 +155,8 @@ namespace ProjectC::GameCore
             CommandResult result{ .Events = { GameEvent{ .Type = GameEventType::TurnEnded,
                 .TargetPlayerId = command.Player, .TurnNumber = candidate.TurnNumber,
                 .Phase = candidate.Phase } } };
+            for(auto& owner:candidate.Players) for(auto& card:owner.Field)
+                if(card.TemporaryAttack!=0) { card.Attack=std::max(0,card.Attack-card.TemporaryAttack);card.TemporaryAttack=0;result.Events.push_back(GameEvent{.Type=GameEventType::StatsModified,.TargetPlayerId=owner.Id,.TargetCardId=card.Id,.HpAfter=card.Hp,.AttackAfter=card.Attack,.MaxHpAfter=card.MaxHp}); }
             for (PlayerState const& player : candidate.Players)
                 if (player.Id != command.Player) { candidate.ActivePlayerId = player.Id; break; }
             ++candidate.TurnNumber;
@@ -189,6 +193,7 @@ namespace ProjectC::GameCore
             if (defender == nullptr || defender->Id == command.AttackerPlayerId)
                 return CommandResult{ .Result = BattleResult::DefenderNotFound, .Code = CommandError::BattleRejected };
             CardInstance& attacker = *FindCard(*FindPlayer(candidate, command.AttackerPlayerId), command.AttackerCardId);
+            if(attacker.DirectAttackRestrictedTurn==candidate.TurnNumber) return Reject(CommandError::DirectAttackRestricted);
             battle = ValidateAttackReadiness(candidate, attacker);
             if (battle != BattleResult::Success)
                 return CommandResult{ .Result = battle, .Code = CommandError::BattleRejected };

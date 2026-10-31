@@ -20,6 +20,10 @@ namespace ProjectC::GameCore
         std::size_t MinDeckSize = 1;
         std::size_t MaxDeckSize = 128;
         std::size_t MaxCardCopies = 4;
+        int InitialYokaiPower = 0;
+        int YokaiPowerPerTurn = 0;
+        int MaxYokaiPower = 0;
+        bool SummoningSickness = true;
 
         bool operator==(GameConfig const&) const = default;
     };

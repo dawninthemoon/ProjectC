@@ -6,6 +6,13 @@
 
 namespace ProjectC::GameCore
 {
+    struct EffectUsage
+    {
+        CardDefinitionId Definition = 0;
+        int Effect = 0;
+        int Count = 0;
+        bool operator==(EffectUsage const&) const = default;
+    };
     struct PlayerState
     {
         PlayerId Id = 0;
@@ -16,6 +23,11 @@ namespace ProjectC::GameCore
         std::vector<CardInstance> Graveyard;
         std::uint64_t TurnsStarted = 0;
         int NormalSummonsThisTurn = 0;
+        std::vector<CardInstance> Exile;
+        std::vector<CardInstance> HiddenExile;
+        int YokaiPower = 0;
+        std::vector<EffectUsage> EffectUses;
+        std::vector<std::string> GraveyardArchetypesThisTurn;
 
         bool operator==(PlayerState const&) const = default;
     };

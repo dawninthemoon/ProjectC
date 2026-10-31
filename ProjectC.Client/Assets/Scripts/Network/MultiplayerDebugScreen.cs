@@ -14,6 +14,7 @@ namespace ProjectC.Client
         int playerId, gameNumber, cardId, targetId;
         long sequence, lastEvents;
         bool connecting, pending, resyncing;
+        public ActionChoiceView PendingChoice { get; private set; }
         StateView state;
         LobbyView lobby;
         DeckView[] decks = Array.Empty<DeckView>();
@@ -43,7 +44,7 @@ namespace ProjectC.Client
         void Note(string text) { log.Enqueue(text); while (log.Count > 100) log.Dequeue(); NoticeReceived?.Invoke(text); }
         void ResetEpoch(int game)
         {
-            commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
+            PendingChoice=null; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
             gameNumber = game; sequence = lastEvents = 0; state = null;
             cardId = targetId = 0; selectedCard = null; pending = resyncing = false;
         }
@@ -53,7 +54,7 @@ namespace ProjectC.Client
         }
         internal bool Connected => transport != null && transport.Connected;
         internal void ConnectTo(string serverAddress) { address = serverAddress; Connect(); }
-        internal void DisconnectNetwork() { commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke(); transport?.Dispose(); connecting = pending = resyncing = false; }
+        internal void DisconnectNetwork() { PendingChoice=null;commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke(); transport?.Dispose(); connecting = pending = resyncing = false; }
         internal void CreateMatch() { pending = true; Send(Request("CreateMatch") + ",\"DeckId\":" + Quote(selectedDeck)); }
         internal void JoinMatch(string id) { pending = true; Send(Request("JoinMatch") + ",\"MatchId\":" + Quote(id) + ",\"DeckId\":" + Quote(selectedDeck)); }
         internal void SetReady(string deck, bool ready = true) { selectedDeck = deck; LobbyAction("SetReady", ",\"Ready\":" + (ready ? "true" : "false") + ",\"DeckId\":" + Quote(deck)); }
@@ -79,7 +80,7 @@ namespace ProjectC.Client
         void Resync()
         {
             if (string.IsNullOrEmpty(matchId) || transport == null || !transport.Connected) return;
-            commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
+            PendingChoice=null; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
             resyncing = true;
             Send(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId));
         }
@@ -99,6 +100,14 @@ namespace ProjectC.Client
                 groups.Add("[" + string.Join(",",entries) + "]");
             }
             return SubmitJson("{\"Type\":\"ActivateEffect\",\"CardId\":" + source + ",\"EffectId\":" + effect + ",\"Targets\":[" + string.Join(",",groups) + "]}");
+        }
+        internal bool SendPlayerAction(int source,int effect) => SubmitJson("{\"Type\":\"PlayerAction\",\"CardId\":"+source+",\"EffectId\":"+effect+"}");
+        internal bool SendCancelChoice() => PendingChoice!=null && PendingChoice.CanCancel && SubmitJson("{\"Type\":\"CancelAction\",\"ChoiceId\":"+Quote(PendingChoice.ChoiceId)+"}");
+        internal bool SendChoice(List<string> choices)
+        {
+            if(PendingChoice==null) return false;
+            var values=new List<string>();foreach(var choice in choices) values.Add(Quote(choice));
+            return SubmitJson("{\"Type\":\"ResolveChoice\",\"ChoiceId\":"+Quote(PendingChoice.ChoiceId)+",\"Choices\":["+string.Join(",",values)+"]}");
         }
         bool SubmitJson(string command)
         {
@@ -138,7 +147,7 @@ namespace ProjectC.Client
         {
             var message = JsonUtility.FromJson<MessageView>(json);
             if (message.ProtocolVersion != 2) throw new InvalidOperationException("Server/client protocol mismatch; rebuild both");
-            if (message.Type == "DeckCatalog") { decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; return; }
+            if (message.Type == "DeckCatalog") { decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; if(decks.Length>0 && !Array.Exists(decks,d=>d.Id==selectedDeck)) selectedDeck=decks[0].Id;return; }
             if (message.Type == "MatchCreated" || message.Type == "MatchJoined")
             {
                 matchId = message.MatchId; playerId = message.PlayerId; token = message.SessionToken;
@@ -172,6 +181,12 @@ namespace ProjectC.Client
                     lastEvents = message.SequenceNumber;
                     foreach (var e in JsonUtility.FromJson<EventsMessage>(json).Payload) { Note(EventText(e)); EventReceived?.Invoke(e); }
                     break;
+                case "CommandPending": break;
+                case "ActionChoiceRequired":
+                    if(message.SequenceNumber<sequence) break;
+                    PendingChoice=JsonUtility.FromJson<ActionChoiceMessage>(json).Payload;
+                    commandRequestId=null;acceptedSequence=-1;pending=resyncing=false;
+                    break;
                 case "CommandAccepted":
                     if(message.RequestId==commandRequestId) acceptedSequence=message.SequenceNumber;
                     break;
@@ -179,6 +194,7 @@ namespace ProjectC.Client
                     if (message.SequenceNumber < sequence) return;
                     state = JsonUtility.FromJson<SnapshotMessage>(json).Payload;
                     sequence = lastEvents = message.SequenceNumber; resyncing=false;
+                    if(state.ResolvingPlayerId==0) PendingChoice=null;
                     if(commandRequestId!=null && acceptedSequence>=0 && sequence>=acceptedSequence)
                     { commandRequestId=null; acceptedSequence=-1; pending=false; CommandFinished?.Invoke(true,""); }
                     else if(commandRequestId==null) pending=false;
@@ -243,6 +259,8 @@ namespace ProjectC.Client
                 case 14: return "Card effect resolved";
                 case 15: return "Card manifested";
                 case 16: return "Card healed";
+                case 18: return "Player "+e.TargetPlayerId+" Yokai power: "+e.YokaiPowerAfter;
+                case 19: return "Normal spell activated";
                 case 17: return "Card #" + e.TargetCardId + " stats changed (ATK " + e.AttackAfter + ")";
                 default: return "Game event " + e.Type;
             }

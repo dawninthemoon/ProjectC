@@ -1,0 +1,9 @@
+{"Cards":[
+ {"Id":10,"Name":"Test Striker","Attack":3,"MaxHp":5,"Traits":["Striker"],"AllowedManifestations":[12]},
+ {"Id":11,"Name":"Test Scout","Attack":3,"MaxHp":5,"Traits":["Striker"]},
+ {"Id":12,"Name":"Test Striker Manifestation","Attack":4,"MaxHp":8,"Traits":["Striker"]},
+ {"Id":20,"Name":"Test Warden","Attack":2,"MaxHp":3,"Traits":["Warden"],"Effects":[
+   {"Id":1,"Type":"Triggered","Trigger":"OnSummoned","Actions":[{"Operation":"ModifyStats","Targets":{"Category":"Self","Zones":["Field"]},"AttackDelta":1}]}]},
+ {"Id":21,"Name":"Test Sentinel","Attack":2,"MaxHp":3,"Traits":["Warden"],"Effects":[
+   {"Id":1,"Type":"Triggered","Trigger":"OnSummoned","Actions":[{"Operation":"ModifyStats","Targets":{"Category":"Self","Zones":["Field"]},"AttackDelta":1}]}]}
+]}

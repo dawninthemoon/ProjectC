@@ -2,6 +2,7 @@
 #include "ProjectC/GameState.hpp"
 #include "GameOperations.hpp"
 #include "ProjectC/CardEffects.hpp"
+#include "ProjectC/GameInitializer.hpp"
 
 #include <algorithm>
 #include <set>
@@ -16,6 +17,8 @@ namespace ProjectC::GameCore
         case Zone::Hand: return &player.Hand;
         case Zone::Field: return &player.Field;
         case Zone::Graveyard: return &player.Graveyard;
+        case Zone::Exile: return &player.Exile;
+        case Zone::HiddenExile: return &player.HiddenExile;
         }
         return nullptr;
     }
@@ -28,6 +31,8 @@ namespace ProjectC::GameCore
         case Zone::Hand: return &player.Hand;
         case Zone::Field: return &player.Field;
         case Zone::Graveyard: return &player.Graveyard;
+        case Zone::Exile: return &player.Exile;
+        case Zone::HiddenExile: return &player.HiddenExile;
         }
         return nullptr;
     }
@@ -38,7 +43,7 @@ namespace ProjectC::GameCore
         for (CardDefinition const& definition : gameState.Definitions)
         {
             if (definition.Id <= 0 || definition.Attack < 0 || definition.MaxHp <= 0
-                || definition.Type != CardType::Monster || !definitions.insert(definition.Id).second)
+                || (definition.Type != CardType::Monster && definition.Type != CardType::Spell) || !definitions.insert(definition.Id).second)
             {
                 return false;
             }
@@ -52,7 +57,7 @@ namespace ProjectC::GameCore
             {
                 return false;
             }
-            for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard })
+            for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard, Zone::Exile, Zone::HiddenExile })
             {
                 for (CardInstance const& card : *GetZone(player, zone))
                 {
@@ -93,10 +98,22 @@ namespace ProjectC::GameCore
         {
             return ZoneResult::DestinationFull;
         }
+        if (to == Zone::Field && !gameState.Definitions.empty())
+        {
+            auto definition=FindDefinition(gameState,card->CurrentDefinitionId);
+            if(!definition || definition->Type!=CardType::Monster) return ZoneResult::InvalidZone;
+        }
         if (to == Zone::Field && card->IsDestroyed()) return ZoneResult::DestroyedCard;
         CardInstance moved = *card;
         if (to == Zone::Field) Detail::MarkFieldEntry(gameState, *player, moved);
-        if (to == Zone::Graveyard) moved.CurrentDefinitionId = moved.OriginalDefinitionId;
+        if (to == Zone::Graveyard)
+        {
+            moved.CurrentDefinitionId = moved.OriginalDefinitionId;
+            if(auto definition=FindDefinition(gameState,moved.OriginalDefinitionId))
+                for(auto const& archetype:definition->Archetypes)
+                    if(std::find(player->GraveyardArchetypesThisTurn.begin(),player->GraveyardArchetypesThisTurn.end(),archetype)==player->GraveyardArchetypesThisTurn.end())
+                        player->GraveyardArchetypesThisTurn.push_back(archetype);
+        }
         destination->push_back(moved);
         source->erase(card);
         return ZoneResult::Success;

@@ -1,3 +1,5 @@
+**2026-10-31 갱신:** 소환 후유증 설정, 요력, 일반 주문, 버리기·희생·부활·제외·현현의 실험 규칙은 [HyakkiYagyo.md](HyakkiYagyo.md)에 정리했다. 아래의 규칙은 기존 테스트 규칙이며 새 수치는 별도 `HyakkiYagyo/Decks.json`을 사용할 때만 적용된다.
+
 # Project C — 현재 TCG 규칙과 효과 실행 계약
 
 현재 GameCore는 기존 카드/Zone/Command/Event/Replay 구조 위에 확정 TCG 규칙을 추가한다.

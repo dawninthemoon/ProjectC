@@ -17,6 +17,10 @@ namespace ProjectC::GameCore
         std::vector<std::string> Traits;
         std::vector<CardDefinitionId> AllowedManifestations;
         std::vector<EffectDefinition> Effects;
+        std::vector<std::string> Archetypes;
+        std::string Rarity;
+        std::string ArtKey;
+        bool MainDeckEligible = true;
 
         bool operator==(CardDefinition const&) const = default;
     };

@@ -24,6 +24,7 @@ namespace ProjectC::GameCore::Detail
             case GameEventType::CardDamaged: return TriggerCondition::OnDamaged;
             case GameEventType::TurnStarted: return TriggerCondition::OnTurnStarted;
             case GameEventType::TurnEnded: return TriggerCondition::OnTurnEnded;
+            case GameEventType::CardTransformed: return TriggerCondition::OnManifested;
             default: return TriggerCondition::None;
             }
         }
@@ -60,8 +61,12 @@ namespace ProjectC::GameCore::Detail
                                 if (!card.IsDestroyed())
                                     Register(state, owner.Id, card.Id, card.CurrentDefinitionId, condition, pending);
                 }
-                else Register(state, event.TargetPlayerId, event.TargetCardId,
-                    event.CurrentDefinitionId, condition, pending);
+                else
+                {
+                    Register(state,event.TargetPlayerId,event.TargetCardId,event.CurrentDefinitionId,condition,pending);
+                    if(event.Type==GameEventType::CardSummoned && (event.SummonOrigin==0 || event.SummonOrigin==3))
+                        Register(state,event.TargetPlayerId,event.TargetCardId,event.CurrentDefinitionId,event.SummonOrigin==0?TriggerCondition::OnNormalSummoned:TriggerCondition::OnRevived,pending);
+                }
             }
             if (pending.empty()) return CommandError::Success;
             if (resolved++ >= state.Config.TriggerResolutionLimit) return CommandError::TriggerLimitReached;
@@ -75,6 +80,7 @@ namespace ProjectC::GameCore::Detail
                 state = std::move(candidate);
                 events.insert(events.end(), produced.begin(), produced.end());
             }
+            else if(outcome==CommandError::ChoiceRequired) { state.SelectionContext.Request=candidate.SelectionContext.Request;return outcome; }
             else
             {
                 // An automatic trigger with no legal target fizzles; it cannot undo the originating action.

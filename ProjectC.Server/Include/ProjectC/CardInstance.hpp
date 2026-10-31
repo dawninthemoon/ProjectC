@@ -20,6 +20,8 @@ namespace ProjectC::GameCore
         std::uint64_t OwnerTurnAtEntry = 0;
         bool IgnoreSummoningSickness = false;
         bool HasManifested = false;
+        int TemporaryAttack = 0;
+        int DirectAttackRestrictedTurn = 0;
 
         bool operator==(CardInstance const&) const = default;
 

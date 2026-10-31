@@ -18,6 +18,7 @@ add_library(ProjectCGameCore STATIC
     Source/GameReplay.cpp
     Source/GameOperations.cpp
     Source/TargetSelection.cpp
+    Source/EffectActivation.cpp
     Source/CardEffects.cpp
     Source/CardMutations.cpp
     Source/TriggeredEffects.cpp
@@ -45,6 +46,7 @@ add_executable(ProjectCTests
     Tests/GameIntegrationTests.cpp
     Tests/CardRulesTests.cpp
     Tests/EffectTests.cpp
+    Tests/ContentTests.cpp
 )
 
 target_link_libraries(ProjectCTests

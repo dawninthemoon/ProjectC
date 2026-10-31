@@ -11,7 +11,7 @@ using ProjectC.Client;
 
 namespace ProjectC.Tests
 {
-    public class MultiplayerPlayModeTests
+    public partial class MultiplayerPlayModeTests
     {
         Process server;
         readonly System.Collections.Generic.List<GameObject> objects = new System.Collections.Generic.List<GameObject>();
@@ -87,7 +87,7 @@ namespace ProjectC.Tests
             for (int i = 0; i + 1 < args.Length; ++i) if (args[i] == "-projectcServerPath") path = args[i + 1];
             Assert.IsTrue(File.Exists(path), "Build the C++ server or pass -projectcServerPath");
             var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); int port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
-            server = Process.Start(new ProcessStartInfo(path, "--port " + port) { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true });
+            server = Process.Start(new ProcessStartInfo(path, "--port " + port+" --data \""+Path.Combine(Path.GetDirectoryName(path),"TestData")+"\"") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true });
             var startup = server.StandardOutput.ReadLineAsync();
             yield return Until(() => startup.IsCompleted);
             StringAssert.Contains("listening", startup.Result);
@@ -203,7 +203,7 @@ namespace ProjectC.Tests
             yield return Command(b,"PlayCard",target);yield return Command(b,"EndTurn");yield return Until(()=>a.Sequence==b.Sequence);yield return null;
             var ui=a.GetComponent<BattlePresenter>();var own=ui.OwnField.Widgets[0];own.OnPointerDown(null);own.OnPointerClick(null);
             var context=ui.GetComponentInChildren<ContextActionView>();Assert.IsNotNull(context);
-            var actions=context.GetComponentsInChildren<UnityEngine.UI.Button>();Assert.AreEqual(2,actions.Length);
+            var actions=context.GetComponentsInChildren<UnityEngine.UI.Button>();Assert.AreEqual(3,actions.Length);
             actions[0].onClick.Invoke();Assert.AreEqual(BattleInputState.SelectingEffectTarget,ui.Interaction.State);
             var enemy=ui.EnemyField.Widgets[0];Assert.AreEqual("VALID TARGET",enemy.Status.text);enemy.OnPointerClick(null);
             Assert.AreEqual("TARGET SELECTED",enemy.Status.text);

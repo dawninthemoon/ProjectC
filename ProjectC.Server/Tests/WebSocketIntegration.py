@@ -83,6 +83,8 @@ class Peer:
     def until(self, kind):
         for _ in range(64):
             data = self.read()
+            if kind == 'CommandAccepted' and data['Type'] in ('CommandRejected','ServerError'):
+                raise AssertionError(('unexpected rejection', data.get('Reason')))
             if data['Type'] == kind: return data
         raise AssertionError('message not received: '+kind)
     def close(self):
@@ -239,7 +241,7 @@ def run(port,check_limits=False,check_expiry=False):
 if __name__=='__main__':
     with socket.socket() as probe:
         probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
-    server=subprocess.Popen([sys.argv[1],'--port',str(port),'--max-matches','2','--waiting-timeout','2'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+    server=subprocess.Popen([sys.argv[1],'--port',str(port),'--max-matches','2','--waiting-timeout','2','--data',os.path.join(os.path.dirname(__file__),'LegacyData')],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
     tokens=[]
     try:
         line=server.stdout.readline();assert 'listening' in line,line

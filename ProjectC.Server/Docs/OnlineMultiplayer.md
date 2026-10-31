@@ -1,3 +1,5 @@
+**2026-10-31 갱신:** 실험 카드 데이터와 `PlayerAction`·`ResolveChoice`·`CancelAction`, 비공개 선택 토큰, 재접속 중 선택 복구는 [HyakkiYagyo.md](HyakkiYagyo.md)에 정리했다. Windows 및 Ubuntu WSL CTest는 각각 4/4, GameCore는 308개 그룹, Unity PlayMode는 6/6 통과했다. 이번 변경의 Docker 검증은 로컬 Docker 엔진이 꺼져 있어 미수행이다.
+
 # Online Multiplayer — Match Management & Playable Client
 
 2026-10-30. 현재 구현은 JSON WebSocket **ProtocolVersion 2**다. 이전 `local-1` 단일 매치 프로토콜(v1)과 호환되지 않으므로 서버와 Unity 클라이언트를 함께 다시 빌드한다. 기존 GameCore 규칙과 실행 타깃은 유지했다.

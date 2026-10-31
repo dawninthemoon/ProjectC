@@ -17,7 +17,8 @@ namespace ProjectC.Client
             {
                 if(!action.CanActivate) continue;
                 var button=Instantiate(ActionPrefab,content); buttons.Add(button);
-                button.GetComponentInChildren<Text>().text=action.IsManifest?"현현":"EFFECT #"+action.EffectId;
+                button.GetComponentInChildren<Text>().text=action.IsManifest?"현현":widget.Card.CardType==1?"ACTIVATE":"EFFECT #"+action.EffectId;
+                if(action.YokaiCost>0) button.GetComponentInChildren<Text>().text+=" / YOKAI "+action.YokaiCost;
                 button.onClick.AddListener(()=>activate(action));
             }
             gameObject.SetActive(buttons.Count>0);

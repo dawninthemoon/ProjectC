@@ -39,7 +39,7 @@ namespace ProjectC.Client
             BindReferences(); Card=hidden?null:card; Hidden=hidden; InHand=hand; IsSelected=chosen;
             hint=target?TargetHint.Available:TargetHint.None;
             Title.text=hidden?"HIDDEN CARD":card?.Name??"";
-            Stats.text=card==null || hidden?"":$"{card.Attack} ATK   {card.Hp}/{card.MaxHp} HP";
+            Stats.text=card==null || hidden?"":card.CardType==1?"SPELL":$"{card.Attack} ATK   {card.Hp}/{card.MaxHp} HP";
             Art.color=hidden?new Color(.07f,.13f,.2f):card!=null && card.EffectCount>0?new Color(.22f,.2f,.33f):new Color(.1f,.29f,.31f);
             Symbol.text=hidden?"C":card!=null && card.EffectCount>0?"W":"S";
             RenderStatus();
@@ -51,9 +51,9 @@ namespace ProjectC.Client
         void RenderStatus()
         {
             if(!bound) return;
-            Frame.color=hint==TargetHint.Focused?new Color(1,.8f,.35f):hint==TargetHint.Available?new Color(.38f,.9f,.71f):hint==TargetHint.Unavailable?new Color(.22f,.25f,.29f):IsSelected?new Color(.93f,.73f,.36f):Card!=null && (Card.CanSummon || Card.CanAttack)?new Color(.24f,.64f,.58f):new Color(.28f,.36f,.43f);
+            Frame.color=hint==TargetHint.Focused?new Color(1,.8f,.35f):hint==TargetHint.Available?new Color(.38f,.9f,.71f):hint==TargetHint.Unavailable?new Color(.22f,.25f,.29f):IsSelected?new Color(.93f,.73f,.36f):Card!=null && (Card.CanSummon || Card.CanAttack || Card.Activations!=null && Array.Exists(Card.Activations,a=>a.CanActivate))?new Color(.24f,.64f,.58f):new Color(.28f,.36f,.43f);
             Accent.color=Frame.color;
-            Status.text=Hidden?"HIDDEN":Card==null?"":hint==TargetHint.Focused?"TARGET SELECTED":hint==TargetHint.Available?"VALID TARGET":hint==TargetHint.Unavailable?"NOT A TARGET":IsSelected?"SELECTED":InHand?(Card.CanSummon?"DRAG TO SUMMON":"IN HAND"):Card.HasAttacked?"ATTACK USED":Card.SummoningSick?"SUMMONING SICKNESS":Card.CanAttack?"DRAG TO ATTACK":"ON FIELD";
+            Status.text=Hidden?"HIDDEN":Card==null?"":hint==TargetHint.Focused?"TARGET SELECTED":hint==TargetHint.Available?"VALID TARGET":hint==TargetHint.Unavailable?"NOT A TARGET":IsSelected?"SELECTED":InHand?(Card.CardType==1?(Card.Activations!=null && Array.Exists(Card.Activations,a=>a.CanActivate)?"DRAG TO ACTIVATE":"NO LEGAL ACTIVATION"):Card.CanSummon?"DRAG TO SUMMON":Card.Activations!=null && Array.Exists(Card.Activations,a=>a.CanActivate)?"CLICK / SPECIAL ACTION":"IN HAND"):Card.HasAttacked?"ATTACK USED":Card.SummoningSick?"SUMMONING SICKNESS":Card.CanAttack?"DRAG TO ATTACK":"ON FIELD";
         }
         void Update()
         {

@@ -19,17 +19,22 @@ namespace ProjectC::GameCore
             {
                 if (effect.Id <= 0 || !ids.insert(effect.Id).second || effect.Actions.empty()
                     || effect.Type < EffectType::Activated || effect.Type > EffectType::Replacement
-                    || effect.Trigger < TriggerCondition::None || effect.Trigger > TriggerCondition::OnTurnEnded
+                    || effect.Trigger < TriggerCondition::None || effect.Trigger > TriggerCondition::OnManifested
                     || (effect.Type == EffectType::Triggered && effect.Trigger == TriggerCondition::None)) return false;
+                if(effect.PerTurnLimit<0 || effect.Costs.size()>16 || (effect.ActivationZone!=Zone::Hand && effect.ActivationZone!=Zone::Field)) return false;
+                for(auto const& cost:effect.Costs)
+                    if(cost.Kind<CostKind::YokaiPower || cost.Kind>CostKind::HiddenExileTop || cost.Amount<0
+                        || cost.Targets.MinCount>cost.Targets.MaxCount || cost.Targets.MaxCount>128 || cost.Targets.MaxCount==0) return false;
                 for (EffectAction const& action : effect.Actions)
                 {
                     TargetRule const& rule = action.Targets;
-                    if (action.Operation < EffectOperation::Draw || action.Operation > EffectOperation::Transform
+                    if (action.Operation < EffectOperation::Draw || action.Operation > EffectOperation::GainYokaiPower
                         || action.Amount < 0 || rule.MinCount > rule.MaxCount || rule.MaxCount == 0
                         || rule.Category < TargetCategory::Self || rule.Category > TargetCategory::EnemyGraveyard
-                        || rule.Type != CardType::Monster) return false;
+                        || (rule.Type != CardType::Monster && rule.Type != CardType::Spell && rule.Type != CardType::Any)) return false;
                     for (Zone const zone : rule.Zones)
-                        if (zone < Zone::Deck || zone > Zone::Graveyard) return false;
+                        if (zone < Zone::Deck || zone > Zone::Exile) return false;
+                    if(action.YokaiGainAmount<0 || rule.MaxAttack< -1 || (action.TemporaryStats && action.MaxHpDelta!=0)) return false;
                     if (action.Operation == EffectOperation::Transform
                         && FindDefinition(state, action.TransformDefinitionId) == nullptr) return false;
                 }
@@ -47,7 +52,9 @@ namespace ProjectC::GameCore
         if (state.ActivePlayerId != command.Player) return CommandResult{ .Code = CommandError::NotActivePlayer };
         if (!state.TurnStarted) return CommandResult{ .Code = CommandError::TurnNotStarted };
         if (state.Phase != TurnPhase::Main) return CommandResult{ .Code = CommandError::WrongPhase };
-        CardInstance const* source = FindCard(*owner, command.SourceCard);
+        CardInstance const* source=nullptr;Zone sourceZone=Zone::Field;
+        for(auto zone:{Zone::Hand,Zone::Field}) for(auto const& card:*GetZone(*owner,zone))
+            if(card.Id==command.SourceCard) { source=&card;sourceZone=zone; }
         if (source == nullptr || source->IsDestroyed()) return CommandResult{ .Code = CommandError::CardNotFound };
         CardDefinition const* definition = FindDefinition(state, source->CurrentDefinitionId);
         if (definition == nullptr) return CommandResult{ .Code = CommandError::InvalidDefinition };
@@ -55,10 +62,26 @@ namespace ProjectC::GameCore
             [&](EffectDefinition const& entry) { return entry.Id == command.EffectId; });
         if (effect == definition->Effects.end()) return CommandResult{ .Code = CommandError::EffectNotFound };
         if (effect->Type != EffectType::Activated) return CommandResult{ .Code = CommandError::UnsupportedEffect };
+        if(effect->ActivationZone!=sourceZone) return CommandResult{.Code=CommandError::WrongZone};
         GameState candidate = state;
         CommandResult result;
+        bool spell=definition->Type==CardType::Spell;
+        if(spell && sourceZone!=Zone::Hand) return CommandResult{.Code=CommandError::WrongZone};
+        if(spell) result.Events.push_back(GameEvent{.Type=GameEventType::SpellActivated,.SourcePlayerId=command.Player,.SourceCardId=command.SourceCard});
         result.Code = Detail::ResolveEffect(candidate, command.Player, command.SourceCard, *effect,
-            &command.Targets, result.Events);
+            candidate.SelectionContext.Enabled?nullptr:&command.Targets, result.Events);
+        if(result.Code==CommandError::Success && spell)
+        {
+            auto player=FindPlayer(candidate,command.Player);
+            auto card=std::find_if(player->Hand.begin(),player->Hand.end(),[&](auto const& c){return c.Id==command.SourceCard;});
+            if(card==player->Hand.end()) return CommandResult{.Code=CommandError::InvalidState};
+            auto moved=*card;player->Hand.erase(card);player->Graveyard.push_back(moved);
+            auto movement=Detail::Movement(moved,Zone::Hand,Zone::Graveyard);
+            if(!result.Events.empty() && result.Events.back().Type==GameEventType::GameFinished) result.Events.insert(result.Events.end()-1,movement);
+            else result.Events.push_back(movement);
+            for(auto const& archetype:definition->Archetypes)
+                if(std::find(player->GraveyardArchetypesThisTurn.begin(),player->GraveyardArchetypesThisTurn.end(),archetype)==player->GraveyardArchetypesThisTurn.end()) player->GraveyardArchetypesThisTurn.push_back(archetype);
+        }
         return Detail::CommitCommand(state, std::move(candidate), std::move(result));
     }
 
@@ -106,6 +129,13 @@ namespace ProjectC::GameCore::Detail
         EffectDefinition const& effect, std::vector<std::vector<EffectTarget>> const* selections,
         std::vector<GameEvent>& events)
     {
+        CardDefinitionId definitionId=0;
+        if(auto owner=FindPlayer(state,actor)) for(auto zone:{Zone::Hand,Zone::Field,Zone::Graveyard})
+            for(auto const& card:*GetZone(*owner,zone)) if(card.Id==source) definitionId=card.CurrentDefinitionId;
+        auto condition=CheckEffectConditions(state,actor,definitionId,effect);
+        if(condition!=CommandError::Success) return condition;
+        auto paid=PayEffectCosts(state,actor,source,effect,events);
+        if(paid!=CommandError::Success) return paid;
         if (selections != nullptr && selections->size() != effect.Actions.size())
             return CommandError::InvalidTargetCount;
         events.push_back(GameEvent{ .Type = GameEventType::EffectActivated,
@@ -113,8 +143,16 @@ namespace ProjectC::GameCore::Detail
         for (std::size_t index = 0; index < effect.Actions.size(); ++index)
         {
             EffectAction const& action = effect.Actions[index];
-            auto const targets = selections == nullptr
-                ? SelectAutomaticTargets(state, actor, source, action.Targets) : (*selections)[index];
+            bool summons=action.Operation==EffectOperation::SummonFromDeck || action.Operation==EffectOperation::SummonFromHand || action.Operation==EffectOperation::SummonFromGraveyard;
+            auto owner=FindPlayer(state,actor);
+            if(summons && owner && owner->Field.size()+action.Targets.MinCount>state.Config.FieldLimit) return CommandError::FieldFull;
+            std::vector<EffectTarget> targets;
+            if(selections==nullptr)
+            {
+                auto selected=SelectEffectTargets(state,actor,source,effect.Id,action.Targets,false,action.AllTargets,targets);
+                if(selected!=CommandError::Success) return selected;
+            }
+            else targets=(*selections)[index];
             CommandError const validation = ValidateTargets(state, actor, source, action.Targets, targets);
             if (validation != CommandError::Success) return validation;
             for (EffectTarget const& target : targets)
@@ -130,6 +168,8 @@ namespace ProjectC::GameCore::Detail
             }
             if (state.Status == GameStatus::Finished) break;
         }
+        RecordEffectUse(state,actor,definitionId,effect);
+        state.SelectionContext.CostCards.clear();
         GameEvent resolved{ .Type = GameEventType::EffectResolved,
             .SourcePlayerId = actor, .SourceCardId = source, .EffectId = effect.Id };
         if (!events.empty() && events.back().Type == GameEventType::GameFinished)
@@ -148,7 +188,7 @@ namespace ProjectC::GameCore::Detail
         {
             state = std::move(candidate);
         }
-        else result.Events.clear();
+        else { if(result.Code==CommandError::ChoiceRequired) result.Choice=candidate.SelectionContext.Request;result.Events.clear(); }
         return result;
     }
 }

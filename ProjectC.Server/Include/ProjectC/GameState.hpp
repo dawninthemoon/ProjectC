@@ -32,6 +32,33 @@ namespace ProjectC::GameCore
     enum class GameStatus { Running, Finished };
     enum class GameEndReason { None, LifeDepleted, DeckExhausted };
 
+    struct ChoiceCandidate
+    {
+        EffectTarget Target;
+        CardInstance Card; // Internal candidate data; never serialize directly.
+        bool operator==(ChoiceCandidate const&) const = default;
+    };
+    struct EffectChoiceRequest
+    {
+        PlayerId Player = 0;
+        CardInstanceId Source = 0;
+        int EffectId = 0;
+        bool IsCost = false;
+        TargetRule Rule;
+        std::vector<ChoiceCandidate> Candidates;
+        bool operator==(EffectChoiceRequest const&) const = default;
+    };
+    // Candidate-only execution context, cleared before commit/public projection.
+    struct EffectSelectionContext
+    {
+        bool Enabled = false;
+        std::vector<std::vector<EffectTarget>> Selections;
+        std::size_t Cursor = 0;
+        EffectChoiceRequest Request;
+        std::vector<CardInstanceId> CostCards;
+        bool operator==(EffectSelectionContext const&) const = default;
+    };
+
     struct GameState
     {
         std::array<PlayerState, 2> Players;
@@ -44,6 +71,7 @@ namespace ProjectC::GameCore
         PlayerId WinnerPlayerId = 0;
         bool TurnStarted = false;
         GameEndReason EndReason = GameEndReason::None;
+        EffectSelectionContext SelectionContext;
 
         bool operator==(GameState const&) const = default;
     };

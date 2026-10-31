@@ -1,3 +1,4 @@
+void RunContentTests(int& testCount, int& failedTests);
 #include "ProjectC/GameCommand.hpp"
 
 #include <iostream>
@@ -493,6 +494,7 @@ int main()
     RunGameIntegrationTests(testCount, failedTests);
     RunCardRulesTests(testCount, failedTests);
     RunEffectTests(testCount, failedTests);
+    RunContentTests(testCount, failedTests);
 
     if (failedTests > 0)
     {

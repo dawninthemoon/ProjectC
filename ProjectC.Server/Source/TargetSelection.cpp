@@ -65,7 +65,9 @@ namespace ProjectC::GameCore
             default: return CommandError::InvalidTarget;
             }
             CardDefinition const* definition = FindDefinition(state, card->CurrentDefinitionId);
-            if (definition == nullptr || definition->Type != rule.Type) return CommandError::InvalidTarget;
+            if (definition == nullptr || (rule.Type!=CardType::Any && definition->Type != rule.Type)) return CommandError::InvalidTarget;
+            if(!rule.RequiredArchetype.empty() && std::find(definition->Archetypes.begin(),definition->Archetypes.end(),rule.RequiredArchetype)==definition->Archetypes.end()) return CommandError::InvalidTarget;
+            if(rule.MaxAttack>=0 && (target.Location==Zone::Field?card->Attack:definition->Attack)>rule.MaxAttack) return CommandError::InvalidTarget;
             if (!rule.RequiredTrait.empty() && std::find(definition->Traits.begin(), definition->Traits.end(),
                 rule.RequiredTrait) == definition->Traits.end()) return CommandError::InvalidTarget;
         }
@@ -81,7 +83,7 @@ namespace ProjectC::GameCore
                 && event.TargetPlayerId != viewer
                 && (event.FromZone == Zone::Deck || event.FromZone == Zone::Hand
                     || event.ToZone == Zone::Deck || event.ToZone == Zone::Hand);
-            if (privateMove)
+            if (privateMove || event.FromZone==Zone::HiddenExile || event.ToZone==Zone::HiddenExile)
             {
                 event.OriginalDefinitionId = 0;
                 event.CurrentDefinitionId = 0;

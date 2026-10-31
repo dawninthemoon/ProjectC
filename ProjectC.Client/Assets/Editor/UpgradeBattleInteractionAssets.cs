@@ -62,7 +62,9 @@ namespace ProjectC.Client.Editor
             var p=root.GetComponent<BattlePresenter>(); var table=Find<RectTransform>(root,"Table");
             foreach(var t in root.GetComponentsInChildren<Text>(true)) { t.font=font;t.verticalOverflow=VerticalWrapMode.Overflow; }
             p.OwnPlayer.name="OwnPlayer";p.EnemyPlayer.name="EnemyPlayer";
-            Move(p.EnemyPlayer,735,20,450,100);Move(p.OwnPlayer,40,860,450,100);
+            Move(p.EnemyPlayer,735,10,450,110);Move(p.OwnPlayer,40,860,450,110);
+            foreach(var player in new[]{p.OwnPlayer,p.EnemyPlayer})
+            { var counts=Find<Text>(player.gameObject,"Counts");Move(counts,18,58,335,48);counts.fontSize=14; }
             Move(p.EnemyHand,470,125,980,100);Move(p.EnemyField,240,248,1440,220);Move(p.OwnField,240,510,1440,230);Move(p.Hand,460,805,1000,260);
             foreach(var zone in new[]{p.Hand,p.OwnField,p.EnemyField,p.EnemyHand})
             {
@@ -133,7 +135,7 @@ namespace ProjectC.Client.Editor
             var vl=Ensure<VerticalLayoutGroup>(actionContent);vl.spacing=4;vl.childControlHeight=true;vl.childForceExpandHeight=false;
             var cr=(RectTransform)actionContent.transform;cr.anchorMin=Vector2.zero;cr.anchorMax=Vector2.one;cr.offsetMin=new Vector2(10,10);cr.offsetMax=new Vector2(-10,-10);
             Ensure<ContextActionView>(context).ActionPrefab=actionAsset;context.SetActive(false);
-            var picker=Box(table,"EffectTargetPicker",20,640,410,410,Panel,true);Ensure<EffectTargetPicker>(picker).CandidatePrefab=actionAsset;
+            var picker=Box(table,"EffectTargetPicker",215,290,410,410,Panel,true);Ensure<EffectTargetPicker>(picker).CandidatePrefab=actionAsset;
             Label(picker.transform,"Title","EFFECT TARGETS",18,10,374,65,18);
             var pv=Box(picker.transform,"Viewport",18,85,374,250,Ink,true);Ensure<RectMask2D>(pv);
             var pc=Box(pv.transform,"Candidates",0,0,374,250,Color.clear);var pl=Ensure<VerticalLayoutGroup>(pc);pl.spacing=5;pl.childControlHeight=true;pl.childForceExpandHeight=false;

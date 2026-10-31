@@ -6,6 +6,7 @@
 #include <memory>
 #include <map>
 #include <array>
+#include <optional>
 namespace ProjectC::Network
 {
 using Clock = std::chrono::steady_clock;
@@ -72,6 +73,19 @@ private:
     int hostPlayer = 0;
     ReplayRecord journal;
     bool archived = true;
+    struct PendingAction
+    {
+        GameCore::PlayerActionCommand Command;
+        GameCore::EffectChoiceRequest Choice;
+        std::string ChoiceId;
+        bool CanCancel = true;
+        std::map<std::string,GameCore::EffectTarget> Options;
+        Json Payload;
+        std::vector<std::pair<int,std::string>> Requests;
+    };
+    std::optional<PendingAction> pendingAction;
+    void PrepareChoice(GameCore::PlayerActionCommand const& command,GameCore::EffectChoiceRequest const& choice);
+    void SendChoice(std::shared_ptr<ClientSession> const& client) const;
     int SeatIndex(int player) const;
     void SendSnapshot(std::shared_ptr<ClientSession> const& client, std::string const& request = "") const;
     void Broadcast(std::vector<GameCore::GameEvent> const& events);

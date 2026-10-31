@@ -25,6 +25,7 @@ namespace ProjectC.Client
         }
         public void Add(string line)
         {
+            if(line=="Connected") ClearFeedback();
             BindReferences();bool follow=Scroll.verticalNormalizedPosition<=.035f || Full.preferredHeight<Scroll.viewport.rect.height;
             Vector2 old=Scroll.content.anchoredPosition;float oldHeight=Full.preferredHeight;
             lines.Enqueue(line);while(lines.Count>200) lines.Dequeue();Full.text=string.Join("\n",lines);

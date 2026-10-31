@@ -22,6 +22,7 @@ namespace ProjectC::GameCore::Detail
         card.OwnerTurnAtEntry = owner.TurnsStarted;
         card.HasAttackedThisTurn = false;
         card.IgnoreSummoningSickness = false;
+        card.TemporaryAttack=0;card.DirectAttackRestrictedTurn=0;
     }
 
     void FinishGame(GameState& state, PlayerId loser, GameEndReason reason, std::vector<GameEvent>& events)

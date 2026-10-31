@@ -1,3 +1,5 @@
+**2026-10-31 갱신:** 실험용 백귀야행 덱에 손패 주문 드래그, 서버의 비공개 대상 선택, 요력 및 자원 표시를 연결했다. 자세한 실행·프로토콜 설명은 [HyakkiYagyo.md](../../ProjectC.Server/Docs/HyakkiYagyo.md)를 참조한다. 아래의 기존 규칙과 CTest 3/3 기록은 이전 고정 데이터 빌드 기준이다. 현재 Windows CTest는 4/4, Unity PlayMode는 6/6 통과했다. 편집 가능한 기본 `Data/Decks.json`은 로컬 변경인 `DrawPerTurn=1`을 유지하며 기존 회귀 테스트는 `Tests/LegacyData`를 사용한다.
+
 # Project C 카드 중심 배틀 UI
 
 2026-10-30. 실제 프로젝트 버전 **Unity 6000.0.81f1**을 유지한다. 구현은 uGUI Scene/Prefab과 서버 권위 스냅샷을 사용한다. 분석 자료는 [ReferenceVideoAnalysis.md](ReferenceVideoAnalysis.md), [AdditionalInteractionRequirements.md](AdditionalInteractionRequirements.md)에 있으며, 이번 작업은 그 다음 구현 단계다.

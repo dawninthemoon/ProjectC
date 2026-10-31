@@ -28,10 +28,14 @@ add_executable(ProjectCNetworkServer Network/main.cpp)
 target_link_libraries(ProjectCNetworkServer PRIVATE ProjectCNetwork)
 add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Data $<TARGET_FILE_DIR:ProjectCNetworkServer>/Data)
-add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp)
+add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LegacyData $<TARGET_FILE_DIR:ProjectCNetworkServer>/TestData)
+add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/HyakkiComboTests.cpp)
 target_link_libraries(ProjectCNetworkTests PRIVATE ProjectCNetwork)
 add_test(NAME NetworkTests COMMAND ProjectCNetworkTests)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
-set_tests_properties(NetworkTests WebSocketIntegration PROPERTIES TIMEOUT 45)
+add_test(NAME ContentWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(NetworkTests WebSocketIntegration ContentWebSocketIntegration PROPERTIES TIMEOUT 45)

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -67,7 +68,7 @@ static class Program
     {
         var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
-        using var server = Process.Start(new ProcessStartInfo(args[0], "--port " + port) { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true });
+        using var server = Process.Start(new ProcessStartInfo(args[0], "--port " + port+" --data \""+Path.Combine(Path.GetDirectoryName(args[0])!,"TestData")+"\"") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true });
         try
         {
             Check((await server.StandardOutput.ReadLineAsync()).Contains("listening"));

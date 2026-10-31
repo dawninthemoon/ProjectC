@@ -1,0 +1,5 @@
+{"Config":{"InitialLife":3,"InitialHandSize":2,"DrawPerTurn":0,"FieldLimit":5,"HandLimit":10,"MinDeckSize":4,"MaxDeckSize":40,"MaxCardCopies":4},
+ "Decks":[
+  {"Id":"Strikers","Name":"Strikers - combat test","Cards":[10,11,10,11]},
+  {"Id":"Wardens","Name":"Wardens - summon trigger test","Cards":[20,21,20,21]}
+ ]}

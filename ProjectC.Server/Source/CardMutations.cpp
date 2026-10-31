@@ -47,9 +47,9 @@ namespace ProjectC::GameCore::Detail
                 card->HasAttackedThisTurn = false;
                 card->HasManifested = false;
             }
-            if (operation == EffectOperation::SummonFromDeck || operation == EffectOperation::SummonFromGraveyard)
+            if (operation == EffectOperation::SummonFromDeck || operation == EffectOperation::SummonFromGraveyard || operation==EffectOperation::SummonFromHand)
             {
-                Zone const required = operation == EffectOperation::SummonFromDeck ? Zone::Deck : Zone::Graveyard;
+                Zone const required = operation == EffectOperation::SummonFromDeck ? Zone::Deck : operation==EffectOperation::SummonFromHand?Zone::Hand:Zone::Graveyard;
                 if (target.Location != required) return CommandError::InvalidTarget;
                 destination = Zone::Field;
                 if (required == Zone::Graveyard)
@@ -71,7 +71,7 @@ namespace ProjectC::GameCore::Detail
             if (destination == Zone::Field)
                 events.push_back(GameEvent{ .Type = GameEventType::CardSummoned,
                     .TargetPlayerId = target.Player, .TargetCardId = target.Card,
-                    .CurrentDefinitionId = after.CurrentDefinitionId });
+                    .CurrentDefinitionId = after.CurrentDefinitionId, .SummonOrigin=target.Location==Zone::Deck?1:target.Location==Zone::Hand?2:3 });
             return CommandError::Success;
         }
 
@@ -111,6 +111,12 @@ namespace ProjectC::GameCore::Detail
                 if (attack < std::numeric_limits<int>::min() || attack > std::numeric_limits<int>::max()
                     || maxHp < 0 || maxHp > std::numeric_limits<int>::max()) return CommandError::InvalidEffect;
                 card->Hp = PreserveDamageHp(*card, static_cast<int>(maxHp));
+                if(action.TemporaryStats)
+                {
+                    auto temporary=static_cast<std::int64_t>(card->TemporaryAttack)+action.AttackDelta;
+                    if(action.MaxHpDelta!=0 || temporary<std::numeric_limits<int>::min() || temporary>std::numeric_limits<int>::max()) return CommandError::InvalidEffect;
+                    card->TemporaryAttack=static_cast<int>(temporary);
+                }
                 card->Attack = static_cast<int>(attack);
                 card->MaxHp = static_cast<int>(maxHp);
                 events.push_back(GameEvent{ .Type = GameEventType::StatsModified,
@@ -152,6 +158,7 @@ namespace ProjectC::GameCore::Detail
                 == before->AllowedManifestations.end()) return CommandError::InvalidTransformation;
         card->Hp = PreserveDamageHp(*card, after->MaxHp);
         card->Attack = after->Attack;
+        card->TemporaryAttack=0;
         card->MaxHp = after->MaxHp;
         card->CurrentDefinitionId = destination;
         card->HasManifested = true;
@@ -166,6 +173,21 @@ namespace ProjectC::GameCore::Detail
     CommandError ApplyEffectAction(GameState& state, PlayerId actor, CardInstanceId source,
         EffectAction const& action, EffectTarget const& target, std::vector<GameEvent>& events)
     {
+        if(action.Operation==EffectOperation::GainYokaiPower)
+            return target.Card==0?ChangeYokaiPower(state,target.Player,action.Amount,events):CommandError::InvalidTarget;
+        if(action.Operation==EffectOperation::Discard || action.Operation==EffectOperation::SendToGraveyard || action.Operation==EffectOperation::Exile)
+        {
+            auto card=CardAt(state,target);if(!card || target.Card==source) return CommandError::InvalidTarget;
+            if(action.Operation==EffectOperation::Discard && (target.Player!=actor || target.Location!=Zone::Hand)) return CommandError::InvalidTarget;
+            if(action.Operation==EffectOperation::SendToGraveyard && (target.Player!=actor || target.Location!=Zone::Deck)) return CommandError::InvalidTarget;
+            bool gain=false;
+            if(auto definition=FindDefinition(state,card->CurrentDefinitionId)) gain=definition->Type==CardType::Monster && !action.YokaiGainArchetype.empty() && std::find(definition->Archetypes.begin(),definition->Archetypes.end(),action.YokaiGainArchetype)!=definition->Archetypes.end();
+            Zone destination=action.Operation==EffectOperation::Exile?Zone::Exile:Zone::Graveyard;
+            if(MoveCard(state,target.Player,target.Card,target.Location,destination)!=ZoneResult::Success) return CommandError::InvalidTarget;
+            events.push_back(Movement(GetZone(*FindPlayer(state,target.Player),destination)->back(),target.Location,destination));
+            if(gain) return ChangeYokaiPower(state,actor,action.YokaiGainAmount,events);
+            return CommandError::Success;
+        }
         if (action.Operation == EffectOperation::Draw || action.Operation == EffectOperation::Mill)
         {
             if (target.Card != 0) return CommandError::InvalidTarget;
@@ -192,6 +214,9 @@ namespace ProjectC::GameCore::Detail
         if (action.Operation == EffectOperation::DealDamage || action.Operation == EffectOperation::Heal
             || action.Operation == EffectOperation::ModifyStats)
             return ApplyStatAction(state, actor, source, action, target, events);
-        return MoveEffectCard(state, target, action.Operation, events);
+        auto code=MoveEffectCard(state, target, action.Operation, events);
+        if(code==CommandError::Success && action.PreventDirectAttackThisTurn)
+            if(auto card=FindCard(*FindPlayer(state,target.Player),target.Card)) card->DirectAttackRestrictedTurn=state.TurnNumber;
+        return code;
     }
 }

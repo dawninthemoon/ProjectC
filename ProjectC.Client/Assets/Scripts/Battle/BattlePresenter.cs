@@ -22,7 +22,7 @@ namespace ProjectC.Client
         public int RenderedTurn { get; private set; }
         public BattleInteractionController Interaction { get; private set; }
         public CardZoneView[] Zones => new[]{Hand,OwnField,EnemyField,EnemyHand,OwnGraveyard,EnemyGraveyard};
-        public bool CanAct => Client.Connected && !Client.Busy && Client.State != null && Client.State.Started && !Client.State.Finished && Client.State.ActivePlayerId==Client.PlayerId && !LobbyOverlay.activeSelf && !GraveyardPanel.activeSelf;
+        public bool CanAct => Client.Connected && !Client.Busy && Client.State != null && Client.State.Started && !Client.State.Finished && Client.State.ResolvingPlayerId==0 && Client.State.ActivePlayerId==Client.PlayerId && !LobbyOverlay.activeSelf && !GraveyardPanel.activeSelf;
         public int EnemyId => enemy?.PlayerId ?? 0;
         public bool EnemyFieldEmpty => enemy?.Field?.Length==0;
         public bool IsOwnField(int id) => id!=0 && mine?.Field!=null && System.Array.Exists(mine.Field,c=>c.Id==id);
@@ -85,6 +85,7 @@ namespace ProjectC.Client
             if (dirty) { RenderBoard(); dirty = false; }
             while (events.Count > 0) Present(events.Dequeue());
             if(hoverWidget!=null && Time.unscaledTime-hoverAt>=(Interaction.Settings?.HoverDelay??.2f)) { hovered=hoverWidget.Card;Detail.Show(hovered);Detail.Place(hoverWidget.WorldCenter); }
+            Interaction.RefreshServerChoice();
             Lobby.Render();
             bool started = rendered != null && rendered.Started;
             LobbyOverlay.SetActive(showLobby || !started);
@@ -117,7 +118,7 @@ namespace ProjectC.Client
                 return;
             }
             selected = null; bool targetExists = false;
-            foreach (var p in rendered.Players) foreach (var zone in new[] {p.Hand, p.Field, p.Graveyard})
+            foreach (var p in rendered.Players) foreach (var zone in new[] {p.Hand, p.Field, p.Graveyard,p.Exile})
                 if (zone != null) foreach (var card in zone) { knownCards[card.Id] = card; if (p == mine && card.Id == SelectedCardId) selected = card; }
             foreach (var card in enemy.Field) if (card.Id == TargetCardId) targetExists = true;
             if (selected == null) SelectedCardId = 0;
@@ -129,8 +130,9 @@ namespace ProjectC.Client
             EnemyHand.Render(null,enemy.HandCount,true,0,false,null,Hover,Unhover);
             OwnGraveyard.Render(mine.Graveyard,0,false,0,false,Choose,Hover,Unhover);
             EnemyGraveyard.Render(enemy.Graveyard,0,false,0,false,Choose,Hover,Unhover);
-            OwnPlayer.Render(mine,true,rendered.ActivePlayerId == mine.PlayerId); EnemyPlayer.Render(enemy,false,rendered.ActivePlayerId == enemy.PlayerId);
+            OwnPlayer.Render(mine,true,rendered.ActivePlayerId == mine.PlayerId,rendered.MaxYokaiPower); EnemyPlayer.Render(enemy,false,rendered.ActivePlayerId == enemy.PlayerId,rendered.MaxYokaiPower);
             TurnLabel.text = rendered.ActivePlayerId == Client.PlayerId ? "YOUR TURN" : "OPPONENT TURN";
+            if(rendered.ResolvingPlayerId!=0) TurnLabel.text="RESOLVING / P"+rendered.ResolvingPlayerId;
             PhaseLabel.text = "TURN " + rendered.TurnNumber + "  /  " + (rendered.Phase == 0 ? "MAIN" : rendered.Phase == 1 ? "BATTLE" : "END");
             SelectionLabel.text = selected == null ? "Select a card" : selected.Name + (TargetCardId == 0 ? "" : "  >  target #" + TargetCardId);
             foreach(var zone in Zones) foreach(var widget in zone.Widgets) Interaction.Attach(widget);
@@ -144,6 +146,7 @@ namespace ProjectC.Client
             if (e.Type == 4 && e.FromZone == 0 && e.ToZone == 1) Effects.Draw(e.TargetPlayerId == Client.PlayerId,card);
             if (e.Type == 11) { foreach(var zone in Zones) foreach(var widget in zone.Widgets) if(widget.Card?.Id==id) widget.Pulse(); }
             if (e.Type == 11) Effects.Popup(card?.Name ?? "Monster summoned", "SUMMONED\n" + (card?.RulesText ?? ""));
+            if (e.Type == 19) Effects.Popup(card?.Name ?? "Spell", "SPELL ACTIVATED / server confirmed");
             if (e.Type == 13) Effects.Popup(card?.Name ?? "Card effect", "EFFECT ACTIVATED\n" + (card?.RulesText ?? ""));
             if (e.Type == 1) Effects.Popup(card?.Name ?? "Monster", "DAMAGE  -" + e.Damage + " / HP " + e.HpAfter);
             if (e.Type == 15) Effects.Popup(card?.Name??"Manifestation", "FORM CHANGED / server confirmed");

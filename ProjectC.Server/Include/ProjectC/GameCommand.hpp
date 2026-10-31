@@ -17,7 +17,9 @@ namespace ProjectC::GameCore
         InsufficientCards, HandFull, FieldFull, DrawDisabled, InvalidDefinition,
         InvalidLifeChange, TurnOverflow, NormalSummonLimit, DefenderHasMonsters,
         EffectNotFound, InvalidTarget, InvalidTargetCount, UnsupportedEffect,
-        InvalidEffect, InvalidTransformation, TriggerLimitReached
+        InvalidEffect, InvalidTransformation, TriggerLimitReached,
+        InsufficientResource, InvalidCost, UsageLimitReached, ConditionNotMet, ChoiceRequired,
+        DirectAttackRestricted
     };
 
     struct AttackCommand
@@ -34,6 +36,7 @@ namespace ProjectC::GameCore
         BattleResult Result = BattleResult::Success;
         std::vector<GameEvent> Events;
         CommandError Code = CommandError::Success;
+        EffectChoiceRequest Choice;
 
         bool operator==(CommandResult const&) const = default;
     };
@@ -70,6 +73,13 @@ namespace ProjectC::GameCore
         CardInstanceId Card = 0;
         CardDefinitionId Definition = 0;
     }; // Trusted server input, not a player-facing permission to transform freely.
+    struct PlayerActionCommand
+    {
+        PlayerId Player = 0;
+        CardInstanceId SourceCard = 0;
+        int EffectId = 0; // Zero: normal summon; positive: server-defined effect/spell.
+        std::vector<std::vector<EffectTarget>> Choices;
+    };
 
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, DrawCommand const& command);
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, PlayCardCommand const& command);
@@ -81,10 +91,11 @@ namespace ProjectC::GameCore
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, DirectAttackCommand const& command);
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, ActivateEffectCommand const& command);
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, TransformCommand const& command);
+    [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, PlayerActionCommand const& command);
 
     using GameCommand = std::variant<AttackCommand, DrawCommand, PlayCardCommand,
         StartTurnCommand, EndTurnCommand, AdvancePhaseCommand, ChangeLifeCommand,
-        DirectAttackCommand, ActivateEffectCommand, TransformCommand>;
+        DirectAttackCommand, ActivateEffectCommand, TransformCommand, PlayerActionCommand>;
 
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, GameCommand const& command);
 }

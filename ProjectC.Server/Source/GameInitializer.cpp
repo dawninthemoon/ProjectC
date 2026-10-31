@@ -11,7 +11,8 @@ namespace ProjectC::GameCore
     bool ValidateConfig(GameConfig const& config)
     {
         return config.InitialLife > 0 && config.InitialHandSize <= config.HandLimit
-            && config.TriggerResolutionLimit > 0;
+            && config.TriggerResolutionLimit > 0
+            && config.InitialYokaiPower>=0 && config.YokaiPowerPerTurn>=0 && config.MaxYokaiPower>=config.InitialYokaiPower;
     }
 
     bool ValidateGameState(GameState const& gameState)
@@ -28,10 +29,11 @@ namespace ProjectC::GameCore
         {
             if (player.Field.size() > gameState.Config.FieldLimit
                 || player.Hand.size() > gameState.Config.HandLimit || player.Life < 0
+                || player.YokaiPower<0 || player.YokaiPower>gameState.Config.MaxYokaiPower
                 || player.NormalSummonsThisTurn < 0 || player.NormalSummonsThisTurn > 1) return false;
             if (player.Life > 0) { ++livingPlayers; survivor = player.Id; }
             if (!gameState.Definitions.empty())
-                for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard })
+                for (Zone const zone : { Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard, Zone::Exile, Zone::HiddenExile })
                     for (CardInstance const& card : *GetZone(player, zone))
                         if (card.MaxHp < 0 || card.Hp < 0 || card.Hp > card.MaxHp) return false;
         }
@@ -77,6 +79,7 @@ namespace ProjectC::GameCore
         {
             candidate.Players[index].Id = players[index].Id;
             candidate.Players[index].Life = config.InitialLife;
+            candidate.Players[index].YokaiPower = config.InitialYokaiPower;
         }
         if (!ValidateCardIntegrity(candidate)) return InitializationResult::InvalidDefinitions;
         std::int64_t nextId = 1;

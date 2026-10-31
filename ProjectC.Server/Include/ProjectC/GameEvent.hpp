@@ -26,7 +26,7 @@ namespace ProjectC::GameCore
         EffectResolved,
         CardTransformed,
         CardHealed,
-        StatsModified
+        StatsModified, YokaiPowerChanged, SpellActivated
     };
 
     struct GameEvent
@@ -53,6 +53,8 @@ namespace ProjectC::GameCore
         int AttackAfter = 0;
         int MaxHpAfter = 0;
         int EffectOutcome = 0; // CommandError numeric value; nonzero means an automatic effect fizzled.
+        int SummonOrigin = 0; // 0 normal, 1 deck, 2 hand, 3 graveyard.
+        int YokaiPowerAfter = 0;
 
         bool operator==(GameEvent const&) const = default;
     };

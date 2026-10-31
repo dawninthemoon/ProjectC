@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <limits>
 #include <iostream>
+#include <algorithm>
 namespace ProjectC::Network
 {
 using namespace GameCore;
@@ -15,6 +16,7 @@ bool VisibleCard(GameState const& state, int viewer, CardInstanceId id)
     {
         for (auto const& card : player.Field) if (card.Id == id) return true;
         for (auto const& card : player.Graveyard) if (card.Id == id) return true;
+        for (auto const& card : player.Exile) if(card.Id==id) return true;
         if (player.Id == viewer) for (auto const& card : player.Hand) if (card.Id == id) return true;
     }
     return false;
@@ -28,7 +30,7 @@ std::string RuleReason(CommandError error)
         "InsufficientCards", "HandFull", "FieldFull", "DrawDisabled", "InvalidDefinition",
         "InvalidLifeChange", "TurnOverflow", "NormalSummonLimit", "DefenderHasMonsters",
         "EffectNotFound", "InvalidTarget", "InvalidTargetCount", "UnsupportedEffect",
-        "InvalidEffect", "InvalidTransformation", "TriggerLimitReached"};
+        "InvalidEffect", "InvalidTransformation", "TriggerLimitReached", "InsufficientResource", "InvalidCost", "UsageLimitReached", "ConditionNotMet", "ChoiceRequired", "DirectAttackRestricted"};
     return names[static_cast<int>(error)];
 }
 char const* StatusName(MatchStatus status)
@@ -44,22 +46,36 @@ char const* StatusName(MatchStatus status)
 // Descriptions come from the visible definition, never from an opponent's deck.
 std::string RulesText(CardDefinition const& definition)
 {
-    static char const* const triggers[]={"Activated", "On summon", "On destruction", "On damage", "On turn start", "On turn end"};
-    static char const* const operations[]={"Draw", "Mill", "Salvage", "Search", "Summon from deck", "Summon from graveyard", "Return to hand", "Destroy", "Deal damage", "Heal", "Modify stats", "Transform"};
+    static char const* const triggers[]={"Activated", "On summon", "On destruction", "On damage", "On turn start", "On turn end", "On normal summon", "On revival", "On manifestation"};
+    static char const* const operations[]={"Draw", "Mill", "Salvage", "Search", "Summon from deck", "Summon from graveyard", "Return to hand", "Destroy", "Deal damage", "Heal", "Modify stats", "Transform", "Discard", "Send to graveyard", "Special summon from hand", "Exile", "Gain Yokai Power"};
     static char const* const targets[]={"self", "friendly monster", "enemy monster", "any monster", "friendly player", "enemy player", "friendly deck", "friendly hand", "friendly graveyard", "enemy graveyard"};
     std::string text;
     for(auto const& effect:definition.Effects)
     {
         if(!text.empty()) text+="\n";
         text+=triggers[static_cast<int>(effect.Trigger)]; text+=": ";
+        for(auto const& cost:effect.Costs)
+        {
+            int amount=cost.Kind==CostKind::Tribute || cost.Kind==CostKind::Discard?static_cast<int>(cost.Targets.MinCount):cost.Amount;
+            text+="Cost "+std::to_string(amount)+" "+(cost.Kind==CostKind::YokaiPower?"Yokai":cost.Kind==CostKind::Life?"Life":cost.Kind==CostKind::HiddenExileTop?"hidden deck exile":cost.Kind==CostKind::Tribute?"tribute":"discard")+". ";
+        }
+        if(effect.PerTurnLimit>0) text+=std::to_string(effect.PerTurnLimit)+" use(s) per turn across copies. ";
+        if(effect.MinGraveyardCount>0) text+="Requires "+std::to_string(effect.MinGraveyardCount)+" in graveyard. ";
+        if(!effect.RequireGraveyardEntryThisTurn.empty()) text+="Requires "+effect.RequireGraveyardEntryThisTurn+" sent to graveyard this turn. ";
         for(auto const& action:effect.Actions)
         {
             text+=operations[static_cast<int>(action.Operation)]; text+=" (";
             text+=targets[static_cast<int>(action.Targets.Category)]; text+=")";
+            if(!action.Targets.RequiredArchetype.empty()) text+=" / "+action.Targets.RequiredArchetype;
+            if(action.Targets.MaxAttack>=0) text+=" / ATK <= "+std::to_string(action.Targets.MaxAttack);
+            if(action.Targets.Type==CardType::Monster) text+=" / monster";
+            if(action.Targets.Type==CardType::Spell) text+=" / spell";
             if(action.Operation==EffectOperation::ModifyStats)
                 text+=" ATK "+std::to_string(action.AttackDelta)+", max HP "+std::to_string(action.MaxHpDelta);
             else if(action.Operation==EffectOperation::Transform) text+=" definition #"+std::to_string(action.TransformDefinitionId);
             else text+=" x"+std::to_string(action.Amount);
+            if(action.PreventDirectAttackThisTurn) text+=" / no direct attack this turn";
+            if(action.TemporaryStats) text+=" / until turn end";
             text+=". ";
         }
     }
@@ -80,10 +96,21 @@ Json Activations(GameState const& state, CardInstance const& card, int viewer, Z
 {
     Json actions=Json::array();
     auto definition=FindDefinition(state,card.CurrentDefinitionId);
-    if(!definition || zone!=Zone::Field || card.OwnerId!=viewer) return actions;
+    if(!definition || (zone!=Zone::Field && zone!=Zone::Hand) || card.OwnerId!=viewer) return actions;
     for(auto const& effect:definition->Effects)
     {
-        if(effect.Type!=EffectType::Activated) continue;
+        if(effect.Type!=EffectType::Activated || effect.ActivationZone!=zone) continue;
+        bool interactive=zone==Zone::Hand || !effect.Costs.empty() || !effect.RequireGraveyardEntryThisTurn.empty();
+        for(auto const& action:effect.Actions) interactive |= action.Targets.Category==TargetCategory::FriendlyDeck;
+        if(interactive)
+        {
+            auto candidate=state;auto result=ProcessCommand(candidate,PlayerActionCommand{viewer,card.Id,effect.Id,{}});
+            bool enabled=result.Code==CommandError::Success || result.Code==CommandError::ChoiceRequired;
+            bool manifest=false;int yokai=0;for(auto const& action:effect.Actions) manifest |= action.Operation==EffectOperation::Transform;
+            for(auto const& cost:effect.Costs) if(cost.Kind==CostKind::YokaiPower) yokai+=cost.Amount;
+            actions.push_back({{"EffectId",effect.Id},{"CanActivate",enabled},{"IsManifest",manifest},{"Interactive",true},{"YokaiCost",yokai},{"Selections",Json::array()}});
+            continue;
+        }
         Json selections=Json::array();bool manifest=false,supported=true;
         bool allowed=state.Status==GameStatus::Running && state.ActivePlayerId==viewer
             && state.TurnStarted && state.Phase==TurnPhase::Main && !card.IsDestroyed();
@@ -120,14 +147,14 @@ Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int v
     for(auto const& card:cards)
     {
         auto definition=FindDefinition(state,card.CurrentDefinitionId);
-        bool summon=zone==Zone::Hand && card.OwnerId==viewer && state.ActivePlayerId==viewer
+        bool summon=definition && definition->Type==CardType::Monster && zone==Zone::Hand && card.OwnerId==viewer && state.ActivePlayerId==viewer
             && state.TurnStarted && state.Phase==TurnPhase::Main && state.Status==GameStatus::Running
             && owner && owner->NormalSummonsThisTurn<1 && owner->Field.size()<state.Config.FieldLimit;
         bool attack=zone==Zone::Field && card.OwnerId==viewer && state.TurnStarted
             && ValidateAttackSource(state,viewer,card.Id)==BattleResult::Success
             && ValidateAttackReadiness(state,card)==BattleResult::Success;
         result.push_back({{"Id",card.Id},{"DefinitionId",card.CurrentDefinitionId},{"Name",definition?definition->Name:""},
-            {"Attack",card.Attack},{"Hp",card.Hp},{"MaxHp",card.MaxHp},{"HasAttacked",card.HasAttackedThisTurn},
+            {"CardType",definition?static_cast<int>(definition->Type):0},{"Attack",card.Attack},{"Hp",card.Hp},{"MaxHp",card.MaxHp},{"HasAttacked",card.HasAttackedThisTurn},
             {"RulesText",definition?RulesText(*definition):""},{"ManifestationText",definition?Manifestations(state,*definition):""},
             {"SummoningSick",zone==Zone::Field && IsSummoningSick(state,card)},
             {"CanSummon",summon},{"CanAttack",attack},{"EffectCount",definition?definition->Effects.size():0},
@@ -173,15 +200,41 @@ Json MatchSession::Snapshot(int viewer) const
     Json players=Json::array();
     if(gameNumber>0) for(auto const& player:state.Players)
         players.push_back({{"PlayerId",player.Id},{"Life",player.Life},{"HandCount",player.Hand.size()},
-            {"DeckCount",player.Deck.size()},{"Hand",player.Id==viewer?Cards(state,player.Hand,viewer,Zone::Hand):Json::array()},
+            {"DeckCount",player.Deck.size()},{"YokaiPower",player.YokaiPower},{"HiddenExileCount",player.HiddenExile.size()},{"Exile",Cards(state,player.Exile,viewer,Zone::Exile)},{"Hand",player.Id==viewer?Cards(state,player.Hand,viewer,Zone::Hand):Json::array()},
             {"Field",Cards(state,player.Field,viewer,Zone::Field)},{"Graveyard",Cards(state,player.Graveyard,viewer,Zone::Graveyard)}});
-    return {{"FieldLimit",state.Config.FieldLimit},{"Started",gameNumber>0},{"MatchStatus",StatusName(status)},{"Players",players},
+    return {{"ResolvingPlayerId",pendingAction?pendingAction->Choice.Player:0},{"MaxYokaiPower",state.Config.MaxYokaiPower},{"SummoningSickness",state.Config.SummoningSickness},{"FieldLimit",state.Config.FieldLimit},{"Started",gameNumber>0},{"MatchStatus",StatusName(status)},{"Players",players},
         {"ActivePlayerId",state.ActivePlayerId},{"TurnNumber",state.TurnNumber},{"TurnStarted",state.TurnStarted},
         {"Phase",static_cast<int>(state.Phase)},{"Finished",status==MatchStatus::Finished},{"WinnerPlayerId",state.WinnerPlayerId}};
 }
+void MatchSession::PrepareChoice(PlayerActionCommand const& command,EffectChoiceRequest const& choice)
+{
+    if(!pendingAction) pendingAction.emplace();
+    auto& pending=*pendingAction;pending.Command=command;pending.Choice=choice;pending.ChoiceId=Token();pending.Options.clear();
+    Json candidates=Json::array();auto options=choice.Candidates;
+    std::stable_sort(options.begin(),options.end(),[](auto const& a,auto const& b){return a.Card.CurrentDefinitionId<b.Card.CurrentDefinitionId;});
+    for(auto const& option:options)
+    {
+        auto token=Token();pending.Options.emplace(token,option.Target);
+        bool hidden=option.Target.Location==Zone::Deck || option.Target.Location==Zone::HiddenExile;
+        auto owner=FindPlayer(state,option.Target.Player);
+        bool newHandCard=option.Target.Location==Zone::Hand && owner && std::none_of(owner->Hand.begin(),owner->Hand.end(),[&](auto const& card){return card.Id==option.Target.Card;});
+        if(hidden || newHandCard) pending.CanCancel=false;
+        auto definition=FindDefinition(state,option.Card.CurrentDefinitionId);
+        Json card={{"Id",hidden?0:option.Card.Id},{"DefinitionId",option.Card.CurrentDefinitionId},{"Name",definition?definition->Name:"Player"},
+            {"CardType",definition?static_cast<int>(definition->Type):0},{"Attack",option.Card.Attack},{"Hp",option.Card.Hp},{"MaxHp",option.Card.MaxHp},
+            {"RulesText",definition?RulesText(*definition):""}};
+        candidates.push_back({{"Token",token},{"PlayerId",option.Target.Player},{"CardId",hidden?0:option.Target.Card},{"Zone",static_cast<int>(option.Target.Location)},{"Card",card}});
+    }
+    pending.Payload={{"ChoiceId",pending.ChoiceId},{"CanCancel",pending.CanCancel},{"SourceCardId",choice.Source},{"IsCost",choice.IsCost},{"MinCount",choice.Rule.MinCount},{"MaxCount",choice.Rule.MaxCount},{"Candidates",candidates}};
+}
+void MatchSession::SendChoice(std::shared_ptr<ClientSession> const& client) const
+{
+    if(pendingAction && pendingAction->Choice.Player==client->Player)
+    {auto message=Message("ActionChoiceRequired");message["Payload"]=pendingAction->Payload;client->Send(message);}
+}
 void MatchSession::SendSnapshot(std::shared_ptr<ClientSession> const& client,std::string const& request) const
 {
-    auto message=Message("StateSnapshot",request); message["Payload"]=Snapshot(client->Player);client->Send(message);
+    auto message=Message("StateSnapshot",request); message["Payload"]=Snapshot(client->Player);client->Send(message);SendChoice(client);
 }
 void MatchSession::Lobby() const
 {
@@ -210,7 +263,7 @@ void MatchSession::Broadcast(std::vector<GameEvent> const& events)
                 {"TargetPlayerId",e.TargetPlayerId},{"TargetCardId",e.TargetCardId},{"DefinitionId",e.CurrentDefinitionId},
                 {"FromZone",static_cast<int>(e.FromZone)},{"ToZone",static_cast<int>(e.ToZone)},
                 {"Damage",e.Damage},{"HpAfter",e.HpAfter},{"LifeAfter",e.LifeAfter},{"AttackAfter",e.AttackAfter},
-                {"Phase",static_cast<int>(e.Phase)},{"TurnNumber",e.TurnNumber}});
+                {"Phase",static_cast<int>(e.Phase)},{"TurnNumber",e.TurnNumber},{"YokaiPowerAfter",e.YokaiPowerAfter}});
         }
         message["Payload"]=visible;client->Send(message);SendSnapshot(client);
         if(status==MatchStatus::Finished)
@@ -239,7 +292,7 @@ void MatchSession::StartGame()
     GameCommand command=StartTurnCommand{fresh.ActivePlayerId};
     auto result=ProcessCommand(fresh,command);
     if(result.Code!=CommandError::Success) throw std::runtime_error("Start game failed");
-    state=std::move(fresh);sequence=0;++gameNumber;status=MatchStatus::Playing;lastActivity=Clock::now();
+    pendingAction.reset();state=std::move(fresh);sequence=0;++gameNumber;status=MatchStatus::Playing;lastActivity=Clock::now();
     journal={};journal.MatchId=id;journal.GameNumber=gameNumber;journal.Seed=seed;journal.InitialState=std::move(initial);archived=false;
     journal.Commands.push_back(command);journal.Results.push_back(result);++sequence;
     if(state.Status==GameStatus::Finished) {status=MatchStatus::Finished;Archive();}
@@ -269,7 +322,7 @@ void MatchSession::Disconnect(std::shared_ptr<ClientSession> const& client)
 void MatchSession::Close(std::string const& reason)
 {
     if(status==MatchStatus::Closed) return;
-    Archive();status=MatchStatus::Closed;
+    pendingAction.reset();Archive();status=MatchStatus::Closed;
     for(auto& seat:seats)
     {
         if(auto client=seat.Client.lock())
@@ -390,7 +443,39 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
     auto const& command=input.at("Command");auto name=String(command,"Type");
     int player=client->Player;int opponent=seats[1-SeatIndex(player)].Player;
     GameCommand parsed;
-    if(name=="PlayCard") {Fields(command,{"Type","CardId"});parsed=PlayCardCommand{player,static_cast<int>(Number(command,"CardId",2147483647))};}
+    if(pendingAction)
+    {
+        if(name!="ResolveChoice" && name!="CancelAction") {cacheReject("ActionPending");return;}
+        if(name=="CancelAction") Fields(command,{"Type","ChoiceId"});else Fields(command,{"Type","ChoiceId","Choices"});
+        if(client->Player!=pendingAction->Choice.Player || String(command,"ChoiceId",64)!=pendingAction->ChoiceId) {cacheReject("InvalidChoiceSession");SendSnapshot(client);return;}
+        if(name=="CancelAction")
+        {
+            if(!pendingAction->CanCancel) {cacheReject("ChoiceMustResolve");SendSnapshot(client);return;}
+            for(auto const& [owner,key]:pendingAction->Requests)
+            {
+                auto& seat=seats[SeatIndex(owner)];auto response=Message("CommandRejected",key);response["Reason"]="ActionCancelled";
+                if(auto cached=seat.Requests.find(key);cached!=seat.Requests.end()) cached->second.second=response;
+                if(auto peer=seat.Client.lock()) peer->Send(response);
+            }
+            pendingAction.reset();lastActivity=Clock::now();
+            auto response=Message("CommandAccepted",request);requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);
+            for(auto const& seat:seats) if(auto peer=seat.Client.lock()) SendSnapshot(peer);
+            return;
+        }
+        auto const& choices=command.at("Choices");
+        if(!choices.is_array() || choices.size()>128) {cacheReject("InvalidChoice");SendSnapshot(client);return;}
+        std::vector<EffectTarget> targets;
+        for(auto const& token:choices)
+        {
+            auto key=String(Json{{"Token",token}},"Token",64);auto found=pendingAction->Options.find(key);
+            if(found==pendingAction->Options.end()) {cacheReject("InvalidChoice");SendSnapshot(client);return;}
+            targets.push_back(found->second);
+        }
+        auto action=pendingAction->Command;action.Choices.push_back(std::move(targets));parsed=std::move(action);
+    }
+    else if(name=="PlayerAction")
+    {Fields(command,{"Type","CardId","EffectId"});parsed=PlayerActionCommand{player,static_cast<int>(Number(command,"CardId",2147483647)),static_cast<int>(Number(command,"EffectId",2147483647)),{}};}
+    else if(name=="PlayCard") {Fields(command,{"Type","CardId"});parsed=PlayerActionCommand{player,static_cast<int>(Number(command,"CardId",2147483647)),0,{}};}
     else if(name=="EndTurn") {Fields(command,{"Type"});parsed=EndTurnCommand{player};}
     else if(name=="AdvancePhase") {Fields(command,{"Type"});parsed=AdvancePhaseCommand{player};}
     else if(name=="Attack" || name=="DirectAttack")
@@ -405,6 +490,10 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
         Fields(command,{"Type","CardId","EffectId","Targets"});
         ActivateEffectCommand activation{player,static_cast<int>(Number(command,"CardId",2147483647)),
             static_cast<int>(Number(command,"EffectId",2147483647)),{}};
+        auto own=FindPlayer(state,player);auto source=own?FindCard(*own,activation.SourceCard):nullptr;
+        auto definition=source?FindDefinition(state,source->CurrentDefinitionId):nullptr;
+        if(!definition) {cacheReject("GameRule:CardNotFound");return;}
+        for(auto const& effect:definition->Effects) if(effect.Id==activation.EffectId && !effect.Costs.empty()) {cacheReject("UsePlayerAction");return;}
         auto const& groups=command.at("Targets");
         if(!groups.is_array() || groups.size()>16) {cacheReject("InvalidTargets");return;}
         for(auto const& group:groups)
@@ -439,12 +528,21 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
         if(success && candidate.Status==GameStatus::Running) success=apply(StartTurnCommand{candidate.ActivePlayerId});
     }
     else success=apply(parsed);
+    if(!success && results.back().Code==CommandError::ChoiceRequired && std::holds_alternative<PlayerActionCommand>(parsed))
+    {
+        PrepareChoice(std::get<PlayerActionCommand>(parsed),results.back().Choice);
+        pendingAction->Requests.push_back({player,request});
+        auto response=Message("CommandPending",request);requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);
+        lastActivity=Clock::now();for(auto const& seat:seats) if(auto peer=seat.Client.lock()) SendSnapshot(peer);
+        return;
+    }
     if(!success)
     {
         if(commands.size()==1) {journal.Commands.push_back(commands[0]);journal.Results.push_back(results[0]);}
-        auto const& result=results.back();cacheReject("GameRule:"+RuleReason(result.Code)+":Battle:"+std::to_string(static_cast<int>(result.Result)));return;
+        auto const& result=results.back();cacheReject("GameRule:"+RuleReason(result.Code)+":Battle:"+std::to_string(static_cast<int>(result.Result)));if(pendingAction) SendSnapshot(client);return;
     }
-    state=std::move(candidate);
+    auto pendingRequests=pendingAction?pendingAction->Requests:std::vector<std::pair<int,std::string>>{};
+    pendingAction.reset();state=std::move(candidate);
     journal.Commands.insert(journal.Commands.end(),commands.begin(),commands.end());journal.Results.insert(journal.Results.end(),results.begin(),results.end());
     ++sequence;lastActivity=Clock::now();
     if(state.Status==GameStatus::Finished)
@@ -454,6 +552,12 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
         std::cout << "Match " << id << " finished game=" << gameNumber << " winner=" << state.WinnerPlayerId << std::endl;
     }
     auto response=Message("CommandAccepted",request);requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);
+    for(auto const& [owner,key]:pendingRequests)
+    {
+        auto& seat=seats[SeatIndex(owner)];auto accepted=Message("CommandAccepted",key);
+        if(auto cached=seat.Requests.find(key);cached!=seat.Requests.end()) cached->second.second=accepted;
+        if(auto peer=seat.Client.lock()) peer->Send(accepted);
+    }
     Broadcast(events);if(status==MatchStatus::Finished) Lobby();
 }
 }

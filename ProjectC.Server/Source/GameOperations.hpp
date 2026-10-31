@@ -4,6 +4,14 @@
 
 namespace ProjectC::GameCore::Detail
 {
+    [[nodiscard]] CommandError SelectEffectTargets(GameState& state, PlayerId actor, CardInstanceId source,
+        int effect, TargetRule const& rule, bool cost, bool all, std::vector<EffectTarget>& targets);
+    [[nodiscard]] CommandError PayEffectCosts(GameState& state, PlayerId actor, CardInstanceId source,
+        EffectDefinition const& effect, std::vector<GameEvent>& events);
+    [[nodiscard]] CommandError CheckEffectConditions(GameState const& state, PlayerId actor,
+        CardDefinitionId definition, EffectDefinition const& effect);
+    void RecordEffectUse(GameState& state, PlayerId actor, CardDefinitionId definition, EffectDefinition const& effect);
+    [[nodiscard]] CommandError ChangeYokaiPower(GameState& state, PlayerId actor, int delta, std::vector<GameEvent>& events);
     [[nodiscard]] GameEvent Movement(CardInstance const& card, Zone from, Zone to);
     void MarkFieldEntry(GameState const& state, PlayerState const& owner, CardInstance& card);
     void FinishGame(GameState& state, PlayerId loser, GameEndReason reason, std::vector<GameEvent>& events);

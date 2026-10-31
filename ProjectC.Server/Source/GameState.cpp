@@ -44,6 +44,7 @@ namespace ProjectC::GameCore
         {
             ++player->TurnsStarted;
             player->NormalSummonsThisTurn = 0;
+            for(auto& owner:gameState.Players) { owner.EffectUses.clear();owner.GraveyardArchetypesThisTurn.clear(); }
         }
         for (CardInstance& card : player->Field)
         {
@@ -93,7 +94,7 @@ namespace ProjectC::GameCore
     bool IsSummoningSick(GameState const& gameState, CardInstance const& card)
     {
         PlayerState const* owner = FindPlayer(gameState, card.OwnerId);
-        return !card.IgnoreSummoningSickness && card.EnteredFieldTurnNumber != 0
+        return gameState.Config.SummoningSickness && !card.IgnoreSummoningSickness && card.EnteredFieldTurnNumber != 0
             && (owner == nullptr || owner->TurnsStarted <= card.OwnerTurnAtEntry);
     }
 
