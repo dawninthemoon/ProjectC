@@ -41,7 +41,7 @@ namespace ProjectC.Client
         void Awake()
         {
             // Resolve hierarchy references using the project's scoped Bind contract.
-            Client=GetComponent<MultiplayerDebugScreen>();
+            Client=ClientApp.Instance!=null?ClientApp.Instance.Network:GetComponent<MultiplayerDebugScreen>();
             this.Bind("LobbyPanel",out Lobby); LobbyOverlay=Lobby.gameObject;
             this.Bind("YourHand",out Hand);this.Bind("OwnField",out OwnField);this.Bind("OpponentField",out EnemyField);this.Bind("OpponentHand",out EnemyHand);
             this.Bind("YourGraveyard",out OwnGraveyard);this.Bind("OpponentGraveyard",out EnemyGraveyard);
@@ -52,7 +52,7 @@ namespace ProjectC.Client
             Summon.onClick.AddListener(() => Command("PlayCard")); BattlePhase.onClick.AddListener(() => Command("AdvancePhase"));
             Attack.onClick.AddListener(() => Command("Attack")); DirectAttack.onClick.AddListener(() => Command("DirectAttack"));
             EndTurn.onClick.AddListener(() => Command("EndTurn")); Cancel.onClick.AddListener(ClearSelection);
-            LobbyToggle.onClick.AddListener(() => showLobby = !showLobby);
+            LobbyToggle.onClick.AddListener(() => {if(ClientApp.Instance!=null) ClientApp.Instance.Navigate("LobbyScene");else showLobby=!showLobby;});
             GraveyardToggle.onClick.AddListener(() => GraveyardPanel.SetActive(!GraveyardPanel.activeSelf));
             LogToggle.onClick.AddListener(Log.Toggle); Resync.onClick.AddListener(Client.RequestSnapshot);
             ResultRematch.onClick.AddListener(Client.RequestRematch); ResultLeave.onClick.AddListener(Client.LeaveMatch);
@@ -70,6 +70,7 @@ namespace ProjectC.Client
         void Unhover() { hoverWidget=null;hovered=null; Detail.Show(null); }
         void LateUpdate()
         {
+            if(ClientApp.Instance!=null && string.IsNullOrEmpty(Client.CurrentMatch)) {ClientApp.Instance.Navigate("LobbyScene");return;}
             bool changedEpoch = epoch != Client.GameNumber || match != Client.CurrentMatch;
             if (changedEpoch)
             {
