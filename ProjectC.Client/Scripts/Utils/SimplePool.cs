@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace Game.Utils
 {
-    public class SimplePool<T> where T : new()
+    public class SimplePool<T>
+        where T : new()
     {
         Queue<T> _queue = new Queue<T>();
 
@@ -30,7 +31,7 @@ namespace Game.Utils
 
         private void enqueueCount(int count)
         {
-            for(int i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i)
             {
                 _queue.Enqueue(new T());
             }
@@ -38,8 +39,10 @@ namespace Game.Utils
 
         public T dequeue()
         {
-            if(_queue.Count == 0)
+            if (_queue.Count == 0)
+            {
                 enqueue();
+            }
 
             return _queue.Dequeue();
         }

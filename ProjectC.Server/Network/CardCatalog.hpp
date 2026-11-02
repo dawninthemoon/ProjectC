@@ -1,9 +1,13 @@
 #pragma once
-#include "Protocol.hpp"
 #include "ProjectC/GameInitializer.hpp"
+#include "Protocol.hpp"
 #include <array>
+#include <cstddef>
 namespace ProjectC::Network
 {
+inline constexpr std::size_t PersonalDeckCardCount = 30;
+inline constexpr int MaximumCopiesPerPersonalDeckCard = 3;
+
 struct DeckDefinition
 {
     std::string Id;
@@ -12,7 +16,7 @@ struct DeckDefinition
 };
 class CardCatalog
 {
-public:
+  public:
     static CardCatalog Load(std::string const& directory);
     static CardCatalog FromJson(Json const& cards, Json const& decks);
     std::string Version;
@@ -23,9 +27,16 @@ public:
     bool ValidateDeck(std::vector<GameCore::CardDefinitionId> const& cards) const;
     std::string PersonalDeckError(std::vector<GameCore::CardDefinitionId> const& cards) const;
     Json PublicDecks() const;
-    GameCore::GameState InitializeCards(std::array<int,2> players, std::array<std::vector<GameCore::CardDefinitionId>,2> const& decks, std::uint64_t seed, int firstCardId) const;
+    GameCore::GameState
+    InitializeCards(std::array<int, 2> players,
+                    std::array<std::vector<GameCore::CardDefinitionId>, 2> const& decks,
+                    std::uint64_t seed,
+                    int firstCardId) const;
     // Explicit Fisher-Yates with rejection sampling: deterministic on MSVC and GCC.
-    GameCore::GameState Initialize(std::array<int, 2> players, std::array<std::string, 2> const& decks, std::uint64_t seed, int firstCardId) const;
+    GameCore::GameState Initialize(std::array<int, 2> players,
+                                   std::array<std::string, 2> const& decks,
+                                   std::uint64_t seed,
+                                   int firstCardId) const;
 };
 std::string DefaultDataDirectory();
-}
+} // namespace ProjectC::Network

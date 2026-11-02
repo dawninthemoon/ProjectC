@@ -4,18 +4,24 @@ using System.Collections.Generic;
 
 namespace Game.Utils
 {
-    public class ObjectPool<T>  {
+    public class ObjectPool<T>
+    {
         public delegate T ObjectCreateDelegate();
         ObjectCreateDelegate _createObjectCallback;
         Action<T> _onObjectActiveCallback;
         Action<T> _onObjectDisableCallback;
 
         public int _size;
-    
+
         private List<T> _freeList;
         private List<T> _usedList;
 
-        public ObjectPool(int initSize, ObjectCreateDelegate createObjCallback, Action<T> onObjectActive, Action<T> onObjectDisable) 
+        public ObjectPool(
+            int initSize,
+            ObjectCreateDelegate createObjCallback,
+            Action<T> onObjectActive,
+            Action<T> onObjectDisable
+        )
         {
             _size = initSize;
             _createObjectCallback = createObjCallback;
@@ -24,17 +30,18 @@ namespace Game.Utils
             Initalize();
         }
 
-        private T CreateObject() 
+        private T CreateObject()
         {
             var pooledObject = _createObjectCallback.Invoke();
             return pooledObject;
         }
 
-        private void Initalize() {
+        private void Initalize()
+        {
             _freeList = new List<T>(_size);
             _usedList = new List<T>(_size);
-    
-            for (var i = 0; i < _size; ++i) 
+
+            for (var i = 0; i < _size; ++i)
             {
                 var obj = CreateObject();
                 _freeList.Add(obj);
@@ -42,7 +49,7 @@ namespace Game.Utils
             }
         }
 
-        public T GetObject() 
+        public T GetObject()
         {
             if (_freeList.Count == 0)
             {
@@ -56,19 +63,19 @@ namespace Game.Utils
 
             return pooledObject;
         }
-    
-        public void ReturnObject(T pooledObject) 
+
+        public void ReturnObject(T pooledObject)
         {
             UnityEngine.Debug.Assert(_usedList.Contains(pooledObject));
-        
+
             _usedList.Remove(pooledObject);
             _freeList.Add(pooledObject);
             _onObjectDisableCallback?.Invoke(pooledObject);
         }
 
-        public void Clear() 
+        public void Clear()
         {
-            for (int i = 0; i < _usedList.Count; ++i) 
+            for (int i = 0; i < _usedList.Count; ++i)
             {
                 ReturnObject(_usedList[i]);
                 i--;

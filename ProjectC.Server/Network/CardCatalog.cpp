@@ -1,9 +1,9 @@
 #include "CardCatalog.hpp"
-#include "ProjectC/Zone.hpp"
 #include "ProjectC/GameCommand.hpp"
-#include <fstream>
+#include "ProjectC/Zone.hpp"
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <map>
 #include <random>
 #include <stdexcept>
@@ -14,244 +14,635 @@ namespace
 {
 Json File(std::filesystem::path const& path)
 {
-    if (std::filesystem::file_size(path) > 1024 * 1024) throw std::runtime_error("Data file too large");
+    if (std::filesystem::file_size(path) > 1024 * 1024)
+    {
+        throw std::runtime_error("Data file too large");
+    }
     std::ifstream stream(path);
-    if (!stream) throw std::runtime_error("Cannot open data file");
+    if (!stream)
+    {
+        throw std::runtime_error("Cannot open data file");
+    }
     return ParseJson(std::string(std::istreambuf_iterator<char>(stream), {}), 1024 * 1024);
 }
-template<typename T> T Enum(Json const& value, char const* key, std::initializer_list<std::pair<char const*, T>> names)
+template <typename T>
+T Enum(Json const& value, char const* key, std::initializer_list<std::pair<char const*, T>> names)
 {
     auto name = String(value, key);
-    for (auto const& [text, item] : names) if (name == text) return item;
+    for (auto const& [text, item] : names)
+    {
+        if (name == text)
+        {
+            return item;
+        }
+    }
     throw std::runtime_error("Invalid enum in card data");
 }
 Zone Location(Json const& value)
 {
-    return Enum<Zone>(Json{{"Zone",value}},"Zone",{{"Deck",Zone::Deck},{"Hand",Zone::Hand},{"Field",Zone::Field},{"Graveyard",Zone::Graveyard},{"Exile",Zone::Exile},{"HiddenExile",Zone::HiddenExile}});
+    return Enum<Zone>(Json{{"Zone", value}},
+                      "Zone",
+                      {{"Deck", Zone::Deck},
+                       {"Hand", Zone::Hand},
+                       {"Field", Zone::Field},
+                       {"Graveyard", Zone::Graveyard},
+                       {"Exile", Zone::Exile},
+                       {"HiddenExile", Zone::HiddenExile}});
 }
 std::string Text(Json const& value, char const* key)
 {
-    auto const& field=value.at(key);
-    if(!field.is_string()) throw std::runtime_error("Expected card data text");
-    auto text=field.get<std::string>();
-    if(text.empty() || text.size()>256) throw std::runtime_error("Invalid card data text length");
-    for(unsigned char c:text) if(c<32) throw std::runtime_error("Control character in card data text");
+    auto const& field = value.at(key);
+    if (!field.is_string())
+    {
+        throw std::runtime_error("Expected card data text");
+    }
+    auto text = field.get<std::string>();
+    if (text.empty() || text.size() > 256)
+    {
+        throw std::runtime_error("Invalid card data text length");
+    }
+    for (unsigned char c : text)
+    {
+        if (c < 32)
+        {
+            throw std::runtime_error("Control character in card data text");
+        }
+    }
     return text;
 }
 void Array(Json const& value, std::size_t maximum)
 {
-    if (!value.is_array() || value.size() > maximum) throw std::runtime_error("Invalid data array");
+    if (!value.is_array() || value.size() > maximum)
+    {
+        throw std::runtime_error("Invalid data array");
+    }
 }
 TargetRule Rule(Json const& value)
 {
-    Fields(value,{"Category","Zones","MinCount","MaxCount","RequiredTrait","CardType","RequiredArchetype","MaxAttack"});
+    Fields(value,
+           {"Category",
+            "Zones",
+            "MinCount",
+            "MaxCount",
+            "RequiredTrait",
+            "CardType",
+            "RequiredArchetype",
+            "MaxAttack"});
     TargetRule rule;
-    rule.Category = Enum<TargetCategory>(value,"Category",{
-        {"Self",TargetCategory::Self},{"FriendlyMonster",TargetCategory::FriendlyMonster},{"EnemyMonster",TargetCategory::EnemyMonster},
-        {"AnyMonster",TargetCategory::AnyMonster},{"FriendlyPlayer",TargetCategory::FriendlyPlayer},{"EnemyPlayer",TargetCategory::EnemyPlayer},
-        {"FriendlyDeck",TargetCategory::FriendlyDeck},{"FriendlyHand",TargetCategory::FriendlyHand},{"FriendlyGraveyard",TargetCategory::FriendlyGraveyard},
-        {"EnemyGraveyard",TargetCategory::EnemyGraveyard}});
-    if (value.contains("Zones")) { rule.Zones.clear(); Array(value["Zones"],4); for (auto const& zone:value["Zones"]) rule.Zones.push_back(Location(zone)); }
-    if (value.contains("MinCount")) rule.MinCount=Number(value,"MinCount",128);
-    if (value.contains("MaxCount")) rule.MaxCount=Number(value,"MaxCount",128);
-    if (value.contains("RequiredTrait")) rule.RequiredTrait=Text(value,"RequiredTrait");
-    if(value.contains("CardType")) rule.Type=Enum<CardType>(value,"CardType",{{"Monster",CardType::Monster},{"Spell",CardType::Spell},{"Any",CardType::Any}});
-    if(value.contains("RequiredArchetype")) rule.RequiredArchetype=Text(value,"RequiredArchetype");
-    if(value.contains("MaxAttack")) rule.MaxAttack=static_cast<int>(Number(value,"MaxAttack",100000));
+    rule.Category = Enum<TargetCategory>(value,
+                                         "Category",
+                                         {{"Self", TargetCategory::Self},
+                                          {"FriendlyMonster", TargetCategory::FriendlyMonster},
+                                          {"EnemyMonster", TargetCategory::EnemyMonster},
+                                          {"AnyMonster", TargetCategory::AnyMonster},
+                                          {"FriendlyPlayer", TargetCategory::FriendlyPlayer},
+                                          {"EnemyPlayer", TargetCategory::EnemyPlayer},
+                                          {"FriendlyDeck", TargetCategory::FriendlyDeck},
+                                          {"FriendlyHand", TargetCategory::FriendlyHand},
+                                          {"FriendlyGraveyard", TargetCategory::FriendlyGraveyard},
+                                          {"EnemyGraveyard", TargetCategory::EnemyGraveyard}});
+    if (value.contains("Zones"))
+    {
+        rule.Zones.clear();
+        Array(value["Zones"], 4);
+        for (auto const& zone : value["Zones"])
+        {
+            rule.Zones.push_back(Location(zone));
+        }
+    }
+    if (value.contains("MinCount"))
+    {
+        rule.MinCount = Number(value, "MinCount", 128);
+    }
+    if (value.contains("MaxCount"))
+    {
+        rule.MaxCount = Number(value, "MaxCount", 128);
+    }
+    if (value.contains("RequiredTrait"))
+    {
+        rule.RequiredTrait = Text(value, "RequiredTrait");
+    }
+    if (value.contains("CardType"))
+    {
+        rule.Type = Enum<CardType>(
+            value,
+            "CardType",
+            {{"Monster", CardType::Monster}, {"Spell", CardType::Spell}, {"Any", CardType::Any}});
+    }
+    if (value.contains("RequiredArchetype"))
+    {
+        rule.RequiredArchetype = Text(value, "RequiredArchetype");
+    }
+    if (value.contains("MaxAttack"))
+    {
+        rule.MaxAttack = static_cast<int>(Number(value, "MaxAttack", 100000));
+    }
     return rule;
 }
 EffectDefinition Effect(Json const& value)
 {
-    Fields(value,{"Id","Type","Trigger","Actions","ActivationZone","Costs","PerTurnLimit","RequiredGraveyardArchetype","MinGraveyardCount","RequireGraveyardEntryThisTurn"});
+    Fields(value,
+           {"Id",
+            "Type",
+            "Trigger",
+            "Actions",
+            "ActivationZone",
+            "Costs",
+            "PerTurnLimit",
+            "RequiredGraveyardArchetype",
+            "MinGraveyardCount",
+            "RequireGraveyardEntryThisTurn"});
     EffectDefinition effect;
-    effect.Id=static_cast<int>(Number(value,"Id",1000000));
-    effect.Type=Enum<EffectType>(value,"Type",{{"Activated",EffectType::Activated},{"Triggered",EffectType::Triggered}});
-    if (value.contains("Trigger")) effect.Trigger=Enum<TriggerCondition>(value,"Trigger",{
-        {"None",TriggerCondition::None},{"OnSummoned",TriggerCondition::OnSummoned},{"OnDestroyed",TriggerCondition::OnDestroyed},
-        {"OnDamaged",TriggerCondition::OnDamaged},{"OnTurnStarted",TriggerCondition::OnTurnStarted},{"OnTurnEnded",TriggerCondition::OnTurnEnded},{"OnNormalSummoned",TriggerCondition::OnNormalSummoned},{"OnRevived",TriggerCondition::OnRevived},{"OnManifested",TriggerCondition::OnManifested}});
-    if(value.contains("ActivationZone")) effect.ActivationZone=Location(value["ActivationZone"]);
-    if(value.contains("PerTurnLimit")) effect.PerTurnLimit=static_cast<int>(Number(value,"PerTurnLimit",128));
-    if(value.contains("RequiredGraveyardArchetype")) effect.RequiredGraveyardArchetype=Text(value,"RequiredGraveyardArchetype");
-    if(value.contains("MinGraveyardCount")) effect.MinGraveyardCount=Number(value,"MinGraveyardCount",128);
-    if(value.contains("RequireGraveyardEntryThisTurn")) effect.RequireGraveyardEntryThisTurn=Text(value,"RequireGraveyardEntryThisTurn");
-    if(value.contains("Costs"))
+    effect.Id = static_cast<int>(Number(value, "Id", 1000000));
+    effect.Type = Enum<EffectType>(
+        value,
+        "Type",
+        {{"Activated", EffectType::Activated}, {"Triggered", EffectType::Triggered}});
+    if (value.contains("Trigger"))
     {
-        Array(value["Costs"],16);
-        for(auto const& entry:value["Costs"])
+        effect.Trigger =
+            Enum<TriggerCondition>(value,
+                                   "Trigger",
+                                   {{"None", TriggerCondition::None},
+                                    {"OnSummoned", TriggerCondition::OnSummoned},
+                                    {"OnDestroyed", TriggerCondition::OnDestroyed},
+                                    {"OnDamaged", TriggerCondition::OnDamaged},
+                                    {"OnTurnStarted", TriggerCondition::OnTurnStarted},
+                                    {"OnTurnEnded", TriggerCondition::OnTurnEnded},
+                                    {"OnNormalSummoned", TriggerCondition::OnNormalSummoned},
+                                    {"OnRevived", TriggerCondition::OnRevived},
+                                    {"OnManifested", TriggerCondition::OnManifested}});
+    }
+    if (value.contains("ActivationZone"))
+    {
+        effect.ActivationZone = Location(value["ActivationZone"]);
+    }
+    if (value.contains("PerTurnLimit"))
+    {
+        effect.PerTurnLimit = static_cast<int>(Number(value, "PerTurnLimit", 128));
+    }
+    if (value.contains("RequiredGraveyardArchetype"))
+    {
+        effect.RequiredGraveyardArchetype = Text(value, "RequiredGraveyardArchetype");
+    }
+    if (value.contains("MinGraveyardCount"))
+    {
+        effect.MinGraveyardCount = Number(value, "MinGraveyardCount", 128);
+    }
+    if (value.contains("RequireGraveyardEntryThisTurn"))
+    {
+        effect.RequireGraveyardEntryThisTurn = Text(value, "RequireGraveyardEntryThisTurn");
+    }
+    if (value.contains("Costs"))
+    {
+        Array(value["Costs"], 16);
+        for (auto const& entry : value["Costs"])
         {
-            Fields(entry,{"Kind","Amount","Targets"});CostDefinition cost;
-            cost.Kind=Enum<CostKind>(entry,"Kind",{{"YokaiPower",CostKind::YokaiPower},{"Life",CostKind::Life},{"Discard",CostKind::Discard},{"Tribute",CostKind::Tribute},{"HiddenExileTop",CostKind::HiddenExileTop}});
-            if(entry.contains("Amount")) cost.Amount=static_cast<int>(Number(entry,"Amount",100000));
-            if(entry.contains("Targets")) cost.Targets=Rule(entry["Targets"]);
-            if((cost.Kind==CostKind::Discard || cost.Kind==CostKind::Tribute) && !entry.contains("Targets")) throw std::runtime_error("Card cost requires target rule");
+            Fields(entry, {"Kind", "Amount", "Targets"});
+            CostDefinition cost;
+            cost.Kind = Enum<CostKind>(entry,
+                                       "Kind",
+                                       {{"YokaiPower", CostKind::YokaiPower},
+                                        {"Life", CostKind::Life},
+                                        {"Discard", CostKind::Discard},
+                                        {"Tribute", CostKind::Tribute},
+                                        {"HiddenExileTop", CostKind::HiddenExileTop}});
+            if (entry.contains("Amount"))
+            {
+                cost.Amount = static_cast<int>(Number(entry, "Amount", 100000));
+            }
+            if (entry.contains("Targets"))
+            {
+                cost.Targets = Rule(entry["Targets"]);
+            }
+            if ((cost.Kind == CostKind::Discard || cost.Kind == CostKind::Tribute) &&
+                !entry.contains("Targets"))
+            {
+                throw std::runtime_error("Card cost requires target rule");
+            }
             effect.Costs.push_back(cost);
         }
     }
-    Array(value.at("Actions"),16);
-    for(auto const& entry:value["Actions"])
+    Array(value.at("Actions"), 16);
+    for (auto const& entry : value["Actions"])
     {
-        Fields(entry,{"Operation","Targets","Amount","AttackDelta","MaxHpDelta","TransformDefinitionId","AllTargets","TemporaryStats","PreventDirectAttackThisTurn","YokaiGainArchetype","YokaiGainAmount"});
+        Fields(entry,
+               {"Operation",
+                "Targets",
+                "Amount",
+                "AttackDelta",
+                "MaxHpDelta",
+                "TransformDefinitionId",
+                "AllTargets",
+                "TemporaryStats",
+                "PreventDirectAttackThisTurn",
+                "YokaiGainArchetype",
+                "YokaiGainAmount"});
         EffectAction action;
-        action.Operation=Enum<EffectOperation>(entry,"Operation",{
-            {"Draw",EffectOperation::Draw},{"Mill",EffectOperation::Mill},{"Salvage",EffectOperation::Salvage},{"Search",EffectOperation::Search},
-            {"SummonFromDeck",EffectOperation::SummonFromDeck},{"SummonFromGraveyard",EffectOperation::SummonFromGraveyard},
-            {"ReturnToHand",EffectOperation::ReturnToHand},{"Destroy",EffectOperation::Destroy},{"DealDamage",EffectOperation::DealDamage},
-            {"Heal",EffectOperation::Heal},{"ModifyStats",EffectOperation::ModifyStats},{"Transform",EffectOperation::Transform},{"Discard",EffectOperation::Discard},{"SendToGraveyard",EffectOperation::SendToGraveyard},{"SummonFromHand",EffectOperation::SummonFromHand},{"Exile",EffectOperation::Exile},{"GainYokaiPower",EffectOperation::GainYokaiPower}});
-        action.Targets=Rule(entry.at("Targets"));
-        if (entry.contains("Amount")) action.Amount=static_cast<int>(Number(entry,"Amount",100000));
-        for (auto key:{"AttackDelta","MaxHpDelta"}) if(entry.contains(key))
+        action.Operation =
+            Enum<EffectOperation>(entry,
+                                  "Operation",
+                                  {{"Draw", EffectOperation::Draw},
+                                   {"Mill", EffectOperation::Mill},
+                                   {"Salvage", EffectOperation::Salvage},
+                                   {"Search", EffectOperation::Search},
+                                   {"SummonFromDeck", EffectOperation::SummonFromDeck},
+                                   {"SummonFromGraveyard", EffectOperation::SummonFromGraveyard},
+                                   {"ReturnToHand", EffectOperation::ReturnToHand},
+                                   {"Destroy", EffectOperation::Destroy},
+                                   {"DealDamage", EffectOperation::DealDamage},
+                                   {"Heal", EffectOperation::Heal},
+                                   {"ModifyStats", EffectOperation::ModifyStats},
+                                   {"Transform", EffectOperation::Transform},
+                                   {"Discard", EffectOperation::Discard},
+                                   {"SendToGraveyard", EffectOperation::SendToGraveyard},
+                                   {"SummonFromHand", EffectOperation::SummonFromHand},
+                                   {"Exile", EffectOperation::Exile},
+                                   {"GainYokaiPower", EffectOperation::GainYokaiPower}});
+        action.Targets = Rule(entry.at("Targets"));
+        if (entry.contains("Amount"))
         {
-            if (!entry[key].is_number_integer() || (entry[key].is_number_unsigned() && entry[key].get<std::uint64_t>()>100000))
-                throw std::runtime_error("Invalid stat delta");
-            auto delta=entry[key].get<std::int64_t>();
-            if (delta < -100000 || delta > 100000) throw std::runtime_error("Invalid stat delta");
-            if(std::string(key)=="AttackDelta") action.AttackDelta=static_cast<int>(delta); else action.MaxHpDelta=static_cast<int>(delta);
+            action.Amount = static_cast<int>(Number(entry, "Amount", 100000));
         }
-        if(entry.contains("TransformDefinitionId")) action.TransformDefinitionId=static_cast<int>(Number(entry,"TransformDefinitionId",1000000));
-        if(entry.contains("AllTargets")) action.AllTargets=Boolean(entry,"AllTargets");
-        if(entry.contains("TemporaryStats")) action.TemporaryStats=Boolean(entry,"TemporaryStats");
-        if(entry.contains("PreventDirectAttackThisTurn")) action.PreventDirectAttackThisTurn=Boolean(entry,"PreventDirectAttackThisTurn");
-        if(entry.contains("YokaiGainArchetype")) action.YokaiGainArchetype=Text(entry,"YokaiGainArchetype");
-        if(entry.contains("YokaiGainAmount")) action.YokaiGainAmount=static_cast<int>(Number(entry,"YokaiGainAmount",100000));
+        for (auto key : {"AttackDelta", "MaxHpDelta"})
+        {
+            if (entry.contains(key))
+            {
+                if (!entry[key].is_number_integer() ||
+                    (entry[key].is_number_unsigned() && entry[key].get<std::uint64_t>() > 100000))
+                {
+                    throw std::runtime_error("Invalid stat delta");
+                }
+                auto delta = entry[key].get<std::int64_t>();
+                if (delta < -100000 || delta > 100000)
+                {
+                    throw std::runtime_error("Invalid stat delta");
+                }
+                if (std::string(key) == "AttackDelta")
+                {
+                    action.AttackDelta = static_cast<int>(delta);
+                }
+                else
+                {
+                    action.MaxHpDelta = static_cast<int>(delta);
+                }
+            }
+        }
+        if (entry.contains("TransformDefinitionId"))
+        {
+            action.TransformDefinitionId =
+                static_cast<int>(Number(entry, "TransformDefinitionId", 1000000));
+        }
+        if (entry.contains("AllTargets"))
+        {
+            action.AllTargets = Boolean(entry, "AllTargets");
+        }
+        if (entry.contains("TemporaryStats"))
+        {
+            action.TemporaryStats = Boolean(entry, "TemporaryStats");
+        }
+        if (entry.contains("PreventDirectAttackThisTurn"))
+        {
+            action.PreventDirectAttackThisTurn = Boolean(entry, "PreventDirectAttackThisTurn");
+        }
+        if (entry.contains("YokaiGainArchetype"))
+        {
+            action.YokaiGainArchetype = Text(entry, "YokaiGainArchetype");
+        }
+        if (entry.contains("YokaiGainAmount"))
+        {
+            action.YokaiGainAmount = static_cast<int>(Number(entry, "YokaiGainAmount", 100000));
+        }
         effect.Actions.push_back(action);
     }
     return effect;
 }
+} // namespace
+std::string DefaultDataDirectory()
+{
+    return PROJECTC_DATA_DIR;
 }
-std::string DefaultDataDirectory() { return PROJECTC_DATA_DIR; }
 CardCatalog CardCatalog::Load(std::string const& directory)
 {
-    return FromJson(File(std::filesystem::path(directory)/"Cards.json"),File(std::filesystem::path(directory)/"Decks.json"));
+    return FromJson(File(std::filesystem::path(directory) / "Cards.json"),
+                    File(std::filesystem::path(directory) / "Decks.json"));
 }
 CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
 {
-    Fields(cards,{"Cards","CatalogVersion"}); Fields(decks,{"Config","Decks"});
+    Fields(cards, {"Cards", "CatalogVersion"});
+    Fields(decks, {"Config", "Decks"});
     CardCatalog catalog;
-    if(cards.contains("CatalogVersion")) catalog.Version=String(cards,"CatalogVersion",64);
-    auto const& config=decks.at("Config");
-    Fields(config,{"InitialLife","InitialHandSize","DrawPerTurn","FieldLimit","HandLimit","MinDeckSize","MaxDeckSize","MaxCardCopies","InitialYokaiPower","YokaiPowerPerTurn","MaxYokaiPower","SummoningSickness","EnableMulligan"});
-    catalog.Config.InitialLife=static_cast<int>(Number(config,"InitialLife",100000));
-    catalog.Config.InitialHandSize=Number(config,"InitialHandSize",128);
-    catalog.Config.DrawPerTurn=Number(config,"DrawPerTurn",128);
-    catalog.Config.FieldLimit=Number(config,"FieldLimit",32);
-    catalog.Config.HandLimit=Number(config,"HandLimit",128);
-    catalog.Config.MinDeckSize=Number(config,"MinDeckSize",128);
-    catalog.Config.MaxDeckSize=Number(config,"MaxDeckSize",128);
-    catalog.Config.MaxCardCopies=Number(config,"MaxCardCopies",128);
-    if(config.contains("InitialYokaiPower")) catalog.Config.InitialYokaiPower=static_cast<int>(Number(config,"InitialYokaiPower",100000));
-    if(config.contains("YokaiPowerPerTurn")) catalog.Config.YokaiPowerPerTurn=static_cast<int>(Number(config,"YokaiPowerPerTurn",100000));
-    if(config.contains("MaxYokaiPower")) catalog.Config.MaxYokaiPower=static_cast<int>(Number(config,"MaxYokaiPower",100000));
-    if(config.contains("SummoningSickness")) catalog.Config.SummoningSickness=Boolean(config,"SummoningSickness");
-    if(config.contains("EnableMulligan")) catalog.Config.EnableMulligan=Boolean(config,"EnableMulligan");
-    catalog.Config.AllowManualDraw=false;
-    if(!ValidateConfig(catalog.Config) || catalog.Config.MinDeckSize==0 || catalog.Config.MinDeckSize>catalog.Config.MaxDeckSize
-        || catalog.Config.MaxCardCopies==0 || catalog.Config.FieldLimit==0) throw std::runtime_error("Invalid deck configuration");
-    Array(cards.at("Cards"),1024);
-    for(auto const& entry:cards["Cards"])
+    if (cards.contains("CatalogVersion"))
     {
-        Fields(entry,{"Id","Name","Attack","MaxHp","Traits","AllowedManifestations","Effects","Type","Archetypes","Rarity","ArtKey","MainDeckEligible"});
+        catalog.Version = String(cards, "CatalogVersion", 64);
+    }
+    auto const& config = decks.at("Config");
+    Fields(config,
+           {"InitialLife",
+            "InitialHandSize",
+            "DrawPerTurn",
+            "FieldLimit",
+            "HandLimit",
+            "MinDeckSize",
+            "MaxDeckSize",
+            "MaxCardCopies",
+            "InitialYokaiPower",
+            "YokaiPowerPerTurn",
+            "MaxYokaiPower",
+            "SummoningSickness",
+            "EnableMulligan"});
+    catalog.Config.InitialLife = static_cast<int>(Number(config, "InitialLife", 100000));
+    catalog.Config.InitialHandSize = Number(config, "InitialHandSize", 128);
+    catalog.Config.DrawPerTurn = Number(config, "DrawPerTurn", 128);
+    catalog.Config.FieldLimit = Number(config, "FieldLimit", 32);
+    catalog.Config.HandLimit = Number(config, "HandLimit", 128);
+    catalog.Config.MinDeckSize = Number(config, "MinDeckSize", 128);
+    catalog.Config.MaxDeckSize = Number(config, "MaxDeckSize", 128);
+    catalog.Config.MaxCardCopies = Number(config, "MaxCardCopies", 128);
+    if (config.contains("InitialYokaiPower"))
+    {
+        catalog.Config.InitialYokaiPower =
+            static_cast<int>(Number(config, "InitialYokaiPower", 100000));
+    }
+    if (config.contains("YokaiPowerPerTurn"))
+    {
+        catalog.Config.YokaiPowerPerTurn =
+            static_cast<int>(Number(config, "YokaiPowerPerTurn", 100000));
+    }
+    if (config.contains("MaxYokaiPower"))
+    {
+        catalog.Config.MaxYokaiPower = static_cast<int>(Number(config, "MaxYokaiPower", 100000));
+    }
+    if (config.contains("SummoningSickness"))
+    {
+        catalog.Config.SummoningSickness = Boolean(config, "SummoningSickness");
+    }
+    if (config.contains("EnableMulligan"))
+    {
+        catalog.Config.EnableMulligan = Boolean(config, "EnableMulligan");
+    }
+    catalog.Config.AllowManualDraw = false;
+    if (!ValidateConfig(catalog.Config) || catalog.Config.MinDeckSize == 0 ||
+        catalog.Config.MinDeckSize > catalog.Config.MaxDeckSize ||
+        catalog.Config.MaxCardCopies == 0 || catalog.Config.FieldLimit == 0)
+    {
+        throw std::runtime_error("Invalid deck configuration");
+    }
+    Array(cards.at("Cards"), 1024);
+    for (auto const& entry : cards["Cards"])
+    {
+        Fields(entry,
+               {"Id",
+                "Name",
+                "Attack",
+                "MaxHp",
+                "Traits",
+                "AllowedManifestations",
+                "Effects",
+                "Type",
+                "Archetypes",
+                "Rarity",
+                "ArtKey",
+                "MainDeckEligible"});
         CardDefinition card;
-        card.Id=static_cast<int>(Number(entry,"Id",1000000)); card.Name=Text(entry,"Name");
-        if(entry.contains("Type")) card.Type=Enum<CardType>(entry,"Type",{{"Monster",CardType::Monster},{"Spell",CardType::Spell}});
-        if(card.Type==CardType::Monster) { card.Attack=static_cast<int>(Number(entry,"Attack",100000));card.MaxHp=static_cast<int>(Number(entry,"MaxHp",100000)); }
-        if(entry.contains("Archetypes")) {Array(entry["Archetypes"],16);for(auto const& archetype:entry["Archetypes"]) card.Archetypes.push_back(Text(Json{{"Value",archetype}},"Value"));}
-        if(entry.contains("Rarity")) card.Rarity=Text(entry,"Rarity");
-        if(entry.contains("ArtKey")) card.ArtKey=Text(entry,"ArtKey");
-        if(entry.contains("MainDeckEligible")) card.MainDeckEligible=Boolean(entry,"MainDeckEligible");
-        if(entry.contains("Traits")) { Array(entry["Traits"],16); for(auto const& trait:entry["Traits"]) card.Traits.push_back(Text(Json{{"Value",trait}},"Value")); }
-        if(entry.contains("AllowedManifestations")) { Array(entry["AllowedManifestations"],16); for(auto const& id:entry["AllowedManifestations"]) card.AllowedManifestations.push_back(static_cast<int>(Number(Json{{"Id",id}},"Id",1000000))); }
-        if(entry.contains("Effects")) { Array(entry["Effects"],16); for(auto const& effect:entry["Effects"]) { auto parsed=Effect(effect);if(card.Type==CardType::Spell && !effect.contains("ActivationZone")) parsed.ActivationZone=Zone::Hand;card.Effects.push_back(parsed); } }
+        card.Id = static_cast<int>(Number(entry, "Id", 1000000));
+        card.Name = Text(entry, "Name");
+        if (entry.contains("Type"))
+        {
+            card.Type = Enum<CardType>(
+                entry, "Type", {{"Monster", CardType::Monster}, {"Spell", CardType::Spell}});
+        }
+        if (card.Type == CardType::Monster)
+        {
+            card.Attack = static_cast<int>(Number(entry, "Attack", 100000));
+            card.MaxHp = static_cast<int>(Number(entry, "MaxHp", 100000));
+        }
+        if (entry.contains("Archetypes"))
+        {
+            Array(entry["Archetypes"], 16);
+            for (auto const& archetype : entry["Archetypes"])
+            {
+                card.Archetypes.push_back(Text(Json{{"Value", archetype}}, "Value"));
+            }
+        }
+        if (entry.contains("Rarity"))
+        {
+            card.Rarity = Text(entry, "Rarity");
+        }
+        if (entry.contains("ArtKey"))
+        {
+            card.ArtKey = Text(entry, "ArtKey");
+        }
+        if (entry.contains("MainDeckEligible"))
+        {
+            card.MainDeckEligible = Boolean(entry, "MainDeckEligible");
+        }
+        if (entry.contains("Traits"))
+        {
+            Array(entry["Traits"], 16);
+            for (auto const& trait : entry["Traits"])
+            {
+                card.Traits.push_back(Text(Json{{"Value", trait}}, "Value"));
+            }
+        }
+        if (entry.contains("AllowedManifestations"))
+        {
+            Array(entry["AllowedManifestations"], 16);
+            for (auto const& id : entry["AllowedManifestations"])
+            {
+                card.AllowedManifestations.push_back(
+                    static_cast<int>(Number(Json{{"Id", id}}, "Id", 1000000)));
+            }
+        }
+        if (entry.contains("Effects"))
+        {
+            Array(entry["Effects"], 16);
+            for (auto const& effect : entry["Effects"])
+            {
+                auto parsed = Effect(effect);
+                if (card.Type == CardType::Spell && !effect.contains("ActivationZone"))
+                {
+                    parsed.ActivationZone = Zone::Hand;
+                }
+                card.Effects.push_back(parsed);
+            }
+        }
         catalog.Definitions.push_back(card);
     }
-    Array(decks.at("Decks"),32);
-    for(auto const& entry:decks["Decks"])
+    Array(decks.at("Decks"), 32);
+    for (auto const& entry : decks["Decks"])
     {
-        Fields(entry,{"Id","Name","Cards"});
-        DeckDefinition deck{String(entry,"Id",64),Text(entry,"Name"),{}};
-        if(catalog.FindDeck(deck.Id)) throw std::runtime_error("Duplicate deck ID");
-        Array(entry.at("Cards"),128);
-        for(auto const& id:entry["Cards"]) deck.Cards.push_back(static_cast<int>(Number(Json{{"Id",id}},"Id",1000000)));
-        if(!catalog.ValidateDeck(deck.Cards)) throw std::runtime_error("Invalid deck composition");
+        Fields(entry, {"Id", "Name", "Cards"});
+        DeckDefinition deck{String(entry, "Id", 64), Text(entry, "Name"), {}};
+        if (catalog.FindDeck(deck.Id))
+        {
+            throw std::runtime_error("Duplicate deck ID");
+        }
+        Array(entry.at("Cards"), 128);
+        for (auto const& id : entry["Cards"])
+        {
+            deck.Cards.push_back(static_cast<int>(Number(Json{{"Id", id}}, "Id", 1000000)));
+        }
+        if (!catalog.ValidateDeck(deck.Cards))
+        {
+            throw std::runtime_error("Invalid deck composition");
+        }
         catalog.Decks.push_back(deck);
     }
-    if(catalog.Decks.empty()) throw std::runtime_error("At least one playable deck required");
-    // Core validates IDs, stats, effects, target rules and transformation links before serving clients.
-    for(auto const& deck:catalog.Decks)
+    if (catalog.Decks.empty())
     {
-        auto sample=catalog.Initialize({1,2},{deck.Id,deck.Id},1,1);
-        if(!ValidateGameState(sample) || (!sample.Config.EnableMulligan && ProcessCommand(sample,StartTurnCommand{1}).Code!=CommandError::Success))
+        throw std::runtime_error("At least one playable deck required");
+    }
+    // Core validates IDs, stats, effects, target rules and transformation links before serving
+    // clients.
+    for (auto const& deck : catalog.Decks)
+    {
+        auto sample = catalog.Initialize({1, 2}, {deck.Id, deck.Id}, 1, 1);
+        if (!ValidateGameState(sample) ||
+            (!sample.Config.EnableMulligan &&
+             ProcessCommand(sample, StartTurnCommand{1}).Code != CommandError::Success))
+        {
             throw std::runtime_error("Invalid card definitions or initial draw configuration");
+        }
     }
     return catalog;
 }
 DeckDefinition const* CardCatalog::FindDeck(std::string const& id) const
 {
-    for(auto const& deck:Decks) if(deck.Id==id) return &deck;
+    for (auto const& deck : Decks)
+    {
+        if (deck.Id == id)
+        {
+            return &deck;
+        }
+    }
     return nullptr;
 }
 bool CardCatalog::ValidateDeck(std::vector<CardDefinitionId> const& cards) const
 {
-    if(cards.size()<Config.MinDeckSize || cards.size()>Config.MaxDeckSize || cards.size()<Config.InitialHandSize) return false;
-    std::map<int,std::size_t> counts;
-    for(auto id:cards)
+    if (cards.size() < Config.MinDeckSize || cards.size() > Config.MaxDeckSize ||
+        cards.size() < Config.InitialHandSize)
     {
-        bool known=false; for(auto const& definition:Definitions) if(definition.Id==id) known=definition.MainDeckEligible;
-        if(!known || ++counts[id]>Config.MaxCardCopies) return false;
+        return false;
+    }
+    std::map<int, std::size_t> counts;
+    for (auto id : cards)
+    {
+        bool known = false;
+        for (auto const& definition : Definitions)
+        {
+            if (definition.Id == id)
+            {
+                known = definition.MainDeckEligible;
+            }
+        }
+        if (!known || ++counts[id] > Config.MaxCardCopies)
+        {
+            return false;
+        }
     }
     return true;
 }
 std::string CardCatalog::PersonalDeckError(std::vector<CardDefinitionId> const& cards) const
 {
-    if(Config.MinDeckSize!=30 || Config.MaxDeckSize!=30 || Config.MaxCardCopies!=3) return "DeckRulesMismatch";
-    if(cards.size()!=30) return "DeckCardCount";
-    std::map<int,std::size_t> counts;
-    for(auto id:cards)
+    if (Config.MinDeckSize != PersonalDeckCardCount ||
+        Config.MaxDeckSize != PersonalDeckCardCount ||
+        Config.MaxCardCopies != MaximumCopiesPerPersonalDeckCard)
     {
-        auto definition=std::find_if(Definitions.begin(),Definitions.end(),[&](auto const& d){return d.Id==id;});
-        if(definition==Definitions.end()) return "DeckUnknownCard";
-        if(!definition->MainDeckEligible) return "DeckIneligibleCard";
-        if(++counts[id]>Config.MaxCardCopies) return "DeckCopyLimit";
+        return "DeckRulesMismatch";
     }
-    return ValidateDeck(cards)?"":"DeckRulesMismatch";
+    if (cards.size() != PersonalDeckCardCount)
+    {
+        return "DeckCardCount";
+    }
+    std::map<int, std::size_t> counts;
+    for (auto id : cards)
+    {
+        auto definition = std::find_if(
+            Definitions.begin(), Definitions.end(), [&](auto const& d) { return d.Id == id; });
+        if (definition == Definitions.end())
+        {
+            return "DeckUnknownCard";
+        }
+        if (!definition->MainDeckEligible)
+        {
+            return "DeckIneligibleCard";
+        }
+        if (++counts[id] > Config.MaxCardCopies)
+        {
+            return "DeckCopyLimit";
+        }
+    }
+    return ValidateDeck(cards) ? "" : "DeckRulesMismatch";
 }
 Json CardCatalog::PublicDecks() const
 {
-    Json result=Json::array();
-    for(auto const& deck:Decks) result.push_back({{"Id",deck.Id},{"Name",deck.Name},{"CardCount",deck.Cards.size()}});
+    Json result = Json::array();
+    for (auto const& deck : Decks)
+    {
+        result.push_back({{"Id", deck.Id}, {"Name", deck.Name}, {"CardCount", deck.Cards.size()}});
+    }
     return result;
 }
-GameState CardCatalog::Initialize(std::array<int,2> players, std::array<std::string,2> const& decks, std::uint64_t seed, int firstCardId) const
+GameState CardCatalog::Initialize(std::array<int, 2> players,
+                                  std::array<std::string, 2> const& decks,
+                                  std::uint64_t seed,
+                                  int firstCardId) const
 {
-    std::array<std::vector<CardDefinitionId>,2> cards;
-    for(int i=0;i<2;++i)
+    std::array<std::vector<CardDefinitionId>, 2> cards;
+    for (int i = 0; i < 2; ++i)
     {
-        auto deck=FindDeck(decks[i]);
-        if(!deck) throw std::runtime_error("Invalid selected deck");
-        cards[i]=deck->Cards;
+        auto deck = FindDeck(decks[i]);
+        if (!deck)
+        {
+            throw std::runtime_error("Invalid selected deck");
+        }
+        cards[i] = deck->Cards;
     }
-    return InitializeCards(players,cards,seed,firstCardId);
+    return InitializeCards(players, cards, seed, firstCardId);
 }
-GameState CardCatalog::InitializeCards(std::array<int,2> players, std::array<std::vector<CardDefinitionId>,2> const& decks, std::uint64_t seed, int firstCardId) const
+GameState CardCatalog::InitializeCards(std::array<int, 2> players,
+                                       std::array<std::vector<CardDefinitionId>, 2> const& decks,
+                                       std::uint64_t seed,
+                                       int firstCardId) const
 {
     std::mt19937_64 random(seed);
-    std::array<PlayerSetup,2> setup;
-    for(int i=0;i<2;++i)
+    std::array<PlayerSetup, 2> setup;
+    for (int i = 0; i < 2; ++i)
     {
-        if(!ValidateDeck(decks[i])) throw std::runtime_error("Invalid selected deck");
-        setup[i]={players[i],decks[i]};
-        for(std::size_t n=setup[i].Deck.size();n>1;--n)
+        if (!ValidateDeck(decks[i]))
         {
-            auto const bound=static_cast<std::uint64_t>(n);
-            auto const threshold=(std::uint64_t{0}-bound)%bound;
+            throw std::runtime_error("Invalid selected deck");
+        }
+        setup[i] = {players[i], decks[i]};
+        for (std::size_t n = setup[i].Deck.size(); n > 1; --n)
+        {
+            auto const bound = static_cast<std::uint64_t>(n);
+            auto const threshold = (std::uint64_t{0} - bound) % bound;
             std::uint64_t value;
-            do {value=random();} while(value<threshold);
-            std::swap(setup[i].Deck[n-1],setup[i].Deck[value%bound]);
+            do
+            {
+                value = random();
+            } while (value < threshold);
+            std::swap(setup[i].Deck[n - 1], setup[i].Deck[value % bound]);
         }
     }
     GameState state;
-    if(InitializeGame(state,Config,Definitions,setup,players[0],seed)!=InitializationResult::Success) throw std::runtime_error("Invalid card data");
-    for(auto& player:state.Players) for(auto zone:{Zone::Deck,Zone::Hand,Zone::Field,Zone::Graveyard})
-        for(auto& card:*GetZone(player,zone)) card.Id+=firstCardId-1;
+    if (InitializeGame(state, Config, Definitions, setup, players[0], seed) !=
+        InitializationResult::Success)
+    {
+        throw std::runtime_error("Invalid card data");
+    }
+    for (auto& player : state.Players)
+    {
+        for (auto zone : {Zone::Deck, Zone::Hand, Zone::Field, Zone::Graveyard})
+        {
+            for (auto& card : *GetZone(player, zone))
+            {
+                card.Id += firstCardId - 1;
+            }
+        }
+    }
     return state;
 }
-}
+} // namespace ProjectC::Network

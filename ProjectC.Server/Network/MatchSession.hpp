@@ -1,11 +1,11 @@
 #pragma once
 #include "CardCatalog.hpp"
 #include "ProjectC/GameReplay.hpp"
+#include <array>
 #include <chrono>
 #include <functional>
-#include <memory>
 #include <map>
-#include <array>
+#include <memory>
 #include <optional>
 namespace ProjectC::Network
 {
@@ -16,12 +16,20 @@ struct ClientSession
     int Player = 0;
     std::string MatchId; // Bound by server; never assigned from SubmitCommand.
 };
-enum class MatchStatus { WaitingForPlayers, Ready, Mulligan, Playing, Finished, Closed };
+enum class MatchStatus
+{
+    WaitingForPlayers,
+    Ready,
+    Mulligan,
+    Playing,
+    Finished,
+    Closed
+};
 struct IdentityAllocator
 {
     int NextPlayer = 1;
     int NextCard = 1;
-    std::array<int,2> Players();
+    std::array<int, 2> Players();
     int Cards(std::size_t count);
 };
 struct ReplayRecord
@@ -38,19 +46,33 @@ struct ReplayRecord
 };
 class MatchSession
 {
-public:
-    MatchSession(std::string id, std::shared_ptr<CardCatalog const> catalog,
-        std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive, int mulliganTimeoutSeconds = 60, bool mulliganAutoKeep = true);
+  public:
+    MatchSession(std::string id,
+                 std::shared_ptr<CardCatalog const> catalog,
+                 std::shared_ptr<IdentityAllocator> identities,
+                 std::function<void(ReplayRecord)> archive,
+                 int mulliganTimeoutSeconds = 60,
+                 bool mulliganAutoKeep = true);
     void Handle(std::shared_ptr<ClientSession> const& client, Json const& input);
     void Disconnect(std::shared_ptr<ClientSession> const& client);
     void Close(std::string const& reason);
     void Tick(Clock::time_point now);
     Json Snapshot(int viewer) const;
     Json Message(std::string const& type, std::string const& request = "") const;
-    MatchStatus Status() const { return status; }
-    Clock::time_point LastActivity() const { return lastActivity; }
-    std::string const& Id() const { return id; }
-private:
+    MatchStatus Status() const
+    {
+        return status;
+    }
+    Clock::time_point LastActivity() const
+    {
+        return lastActivity;
+    }
+    std::string const& Id() const
+    {
+        return id;
+    }
+
+  private:
     struct Seat
     {
         int Player = 0;
@@ -67,7 +89,7 @@ private:
     std::shared_ptr<CardCatalog const> catalog;
     std::shared_ptr<IdentityAllocator> identities;
     std::function<void(ReplayRecord)> archive;
-    std::array<Seat,2> seats;
+    std::array<Seat, 2> seats;
     GameCore::GameState state;
     MatchStatus status = MatchStatus::WaitingForPlayers;
     Clock::time_point lastActivity = Clock::now();
@@ -85,19 +107,21 @@ private:
         GameCore::EffectChoiceRequest Choice;
         std::string ChoiceId;
         bool CanCancel = true;
-        std::map<std::string,GameCore::EffectTarget> Options;
+        std::map<std::string, GameCore::EffectTarget> Options;
         Json Payload;
-        std::vector<std::pair<int,std::string>> Requests;
+        std::vector<std::pair<int, std::string>> Requests;
     };
     std::optional<PendingAction> pendingAction;
-    void PrepareChoice(GameCore::PlayerActionCommand const& command,GameCore::EffectChoiceRequest const& choice);
+    void PrepareChoice(GameCore::PlayerActionCommand const& command,
+                       GameCore::EffectChoiceRequest const& choice);
     void SendChoice(std::shared_ptr<ClientSession> const& client) const;
     int SeatIndex(int player) const;
-    void SendSnapshot(std::shared_ptr<ClientSession> const& client, std::string const& request = "") const;
+    void SendSnapshot(std::shared_ptr<ClientSession> const& client,
+                      std::string const& request = "") const;
     void Broadcast(std::vector<GameCore::GameEvent> const& events);
     void Lobby() const;
     void StartGame();
     void Archive();
     void Submit(std::shared_ptr<ClientSession> const& client, Json const& input);
 };
-}
+} // namespace ProjectC::Network

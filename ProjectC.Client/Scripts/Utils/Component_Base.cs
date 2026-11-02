@@ -1,5 +1,5 @@
-using UnityEngine;
 using Game.Utils;
+using UnityEngine;
 
 public class Component_Base : MonoBehaviour
 {
@@ -16,9 +16,7 @@ public class Component_Base : MonoBehaviour
         OnPreInitialized();
     }
 
-    protected virtual void OnPreInitialized()
-    {
-    }
+    protected virtual void OnPreInitialized() { }
 
     protected bool Bind<T>(string objectName, out T component)
         where T : Component

@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 public class MultiKeyDictionary<Key1, Key2, V> : Dictionary<Key1, Dictionary<Key2, V>>
 {
@@ -17,7 +17,7 @@ public class MultiKeyDictionary<Key1, Key2, V> : Dictionary<Key1, Dictionary<Key
             return base[key1][key2];
         }
         set
-        { 
+        {
             if (!ContainsKey(key1))
             {
                 this[key1] = new Dictionary<Key2, V>();
@@ -42,7 +42,9 @@ public class MultiKeyDictionary<Key1, Key2, V> : Dictionary<Key1, Dictionary<Key
     public void Add(Key1 key1, Key2 key2, V value)
     {
         if (!ContainsKey(key1))
+        {
             this[key1] = new Dictionary<Key2, V>();
+        }
         this[key1][key2] = value;
     }
 
@@ -56,8 +58,8 @@ public class MultiKeyDictionary<Key1, Key2, V> : Dictionary<Key1, Dictionary<Key
         get
         {
             return from baseDict in base.Values
-                   from baseKey in baseDict.Keys
-                   select baseDict[baseKey];
+                from baseKey in baseDict.Keys
+                select baseDict[baseKey];
         }
     }
 }

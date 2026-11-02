@@ -2,21 +2,45 @@ using System.Text;
 using Game.Utils;
 using UnityEngine;
 using UnityEngine.UI;
+
 namespace ProjectC.Client
 {
     public sealed class LobbyPanelView : MonoBehaviour
     {
-        public InputField Address, MatchId;
-        public Text Connection, Seats, DeckLabel, ReadyLabel;
-        public Button Connect, Disconnect, Create, Join, Ready, Deck, Rematch, Leave, Close;
+        public InputField Address,
+            MatchId;
+        public Text Connection,
+            Seats,
+            DeckLabel,
+            ReadyLabel;
+        public Button Connect,
+            Disconnect,
+            Create,
+            Join,
+            Ready,
+            Deck,
+            Rematch,
+            Leave,
+            Close;
         MultiplayerDebugScreen client;
+
         public void Bind(MultiplayerDebugScreen value)
         {
-            this.Bind("ServerAddress",out Address);this.Bind("MatchId",out MatchId);
-            this.Bind("Status",out Connection);this.Bind("Seats",out Seats);
-            this.Bind("Connect",out Connect);this.Bind("Disconnect",out Disconnect);this.Bind("Create",out Create);this.Bind("Join",out Join);
-            this.Bind("Ready",out Ready);this.Bind("Deck",out Deck);this.Bind("Rematch",out Rematch);this.Bind("Leave",out Leave);this.Bind("Close",out Close);
-            Deck.transform.Bind("Label",out DeckLabel);Ready.transform.Bind("Label",out ReadyLabel);
+            this.Bind("ServerAddress", out Address);
+            this.Bind("MatchId", out MatchId);
+            this.Bind("Status", out Connection);
+            this.Bind("Seats", out Seats);
+            this.Bind("Connect", out Connect);
+            this.Bind("Disconnect", out Disconnect);
+            this.Bind("Create", out Create);
+            this.Bind("Join", out Join);
+            this.Bind("Ready", out Ready);
+            this.Bind("Deck", out Deck);
+            this.Bind("Rematch", out Rematch);
+            this.Bind("Leave", out Leave);
+            this.Bind("Close", out Close);
+            Deck.transform.Bind("Label", out DeckLabel);
+            Ready.transform.Bind("Label", out ReadyLabel);
             client = value;
             Connect.onClick.AddListener(() => client.ConnectTo(Address.text.Trim()));
             Disconnect.onClick.AddListener(client.DisconnectNetwork);
@@ -24,33 +48,89 @@ namespace ProjectC.Client
             Join.onClick.AddListener(() => client.JoinMatch(MatchId.text.Trim()));
             Ready.onClick.AddListener(() => client.SetReady(client.SelectedDeck, !IsReady()));
             Deck.onClick.AddListener(client.CycleDeck);
-            Rematch.onClick.AddListener(client.RequestRematch); Leave.onClick.AddListener(client.LeaveMatch); Close.onClick.AddListener(client.CloseMatch);
+            Rematch.onClick.AddListener(client.RequestRematch);
+            Leave.onClick.AddListener(client.LeaveMatch);
+            Close.onClick.AddListener(client.CloseMatch);
         }
+
         bool IsReady()
         {
-            if (client.Lobby?.Players != null) foreach (var p in client.Lobby.Players) if (p.PlayerId == client.PlayerId) return p.Ready;
+            if (client.Lobby?.Players != null)
+            {
+                foreach (var p in client.Lobby.Players)
+                {
+                    if (p.PlayerId == client.PlayerId)
+                    {
+                        return p.Ready;
+                    }
+                }
+            }
             return false;
         }
+
         public void Render()
         {
-            if (client == null) return;
+            if (client == null)
+            {
+                return;
+            }
             bool available = client.Connected && !client.Busy;
             bool joined = !string.IsNullOrEmpty(client.CurrentMatch);
             string status = client.Lobby?.Status ?? "Lobby";
-            Connection.text = (client.Connected ? "CONNECTED" : "OFFLINE / reconnect to restore") + "\n" + (joined ? client.CurrentMatch + "  /  P" + client.PlayerId + "  /  " + status : "Create a room or enter a Match ID");
+            Connection.text =
+                (client.Connected ? "CONNECTED" : "OFFLINE / reconnect to restore")
+                + "\n"
+                + (
+                    joined
+                        ? client.CurrentMatch + "  /  P" + client.PlayerId + "  /  " + status
+                        : "Create a room or enter a Match ID"
+                );
             var seats = new StringBuilder();
-            if (client.Lobby?.Players != null) foreach (var p in client.Lobby.Players)
-                seats.AppendLine("P" + p.PlayerId + (p.PlayerId == client.PlayerId ? " (you)" : "") + " : " + (!p.Occupied ? "empty" : !p.Connected ? "disconnected" : p.Rematch ? "rematch requested" : p.Ready ? "READY / 덱 확정" : p.DeckSubmitted ? "덱 제출 완료 / 준비 전" : "덱 제출 대기"));
-            Seats.text = seats.ToString(); DeckLabel.text = client.DeckSummary;
+            if (client.Lobby?.Players != null)
+            {
+                foreach (var p in client.Lobby.Players)
+                {
+                    seats.AppendLine(
+                        "P"
+                            + p.PlayerId
+                            + (p.PlayerId == client.PlayerId ? " (you)" : "")
+                            + " : "
+                            + (
+                                !p.Occupied ? "empty"
+                                : !p.Connected ? "disconnected"
+                                : p.Rematch ? "rematch requested"
+                                : p.Ready ? "READY / 덱 확정"
+                                : p.DeckSubmitted ? "덱 제출 완료 / 준비 전"
+                                : "덱 제출 대기"
+                            )
+                    );
+                }
+            }
+            Seats.text = seats.ToString();
+            DeckLabel.text = client.DeckSummary;
             ReadyLabel.text = IsReady() ? "CANCEL READY" : "READY TO PLAY";
-            if(!IsReady() && !string.IsNullOrEmpty(client.DeckProblem)) Seats.text+="\n"+client.DeckProblem;
-            if(!string.IsNullOrEmpty(client.ConfirmedDeckName)) Seats.text+="\n확정 덱: "+client.ConfirmedDeckName;
-            Connect.interactable = !client.Connected && !client.Busy; Disconnect.interactable = client.Connected || client.Busy;
-            Create.interactable = available && !joined; Join.interactable = available && !joined && !string.IsNullOrWhiteSpace(MatchId.text);
-            Ready.interactable = available && joined && (status == "WaitingForPlayers" || status == "Ready") && (IsReady() || string.IsNullOrEmpty(client.DeckProblem));
+            if (!IsReady() && !string.IsNullOrEmpty(client.DeckProblem))
+            {
+                Seats.text += "\n" + client.DeckProblem;
+            }
+            if (!string.IsNullOrEmpty(client.ConfirmedDeckName))
+            {
+                Seats.text += "\n확정 덱: " + client.ConfirmedDeckName;
+            }
+            Connect.interactable = !client.Connected && !client.Busy;
+            Disconnect.interactable = client.Connected || client.Busy;
+            Create.interactable = available && !joined;
+            Join.interactable = available && !joined && !string.IsNullOrWhiteSpace(MatchId.text);
+            Ready.interactable =
+                available
+                && joined
+                && (status == "WaitingForPlayers" || status == "Ready")
+                && (IsReady() || string.IsNullOrEmpty(client.DeckProblem));
             Deck.interactable = available && !IsReady() && status != "Playing";
             Rematch.interactable = available && status == "Finished";
-            Leave.interactable = available && joined; Close.interactable = available && joined && client.Lobby?.HostPlayerId == client.PlayerId;
+            Leave.interactable = available && joined;
+            Close.interactable =
+                available && joined && client.Lobby?.HostPlayerId == client.PlayerId;
         }
     }
 }

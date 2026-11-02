@@ -7,7 +7,11 @@ namespace Game.Utils
 {
     public static class UnityBindingExtensions
     {
-        public static bool Bind(this GameObject gameObject, string objectName, out GameObject target)
+        public static bool Bind(
+            this GameObject gameObject,
+            string objectName,
+            out GameObject target
+        )
         {
             return Bind(gameObject.transform, objectName, out target);
         }
@@ -19,7 +23,11 @@ namespace Game.Utils
             return target != null;
         }
 
-        public static bool Bind(this MonoBehaviour behaviour, string objectName, out GameObject target)
+        public static bool Bind(
+            this MonoBehaviour behaviour,
+            string objectName,
+            out GameObject target
+        )
         {
             return Bind(behaviour.transform, objectName, out target);
         }
@@ -48,7 +56,8 @@ namespace Game.Utils
             this MonoBehaviour behaviour,
             string objectName,
             out Button button,
-            UnityAction callback)
+            UnityAction callback
+        )
         {
             if (!behaviour.Bind(objectName, out button))
             {
