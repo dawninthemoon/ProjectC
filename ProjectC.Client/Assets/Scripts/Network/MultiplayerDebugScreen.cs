@@ -34,6 +34,7 @@ namespace ProjectC.Client
 
         // Transport/controller only. The scene-authored BattleScreen prefab owns all rendering.
         public event Action<EventView> EventReceived;
+        public event Action<StateView> SnapshotReceived;
         public event Action<string> NoticeReceived;
         public event Action<bool, string> CommandFinished;
         public event Action ViewInvalidated;
@@ -905,6 +906,7 @@ namespace ProjectC.Client
                     }
                     // Selection is a view hint; discard it if its old card no longer exists in our visible zones.
                     RefreshSelection();
+                    SnapshotReceived?.Invoke(state);
                     break;
                 case "MatchEnded":
                     token = null;

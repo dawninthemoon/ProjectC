@@ -38,6 +38,8 @@ namespace ProjectC.Client
         public bool InHand { get; private set; }
         public bool IsSelected { get; private set; }
         public bool IsHovered { get; private set; }
+        public bool IsInFlight { get; private set; }
+        public Action SortRequested;
         public Vector3 WorldCenter => Face.TransformPoint(Face.rect.center);
         public Action<CardWidget> Clicked,
             Hovered;
@@ -49,7 +51,6 @@ namespace ProjectC.Client
         bool bound,
             dragging,
             pointerDragged;
-        int originalSibling;
         float pulse;
         TargetHint hint;
 
@@ -179,7 +180,7 @@ namespace ProjectC.Client
 
         void Update()
         {
-            if (!bound || (dragging && !InHand))
+            if (!bound || IsInFlight || (dragging && !InHand))
             {
                 return;
             }
@@ -208,13 +209,12 @@ namespace ProjectC.Client
 
         public void OnPointerEnter(PointerEventData e)
         {
-            if (Hidden || Card == null)
+            if (IsInFlight || Hidden || Card == null)
             {
                 return;
             }
             if (!IsHovered)
             {
-                originalSibling = transform.GetSiblingIndex();
                 if (InHand)
                 {
                     transform.SetAsLastSibling();
@@ -229,7 +229,7 @@ namespace ProjectC.Client
             IsHovered = false;
             if (InHand && !dragging)
             {
-                transform.SetSiblingIndex(originalSibling);
+                SortRequested?.Invoke();
             }
             HoverLeft?.Invoke();
         }
@@ -237,7 +237,8 @@ namespace ProjectC.Client
         public void OnPointerClick(PointerEventData e)
         {
             if (
-                !Hidden
+                !IsInFlight
+                && !Hidden
                 && Card != null
                 && !pointerDragged
                 && (e == null || e.button == PointerEventData.InputButton.Left)
@@ -250,7 +251,7 @@ namespace ProjectC.Client
 
         public void OnBeginDrag(PointerEventData e)
         {
-            if (Hidden || Card == null || e.button != PointerEventData.InputButton.Left)
+            if (IsInFlight || Hidden || Card == null || e.button != PointerEventData.InputButton.Left)
             {
                 return;
             }
@@ -282,11 +283,26 @@ namespace ProjectC.Client
         {
             IsHovered = dragging = pointerDragged = false;
             Dim(false);
+            SortRequested?.Invoke();
+        }
+
+        public void SetInFlight(bool value)
+        {
+            IsInFlight = value;
+            ResetPointer();
+            Face.anchoredPosition = Vector2.zero;
+            Face.localScale = Vector3.one;
+            if (opacity != null)
+            {
+                opacity.blocksRaycasts = opacity.interactable = !value;
+            }
         }
 
         void OnDisable()
         {
-            ResetPointer();
+            // Unity forbids sibling changes while a parent hierarchy is being disabled.
+            IsHovered = dragging = pointerDragged = false;
+            Dim(false);
         }
     }
 }

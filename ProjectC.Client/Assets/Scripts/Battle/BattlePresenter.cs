@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Game.Utils;
 using TMPro;
@@ -58,8 +60,9 @@ namespace ProjectC.Client
             && !Client.State.MulliganActive
             && Client.State.ResolvingPlayerId == 0
             && Client.State.ActivePlayerId == Client.PlayerId
-            && !LobbyOverlay.activeSelf
+            && (LobbyOverlay == null || !LobbyOverlay.activeSelf)
             && !GraveyardPanel.activeSelf;
+        public bool PresentationBusy => _playing || _batches.Count > 0 || events.Count > 0;
         public int EnemyId => enemy?.PlayerId ?? 0;
         public bool EnemyFieldEmpty => enemy?.Field?.Length == 0;
 
@@ -97,6 +100,20 @@ namespace ProjectC.Client
             hovered;
         PlayerView mine,
             enemy;
+        private const int MaximumPendingEvents = 256;
+        private const int MaximumPendingBatches = 64;
+        private readonly BattlePresentationState _presentation = new BattlePresentationState();
+        private readonly Queue<PresentationBatch> _batches = new Queue<PresentationBatch>();
+        private bool _playing;
+        private bool _snapPresentation = true;
+        private bool _restorePresentation = true;
+
+        private sealed class PresentationBatch
+        {
+            public EventView[] Events;
+            public StateView Snapshot;
+        }
+
         readonly Queue<EventView> events = new Queue<EventView>();
         readonly Dictionary<int, CardView> knownCards = new Dictionary<int, CardView>();
 
@@ -107,8 +124,9 @@ namespace ProjectC.Client
                 ClientApp.Instance != null
                     ? ClientApp.Instance.Network
                     : GetComponent<MultiplayerDebugScreen>();
+            // The scene-based front end no longer embeds the legacy lobby/debug panel.
             this.Bind("LobbyPanel", out Lobby);
-            LobbyOverlay = Lobby.gameObject;
+            LobbyOverlay = Lobby != null ? Lobby.gameObject : null;
             this.Bind("YourHand", out Hand);
             this.Bind("OwnField", out OwnField);
             this.Bind("OpponentField", out EnemyField);
@@ -121,7 +139,7 @@ namespace ProjectC.Client
             this.Bind("RecentEvents", out Log);
             Interaction = GetComponent<BattleInteractionController>();
             Interaction.Initialize(this);
-            Lobby.Bind(Client);
+            Lobby?.Bind(Client);
             Summon.onClick.AddListener(() => Command("PlayCard"));
             BattlePhase.onClick.AddListener(() => Command("AdvancePhase"));
             Attack.onClick.AddListener(() => Command("Attack"));
@@ -143,11 +161,12 @@ namespace ProjectC.Client
                 GraveyardPanel.SetActive(!GraveyardPanel.activeSelf)
             );
             LogToggle.onClick.AddListener(Log.Toggle);
-            Resync.onClick.AddListener(Client.RequestSnapshot);
+            Resync?.onClick.AddListener(Client.RequestSnapshot);
             ResultRematch.onClick.AddListener(Client.RequestRematch);
             ResultLeave.onClick.AddListener(Client.LeaveMatch);
             Client.NoticeReceived += Log.Add;
             Client.EventReceived += ReceiveEvent;
+            Client.SnapshotReceived += ReceiveSnapshot;
             Client.ViewInvalidated += Invalidate;
             Effects.ResetFeedback();
             Detail.Show(null);
@@ -160,22 +179,150 @@ namespace ProjectC.Client
             {
                 Client.NoticeReceived -= Log.Add;
                 Client.EventReceived -= ReceiveEvent;
+                Client.SnapshotReceived -= ReceiveSnapshot;
                 Client.ViewInvalidated -= Invalidate;
             }
         }
 
         void Invalidate()
         {
+            StopAllCoroutines();
+            _playing = false;
+            _batches.Clear();
+            _restorePresentation = true;
+            _snapPresentation = true;
+            dirty = true;
             events.Clear();
             Effects.ResetFeedback();
             Detail.Show(null);
         }
 
+        private void OnDisable()
+        {
+            if (Effects != null && Detail != null)
+            {
+                Invalidate();
+            }
+        }
+
         void ReceiveEvent(EventView e)
         {
-            if (events.Count < 256)
+            if (events.Count >= MaximumPendingEvents)
             {
-                events.Enqueue(e);
+                Debug.LogWarning("Battle presentation event backlog exceeded; restoring the latest snapshot.", this);
+                Invalidate();
+            }
+            events.Enqueue(e);
+        }
+
+        private void ReceiveSnapshot(StateView snapshot)
+        {
+            if (_restorePresentation || _presentation.State == null
+                || (snapshot.Started && !_presentation.State.Started)
+                || snapshot.MulliganActive != _presentation.State.MulliganActive)
+            {
+                _presentation.Reset(snapshot);
+                _restorePresentation = false;
+                events.Clear();
+                dirty = true;
+                return;
+            }
+            if (_batches.Count >= MaximumPendingBatches)
+            {
+                Debug.LogWarning("Battle presentation snapshot backlog exceeded; restoring the latest snapshot.", this);
+                Invalidate();
+                _presentation.Reset(snapshot);
+                _restorePresentation = false;
+                return;
+            }
+            // Pair each event batch with the snapshot that supplies its visible cards,
+            // including when several server messages arrive in one Unity frame.
+            _batches.Enqueue(new PresentationBatch { Events = events.ToArray(), Snapshot = snapshot });
+            events.Clear();
+        }
+
+        private IEnumerator PlayPresentation()
+        {
+            _playing = true;
+            var playback = PlayBatches();
+            while (true)
+            {
+                object next;
+                try
+                {
+                    if (!playback.MoveNext())
+                    {
+                        break;
+                    }
+                    next = playback.Current;
+                }
+                catch (Exception error)
+                {
+                    Debug.LogException(error, this);
+                    Effects.ResetFeedback();
+                    _batches.Clear();
+                    events.Clear();
+                    _presentation.Reset(Client.State);
+                    dirty = true;
+                    break;
+                }
+                yield return next;
+            }
+            _playing = false;
+        }
+
+        private IEnumerator PlayBatches()
+        {
+            while (_batches.Count > 0)
+            {
+                var batch = _batches.Dequeue();
+                bool drawing = false;
+                foreach (var e in batch.Events)
+                {
+                    bool draw = BattlePresentationState.IsDraw(e);
+                    bool stateChange = BattlePresentationState.IsStateChange(e);
+                    // Information can start while cards fly. The next actual state
+                    // transition waits for preceding draws to land, preserving causality.
+                    if (!draw && stateChange && drawing)
+                    {
+                        while (Effects.ActiveDraws > 0)
+                        {
+                            yield return null;
+                        }
+                        drawing = false;
+                    }
+                    if (draw && drawing)
+                    {
+                        yield return new WaitForSecondsRealtime(Effects.Settings?.DrawInterval ?? .16f);
+                    }
+                    _presentation.Apply(e, batch.Snapshot, Client.PlayerId);
+                    if (stateChange)
+                    {
+                        RenderBoard();
+                    }
+                    Present(e);
+                    if (draw)
+                    {
+                        bool own = e.TargetPlayerId == Client.PlayerId;
+                        var zone = own ? Hand : EnemyHand;
+                        var widget = own ? zone.Widgets.Find(w => w.Card?.Id == e.TargetCardId)
+                            : zone.Widgets.Count > 0 ? zone.Widgets[zone.Widgets.Count - 1] : null;
+                        if (widget != null)
+                        {
+                            Effects.Draw(zone, widget, own);
+                            drawing = true;
+                        }
+                    }
+                }
+                while (Effects.ActiveDraws > 0)
+                {
+                    yield return null;
+                }
+                if (batch.Snapshot != null)
+                {
+                    _presentation.Reset(batch.Snapshot);
+                    RenderBoard();
+                }
             }
         }
 
@@ -271,14 +418,27 @@ namespace ProjectC.Client
                     showLobby = false;
                 }
             }
+            if (_restorePresentation)
+            {
+                _presentation.Reset(Client.State);
+                _restorePresentation = false;
+                dirty = true;
+            }
             if (dirty)
             {
                 RenderBoard();
                 dirty = false;
             }
-            while (events.Count > 0)
+            if (events.Count > 0)
             {
-                Present(events.Dequeue());
+                // A separate network frame may carry events before its snapshot. Public
+                // events can still be shown; the later snapshot reconciles the projection.
+                _batches.Enqueue(new PresentationBatch { Events = events.ToArray() });
+                events.Clear();
+            }
+            if (!_playing && _batches.Count > 0)
+            {
+                StartCoroutine(PlayPresentation());
             }
             if (
                 hoverWidget != null
@@ -289,11 +449,14 @@ namespace ProjectC.Client
                 Detail.Show(hovered);
                 Detail.Place(hoverWidget.WorldCenter);
             }
-            Interaction.RefreshServerChoice();
-            Lobby.Render();
+            if (!PresentationBusy)
+            {
+                Interaction.RefreshServerChoice();
+            }
+            Lobby?.Render();
             Mulligan.Render();
             bool started = rendered != null && rendered.Started;
-            LobbyOverlay.SetActive(showLobby || !started);
+            LobbyOverlay?.SetActive(showLobby || !started);
             ResultPanel.SetActive(started && rendered.Finished && !showLobby);
             if (started && rendered.Finished)
             {
@@ -310,11 +473,17 @@ namespace ProjectC.Client
             EndTurn.interactable = action;
             ResultRematch.interactable = Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
-            ConnectionLabel.text =
-                (Client.Connected ? "ONLINE" : "OFFLINE") + "  /  " + Client.CurrentMatch;
-            DebugLabel.text =
-                $"P{Client.PlayerId}  |  GAME {epoch}  |  SEQ {Client.Sequence}"
-                + (Client.Busy ? "  /  WAITING" : "");
+            if (ConnectionLabel != null)
+            {
+                ConnectionLabel.text =
+                    (Client.Connected ? "ONLINE" : "OFFLINE") + "  /  " + Client.CurrentMatch;
+            }
+            if (DebugLabel != null)
+            {
+                DebugLabel.text =
+                    $"P{Client.PlayerId}  |  GAME {epoch}  |  SEQ {Client.Sequence}"
+                    + (Client.Busy ? "  /  WAITING" : "");
+            }
         }
 
         bool RematchRequested()
@@ -334,6 +503,9 @@ namespace ProjectC.Client
 
         void RenderBoard()
         {
+            // Command availability follows the latest server state even while visual
+            // positions, HP and zone transitions are still catching up.
+            _presentation.RefreshActions(Client.State);
             mine = enemy = null;
             if (rendered?.Players != null)
             {
@@ -349,6 +521,8 @@ namespace ProjectC.Client
                     }
                 }
             }
+            var visibleMine = _presentation.Player(Client.PlayerId) ?? mine;
+            var visibleEnemy = _presentation.Player(enemy?.PlayerId ?? 0) ?? enemy;
             if (mine == null || enemy == null)
             {
                 Hand.Render(null, 0, false, 0, false, Choose, Hover, Unhover);
@@ -392,9 +566,9 @@ namespace ProjectC.Client
                 TargetCardId = 0;
             }
             int slots = Mathf.Max(1, rendered.FieldLimit);
-            Hand.Render(mine.Hand, 0, false, SelectedCardId, false, Choose, Hover, Unhover);
+            Hand.Render(visibleMine.Hand, 0, false, SelectedCardId, false, Choose, Hover, Unhover);
             OwnField.Render(
-                mine.Field,
+                visibleMine.Field,
                 slots,
                 false,
                 SelectedCardId,
@@ -404,7 +578,7 @@ namespace ProjectC.Client
                 Unhover
             );
             EnemyField.Render(
-                enemy.Field,
+                visibleEnemy.Field,
                 slots,
                 false,
                 TargetCardId,
@@ -413,17 +587,17 @@ namespace ProjectC.Client
                 Hover,
                 Unhover
             );
-            EnemyHand.Render(null, enemy.HandCount, true, 0, false, null, Hover, Unhover);
-            OwnGraveyard.Render(mine.Graveyard, 0, false, 0, false, Choose, Hover, Unhover);
-            EnemyGraveyard.Render(enemy.Graveyard, 0, false, 0, false, Choose, Hover, Unhover);
+            EnemyHand.Render(null, visibleEnemy.HandCount, true, 0, false, null, Hover, Unhover);
+            OwnGraveyard.Render(visibleMine.Graveyard, 0, false, 0, false, Choose, Hover, Unhover);
+            EnemyGraveyard.Render(visibleEnemy.Graveyard, 0, false, 0, false, Choose, Hover, Unhover);
             OwnPlayer.Render(
-                mine,
+                visibleMine,
                 true,
                 rendered.ActivePlayerId == mine.PlayerId,
                 rendered.MaxYokaiPower
             );
             EnemyPlayer.Render(
-                enemy,
+                visibleEnemy,
                 false,
                 rendered.ActivePlayerId == enemy.PlayerId,
                 rendered.MaxYokaiPower
@@ -454,6 +628,14 @@ namespace ProjectC.Client
                     Interaction.Attach(widget);
                 }
             }
+            if (_snapPresentation)
+            {
+                foreach (var zone in Zones)
+                {
+                    zone.Layout?.Snap();
+                }
+                _snapPresentation = false;
+            }
             if (rendered.TurnNumber != RenderedTurn && rendered.TurnStarted)
             {
                 RenderedTurn = rendered.TurnNumber;
@@ -465,11 +647,7 @@ namespace ProjectC.Client
         {
             int id = e.TargetCardId != 0 ? e.TargetCardId : e.SourceCardId;
             knownCards.TryGetValue(id, out var card);
-            if (e.Type == 4 && e.FromZone == 0 && e.ToZone == 1)
-            {
-                Effects.Draw(e.TargetPlayerId == Client.PlayerId, card);
-            }
-            if (e.Type == 11)
+            if (BattlePresentationState.IsStateChange(e) && !BattlePresentationState.IsDraw(e))
             {
                 foreach (var zone in Zones)
                 {

@@ -1,5 +1,7 @@
 **2026-10-31 갱신:** 실험용 백귀야행 덱에 손패 주문 드래그, 서버의 비공개 대상 선택, 요력 및 자원 표시를 연결했다. 자세한 실행·프로토콜 설명은 [HyakkiYagyo.md](../../ProjectC.Server/Docs/HyakkiYagyo.md)를 참조한다. 아래의 기존 규칙과 CTest 3/3 기록은 이전 고정 데이터 빌드 기준이다. 현재 Windows CTest는 4/4, Unity PlayMode는 6/6 통과했다. 편집 가능한 기본 `Data/Decks.json`은 로컬 변경인 `DrawPerTurn=1`을 유지하며 기존 회귀 테스트는 `Tests/LegacyData`를 사용한다.
 
+**2026-11-02 드로우·손패 갱신:** 서버 상태와 표시 상태를 분리하고 실제 손패 위젯의 곡선 비행·재배치·Sorting을 구현했다. 설정, 구조, 검증 범위는 [DrawPresentation.md](DrawPresentation.md)를 참조한다.
+
 # Project C 카드 중심 배틀 UI
 
 2026-10-30. 실제 프로젝트 버전 **Unity 6000.0.81f1**을 유지한다. 구현은 uGUI Scene/Prefab과 서버 권위 스냅샷을 사용한다. 분석 자료는 [ReferenceVideoAnalysis.md](ReferenceVideoAnalysis.md), [AdditionalInteractionRequirements.md](AdditionalInteractionRequirements.md)에 있으며, 이번 작업은 그 다음 구현 단계다.
@@ -31,7 +33,7 @@
 | `BattleInteractionController.cs` | 드래그, 실제 UI raycast 드롭 판정, 클릭 대상 선택, 임시 카드, 공격 화살표, 입력 상태와 취소 |
 | `CardWidget.cs`, `CardTableLayout.cs`, `CardZoneView.cs` | Hover·선택·후보 표시, 겹친 손패와 필드 자동 배치 |
 | `BattlePresenter.cs` | 공개 스냅샷 바인딩, 로비/결과, 서버 이벤트와 연출 연결 |
-| `BattleEffectsView.cs`, `BattleLogView.cs`, `CardDetailView.cs` | FIFO 연출, 왼쪽 로그 서랍, 문맥 상세 정보 |
+| `BattleEffectsView.cs`, `BattleLogView.cs`, `CardDetailView.cs` | 드로우 이동과 독립 정보 연출, 왼쪽 로그 서랍, 문맥 상세 정보 |
 | `ContextActionView.cs`, `EffectTargetPicker.cs` | 선택 카드 액션, 클릭 대상 후보와 최소/최대 개수 확인 |
 | `MultiplayerDebugScreen.cs`, `Protocol.cs` | 기존 전송 경로, RequestId/Sequence 기반 승인 추적, 공개 액션 DTO |
 
@@ -69,9 +71,9 @@ UI 참조는 프로젝트의 `Game.Utils.UnityBindingExtensions.Bind` 실제 API
 
 ## 연출과 폰트
 
-턴 안내는 YOUR TURN/OPPONENT TURN 및 TURN X, 중앙 dim/fade로 표시한다. 과거 턴 안내가 뒤늦게 나타나지 않도록 새 턴이 도착하면 오래된 턴 안내를 생략한다. 페이즈·소환·효과·피해·파괴·현현 팝업과 드로우는 FIFO로 재생하며 네트워크 수신과 실제 상태 갱신을 지연하지 않는다. 연출은 raycast를 차단하지 않는다.
+턴 안내는 YOUR TURN/OPPONENT TURN 및 TURN X, 중앙 dim/fade로 표시한다. 과거 턴 안내가 뒤늦게 나타나지 않도록 새 턴이 도착하면 오래된 턴 안내를 생략한다. 상태 변화는 이벤트 순서대로 표시하며, 연속 드로우는 간격을 두고 겹쳐 재생한다. 턴·설명 팝업은 별도로 재생하고 새 설명이 오면 현재 내용을 교체한다. 네트워크 수신과 실제 상태 갱신을 지연하지 않는다. 연출은 raycast를 차단하지 않는다.
 
-드로우는 덱에서 손패로 이동·회전·크기 변화를 적용한다. 자기 카드는 공개 스냅샷에 있을 때 앞면을 사용하고 상대는 뒷면만 사용한다. 여러 드로우는 순서대로 표시한다. 소환 카드는 서버 배치 후 짧게 강조한다. 연출 시간은 Project C용 설정값이며 레퍼런스 영상의 정확한 타이밍을 측정해 복제했다고 주장하지 않는다.
+드로우는 덱에서 손패로 이동·회전·크기 변화를 적용한다. 자기 카드는 공개 스냅샷에 있을 때 앞면을 사용하고 상대는 뒷면만 사용한다. 여러 드로우는 순서대로 출발하고 비행이 겹칠 수 있다. 같은 실제 위젯이 손패 슬롯에 착지하며 기존 손패도 보간 재배치한다. 소환 카드는 서버 배치 후 짧게 강조한다. 연출 시간은 Project C용 설정값이며 레퍼런스 영상의 정확한 타이밍을 측정해 복제했다고 주장하지 않는다.
 
 `Assets/Fonts/NotoSansKR-Regular.otf`는 [Noto CJK 공식 저장소](https://github.com/notofonts/noto-cjk/tree/main/Sans/SubsetOTF/KR)의 폰트다. 라이선스는 함께 저장한 `Assets/Fonts/OFL.txt`(SIL Open Font License 1.1)를 따른다. 현현 텍스트에 사용할 한글 글리프를 포함한다. 카드 그림과 리더 초상화는 플레이스홀더다.
 

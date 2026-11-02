@@ -23,11 +23,15 @@ namespace ProjectC.Client
             OpponentDeck,
             OpponentHand;
         public BattleVisualSettings Settings;
-        readonly Queue<IEnumerator> queue = new Queue<IEnumerator>();
         int turnGeneration;
-        Coroutine routine;
+        private Coroutine _popupRoutine;
         CanvasGroup dim;
-        CardWidget drawFace;
+        private RectTransform _flightRoot;
+        private Coroutine _turnRoutine;
+        private readonly HashSet<CardZoneView> _flightZones = new HashSet<CardZoneView>();
+        public int ActiveDraws { get; private set; }
+        private const float MinimumDuration = .01f;
+        private const float DeckScale = .48f;
         bool bound;
         public int DrawsPresented { get; private set; }
         public int PopupsPresented { get; private set; }
@@ -38,22 +42,29 @@ namespace ProjectC.Client
             {
                 return;
             }
-            bound = true;
-            this.Bind("TurnBanner", out TurnGroup);
-            this.Bind("CardEventPopup", out PopupGroup);
-            this.Bind("DrawCard", out DrawGroup);
-            TurnGroup.transform.Bind("Title", out TurnTitle);
-            TurnGroup.transform.Bind("Subtitle", out TurnSubtitle);
-            PopupGroup.transform.Bind("Title", out PopupTitle);
-            PopupGroup.transform.Bind("Description", out PopupBody);
-            DrawGroup.transform.Bind("Back", out DrawLabel);
-            DrawGroup.transform.Bind("DrawFace", out drawFace);
+            if (!this.Bind("DragVisualRoot", out _flightRoot)
+                || !this.Bind("TurnBanner", out TurnGroup)
+                || !this.Bind("CardEventPopup", out PopupGroup)
+                || !this.Bind("DrawCard", out DrawGroup)
+                || !this.Bind("TurnDim", out dim)
+                || !this.Bind("YourDeck", out OwnDeck)
+                || !this.Bind("OpponentDeck", out OpponentDeck))
+            {
+                throw new System.InvalidOperationException(
+                    "Battle effects require DragVisualRoot, TurnBanner, CardEventPopup, DrawCard, TurnDim and both deck anchors.");
+            }
+            if (!TurnGroup.transform.Bind("Title", out TurnTitle)
+                || !TurnGroup.transform.Bind("Subtitle", out TurnSubtitle)
+                || !PopupGroup.transform.Bind("Title", out PopupTitle)
+                || !PopupGroup.transform.Bind("Description", out PopupBody)
+                || !DrawGroup.transform.Bind("Back", out DrawLabel))
+            {
+                throw new System.InvalidOperationException("Battle effects are missing banner, popup or draw text bindings.");
+            }
             DrawCard = (RectTransform)DrawGroup.transform;
-            this.Bind("YourDeck", out OwnDeck);
             this.Bind("YourHand", out OwnHand);
-            this.Bind("OpponentDeck", out OpponentDeck);
             this.Bind("OpponentHand", out OpponentHand);
-            this.Bind("TurnDim", out dim);
+            bound = true;
             foreach (var group in new[] { TurnGroup, PopupGroup, DrawGroup, dim })
             {
                 group.blocksRaycasts = group.interactable = false;
@@ -65,50 +76,62 @@ namespace ProjectC.Client
             BindReferences();
             ++turnGeneration;
             StopAllCoroutines();
-            queue.Clear();
-            routine = null;
+            _popupRoutine = null;
+            _turnRoutine = null;
+            foreach (var zone in _flightZones)
+            {
+                if (zone != null)
+                {
+                    zone.CancelFlights();
+                }
+            }
+            _flightZones.Clear();
+            ActiveDraws = 0;
             TurnGroup.alpha = PopupGroup.alpha = DrawGroup.alpha = dim.alpha = 0;
-        }
-
-        void Enqueue(IEnumerator effect)
-        {
-            if (queue.Count < 128)
-            {
-                queue.Enqueue(effect);
-            }
-            if (routine == null)
-            {
-                routine = StartCoroutine(Play());
-            }
-        }
-
-        IEnumerator Play()
-        {
-            while (queue.Count > 0)
-            {
-                yield return queue.Dequeue();
-            }
-            routine = null;
         }
 
         public void Turn(bool own, int number)
         {
-            Enqueue(TurnAnimation(own, number, ++turnGeneration));
+            if (_turnRoutine != null)
+            {
+                StopCoroutine(_turnRoutine);
+            }
+            _turnRoutine = StartCoroutine(TurnAnimation(own, number, ++turnGeneration));
         }
 
         public void Phase(string name)
         {
-            Enqueue(PopupAnimation("PHASE", name));
+            Popup("PHASE", name);
         }
 
         public void Popup(string title, string body)
         {
-            Enqueue(PopupAnimation(title, body));
+            // A new explanation belongs to the effect starting now, not to a stale
+            // popup backlog. The battle log keeps every notification.
+            if (_popupRoutine != null)
+            {
+                StopCoroutine(_popupRoutine);
+            }
+            _popupRoutine = StartCoroutine(PopupAnimation(title, body));
         }
 
-        public void Draw(bool own, CardView card = null)
+        public void Draw(CardZoneView zone, CardWidget widget, bool own)
         {
-            Enqueue(DrawAnimation(own, card));
+            BindReferences();
+            if (zone == null || widget == null || zone.Layout == null)
+            {
+                throw new System.InvalidOperationException("Draw presentation requires a hand zone, widget and CardTableLayout.");
+            }
+            _flightZones.Add(zone);
+            StartCoroutine(DrawAnimation(zone, widget, own));
+        }
+
+        private void OnDisable()
+        {
+            if (bound)
+            {
+                ResetFeedback();
+            }
         }
 
         IEnumerator TurnAnimation(bool own, int number, int generation)
@@ -137,33 +160,73 @@ namespace ProjectC.Client
             yield return Flash(PopupGroup, Settings?.PopupDuration ?? 1.35f);
         }
 
-        IEnumerator DrawAnimation(bool own, CardView card)
+        private IEnumerator DrawAnimation(CardZoneView zone, CardWidget widget, bool own)
         {
             ++DrawsPresented;
-            DrawLabel.text = own ? "DRAW" : "HIDDEN";
-            drawFace.gameObject.SetActive(own && card != null);
-            if (own && card != null)
+            ++ActiveDraws;
+            try
             {
-                drawFace.Bind(card, false, false, false, false);
+                DrawLabel.text = own ? "DRAW" : "HIDDEN";
+                widget.SetInFlight(true);
+                var rect = (RectTransform)widget.transform;
+                var from = own ? OwnDeck : OpponentDeck;
+                rect.SetParent(_flightRoot, true);
+                rect.SetAsLastSibling();
+                Vector3 start = _flightRoot.InverseTransformPoint(from.TransformPoint(from.rect.center));
+                Vector3 end = start;
+                Vector3 velocity = Vector3.zero;
+                Quaternion startRotation = Quaternion.Euler(0, 0, Settings?.DrawRotation ?? -16f);
+                float duration = Mathf.Max(MinimumDuration, Settings?.DrawDuration ?? .65f);
+                float arc = (Settings?.DrawArcHeight ?? 120f) * (own ? 1 : -1);
+                // All coordinates are in the shared overlay's space, including scaled canvases.
+                Vector3 targetScale = new Vector3(
+                    zone.Content.lossyScale.x / _flightRoot.lossyScale.x,
+                    zone.Content.lossyScale.y / _flightRoot.lossyScale.y, 1);
+                rect.sizeDelta = zone.Layout.CardSize;
+                for (float elapsed = 0; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+                {
+                    int index = zone.Widgets.IndexOf(widget);
+                    if (index < 0 || widget == null)
+                    {
+                        yield break;
+                    }
+                    zone.Layout.GetSlot(index, zone.Widgets.Count, out var slot, out var rotation);
+                    Vector3 destination = _flightRoot.InverseTransformPoint(zone.Content.TransformPoint(zone.Content.rect.center + slot));
+                    // A later overlapping draw can move this slot; blend that target as well.
+                    float remaining = duration - elapsed;
+                    end = elapsed == 0 ? destination : Vector3.SmoothDamp(
+                        end, destination, ref velocity, Mathf.Min(Settings?.HandRepositionDuration ?? .28f, remaining),
+                        Mathf.Infinity, Time.unscaledDeltaTime);
+                    float progress = elapsed / duration;
+                    float u = Settings?.Ease(progress) ?? Mathf.SmoothStep(0, 1, progress);
+                    Vector3 control = (start + end) * .5f + Vector3.up * arc;
+                    rect.localPosition = (1 - u) * (1 - u) * start + 2 * (1 - u) * u * control + u * u * end;
+                    Quaternion destinationRotation = Quaternion.Inverse(_flightRoot.rotation) * zone.Content.rotation * rotation;
+                    rect.localRotation = Quaternion.Slerp(startRotation, destinationRotation, u);
+                    float scale = Mathf.Lerp(DeckScale, 1, u)
+                        + ((Settings?.DrawScale ?? 1.08f) - 1) * Mathf.Sin(Mathf.PI * u);
+                    rect.localScale = targetScale * scale;
+                    yield return null;
+                }
             }
-            var from = own ? OwnDeck : OpponentDeck;
-            var to = own ? OwnHand : OpponentHand;
-            Vector3 a = from.TransformPoint(from.rect.center),
-                b = to.TransformPoint(to.rect.center);
-            float duration = Settings?.DrawDuration ?? .45f;
-            for (float t = 0; t < duration; t += Time.unscaledDeltaTime)
+            finally
             {
-                float u = Mathf.SmoothStep(0, 1, t / duration);
-                DrawGroup.alpha = 1;
-                DrawCard.position =
-                    Vector3.Lerp(a, b, u) + Vector3.up * (Mathf.Sin(u * Mathf.PI) * 60);
-                DrawCard.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(-18, 0, u));
-                DrawCard.localScale = Vector3.one * (.65f + .35f * Mathf.Sin(u * Mathf.PI));
-                yield return null;
+                if (widget != null && zone != null)
+                {
+                    if (zone.isActiveAndEnabled)
+                    {
+                        widget.transform.SetParent(zone.Content, false);
+                    }
+                    widget.SetInFlight(false);
+                    int index = zone.Widgets.IndexOf(widget);
+                    if (index >= 0 && zone.isActiveAndEnabled)
+                    {
+                        zone.Layout.Place(widget, index, zone.Widgets.Count);
+                    }
+                    zone.RestoreSorting();
+                }
+                ActiveDraws = Mathf.Max(0, ActiveDraws - 1);
             }
-            DrawGroup.alpha = 0;
-            DrawCard.localRotation = Quaternion.identity;
-            DrawCard.localScale = Vector3.one;
         }
 
         IEnumerator Flash(

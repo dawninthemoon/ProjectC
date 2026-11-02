@@ -5,74 +5,124 @@ namespace ProjectC.Client
 {
     public sealed class CardTableLayout : MonoBehaviour
     {
-        public bool Hand,
-            Compact;
+        private const float CardWidth = 180f;
+        private const float CardHeight = 218f;
+        private const float CompactWidth = 68f;
+        private const float CompactHeight = 88f;
+        private const float FieldSpacing = 35f;
+        private const float EdgePadding = 16f;
+        private const float MinimumSpacing = 12f;
+        private const float MinimumDuration = .01f;
+        public bool Hand, Compact;
         public BattleVisualSettings Settings;
-        List<CardWidget> cards;
+        private List<CardWidget> _cards;
+        private readonly Dictionary<CardWidget, Motion> _motions = new Dictionary<CardWidget, Motion>();
+        private readonly List<CardWidget> _retired = new List<CardWidget>();
         public float Spacing { get; private set; }
+        public Vector2 CardSize => new Vector2(Compact ? CompactWidth : CardWidth, Compact ? CompactHeight : CardHeight);
+
+        private sealed class Motion
+        {
+            public Vector2 From, Target;
+            public Quaternion FromRotation, Rotation;
+            public float Started;
+        }
 
         public void Arrange(List<CardWidget> widgets)
         {
-            cards = widgets;
-            Apply(1);
+            _cards = widgets;
+            Apply(false);
         }
 
         public void Snap()
         {
-            Apply(1);
+            Apply(true);
         }
 
-        void LateUpdate()
+        public void GetSlot(int index, int count, out Vector2 position, out Quaternion rotation)
         {
-            Apply(1 - Mathf.Exp(-Time.unscaledDeltaTime * 18));
+            float width = CardSize.x;
+            Spacing = count < 2 ? 0 : Mathf.Min(
+                width + (Hand ? Settings?.HandSpacing ?? 22f : FieldSpacing),
+                Mathf.Max(MinimumSpacing, (((RectTransform)transform).rect.width - width - EdgePadding) / (count - 1)));
+            float offset = index - (count - 1) * .5f;
+            float ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
+            position = new Vector2(offset * Spacing, Hand ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
+            rotation = Quaternion.Euler(0, 0, Hand ? -ratio * (Settings?.HandRotation ?? 7f) : 0);
         }
 
-        void Apply(float factor)
+        public void Place(CardWidget card, int index, int count)
         {
-            if (cards == null)
+            var rect = (RectTransform)card.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+            rect.sizeDelta = CardSize;
+            GetSlot(index, count, out var position, out var rotation);
+            rect.anchoredPosition = position;
+            rect.localRotation = rotation;
+            rect.localScale = Vector3.one;
+            _motions.Remove(card);
+        }
+
+        private void LateUpdate()
+        {
+            Apply(false);
+        }
+
+        private void Apply(bool snap)
+        {
+            if (_cards == null)
             {
                 return;
             }
-            var area = (RectTransform)transform;
-            int count = 0;
-            foreach (var c in cards)
+            int count = _cards.Count;
+            for (int i = 0; i < count; ++i)
             {
-                if (c.gameObject.activeSelf)
-                {
-                    ++count;
-                }
-            }
-            float width = Compact ? 68 : 180,
-                height = Compact ? 88 : 218;
-            Spacing =
-                count < 2
-                    ? 0
-                    : Mathf.Min(
-                        width + (Hand ? 22 : 35),
-                        Mathf.Max(12, (area.rect.width - width - 16) / (count - 1))
-                    );
-            int i = 0;
-            foreach (var card in cards)
-            {
-                if (!card.gameObject.activeSelf)
+                var card = _cards[i];
+                if (card == null || !card.gameObject.activeSelf || card.IsInFlight)
                 {
                     continue;
                 }
                 var rect = (RectTransform)card.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
-                rect.sizeDelta = new Vector2(width, height);
-                float offset = i++ - (count - 1) * .5f,
-                    ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
-                rect.anchoredPosition = Vector2.Lerp(
-                    rect.anchoredPosition,
-                    new Vector2(offset * Spacing, Hand ? -Mathf.Abs(ratio) * 15 : 0),
-                    factor
-                );
-                rect.localRotation = Quaternion.Slerp(
-                    rect.localRotation,
-                    Quaternion.Euler(0, 0, Hand ? -ratio * 5 : 0),
-                    factor
-                );
+                rect.sizeDelta = CardSize;
+                GetSlot(i, count, out var target, out var rotation);
+                if (snap)
+                {
+                    Place(card, i, count);
+                    continue;
+                }
+                if (!_motions.TryGetValue(card, out var motion))
+                {
+                    motion = new Motion { Target = target, Rotation = rotation,
+                        From = rect.anchoredPosition, FromRotation = rect.localRotation, Started = Time.unscaledTime };
+                    _motions.Add(card, motion);
+                }
+                if (motion.Target != target || motion.Rotation != rotation)
+                {
+                    motion.From = rect.anchoredPosition;
+                    motion.FromRotation = rect.localRotation;
+                    motion.Target = target;
+                    motion.Rotation = rotation;
+                    motion.Started = Time.unscaledTime;
+                }
+                float duration = Hand ? Settings?.HandRepositionDuration ?? .28f : Settings?.LayoutMove ?? .22f;
+                float progress = Mathf.Clamp01((Time.unscaledTime - motion.Started) / Mathf.Max(MinimumDuration, duration));
+                float ease = Settings?.Ease(progress) ?? Mathf.SmoothStep(0, 1, progress);
+                rect.anchoredPosition = Vector2.LerpUnclamped(motion.From, target, ease);
+                rect.localRotation = Quaternion.SlerpUnclamped(motion.FromRotation, rotation, ease);
+            }
+            // Recycled widgets must not retain a previous card's motion.
+            _retired.Clear();
+            foreach (var card in _motions.Keys)
+            {
+                if (!_cards.Contains(card))
+                {
+                    _retired.Add(card);
+                }
+            }
+            foreach (var card in _retired)
+            {
+                _motions.Remove(card);
             }
         }
     }

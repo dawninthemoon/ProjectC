@@ -18,7 +18,15 @@ MonoBehaviour:
   TurnFadeIn: 0.2
   TurnHold: 0.7
   TurnFadeOut: 0.3
-  DrawDuration: 0.45
+  DrawDuration: 0.65
   PopupDuration: 1.35
   DrawerDuration: 0.25
   SettleDuration: 0.35
+  _drawInterval: 0.16
+  _drawArcHeight: 120
+  _drawScale: 1.08
+  _drawRotation: -16
+  _handRepositionDuration: 0.28
+  _handSpacing: 22
+  _handCurve: 24
+  _handRotation: 7
