@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace ProjectC.Client
         public CanvasGroup TurnGroup,
             PopupGroup,
             DrawGroup;
-        public Text TurnTitle,
+        public TMP_Text TurnTitle,
             TurnSubtitle,
             PopupTitle,
             PopupBody,

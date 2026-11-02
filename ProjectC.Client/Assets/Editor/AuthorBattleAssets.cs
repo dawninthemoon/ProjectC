@@ -1,6 +1,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -18,7 +19,7 @@ namespace ProjectC.Client.Editor
             Gold = new Color(.85f, .68f, .37f),
             Teal = new Color(.24f, .74f, .65f),
             Paper = new Color(.88f, .92f, .91f);
-        static Font font;
+        static TMP_FontAsset font;
 
         static GameObject Box(
             Transform parent,
@@ -57,7 +58,7 @@ namespace ProjectC.Client.Editor
             r.offsetMax = new Vector2(-right, -top);
         }
 
-        static Text Label(
+        static TMP_Text Label(
             Transform parent,
             string name,
             string text,
@@ -71,16 +72,16 @@ namespace ProjectC.Client.Editor
         {
             var go = Box(parent, name, x, y, w, h, Color.clear);
             Object.DestroyImmediate(go.GetComponent<Image>());
-            var t = go.AddComponent<Text>();
+            var t = go.AddComponent<TextMeshProUGUI>();
             t.font = font;
             t.text = text;
             t.fontSize = size;
             t.color = color ?? Paper;
-            t.supportRichText = false;
+            t.richText = false;
             t.raycastTarget = false;
-            t.alignment = TextAnchor.MiddleLeft;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow = VerticalWrapMode.Truncate;
+            t.alignment = TextAlignmentOptions.Left;
+            t.textWrappingMode = TextWrappingModes.Normal;
+            t.overflowMode = TextOverflowModes.Truncate;
             return t;
         }
 
@@ -112,12 +113,12 @@ namespace ProjectC.Client.Editor
             colors.disabledColor = new Color(.4f, .4f, .4f, .7f);
             b.colors = colors;
             var t = Label(go.transform, "Label", text, 10, 0, w - 20, h, 19);
-            t.alignment = TextAnchor.MiddleCenter;
+            t.alignment = TextAlignmentOptions.Center;
             Stretch((RectTransform)t.transform, 8, 2, 8, 2);
             return b;
         }
 
-        static InputField Input(
+        static TMP_InputField Input(
             Transform parent,
             string name,
             string value,
@@ -128,10 +129,14 @@ namespace ProjectC.Client.Editor
         {
             var go = Box(parent, name, x, y, w, 48, Ink);
             go.GetComponent<Image>().raycastTarget = true;
-            var input = go.AddComponent<InputField>();
+            var input = go.AddComponent<TMP_InputField>();
             input.targetGraphic = go.GetComponent<Image>();
             input.characterLimit = 128;
             input.textComponent = Label(go.transform, "Text", value, 14, 2, w - 28, 44);
+            input.textViewport = (RectTransform)go.transform;
+            input.fontAsset = font;
+            input.pointSize = input.textComponent.fontSize;
+            input.richText = false;
             input.text = value;
             return input;
         }
@@ -179,7 +184,7 @@ namespace ProjectC.Client.Editor
                 Gold
             );
             Stretch((RectTransform)c.Symbol.transform);
-            c.Symbol.alignment = TextAnchor.MiddleCenter;
+            c.Symbol.alignment = TextAlignmentOptions.Center;
             c.Title = Label(
                 inner.transform,
                 "Name",
@@ -194,9 +199,9 @@ namespace ProjectC.Client.Editor
             tr.anchorMin = new Vector2(0, 1);
             tr.anchorMax = Vector2.one;
             tr.sizeDelta = new Vector2(-16, 36);
-            c.Title.resizeTextForBestFit = true;
-            c.Title.resizeTextMinSize = 12;
-            c.Title.resizeTextMaxSize = 19;
+            c.Title.enableAutoSizing = true;
+            c.Title.fontSizeMin = 12;
+            c.Title.fontSizeMax = 19;
             c.Stats = Label(inner.transform, "Stats", "3 ATK     5/5 HP", 8, 155, 156, 26, 18);
             var sr = (RectTransform)c.Stats.transform;
             sr.anchorMin = Vector2.zero;
@@ -204,9 +209,9 @@ namespace ProjectC.Client.Editor
             sr.pivot = new Vector2(0, 0);
             sr.anchoredPosition = new Vector2(8, 27);
             sr.sizeDelta = new Vector2(-16, 26);
-            c.Stats.resizeTextForBestFit = true;
-            c.Stats.resizeTextMinSize = 11;
-            c.Stats.resizeTextMaxSize = 18;
+            c.Stats.enableAutoSizing = true;
+            c.Stats.fontSizeMin = 11;
+            c.Stats.fontSizeMax = 18;
             c.Status = Label(inner.transform, "Status", "READY", 8, 183, 156, 22, 12, Gold);
             sr = (RectTransform)c.Status.transform;
             sr.anchorMin = Vector2.zero;
@@ -214,9 +219,9 @@ namespace ProjectC.Client.Editor
             sr.pivot = Vector2.zero;
             sr.anchoredPosition = new Vector2(8, 4);
             sr.sizeDelta = new Vector2(-16, 22);
-            c.Status.resizeTextForBestFit = true;
-            c.Status.resizeTextMinSize = 8;
-            c.Status.resizeTextMaxSize = 12;
+            c.Status.enableAutoSizing = true;
+            c.Status.fontSizeMin = 8;
+            c.Status.fontSizeMax = 12;
             c.Accent = Box(inner.transform, "Accent", 0, 0, 3, 200, Teal).GetComponent<Image>();
             var ar = (RectTransform)c.Accent.transform;
             ar.anchorMin = Vector2.zero;
@@ -322,7 +327,7 @@ namespace ProjectC.Client.Editor
         public static void Build()
         {
             Directory.CreateDirectory(Folder);
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Harmonic SDF.asset");
             var card = MakeCard(false);
             var back = MakeCard(true);
             var player = MakePlayer();
@@ -434,9 +439,9 @@ namespace ProjectC.Client.Editor
                 20
             );
             p.Detail.Rules = Label(details.transform, "Rules", "", 18, 143, 249, 130, 18);
-            p.Detail.Rules.alignment = TextAnchor.UpperLeft;
+            p.Detail.Rules.alignment = TextAlignmentOptions.TopLeft;
             p.Detail.Forms = Label(details.transform, "Forms", "", 18, 285, 249, 95, 16, Teal);
-            p.Detail.Forms.alignment = TextAnchor.UpperLeft;
+            p.Detail.Forms.alignment = TextAlignmentOptions.TopLeft;
             var log = Box(table.transform, "RecentEvents", 25, 570, 285, 345, Panel);
             p.Log = log.AddComponent<BattleLogView>();
             Label(log.transform, "Header", "BATTLE RECORD", 18, 15, 249, 35, 20, Gold);
@@ -450,7 +455,7 @@ namespace ProjectC.Client.Editor
                 270,
                 16
             );
-            p.Log.Recent.alignment = TextAnchor.UpperLeft;
+            p.Log.Recent.alignment = TextAlignmentOptions.TopLeft;
             p.Log.Feedback = Label(
                 table.transform,
                 "RejectionReason",
@@ -614,7 +619,7 @@ namespace ProjectC.Client.Editor
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             p.Log.Full = Label(viewport.transform, "Lines", "", 10, 0, 1180, 480, 20);
-            p.Log.Full.alignment = TextAnchor.UpperLeft;
+            p.Log.Full.alignment = TextAlignmentOptions.TopLeft;
             var fitter = p.Log.Full.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             scroll.content = (RectTransform)p.Log.Full.transform;
@@ -633,7 +638,7 @@ namespace ProjectC.Client.Editor
                 48,
                 Gold
             );
-            fx.TurnTitle.alignment = TextAnchor.MiddleCenter;
+            fx.TurnTitle.alignment = TextAlignmentOptions.Center;
             fx.TurnSubtitle = Label(
                 fx.TurnGroup.transform,
                 "Subtitle",
@@ -644,14 +649,14 @@ namespace ProjectC.Client.Editor
                 40,
                 26
             );
-            fx.TurnSubtitle.alignment = TextAnchor.MiddleCenter;
+            fx.TurnSubtitle.alignment = TextAlignmentOptions.Center;
             fx.PopupGroup = Group(table.transform, "CardEventPopup", 570, 115, 780, 120);
             fx.PopupTitle = Label(fx.PopupGroup.transform, "Title", "", 22, 10, 736, 35, 25, Gold);
             fx.PopupBody = Label(fx.PopupGroup.transform, "Description", "", 22, 45, 736, 68, 18);
             fx.DrawGroup = Group(table.transform, "DrawCard", 0, 0, 90, 125);
             fx.DrawCard = (RectTransform)fx.DrawGroup.transform;
             fx.DrawLabel = Label(fx.DrawGroup.transform, "Back", "DRAW", 8, 0, 74, 125, 18, Gold);
-            fx.DrawLabel.alignment = TextAnchor.MiddleCenter;
+            fx.DrawLabel.alignment = TextAlignmentOptions.Center;
             var ownDeck = Box(
                 table.transform,
                 "YourDeck",
@@ -662,7 +667,7 @@ namespace ProjectC.Client.Editor
                 new Color(.13f, .23f, .28f)
             );
             Label(ownDeck.transform, "Label", "DECK", 8, 0, 69, 85, 18, Gold).alignment =
-                TextAnchor.MiddleCenter;
+                TextAlignmentOptions.Center;
             var opponentDeck = Box(
                 table.transform,
                 "OpponentDeck",
@@ -673,7 +678,7 @@ namespace ProjectC.Client.Editor
                 new Color(.13f, .23f, .28f)
             );
             Label(opponentDeck.transform, "Label", "DECK", 8, 0, 69, 100, 18, Gold).alignment =
-                TextAnchor.MiddleCenter;
+                TextAlignmentOptions.Center;
             // Put the deck widgets behind cosmetic overlays and modals.
             ownDeck.transform.SetSiblingIndex(5);
             opponentDeck.transform.SetSiblingIndex(5);
@@ -694,7 +699,7 @@ namespace ProjectC.Client.Editor
                 56,
                 Gold
             );
-            p.ResultLabel.alignment = TextAnchor.MiddleCenter;
+            p.ResultLabel.alignment = TextAlignmentOptions.Center;
             Label(
                 p.ResultPanel.transform,
                 "Hint",
@@ -750,7 +755,7 @@ namespace ProjectC.Client.Editor
             );
             lobby.Connection = Label(lobby.transform, "Status", "", 35, 165, 930, 65, 20, Teal);
             lobby.Deck = Button(lobby.transform, "Deck", "DECK / Strikers", 35, 245, 450, 52);
-            lobby.DeckLabel = lobby.Deck.GetComponentInChildren<Text>();
+            lobby.DeckLabel = lobby.Deck.GetComponentInChildren<TMP_Text>();
             lobby.Create = Button(
                 lobby.transform,
                 "Create",
@@ -765,7 +770,7 @@ namespace ProjectC.Client.Editor
             lobby.Join = Button(lobby.transform, "Join", "JOIN MATCH ID", 665, 320, 300, 48, true);
             lobby.Seats = Label(lobby.transform, "Seats", "", 35, 390, 930, 95, 22);
             lobby.Ready = Button(lobby.transform, "Ready", "READY TO PLAY", 35, 505, 450, 60, true);
-            lobby.ReadyLabel = lobby.Ready.GetComponentInChildren<Text>();
+            lobby.ReadyLabel = lobby.Ready.GetComponentInChildren<TMP_Text>();
             lobby.Rematch = Button(
                 lobby.transform,
                 "Rematch",

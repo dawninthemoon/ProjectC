@@ -2,6 +2,14 @@ using System;
 
 namespace ProjectC.Client
 {
+    public enum MatchmakingState
+    {
+        Idle,
+        Queuing,
+        Matched,
+        Error,
+    }
+
     [Serializable]
     public class CardView
     {
@@ -156,6 +164,7 @@ namespace ProjectC.Client
         public bool PersonalDeckSelected,
             PersonalDeckSupported;
         public int CardCount;
+        public int QueuePosition;
         public int ProtocolVersion,
             PlayerId,
             WinnerPlayerId,

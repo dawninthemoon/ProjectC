@@ -1,4 +1,5 @@
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,7 @@ namespace ProjectC.Client
 {
     public sealed class PlayerPanelView : MonoBehaviour
     {
-        public Text Name,
+        public TMP_Text Name,
             Life,
             Counts;
         public Image TurnMark;

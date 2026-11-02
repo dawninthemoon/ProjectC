@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,13 +13,13 @@ namespace ProjectC.Client
         public DeckTileView TilePrefab;
         public DeckEditSession Session { get; } = new DeckEditSession();
         public ConfirmationDialog Dialog { get; private set; }
-        public InputField NameInput { get; private set; }
-        public InputField Search { get; private set; }
-        public Dropdown DeckList { get; private set; }
+        public TMP_InputField NameInput { get; private set; }
+        public TMP_InputField Search { get; private set; }
+        public TMP_Dropdown DeckList { get; private set; }
         public Transform DeckContent { get; private set; }
         public Transform LibraryContent { get; private set; }
         ClientApp app;
-        Text count,
+        TMP_Text count,
             status,
             detailName,
             detailStats,
@@ -40,11 +41,11 @@ namespace ProjectC.Client
             app = ClientApp.Instance;
             this.Bind("ConfirmOverlay", out ConfirmationDialog dialog);
             Dialog = dialog;
-            this.Bind("DeckName", out InputField name);
+            this.Bind("DeckName", out TMP_InputField name);
             NameInput = name;
-            this.Bind("Search", out InputField search);
+            this.Bind("Search", out TMP_InputField search);
             Search = search;
-            this.Bind("DeckList", out Dropdown list);
+            this.Bind("DeckList", out TMP_Dropdown list);
             DeckList = list;
             this.Bind("DeckCards", out Transform deck);
             DeckContent = deck;
@@ -379,13 +380,13 @@ namespace ProjectC.Client
 
         void RenderLibrary()
         {
-            typeFilter.GetComponentInChildren<Text>().text =
+            typeFilter.GetComponentInChildren<TMP_Text>().text =
                 type == "" ? "종류: 전체"
                 : type == "Monster" ? "종류: 몬스터"
                 : "종류: 주문";
-            archetypeFilter.GetComponentInChildren<Text>().text =
+            archetypeFilter.GetComponentInChildren<TMP_Text>().text =
                 archetype == "" ? "카드군: 전체" : archetype;
-            rarityFilter.GetComponentInChildren<Text>().text =
+            rarityFilter.GetComponentInChildren<TMP_Text>().text =
                 rarity == "" ? "희귀도: 전체" : rarity;
             int i = 0;
             foreach (var card in app.Library.Filter(Search.text.Trim(), type, archetype, rarity))
@@ -444,7 +445,9 @@ namespace ProjectC.Client
                                 ? "메인 덱 투입 가능"
                                 : "현현 전용 · 메인 덱 투입 불가"
                         );
-            detailRules.text = card?.Description ?? "중앙 목록에서 클릭하면 제거할 수 있습니다.";
+            KeywordLinkView.Render(detailRules,
+                card?.DescriptionText ?? new FormattedCardText(new[] { new TextSegment("중앙 목록에서 클릭하면 제거할 수 있습니다.") }),
+                app.Library.Localization, keyword => status.text = keyword.Name + "\n" + keyword.Description);
         }
     }
 }

@@ -1,4 +1,5 @@
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,7 +11,7 @@ namespace ProjectC.Client
         LobbyPanelView matchmaking;
         GameObject matchPanel,
             settings;
-        Text selected,
+        TMP_Text selected,
             feedback,
             serverDeck;
         Button resume;

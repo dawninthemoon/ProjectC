@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace ProjectC.Client
         public Button CandidatePrefab;
         readonly List<Button> buttons = new List<Button>();
         EffectSelectionView selection;
-        Text title;
+        TMP_Text title;
         ActionChoiceView serverChoice;
 
         public void ShowServer(
@@ -40,8 +41,8 @@ namespace ProjectC.Client
             {
                 var button = Instantiate(CandidatePrefab, content);
                 buttons.Add(button);
-                button.GetComponentInChildren<Text>().text =
-                    option.Card?.Name ?? "Player " + option.PlayerId;
+                button.GetComponentInChildren<TMP_Text>().text =
+                    CardPresentation.Name(option.Card, "Player " + option.PlayerId);
                 button.onClick.AddListener(() => pick(option.Token));
             }
             ok.onClick.RemoveAllListeners();
@@ -49,7 +50,7 @@ namespace ProjectC.Client
             back.onClick.RemoveAllListeners();
             back.interactable = value.CanCancel;
             back.onClick.AddListener(() => cancel());
-            back.GetComponentInChildren<Text>().text = value.CanCancel
+            back.GetComponentInChildren<TMP_Text>().text = value.CanCancel
                 ? "CANCEL"
                 : "RESOLVE TO CONTINUE";
             gameObject.SetActive(true);
@@ -63,9 +64,9 @@ namespace ProjectC.Client
             for (int i = 0; i < buttons.Count; ++i)
             {
                 bool chosen = selected.Contains(serverChoice.Candidates[i].Token);
-                var label = buttons[i].GetComponentInChildren<Text>();
+                var label = buttons[i].GetComponentInChildren<TMP_Text>();
                 label.text =
-                    (chosen ? "✓ " : "") + (serverChoice.Candidates[i].Card?.Name ?? "Player");
+                    (chosen ? "✓ " : "") + CardPresentation.Name(serverChoice.Candidates[i].Card, "Player");
                 buttons[i].GetComponent<Image>().color = chosen
                     ? new Color(.23f, .46f, .36f)
                     : new Color(.1f, .18f, .24f);
@@ -88,7 +89,7 @@ namespace ProjectC.Client
             this.Bind("Confirm", out Button ok);
             this.Bind("Cancel", out Button back);
             back.interactable = true;
-            back.GetComponentInChildren<Text>().text = "CANCEL";
+            back.GetComponentInChildren<TMP_Text>().text = "CANCEL";
             title.color = Color.white;
             title.text = $"EFFECT TARGETS / {index + 1}\nChoose {value.MinCount}..{value.MaxCount}";
             foreach (var b in buttons)
@@ -101,7 +102,7 @@ namespace ProjectC.Client
             {
                 var button = Instantiate(CandidatePrefab, content);
                 buttons.Add(button);
-                button.GetComponentInChildren<Text>().text = name(target);
+                button.GetComponentInChildren<TMP_Text>().text = name(target);
                 button.onClick.AddListener(() => pick(target));
             }
             ok.onClick.RemoveAllListeners();
@@ -124,7 +125,7 @@ namespace ProjectC.Client
                     && t.CardId == target.CardId
                     && t.Zone == target.Zone
                 );
-                var label = buttons[i].GetComponentInChildren<Text>();
+                var label = buttons[i].GetComponentInChildren<TMP_Text>();
                 string text = label.text.TrimStart('✓', ' ');
                 label.text = (chosen ? "✓ " : "") + text;
                 buttons[i].GetComponent<Image>().color = chosen

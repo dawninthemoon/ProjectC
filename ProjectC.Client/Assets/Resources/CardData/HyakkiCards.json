@@ -1,9 +1,10 @@
 {
-  "CatalogVersion": "hyakki-2026-11-02-v1",
+  "CatalogVersion": "hyakki-2026-11-02-v1-38a72942812f",
   "Cards": [
     {
       "Id": 1001,
-      "Name": "백귀야행－등불동자",
+      "NameKey": "card_1001_name",
+      "DescriptionKey": "card_1001_desc",
       "Type": "Monster",
       "Attack": 2,
       "MaxHp": 2,
@@ -11,6 +12,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Bronze",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -31,11 +33,21 @@
           "Trigger": "OnNormalSummoned",
           "PerTurnLimit": 1
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].PerTurnLimit"
+        }
       ]
     },
     {
       "Id": 1002,
-      "Name": "백귀야행－망령 수집가",
+      "NameKey": "card_1002_name",
+      "DescriptionKey": "card_1002_desc",
       "Type": "Monster",
       "Attack": 2,
       "MaxHp": 3,
@@ -43,6 +55,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Bronze",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -61,11 +74,18 @@
           ],
           "Trigger": "OnSummoned"
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
       ]
     },
     {
       "Id": 1003,
-      "Name": "백귀야행－여우불 길잡이",
+      "NameKey": "card_1003_name",
+      "DescriptionKey": "card_1003_desc",
       "Type": "Monster",
       "Attack": 3,
       "MaxHp": 2,
@@ -73,6 +93,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Silver",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -92,11 +113,17 @@
           "PerTurnLimit": 1,
           "RequireGraveyardEntryThisTurn": "HyakkiYagyo"
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].PerTurnLimit"
+        }
       ]
     },
     {
       "Id": 1004,
-      "Name": "백귀야행－야행승",
+      "NameKey": "card_1004_name",
+      "DescriptionKey": "card_1004_desc",
       "Type": "Monster",
       "Attack": 3,
       "MaxHp": 3,
@@ -104,6 +131,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Silver",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -124,11 +152,21 @@
           "Trigger": "OnRevived",
           "PerTurnLimit": 1
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].PerTurnLimit"
+        }
       ]
     },
     {
       "Id": 1005,
-      "Name": "백귀야행－오니 문지기",
+      "NameKey": "card_1005_name",
+      "DescriptionKey": "card_1005_desc",
       "Type": "Monster",
       "Attack": 4,
       "MaxHp": 5,
@@ -136,6 +174,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Silver",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -172,11 +211,24 @@
           ],
           "Trigger": "OnRevived"
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        },
+        {
+          "path": "Effects[1].Actions[0].AttackDelta"
+        }
       ]
     },
     {
       "Id": 1006,
-      "Name": "백귀야행－월하의 요호",
+      "NameKey": "card_1006_name",
+      "DescriptionKey": "card_1006_desc",
       "Type": "Monster",
       "Attack": 3,
       "MaxHp": 4,
@@ -184,6 +236,9 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Gold",
+      "AllowedManifestations": [
+        1007
+      ],
       "Effects": [
         {
           "Id": 1,
@@ -208,13 +263,16 @@
           ]
         }
       ],
-      "AllowedManifestations": [
-        1007
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        }
       ]
     },
     {
       "Id": 1007,
-      "Name": "백귀야행－구미호 현현",
+      "NameKey": "card_1007_name",
+      "DescriptionKey": "card_1007_desc",
       "Type": "Monster",
       "Attack": 5,
       "MaxHp": 6,
@@ -222,6 +280,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Legendary",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -243,11 +302,20 @@
           "Trigger": "OnManifested"
         }
       ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
+      ],
       "MainDeckEligible": false
     },
     {
       "Id": 1008,
-      "Name": "백귀야행－행렬의 인도자",
+      "NameKey": "card_1008_name",
+      "DescriptionKey": "card_1008_desc",
       "Type": "Monster",
       "Attack": 3,
       "MaxHp": 5,
@@ -255,6 +323,7 @@
         "HyakkiYagyo"
       ],
       "Rarity": "Gold",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -276,16 +345,30 @@
           "RequiredGraveyardArchetype": "HyakkiYagyo",
           "MinGraveyardCount": 3
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].MinGraveyardCount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxAttack"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
       ]
     },
     {
       "Id": 1101,
-      "Name": "황천의 초혼부",
+      "NameKey": "card_1101_name",
+      "DescriptionKey": "card_1101_desc",
       "Type": "Spell",
-      "Rarity": "Bronze",
       "Archetypes": [
         "HyakkiYagyo"
       ],
+      "Rarity": "Bronze",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -311,16 +394,30 @@
             }
           ]
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxAttack"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
       ]
     },
     {
       "Id": 1102,
-      "Name": "행렬의 서찰",
+      "NameKey": "card_1102_name",
+      "DescriptionKey": "card_1102_desc",
       "Type": "Spell",
-      "Rarity": "Silver",
       "Archetypes": [
         "HyakkiYagyo"
       ],
+      "Rarity": "Silver",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -351,16 +448,31 @@
           "ActivationZone": "Hand",
           "Costs": []
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Amount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[1].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[1].YokaiGainAmount"
+        }
       ]
     },
     {
       "Id": 1103,
-      "Name": "백귀야행",
+      "NameKey": "card_1103_name",
+      "DescriptionKey": "card_1103_desc",
       "Type": "Spell",
-      "Rarity": "Legendary",
       "Archetypes": [
         "HyakkiYagyo"
       ],
+      "Rarity": "Legendary",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -397,16 +509,33 @@
             }
           ]
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Costs[1].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MinCount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount"
+        }
       ]
     },
     {
       "Id": 1104,
-      "Name": "밤길의 호각",
+      "NameKey": "card_1104_name",
+      "DescriptionKey": "card_1104_desc",
       "Type": "Spell",
-      "Rarity": "Gold",
       "Archetypes": [
         "HyakkiYagyo"
       ],
+      "Rarity": "Gold",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -428,14 +557,28 @@
           "Costs": [],
           "PerTurnLimit": 1
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxAttack"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].PerTurnLimit"
+        }
       ]
     },
     {
       "Id": 2001,
-      "Name": "천뢰",
+      "NameKey": "card_2001_name",
+      "DescriptionKey": "card_2001_desc",
       "Type": "Spell",
-      "Rarity": "Legendary",
       "Archetypes": [],
+      "Rarity": "Legendary",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -462,14 +605,21 @@
             }
           ]
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        }
       ]
     },
     {
       "Id": 2002,
-      "Name": "파사의 벼락",
+      "NameKey": "card_2002_name",
+      "DescriptionKey": "card_2002_desc",
       "Type": "Spell",
-      "Rarity": "Silver",
       "Archetypes": [],
+      "Rarity": "Silver",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -494,14 +644,28 @@
             }
           ]
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
       ]
     },
     {
       "Id": 2003,
-      "Name": "금단의 두루마리",
+      "NameKey": "card_2003_name",
+      "DescriptionKey": "card_2003_desc",
       "Type": "Spell",
-      "Rarity": "Gold",
       "Archetypes": [],
+      "Rarity": "Gold",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -531,14 +695,30 @@
           ],
           "PerTurnLimit": 1
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Costs[1].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        },
+        {
+          "path": "Effects[0].PerTurnLimit"
+        }
       ]
     },
     {
       "Id": 2004,
-      "Name": "망각의 인",
+      "NameKey": "card_2004_name",
+      "DescriptionKey": "card_2004_desc",
       "Type": "Spell",
-      "Rarity": "Bronze",
       "Archetypes": [],
+      "Rarity": "Bronze",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -558,14 +738,22 @@
           "ActivationZone": "Hand",
           "Costs": []
         }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
       ]
     },
     {
       "Id": 2005,
-      "Name": "귀환의 부적",
+      "NameKey": "card_2005_name",
+      "DescriptionKey": "card_2005_desc",
       "Type": "Spell",
-      "Rarity": "Gold",
       "Archetypes": [],
+      "Rarity": "Gold",
+      "AllowedManifestations": [],
       "Effects": [
         {
           "Id": 1,
@@ -589,6 +777,15 @@
               "Amount": 1
             }
           ]
+        }
+      ],
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
         }
       ]
     }

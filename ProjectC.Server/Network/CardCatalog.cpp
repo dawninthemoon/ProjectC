@@ -2,16 +2,88 @@
 #include "ProjectC/GameCommand.hpp"
 #include "ProjectC/Zone.hpp"
 #include <algorithm>
+#include <charconv>
 #include <filesystem>
 #include <fstream>
 #include <map>
 #include <random>
+#include <regex>
 #include <stdexcept>
+#include <utility>
 namespace ProjectC::Network
 {
 using namespace GameCore;
 namespace
 {
+constexpr std::size_t MaximumCardDataBytes = 1024 * 1024;
+constexpr std::size_t MaximumDescriptionPathLength = 256;
+constexpr std::size_t MaximumDescriptionArguments = 64;
+
+Json NormalizeCards(Json const& input)
+{
+    Json result = input.is_array() ? Json{{"Cards", input}} : input;
+    if (!result.is_object() || !result.contains("Cards") || !result["Cards"].is_array())
+    {
+        throw std::runtime_error("Expected Cards array");
+    }
+    std::string version = result.value("CatalogVersion", std::string{});
+    for (auto& row : result["Cards"])
+    {
+        if (!row.is_object())
+        {
+            throw std::runtime_error("Expected card object");
+        }
+        for (auto field :
+             {"Archetypes", "AllowedManifestations", "Effects", "DescriptionArgs", "Traits"})
+        {
+            if (row.contains(field) && row[field].is_string())
+            {
+                auto text = row[field].get<std::string>();
+                row[field] = text.empty() ? Json::array() : ParseJson(text, MaximumCardDataBytes);
+            }
+            if (row.contains(field) && !row[field].is_array())
+            {
+                throw std::runtime_error("Expected card data array");
+            }
+        }
+        for (auto field : {"Id", "Attack", "MaxHp"})
+        {
+            if (!row.contains(field) || !row[field].is_string())
+            {
+                continue;
+            }
+            auto const text = row[field].get<std::string>();
+            if (text.empty() && std::string(field) != "Id")
+            {
+                row.erase(field);
+                continue;
+            }
+            std::int64_t number = 0;
+            auto parsed = std::from_chars(text.data(), text.data() + text.size(), number);
+            if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
+            {
+                throw std::runtime_error("Invalid card integer string");
+            }
+            row[field] = number;
+        }
+        if (row.contains("CatalogVersion"))
+        {
+            auto rowVersion = String(row, "CatalogVersion", 64);
+            if (!version.empty() && rowVersion != version)
+            {
+                throw std::runtime_error("Mixed CatalogVersion values");
+            }
+            version = rowVersion;
+            row.erase("CatalogVersion");
+        }
+    }
+    if (!version.empty())
+    {
+        result["CatalogVersion"] = version;
+    }
+    return result;
+}
+
 Json File(std::filesystem::path const& path)
 {
     if (std::filesystem::file_size(path) > 1024 * 1024)
@@ -327,8 +399,9 @@ CardCatalog CardCatalog::Load(std::string const& directory)
     return FromJson(File(std::filesystem::path(directory) / "Cards.json"),
                     File(std::filesystem::path(directory) / "Decks.json"));
 }
-CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
+CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
 {
+    auto const cards = NormalizeCards(cardInput);
     Fields(cards, {"Cards", "CatalogVersion"});
     Fields(decks, {"Config", "Decks"});
     CardCatalog catalog;
@@ -403,10 +476,51 @@ CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
                 "Archetypes",
                 "Rarity",
                 "ArtKey",
-                "MainDeckEligible"});
+                "MainDeckEligible",
+                "NameKey",
+                "DescriptionKey",
+                "DescriptionArgs"});
         CardDefinition card;
         card.Id = static_cast<int>(Number(entry, "Id", 1000000));
-        card.Name = Text(entry, "Name");
+        if (entry.contains("NameKey") || entry.contains("DescriptionKey"))
+        {
+            card.NameKey = Text(entry, "NameKey");
+            card.DescriptionKey = Text(entry, "DescriptionKey");
+        }
+        // Legacy clients still receive Name. Keyed catalogs carry a neutral key,
+        // never a hardcoded translation; current clients localize DefinitionId.
+        card.Name = entry.contains("Name") ? Text(entry, "Name") : card.NameKey;
+        if (card.Name.empty())
+        {
+            throw std::runtime_error("Name or localization keys are required");
+        }
+        if (entry.contains("DescriptionArgs"))
+        {
+            Array(entry["DescriptionArgs"], MaximumDescriptionArguments);
+            static std::regex const pathGrammar(
+                R"(^[A-Za-z_][A-Za-z0-9_]*(\[[0-9]+\]|\.[A-Za-z_][A-Za-z0-9_]*)*$)");
+            for (auto const& argument : entry["DescriptionArgs"])
+            {
+                Fields(argument, {"path", "default"});
+                DescriptionArgument parsed;
+                parsed.Path = String(argument, "path", MaximumDescriptionPathLength);
+                if (!std::regex_match(parsed.Path, pathGrammar))
+                {
+                    throw std::runtime_error("Invalid description data path");
+                }
+                if (argument.contains("default"))
+                {
+                    auto const& fallback = argument["default"];
+                    if (!fallback.is_primitive() || fallback.is_null())
+                    {
+                        throw std::runtime_error("Description default must be a scalar");
+                    }
+                    parsed.Default =
+                        fallback.is_string() ? fallback.get<std::string>() : fallback.dump();
+                }
+                card.DescriptionArgs.push_back(std::move(parsed));
+            }
+        }
         if (entry.contains("Type"))
         {
             card.Type = Enum<CardType>(

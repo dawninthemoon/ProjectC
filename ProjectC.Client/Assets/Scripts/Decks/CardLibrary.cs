@@ -12,11 +12,22 @@ namespace ProjectC.Client
         public int Id,
             Attack,
             MaxHp;
-        public string Name,
-            Type,
+        public string Type,
             Rarity,
-            ArtKey,
-            Description;
+            ArtKey;
+        public string NameKey,
+            DescriptionKey;
+        internal string LegacyName, LegacyDescription;
+        internal JObject Data;
+        internal LocalizationService Localization;
+        static readonly CardTextFormatter Formatter = new CardTextFormatter();
+        public string Name => string.IsNullOrEmpty(NameKey) ? LegacyName : Localization.GetText(NameKey);
+        public FormattedCardText DescriptionText => string.IsNullOrEmpty(DescriptionKey)
+            ? new FormattedCardText(new[] { new TextSegment(LegacyDescription ?? "") })
+            : Formatter.Format(Localization.GetText(DescriptionKey), Data, Data["DescriptionArgs"] as JArray);
+        public string Description => DescriptionText.PlainText;
+        public int[] AllowedManifestations => Data?["AllowedManifestations"]?.Values<int>().ToArray() ?? Array.Empty<int>();
+        public JObject CopyData() => (JObject)Data.DeepClone();
         public bool MainDeckEligible;
         public string[] Archetypes;
     }
@@ -25,6 +36,7 @@ namespace ProjectC.Client
     {
         readonly Dictionary<int, LibraryCard> cards = new Dictionary<int, LibraryCard>();
         public string CatalogVersion { get; private set; } = "";
+        public LocalizationService Localization { get; private set; }
         public IEnumerable<LibraryCard> Cards => cards.Values.OrderBy(c => c.Id);
 
         public LibraryCard Find(int id) => cards.TryGetValue(id, out var card) ? card : null;
@@ -67,15 +79,35 @@ namespace ProjectC.Client
             return (int)value;
         }
 
-        public static CardLibrary Load(string text)
+        public static CardLibrary LoadResources()
         {
-            var root = ParseObject(text);
-            var items = root["Cards"] as JArray;
-            if (items == null || items.Count > 10000)
+            var localize = UnityEngine.Resources.Load<UnityEngine.TextAsset>("ProjectC_Data - Localize");
+            var cards = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CardData/HyakkiCards");
+            if (localize == null || cards == null)
             {
-                throw new FormatException("Cards 배열이 필요합니다.");
+                throw new InvalidOperationException("Card/localization Resources are missing.");
             }
-            var library = new CardLibrary { CatalogVersion = (string)root["CatalogVersion"] ?? "" };
+            return Load(cards.text, LocalizationService.Load(localize.text));
+        }
+
+        public static CardLibrary Load(string text, LocalizationService localization = null)
+        {
+            var document = CardDataLoader.Load(text);
+            var items = document.Cards;
+            if (localization == null && items.Any(item => item["NameKey"] != null))
+            {
+                var resource = UnityEngine.Resources.Load<UnityEngine.TextAsset>("ProjectC_Data - Localize");
+                if (resource == null)
+                {
+                    throw new InvalidOperationException("Localization Resources are missing.");
+                }
+                localization = LocalizationService.Load(resource.text);
+            }
+            var library = new CardLibrary
+            {
+                CatalogVersion = document.CatalogVersion,
+                Localization = localization,
+            };
             foreach (var item in items)
             {
                 int id = Integer(item["Id"]);
@@ -84,7 +116,7 @@ namespace ProjectC.Client
                     throw new FormatException("중복 카드 정의 #" + id);
                 }
                 if (
-                    item["Name"]?.Type != JTokenType.String
+                    (item["Name"]?.Type != JTokenType.String && item["NameKey"]?.Type != JTokenType.String)
                     || item["Type"]?.Type != JTokenType.String
                 )
                 {
@@ -105,7 +137,11 @@ namespace ProjectC.Client
                 var card = new LibraryCard
                 {
                     Id = id,
-                    Name = (string)item["Name"],
+                    LegacyName = (string)item["Name"],
+                    NameKey = (string)item["NameKey"],
+                    DescriptionKey = (string)item["DescriptionKey"],
+                    Data = (JObject)item,
+                    Localization = localization,
                     Type = type,
                     Attack = (int?)item["Attack"] ?? 0,
                     MaxHp = (int?)item["MaxHp"] ?? 0,
@@ -114,8 +150,10 @@ namespace ProjectC.Client
                     MainDeckEligible = (bool?)item["MainDeckEligible"] ?? true,
                     Archetypes =
                         item["Archetypes"]?.Values<string>().ToArray() ?? Array.Empty<string>(),
-                    Description = Describe(item),
+                    LegacyDescription = item["DescriptionKey"] == null ? Describe(item) : "",
                 };
+                // Validate argument paths and indices before binding any UI.
+                _ = card.DescriptionText;
                 library.cards.Add(id, card);
             }
             return library;

@@ -506,7 +506,7 @@ namespace ProjectC.Client
         string TargetName(EffectTargetView target) =>
             target.CardId == 0
                 ? "Player " + target.PlayerId
-                : presenter.FindCard(target.CardId)?.Name
+                : CardPresentation.Name(presenter.FindCard(target.CardId), "#" + target.CardId)
                     + " #"
                     + target.CardId
                     + " / "

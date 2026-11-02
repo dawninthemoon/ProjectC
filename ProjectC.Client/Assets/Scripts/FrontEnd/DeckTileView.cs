@@ -1,5 +1,6 @@
 using System;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -22,11 +23,11 @@ namespace ProjectC.Client
         {
             CardId = id;
             hover = selected;
-            this.Bind("CardName", out Text name);
-            this.Bind("CardKind", out Text kind);
-            this.Bind("CardStats", out Text stats);
-            this.Bind("CardCount", out Text copies);
-            this.Bind("Crest", out Text crest);
+            this.Bind("CardName", out TMP_Text name);
+            this.Bind("CardKind", out TMP_Text kind);
+            this.Bind("CardStats", out TMP_Text stats);
+            this.Bind("CardCount", out TMP_Text copies);
+            this.Bind("Crest", out TMP_Text crest);
             name.text = card?.Name ?? "不明 / 누락 카드 #" + id;
             kind.text =
                 card == null

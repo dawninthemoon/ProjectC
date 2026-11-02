@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -16,7 +17,7 @@ namespace ProjectC.Client.Editor
     public static class AuthorFrontEndAssets
     {
         const string Folder = "Assets/Prefabs/FrontEnd";
-        static Font font;
+        static TMP_FontAsset font;
         static readonly Color Ink = new Color(.035f, .043f, .055f),
             Panel = new Color(.075f, .09f, .105f),
             Paper = new Color(.91f, .86f, .74f),
@@ -49,7 +50,7 @@ namespace ProjectC.Client.Editor
             return go;
         }
 
-        static Text Label(
+        static TMP_Text Label(
             Transform parent,
             string name,
             string value,
@@ -61,18 +62,18 @@ namespace ProjectC.Client.Editor
             Color? color = null
         )
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
+            var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
             Rect((RectTransform)go.transform, x, y, w, h);
-            var t = go.GetComponent<Text>();
+            var t = go.GetComponent<TMP_Text>();
             t.font = font;
             t.text = value;
             t.fontSize = size;
             t.color = color ?? Paper;
             t.raycastTarget = false;
-            t.supportRichText = false;
-            t.alignment = TextAnchor.MiddleLeft;
-            t.verticalOverflow = VerticalWrapMode.Truncate;
+            t.richText = false;
+            t.alignment = TextAlignmentOptions.Left;
+            t.overflowMode = TextOverflowModes.Truncate;
             return t;
         }
 
@@ -100,14 +101,14 @@ namespace ProjectC.Client.Editor
             var button = go.AddComponent<Button>();
             button.targetGraphic = go.GetComponent<Image>();
             var label = Label(go.transform, "Label", value, 12, 0, w - 24, h, 20);
-            label.alignment = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignmentOptions.Center;
             var colors = button.colors;
             colors.disabledColor = new Color(.5f, .5f, .5f, .65f);
             button.colors = colors;
             return button;
         }
 
-        static InputField Input(
+        static TMP_InputField Input(
             Transform parent,
             string name,
             string value,
@@ -118,10 +119,14 @@ namespace ProjectC.Client.Editor
         )
         {
             var go = Box(parent, name, x, y, w, 48, new Color(.10f, .13f, .14f), true);
-            var field = go.AddComponent<InputField>();
+            var field = go.AddComponent<TMP_InputField>();
             field.targetGraphic = go.GetComponent<Image>();
             field.characterLimit = limit;
             field.textComponent = Label(go.transform, "Text", value, 12, 0, w - 24, 48, 20);
+            field.textViewport = (RectTransform)go.transform;
+            field.fontAsset = font;
+            field.pointSize = field.textComponent.fontSize;
+            field.richText = false;
             field.text = value;
             field.placeholder = Label(
                 go.transform,
@@ -185,10 +190,10 @@ namespace ProjectC.Client.Editor
             return r;
         }
 
-        static Dropdown Dropdown(Transform parent, string name, float x, float y, float w)
+        static TMP_Dropdown Dropdown(Transform parent, string name, float x, float y, float w)
         {
             var go = Box(parent, name, x, y, w, 48, Panel, true);
-            var dropdown = go.AddComponent<Dropdown>();
+            var dropdown = go.AddComponent<TMP_Dropdown>();
             dropdown.targetGraphic = go.GetComponent<Image>();
             dropdown.captionText = Label(go.transform, "Caption", "저장된 덱", 12, 0, w - 45, 48);
             Label(go.transform, "Arrow", "▼", w - 32, 0, 25, 48, 16, Gold);
@@ -208,7 +213,7 @@ namespace ProjectC.Client.Editor
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             dropdown.template = (RectTransform)template.transform;
-            dropdown.options.Add(new Dropdown.OptionData("저장된 덱 없음"));
+            dropdown.options.Add(new TMP_Dropdown.OptionData("저장된 덱 없음"));
             template.SetActive(false);
             return dropdown;
         }
@@ -250,9 +255,9 @@ namespace ProjectC.Client.Editor
             var view = root.AddComponent<DeckTileView>();
             Box(root.transform, "Border", 0, 0, 3, 184, Gold);
             var name = Label(root.transform, "CardName", "百鬼夜行", 10, 8, 130, 40, 17);
-            name.resizeTextForBestFit = true;
-            name.resizeTextMinSize = 12;
-            name.resizeTextMaxSize = 17;
+            name.enableAutoSizing = true;
+            name.fontSizeMin = 12;
+            name.fontSizeMax = 17;
             var art = Box(
                 root.transform,
                 "Placeholder",
@@ -263,7 +268,7 @@ namespace ProjectC.Client.Editor
                 new Color(.09f, .12f, .14f)
             );
             Label(art.transform, "Crest", "妖", 0, 0, 130, 68, 44, Gold).alignment =
-                TextAnchor.MiddleCenter;
+                TextAlignmentOptions.Center;
             Label(root.transform, "CardKind", "MONSTER", 10, 122, 130, 18, 11, Gold);
             Label(root.transform, "CardStats", "ATK 3  HP 4", 10, 142, 130, 18, 12);
             Label(root.transform, "CardCount", "× 0", 10, 161, 130, 20, 13);
@@ -312,7 +317,7 @@ namespace ProjectC.Client.Editor
             Label(table, "DetailCaption", "카드 상세", 40, 180, 290, 40, 23, Gold);
             Box(table, "DetailPanel", 40, 230, 290, 680, Panel);
             Label(table, "DetailCrest", "妖", 60, 250, 250, 160, 96, Gold).alignment =
-                TextAnchor.MiddleCenter;
+                TextAlignmentOptions.Center;
             Label(table, "DetailName", "카드에 마우스를 올려보세요", 60, 425, 250, 80, 23);
             Label(
                 table,
@@ -327,7 +332,7 @@ namespace ProjectC.Client.Editor
             );
             var rules = Scroll(table, "DetailContent", 60, 620, 250, 270);
             var rule = Label(rules, "DetailRules", "", 0, 0, 230, 270, 18);
-            rule.alignment = TextAnchor.UpperLeft;
+            rule.alignment = TextAlignmentOptions.TopLeft;
             Label(table, "DeckCaption", "현재 덱  /  클릭하여 제거", 350, 180, 750, 40, 23, Gold);
             Label(table, "DeckCount", "", 350, 225, 770, 75, 18);
             Scroll(table, "DeckCards", 350, 310, 780, 600, 5, new Vector2(140, 184));
@@ -375,7 +380,66 @@ namespace ProjectC.Client.Editor
             Button(panel.transform, "Leave", "방 나가기", 315, 535, 260, 48);
             Button(panel.transform, "Close", "방 닫기", 600, 535, 260, 48);
             Label(panel.transform, "ServerDeckSummary", "", 30, 600, 1150, 66, 16, Gold);
+            AddMatchmakingControls(panel.transform);
             panel.SetActive(false);
+        }
+
+        static void AddMatchmakingControls(Transform panel)
+        {
+            if (panel.Find("QueueMatch") == null)
+            {
+                Button(panel, "QueueMatch", "자동 매칭 시작", 730, 22, 220, 48, true);
+            }
+            if (panel.Find("CancelQueue") == null)
+            {
+                Button(panel, "CancelQueue", "매칭 취소", 975, 22, 220, 48);
+            }
+            var heading = panel.Find("Heading") as RectTransform;
+            if (heading != null)
+            {
+                heading.sizeDelta = new Vector2(660, heading.sizeDelta.y);
+            }
+        }
+
+        [MenuItem("Project C/Upgrade lobby matchmaking UI")]
+        public static void UpgradeMatchmaking()
+        {
+            const string PrefabPath = "Assets/Prefabs/FrontEnd/LobbyScreen.prefab";
+            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                var panel = root.GetComponentInChildren<LobbyPanelView>(true);
+                if (panel == null)
+                {
+                    throw new InvalidOperationException("LobbyScreen is missing LobbyPanelView.");
+                }
+                font = panel.GetComponentInChildren<TMP_Text>(true).font;
+                AddMatchmakingControls(panel.transform);
+                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        public static void ValidateMatchmakingScene()
+        {
+            UpgradeMatchmaking();
+            var scene = EditorSceneManager.OpenScene("Assets/Scenes/LobbyScene.unity");
+            var panel = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<LobbyPanelView>(true))
+                .Single();
+            foreach (string name in new[] { "QueueMatch", "CancelQueue" })
+            {
+                var button = panel.GetComponentsInChildren<Button>(true)
+                    .SingleOrDefault(candidate => candidate.name == name);
+                if (button == null || button.GetComponentInChildren<TMP_Text>(true) == null)
+                {
+                    throw new InvalidOperationException("LobbyScene is missing matchmaking button: " + name);
+                }
+                Debug.Log("LobbyScene matchmaking UI verified: " + name);
+            }
         }
 
         static void Settings(Transform parent)
@@ -429,7 +493,7 @@ namespace ProjectC.Client.Editor
                 250,
                 150,
                 new Color(.29f, .23f, .16f)
-            ).alignment = TextAnchor.MiddleCenter;
+            ).alignment = TextAlignmentOptions.Center;
             Label(
                 table,
                 "Welcome",
@@ -440,7 +504,7 @@ namespace ProjectC.Client.Editor
                 55,
                 23,
                 Gold
-            ).alignment = TextAnchor.MiddleCenter;
+            ).alignment = TextAlignmentOptions.Center;
             Button(table, "BattleMenu", "一  대전 시작", 40, 230, 520, 100, true);
             Button(table, "DeckManager", "二  덱 관리", 40, 350, 520, 100);
             Button(table, "SettingsMenu", "三  설정", 40, 470, 520, 100);
@@ -522,10 +586,10 @@ namespace ProjectC.Client.Editor
                 true
             );
             AssetDatabase.Refresh();
-            font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSansKR-Regular.otf");
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Harmonic SDF.asset");
             if (font == null)
             {
-                throw new InvalidOperationException("NotoSansKR font is required");
+                throw new InvalidOperationException("Harmonic SDF font is required");
             }
             var services = new GameObject(
                 "ClientServices",

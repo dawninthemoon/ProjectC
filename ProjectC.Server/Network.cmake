@@ -33,7 +33,12 @@ add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
 add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/HyakkiComboTests.cpp Tests/MulliganTests.cpp)
 target_link_libraries(ProjectCNetworkTests PRIVATE ProjectCNetwork)
 add_test(NAME NetworkTests COMMAND ProjectCNetworkTests)
+add_executable(ProjectCCardDataTests Tests/CardDataTests.cpp)
+target_link_libraries(ProjectCCardDataTests PRIVATE ProjectCNetwork)
+add_test(NAME CardDataTests COMMAND ProjectCCardDataTests)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME CardDataExportCheck COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ExportCardData.py --check)
 add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 add_test(NAME ContentWebSocketIntegration COMMAND ${Python3_EXECUTABLE}

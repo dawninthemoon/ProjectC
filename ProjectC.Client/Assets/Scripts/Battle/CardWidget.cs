@@ -1,5 +1,6 @@
 using System;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -28,7 +29,7 @@ namespace ProjectC.Client
         public Image Frame,
             Art,
             Accent;
-        public Text Title,
+        public TMP_Text Title,
             Stats,
             Status,
             Symbol;
@@ -86,7 +87,7 @@ namespace ProjectC.Client
             InHand = hand;
             IsSelected = chosen;
             hint = target ? TargetHint.Available : TargetHint.None;
-            Title.text = hidden ? "HIDDEN CARD" : card?.Name ?? "";
+            Title.text = hidden ? "HIDDEN CARD" : CardPresentation.Name(card);
             Stats.text =
                 card == null || hidden ? ""
                 : card.CardType == 1 ? "SPELL"

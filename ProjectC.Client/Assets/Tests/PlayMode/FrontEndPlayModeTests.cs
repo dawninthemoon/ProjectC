@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using ProjectC.Client;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -224,6 +225,101 @@ namespace ProjectC.Tests
         }
 
         [UnityTest]
+        public IEnumerator AutomaticQueueCancelPairReadyBattleAndReturn()
+        {
+            string path = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "../../build/Debug/ProjectCNetworkServer.exe")
+            );
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; ++i)
+            {
+                if (args[i] == "-projectcServerPath")
+                {
+                    path = args[i + 1];
+                }
+            }
+            var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            server = System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(
+                    path,
+                    "--port "
+                        + port
+                        + " --data \""
+                        + Path.Combine(Path.GetDirectoryName(path), "TestData")
+                        + "\""
+                )
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                }
+            );
+            var started = server.StandardOutput.ReadLineAsync();
+            yield return Until(() => started.IsCompleted);
+            StringAssert.Contains("listening", started.Result);
+            var app = ClientApp.Instance;
+            var a = app.Network;
+            a.UsePersonalDeck = false;
+            opponentObject = new GameObject("Opponent", typeof(MultiplayerDebugScreen));
+            UnityEngine.Object.DontDestroyOnLoad(opponentObject);
+            var b = opponentObject.GetComponent<MultiplayerDebugScreen>();
+            var lobby = UnityEngine.Object.FindFirstObjectByType<LobbyScenePresenter>();
+            Button(lobby, "BattleMenu").onClick.Invoke();
+            lobby.Bind("MatchPanel", out LobbyPanelView panel);
+            panel.Address.text = "ws://127.0.0.1:" + port;
+            panel.Connect.onClick.Invoke();
+            b.ConnectTo(panel.Address.text);
+            yield return Until(() => a.Connected && b.Connected && a.Decks.Length > 0);
+            yield return null;
+            Button(lobby, "QueueMatch").onClick.Invoke();
+            a.QueueMatch(); // Duplicate clicks must not enqueue a second request.
+            a.CreateMatch(); // Friendly actions cannot run while queued.
+            yield return Until(() => a.QueuePosition == 1);
+            yield return null;
+            Assert.IsFalse(panel.Create.interactable);
+            Assert.IsFalse(panel.Deck.interactable);
+            Button(lobby, "CancelQueue").onClick.Invoke();
+            Assert.AreEqual(MatchmakingState.Queuing, a.Matchmaking);
+            a.CancelQueue();
+            yield return Until(() => a.Matchmaking == MatchmakingState.Idle);
+            a.QueueMatch();
+            yield return Until(() => a.QueuePosition == 1);
+            b.QueueMatch();
+            yield return Until(() => a.Matchmaking == MatchmakingState.Matched
+                && b.Matchmaking == MatchmakingState.Matched && a.State != null && b.State != null);
+            Assert.AreEqual(a.CurrentMatch, b.CurrentMatch);
+            Assert.AreEqual(1, a.PlayerId);
+            Assert.AreEqual(2, b.PlayerId);
+            yield return null;
+            panel.Ready.onClick.Invoke();
+            b.SetReady("Strikers");
+            yield return Until(() => SceneManager.GetActiveScene().name == "BattleScene");
+            yield return null;
+            var battle = UnityEngine.Object.FindFirstObjectByType<BattlePresenter>();
+            Assert.AreSame(a, battle.Client);
+            Assert.AreSame(app, ClientApp.Instance);
+            Assert.IsTrue(a.Connected);
+            int card = a.State.Players[0].Hand[0].Id;
+            yield return Command(a, b, "PlayCard", card);
+            yield return Command(a, b, "EndTurn");
+            yield return Command(b, a, "EndTurn");
+            yield return Command(a, b, "AdvancePhase");
+            yield return Command(a, b, "DirectAttack", card);
+            Assert.IsTrue(a.State.Finished);
+            yield return null;
+            Assert.IsTrue(battle.ResultPanel.activeSelf);
+            battle.ResultLeave.onClick.Invoke();
+            yield return Until(() => SceneManager.GetActiveScene().name == "LobbyScene");
+            yield return null;
+            Assert.AreSame(a, ClientApp.Instance.Network);
+            Assert.IsTrue(a.Connected);
+            Assert.IsEmpty(a.CurrentMatch);
+        }
+
+        [UnityTest]
         public IEnumerator PersonalDecksSubmitFreezeReconnectAndReject()
         {
             string path = "";
@@ -375,8 +471,8 @@ namespace ProjectC.Tests
             yield return null;
             var battle = UnityEngine.Object.FindFirstObjectByType<BattlePresenter>();
             var ui = battle.Mulligan;
-            Assert.AreEqual("교체 확정", ui.Confirm.GetComponentInChildren<Text>().text);
-            Assert.AreEqual("그대로 시작", ui.Keep.GetComponentInChildren<Text>().text);
+            Assert.AreEqual("교체 확정", ui.Confirm.GetComponentInChildren<TMP_Text>().text);
+            Assert.AreEqual("그대로 시작", ui.Keep.GetComponentInChildren<TMP_Text>().text);
             Assert.IsTrue(ui.gameObject.activeSelf);
             Assert.IsFalse(battle.CanAct);
             Assert.IsFalse(battle.EndTurn.interactable);

@@ -1,1 +1,1 @@
-{"name":"ProjectC.Client.PlayModeTests","references":["ProjectC.Client.Runtime","Unity.ugui"],"optionalUnityReferences":["TestAssemblies"],"autoReferenced":false}
+{"name":"ProjectC.Client.PlayModeTests","references":["ProjectC.Client.Runtime","Unity.ugui","Unity.TextMeshPro"],"optionalUnityReferences":["TestAssemblies"],"autoReferenced":false,"overrideReferences":true,"precompiledReferences":["nunit.framework.dll","Newtonsoft.Json.dll"]}

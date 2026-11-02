@@ -1,4 +1,5 @@
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,11 +7,13 @@ namespace ProjectC.Client
 {
     public sealed class CardDetailView : MonoBehaviour
     {
-        public Text Title,
+        public TMP_Text Title,
             Stats,
             Rules,
             Forms;
         bool bound;
+        int _shownCardId, _shownDefinitionId;
+        KeywordInfo _keyword;
 
         public void Show(CardView card)
         {
@@ -27,13 +30,25 @@ namespace ProjectC.Client
             {
                 return;
             }
-            Title.text = card.Name;
+            if (_shownCardId != card.Id || _shownDefinitionId != card.DefinitionId)
+            {
+                _keyword = null;
+                _shownCardId = card.Id;
+                _shownDefinitionId = card.DefinitionId;
+            }
+            Title.text = CardPresentation.Name(card);
             Stats.text =
                 card.CardType == 1
                     ? "NORMAL SPELL"
                     : $"ATK {card.Attack}   HP {card.Hp}/{card.MaxHp}";
-            Rules.text = card.RulesText ?? "";
-            Forms.text = card.ManifestationText ?? "";
+            KeywordLinkView.Render(Rules, CardPresentation.Description(card), CardPresentation.Library.Localization,
+                keyword =>
+                {
+                    _keyword = keyword;
+                    Forms.text = keyword.Name + "\n" + keyword.Description;
+                });
+            Forms.text = _keyword == null ? CardPresentation.Manifestations(card)
+                : _keyword.Name + "\n" + _keyword.Description;
         }
 
         public void Place(Vector3 world)

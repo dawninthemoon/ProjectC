@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,7 @@ namespace ProjectC.Client
 {
     public sealed class BattleLogView : MonoBehaviour
     {
-        public Text Recent,
+        public TMP_Text Recent,
             Full,
             Feedback;
         public GameObject History;
@@ -17,7 +18,7 @@ namespace ProjectC.Client
         readonly Queue<string> lines = new Queue<string>();
         CanvasGroup group;
         RectTransform panel;
-        Text unread;
+        TMP_Text unread;
         int unreadCount;
         float feedbackUntil;
         bool bound;

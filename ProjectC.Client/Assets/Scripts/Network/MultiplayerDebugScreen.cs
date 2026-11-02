@@ -54,10 +54,25 @@ namespace ProjectC.Client
         public bool PersonalMode =>
             UsePersonalDeck && ClientApp.Instance != null && ClientApp.Instance.Network == this;
         public string ConfirmedDeckName { get; private set; } = "";
+        public string ServerCatalogVersion => serverCatalogVersion;
+        public string CatalogProblem
+        {
+            get
+            {
+                string localVersion = CardPresentation.Library.CatalogVersion;
+                return !string.IsNullOrEmpty(serverCatalogVersion) && serverCatalogVersion != localVersion
+                    ? "서버와 카드 카탈로그 버전이 다릅니다. 서버/클라이언트 데이터를 함께 갱신하세요."
+                    : "";
+            }
+        }
         public string DeckProblem
         {
             get
             {
+                if (!string.IsNullOrEmpty(CatalogProblem))
+                {
+                    return CatalogProblem;
+                }
                 if (!PersonalMode)
                 {
                     return "";
@@ -109,7 +124,124 @@ namespace ProjectC.Client
             }
         }
 
-        public bool Busy => pending || resyncing || connecting || deckRequestId != null;
+        public MatchmakingState Matchmaking { get; private set; }
+        public string MatchmakingError { get; private set; } = "";
+        public int QueuePosition { get; private set; }
+        public bool CancellingQueue => Matchmaking == MatchmakingState.Queuing && _cancelQueueRequestId != null;
+        public float QueueSeconds => Matchmaking == MatchmakingState.Queuing
+            ? Mathf.Max(0, Time.realtimeSinceStartup - _queueStartedAt)
+            : 0;
+        string _queueRequestId;
+        string _cancelQueueRequestId;
+        float _queueStartedAt;
+
+        public bool Busy => pending || resyncing || connecting || deckRequestId != null
+            || Matchmaking == MatchmakingState.Queuing;
+
+        void ResetMatchmaking(MatchmakingState value, string error = "")
+        {
+            Matchmaking = value;
+            MatchmakingError = error;
+            QueuePosition = 0;
+            _queueRequestId = null;
+            _cancelQueueRequestId = null;
+        }
+
+        internal void QueueMatch()
+        {
+            if (!Connected || Busy || !string.IsNullOrEmpty(matchId))
+            {
+                return;
+            }
+            if (!string.IsNullOrEmpty(CatalogProblem))
+            {
+                ResetMatchmaking(MatchmakingState.Error, CatalogProblem);
+                Note(CatalogProblem);
+                return;
+            }
+            if (PersonalMode && !string.IsNullOrEmpty(DeckProblem))
+            {
+                ResetMatchmaking(MatchmakingState.Error, DeckProblem);
+                Note(MatchmakingError);
+                return;
+            }
+            ResetMatchmaking(MatchmakingState.Queuing);
+            _queueStartedAt = Time.realtimeSinceStartup;
+            _queueRequestId = Guid.NewGuid().ToString("N");
+            // QueueMatch accepts server catalog IDs only. Local personal decks are
+            // submitted by the existing SubmitDeck/SetReady flow after pairing.
+            Send(Request("QueueMatch", _queueRequestId)
+                + (PersonalMode ? "" : ",\"DeckId\":" + Quote(selectedDeck)));
+        }
+
+        internal void CancelQueue()
+        {
+            if (!Connected || Matchmaking != MatchmakingState.Queuing || CancellingQueue)
+            {
+                return;
+            }
+            _cancelQueueRequestId = Guid.NewGuid().ToString("N");
+            Send(Request("CancelQueue", _cancelQueueRequestId));
+        }
+
+        bool ApplyMatchmakingMessage(MessageView message)
+        {
+            if (message.Type == "MatchmakingQueued")
+            {
+                if (Matchmaking == MatchmakingState.Queuing && message.RequestId == _queueRequestId)
+                {
+                    QueuePosition = message.QueuePosition;
+                }
+                return true;
+            }
+            if (message.Type == "MatchmakingCancelled")
+            {
+                if (Matchmaking == MatchmakingState.Queuing && message.RequestId == _cancelQueueRequestId)
+                {
+                    ResetMatchmaking(MatchmakingState.Idle);
+                }
+                return true;
+            }
+            if (message.Type == "MatchmakingFound")
+            {
+                // Found has its own request ID and no game number. Never reset the
+                // epoch here: snapshots, ready submission or mulligan may already exist.
+                if (!string.IsNullOrEmpty(matchId) && message.MatchId == matchId)
+                {
+                    Matchmaking = MatchmakingState.Matched;
+                    MatchmakingError = "";
+                    QueuePosition = 0;
+                }
+                return true;
+            }
+            if (message.Type != "ServerError"
+                || string.IsNullOrEmpty(message.RequestId)
+                || (message.RequestId != _queueRequestId && message.RequestId != _cancelQueueRequestId))
+            {
+                return false;
+            }
+            string error = message.Reason + (string.IsNullOrEmpty(message.Message) ? "" : ": " + message.Message);
+            bool cancelling = message.RequestId == _cancelQueueRequestId;
+            if (!string.IsNullOrEmpty(matchId))
+            {
+                Matchmaking = MatchmakingState.Matched;
+            }
+            else if (message.Reason == "AlreadyQueued")
+            {
+                MatchmakingError = error;
+            }
+            else if (cancelling && message.Reason != "NotQueued")
+            {
+                _cancelQueueRequestId = null;
+                MatchmakingError = error;
+            }
+            else
+            {
+                ResetMatchmaking(message.Reason == "NotQueued" ? MatchmakingState.Idle : MatchmakingState.Error, error);
+            }
+            Note(error);
+            return true;
+        }
 
         public void LeaveMatch() => LobbyAction("LeaveMatch");
 
@@ -154,6 +286,7 @@ namespace ProjectC.Client
 
         void ClearMatch()
         {
+            ResetMatchmaking(MatchmakingState.Idle);
             deckRequestId = null;
             ConfirmedDeckName = "";
             token = null;
@@ -173,6 +306,10 @@ namespace ProjectC.Client
 
         internal void DisconnectNetwork()
         {
+            if (Matchmaking == MatchmakingState.Queuing)
+            {
+                ResetMatchmaking(MatchmakingState.Error, "매칭 대기 중 연결이 종료되었습니다. 다시 접속하세요.");
+            }
             deckRequestId = null;
             PendingChoice = null;
             commandRequestId = null;
@@ -184,12 +321,20 @@ namespace ProjectC.Client
 
         internal void CreateMatch()
         {
+            if (!Connected || Busy || !string.IsNullOrEmpty(matchId))
+            {
+                return;
+            }
             pending = true;
             Send(Request("CreateMatch") + ",\"DeckId\":" + Quote(selectedDeck));
         }
 
         internal void JoinMatch(string id)
         {
+            if (!Connected || Busy || !string.IsNullOrEmpty(matchId))
+            {
+                return;
+            }
             pending = true;
             Send(
                 Request("JoinMatch")
@@ -204,6 +349,11 @@ namespace ProjectC.Client
         {
             if (Busy || !Connected)
             {
+                return;
+            }
+            if (ready && !string.IsNullOrEmpty(CatalogProblem))
+            {
+                Note(CatalogProblem);
                 return;
             }
             selectedDeck = deck;
@@ -269,6 +419,7 @@ namespace ProjectC.Client
 
         void Connect()
         {
+            ResetMatchmaking(MatchmakingState.Idle);
             deckRequestId = null;
             serverCatalogVersion = "";
             personalDeckSupported = false;
@@ -475,6 +626,8 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    bool wasQueuing = Matchmaking == MatchmakingState.Queuing
+                        || Matchmaking == MatchmakingState.Error;
                     deckRequestId = null;
                     connecting = pending = resyncing = false;
                     commandRequestId = null;
@@ -484,9 +637,18 @@ namespace ProjectC.Client
                     {
                         ClearMatch();
                     }
+                    if (wasQueuing)
+                    {
+                        ResetMatchmaking(MatchmakingState.Error, "매칭 대기 중 연결이 종료되었습니다. 다시 접속하세요.");
+                    }
                 }
                 if (notice.StartsWith("Send failed"))
                 {
+                    if (Matchmaking == MatchmakingState.Queuing)
+                    {
+                        DisconnectNetwork();
+                        MatchmakingError = notice;
+                    }
                     deckRequestId = null;
                     pending = false;
                     commandRequestId = null;
@@ -502,6 +664,11 @@ namespace ProjectC.Client
                 catch (Exception error)
                 {
                     pending = false;
+                    if (Matchmaking == MatchmakingState.Queuing)
+                    {
+                        DisconnectNetwork();
+                        MatchmakingError = "Protocol error: " + error.Message;
+                    }
                     Note("Protocol error: " + error.Message);
                     Resync();
                 }
@@ -517,10 +684,18 @@ namespace ProjectC.Client
                     "Server/client protocol mismatch; rebuild both"
                 );
             }
+            if (ApplyMatchmakingMessage(message))
+            {
+                return;
+            }
             if (message.Type == "DeckCatalog")
             {
                 serverCatalogVersion = message.CatalogVersion;
                 personalDeckSupported = message.PersonalDeckSupported;
+                if (!string.IsNullOrEmpty(CatalogProblem))
+                {
+                    Note(CatalogProblem);
+                }
                 decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload;
                 if (decks.Length > 0 && !Array.Exists(decks, d => d.Id == selectedDeck))
                 {
@@ -534,6 +709,13 @@ namespace ProjectC.Client
                     matchId == message.MatchId && gameNumber == message.GameNumber
                         ? new List<int>(MulliganSelection)
                         : new List<int>();
+                if (Matchmaking == MatchmakingState.Queuing)
+                {
+                    // Keep cancellation correlation until its response; a formed match wins.
+                    Matchmaking = MatchmakingState.Matched;
+                    MatchmakingError = "";
+                    QueuePosition = 0;
+                }
                 matchId = message.MatchId;
                 playerId = message.PlayerId;
                 token = message.SessionToken;

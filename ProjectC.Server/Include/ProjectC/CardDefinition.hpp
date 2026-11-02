@@ -2,10 +2,18 @@
 
 #include "ProjectC/EffectDefinition.hpp"
 
+#include <optional>
 #include <string>
 
 namespace ProjectC::GameCore
 {
+struct DescriptionArgument
+{
+    std::string Path;
+    std::optional<std::string> Default;
+    bool operator==(DescriptionArgument const&) const = default;
+};
+
 // Immutable printed data. Runtime damage and modifiers belong to CardInstance.
 struct CardDefinition
 {
@@ -21,6 +29,11 @@ struct CardDefinition
     std::string Rarity;
     std::string ArtKey;
     bool MainDeckEligible = true;
+    // Presentation keys never participate in command/effect validation.
+    // Name remains for legacy catalogs and unchanged wire/replay compatibility.
+    std::string NameKey;
+    std::string DescriptionKey;
+    std::vector<DescriptionArgument> DescriptionArgs;
 
     bool operator==(CardDefinition const&) const = default;
 };

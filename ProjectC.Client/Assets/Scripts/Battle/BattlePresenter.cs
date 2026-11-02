@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,7 +24,7 @@ namespace ProjectC.Client
         public CardDetailView Detail;
         public BattleLogView Log;
         public BattleEffectsView Effects;
-        public Text TurnLabel,
+        public TMP_Text TurnLabel,
             PhaseLabel,
             SelectionLabel,
             ResultLabel,
@@ -445,7 +446,7 @@ namespace ProjectC.Client
             SelectionLabel.text =
                 selected == null
                     ? "Select a card"
-                    : selected.Name + (TargetCardId == 0 ? "" : "  >  target #" + TargetCardId);
+                    : CardPresentation.Name(selected) + (TargetCardId == 0 ? "" : "  >  target #" + TargetCardId);
             foreach (var zone in Zones)
             {
                 foreach (var widget in zone.Widgets)
@@ -484,31 +485,31 @@ namespace ProjectC.Client
             if (e.Type == 11)
             {
                 Effects.Popup(
-                    card?.Name ?? "Monster summoned",
-                    "SUMMONED\n" + (card?.RulesText ?? "")
+                    CardPresentation.Name(card, "Monster summoned"),
+                    "SUMMONED\n" + CardPresentation.Rules(card)
                 );
             }
             if (e.Type == 19)
             {
-                Effects.Popup(card?.Name ?? "Spell", "SPELL ACTIVATED / server confirmed");
+                Effects.Popup(CardPresentation.Name(card, "Spell"), "SPELL ACTIVATED / server confirmed");
             }
             if (e.Type == 13)
             {
                 Effects.Popup(
-                    card?.Name ?? "Card effect",
-                    "EFFECT ACTIVATED\n" + (card?.RulesText ?? "")
+                    CardPresentation.Name(card, "Card effect"),
+                    "EFFECT ACTIVATED\n" + CardPresentation.Rules(card)
                 );
             }
             if (e.Type == 1)
             {
                 Effects.Popup(
-                    card?.Name ?? "Monster",
+                    CardPresentation.Name(card, "Monster"),
                     "DAMAGE  -" + e.Damage + " / HP " + e.HpAfter
                 );
             }
             if (e.Type == 15)
             {
-                Effects.Popup(card?.Name ?? "Manifestation", "FORM CHANGED / server confirmed");
+                Effects.Popup(CardPresentation.Name(card, "Manifestation"), "FORM CHANGED / server confirmed");
             }
             if (e.Type == 10)
             {
@@ -520,7 +521,7 @@ namespace ProjectC.Client
             }
             if (e.Type == 2)
             {
-                Effects.Popup(card?.Name ?? "Monster", "DESTROYED / moved to graveyard");
+                Effects.Popup(CardPresentation.Name(card, "Monster"), "DESTROYED / moved to graveyard");
             }
         }
     }

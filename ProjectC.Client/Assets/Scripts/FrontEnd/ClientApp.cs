@@ -31,7 +31,7 @@ namespace ProjectC.Client
             Decks.Load();
             try
             {
-                Library = CardLibrary.Load(Resources.Load<TextAsset>("CardData/HyakkiCards").text);
+                Library = CardLibrary.LoadResources();
                 Starter = CardLibrary.Starter(
                     Resources.Load<TextAsset>("CardData/HyakkiDecks").text
                 );

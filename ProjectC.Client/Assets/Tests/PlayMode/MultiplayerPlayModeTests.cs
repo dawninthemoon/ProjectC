@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using NUnit.Framework;
 using ProjectC.Client;
+using TMPro;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -532,7 +533,7 @@ namespace ProjectC.Tests
             actions = context.GetComponentsInChildren<UnityEngine.UI.Button>();
             var manifest = Array.Find(
                 actions,
-                x => x.GetComponentInChildren<UnityEngine.UI.Text>().text == "\uD604\uD604"
+                x => x.GetComponentInChildren<TMPro.TMP_Text>().text == "\uD604\uD604"
             );
             Assert.IsNotNull(manifest);
             seq = a.Sequence;

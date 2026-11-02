@@ -1,5 +1,6 @@
 using System;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,14 +17,14 @@ namespace ProjectC.Client
             Action alternative = null
         )
         {
-            this.Bind("DialogTitle", out Text heading);
-            this.Bind("DialogMessage", out Text body);
+            this.Bind("DialogTitle", out TMP_Text heading);
+            this.Bind("DialogMessage", out TMP_Text body);
             this.Bind("Confirm", out Button yes);
             this.Bind("Alternative", out Button other);
             this.Bind("Dismiss", out Button no);
             heading.text = title;
             body.text = message;
-            yes.GetComponentInChildren<Text>().text = primary;
+            yes.GetComponentInChildren<TMP_Text>().text = primary;
             yes.onClick.RemoveAllListeners();
             yes.onClick.AddListener(() =>
             {
@@ -31,7 +32,7 @@ namespace ProjectC.Client
                 confirm();
             });
             other.gameObject.SetActive(secondary != null);
-            other.GetComponentInChildren<Text>().text = secondary;
+            other.GetComponentInChildren<TMP_Text>().text = secondary;
             other.onClick.RemoveAllListeners();
             if (alternative != null)
             {

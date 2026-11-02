@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -30,13 +31,13 @@ namespace ProjectC.Client
                     }
                     var button = Instantiate(ActionPrefab, content);
                     buttons.Add(button);
-                    button.GetComponentInChildren<Text>().text =
+                    button.GetComponentInChildren<TMP_Text>().text =
                         action.IsManifest ? "현현"
                         : widget.Card.CardType == 1 ? "ACTIVATE"
                         : "EFFECT #" + action.EffectId;
                     if (action.YokaiCost > 0)
                     {
-                        button.GetComponentInChildren<Text>().text +=
+                        button.GetComponentInChildren<TMP_Text>().text +=
                             " / YOKAI " + action.YokaiCost;
                     }
                     button.onClick.AddListener(() => activate(action));

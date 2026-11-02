@@ -1,5 +1,6 @@
 using System.Text;
 using Game.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,9 +8,9 @@ namespace ProjectC.Client
 {
     public sealed class LobbyPanelView : MonoBehaviour
     {
-        public InputField Address,
+        public TMP_InputField Address,
             MatchId;
-        public Text Connection,
+        public TMP_Text Connection,
             Seats,
             DeckLabel,
             ReadyLabel;
@@ -23,6 +24,8 @@ namespace ProjectC.Client
             Leave,
             Close;
         MultiplayerDebugScreen client;
+        Button _queueMatch;
+        Button _cancelQueue;
 
         public void Bind(MultiplayerDebugScreen value)
         {
@@ -42,6 +45,18 @@ namespace ProjectC.Client
             Deck.transform.Bind("Label", out DeckLabel);
             Ready.transform.Bind("Label", out ReadyLabel);
             client = value;
+            // BattleScene also uses this panel and does not require queue controls.
+            bool queueBound = this.Bind("QueueMatch", out _queueMatch);
+            bool cancelBound = this.Bind("CancelQueue", out _cancelQueue);
+            if (queueBound && cancelBound)
+            {
+                _queueMatch.onClick.AddListener(client.QueueMatch);
+                _cancelQueue.onClick.AddListener(client.CancelQueue);
+            }
+            else if (queueBound || cancelBound || GetComponentInParent<LobbyScenePresenter>() != null)
+            {
+                Debug.LogError("LobbyPanelView requires QueueMatch and CancelQueue Button children. Run Project C/Upgrade lobby matchmaking UI.", this);
+            }
             Connect.onClick.AddListener(() => client.ConnectTo(Address.text.Trim()));
             Disconnect.onClick.AddListener(client.DisconnectNetwork);
             Create.onClick.AddListener(client.CreateMatch);
@@ -85,6 +100,27 @@ namespace ProjectC.Client
                         ? client.CurrentMatch + "  /  P" + client.PlayerId + "  /  " + status
                         : "Create a room or enter a Match ID"
                 );
+            if (client.Matchmaking == MatchmakingState.Queuing)
+            {
+                const int SecondsPerMinute = 60;
+                int seconds = Mathf.FloorToInt(client.QueueSeconds);
+                Connection.text = (client.CancellingQueue ? "매칭 취소 요청 중" : "매칭 중")
+                    + $" · {seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}"
+                    + (client.QueuePosition > 0 ? " · 대기 순서 " + client.QueuePosition : "")
+                    + "\n" + client.MatchmakingError;
+            }
+            else if (!string.IsNullOrEmpty(client.MatchmakingError))
+            {
+                Connection.text += "\n" + client.MatchmakingError;
+            }
+            if (_queueMatch != null && _cancelQueue != null)
+            {
+                _queueMatch.interactable = available && !joined && string.IsNullOrEmpty(client.CatalogProblem);
+                _cancelQueue.gameObject.SetActive(client.Matchmaking == MatchmakingState.Queuing);
+                _cancelQueue.interactable = client.Connected && !client.CancellingQueue;
+            }
+            Address.interactable = !client.Connected && !client.Busy;
+            MatchId.interactable = !joined && client.Matchmaking != MatchmakingState.Queuing;
             var seats = new StringBuilder();
             if (client.Lobby?.Players != null)
             {

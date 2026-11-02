@@ -2,6 +2,7 @@ using System;
 using Game.Utils;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -13,7 +14,7 @@ namespace ProjectC.Client.Editor
     public static class UpgradeBattleInteractionAssets
     {
         const string Folder = "Assets/Prefabs/Battle/";
-        static Font font;
+        static TMP_FontAsset font;
         static readonly Color Panel = new Color(.055f, .1f, .14f),
             Ink = new Color(.025f, .045f, .075f),
             Gold = new Color(.88f, .71f, .4f);
@@ -66,7 +67,7 @@ namespace ProjectC.Client.Editor
             return go;
         }
 
-        static Text Label(
+        static TMP_Text Label(
             Transform parent,
             string name,
             string text,
@@ -81,18 +82,18 @@ namespace ProjectC.Client.Editor
             var go =
                 existing != null
                     ? existing.gameObject
-                    : new GameObject(name, typeof(RectTransform), typeof(Text));
+                    : new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
             Rect((RectTransform)go.transform, x, y, w, h);
-            var t = go.GetComponent<Text>();
+            var t = go.GetComponent<TMP_Text>();
             t.text = text;
             t.font = font;
             t.fontSize = size;
             t.color = new Color(.88f, .93f, .94f);
             t.raycastTarget = false;
-            t.supportRichText = false;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
-            t.alignment = TextAnchor.MiddleLeft;
+            t.richText = false;
+            t.overflowMode = TextOverflowModes.Overflow;
+            t.alignment = TextAlignmentOptions.Left;
             return t;
         }
 
@@ -110,7 +111,7 @@ namespace ProjectC.Client.Editor
             var b = Ensure<Button>(go);
             b.targetGraphic = go.GetComponent<Image>();
             var t = Label(go.transform, "Label", text, 8, 0, w - 16, h, 19);
-            t.alignment = TextAnchor.MiddleCenter;
+            t.alignment = TextAlignmentOptions.Center;
             return b;
         }
 
@@ -135,17 +136,17 @@ namespace ProjectC.Client.Editor
 
         static void SetButton(Button b, string text)
         {
-            b.GetComponentInChildren<Text>(true).text = text;
+            b.GetComponentInChildren<TMP_Text>(true).text = text;
         }
 
         static void SaveCard(string name)
         {
             var root = PrefabUtility.LoadPrefabContents(Folder + name + ".prefab");
             Ensure<CanvasGroup>(root);
-            foreach (var t in root.GetComponentsInChildren<Text>(true))
+            foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 t.font = font;
-                t.verticalOverflow = VerticalWrapMode.Overflow;
+                t.overflowMode = TextOverflowModes.Overflow;
             }
             PrefabUtility.SaveAsPrefabAsset(root, Folder + name + ".prefab");
             PrefabUtility.UnloadPrefabContents(root);
@@ -154,11 +155,11 @@ namespace ProjectC.Client.Editor
         [MenuItem("Project C/Upgrade card interaction prefabs")]
         public static void Build()
         {
-            font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSansKR-Regular.otf");
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Harmonic SDF.asset");
             if (font == null)
             {
                 throw new InvalidOperationException(
-                    "Import the licensed NotoSansKR font before upgrading"
+                    "Import Harmonic SDF before upgrading"
                 );
             }
             var settings = AssetDatabase.LoadAssetAtPath<BattleVisualSettings>(
@@ -182,10 +183,10 @@ namespace ProjectC.Client.Editor
             var root = PrefabUtility.LoadPrefabContents(Folder + "BattleScreen.prefab");
             var p = root.GetComponent<BattlePresenter>();
             var table = Find<RectTransform>(root, "Table");
-            foreach (var t in root.GetComponentsInChildren<Text>(true))
+            foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 t.font = font;
-                t.verticalOverflow = VerticalWrapMode.Overflow;
+                t.overflowMode = TextOverflowModes.Overflow;
             }
             p.OwnPlayer.name = "OwnPlayer";
             p.EnemyPlayer.name = "EnemyPlayer";
@@ -193,7 +194,7 @@ namespace ProjectC.Client.Editor
             Move(p.OwnPlayer, 40, 860, 450, 110);
             foreach (var player in new[] { p.OwnPlayer, p.EnemyPlayer })
             {
-                var counts = Find<Text>(player.gameObject, "Counts");
+                var counts = Find<TMP_Text>(player.gameObject, "Counts");
                 Move(counts, 18, 58, 335, 48);
                 counts.fontSize = 14;
             }
@@ -215,11 +216,11 @@ namespace ProjectC.Client.Editor
             }
             Move(Find<RectTransform>(root, "Battlefield"), 215, 225, 1490, 535);
             Move(Find<RectTransform>(root, "Midline"), 240, 485, 1440, 2);
-            Move(Find<Text>(root, "EnemyFieldCaption"), 250, 218, 550, 28);
-            Move(Find<Text>(root, "OwnFieldCaption"), 250, 480, 550, 28);
-            Move(Find<Text>(root, "HandCaption"), 660, 770, 700, 28);
-            Find<Text>(root, "HandCaption").text = "YOUR HAND  /  drag a card onto your field";
-            Find<Text>(root, "Edition").text = "CARD BATTLE / LOCAL MULTIPLAYER";
+            Move(Find<TMP_Text>(root, "EnemyFieldCaption"), 250, 218, 550, 28);
+            Move(Find<TMP_Text>(root, "OwnFieldCaption"), 250, 480, 550, 28);
+            Move(Find<TMP_Text>(root, "HandCaption"), 660, 770, 700, 28);
+            Find<TMP_Text>(root, "HandCaption").text = "YOUR HAND  /  drag a card onto your field";
+            Find<TMP_Text>(root, "Edition").text = "CARD BATTLE / LOCAL MULTIPLAYER";
             Move(p.TurnLabel, 1720, 330, 180, 55);
             p.TurnLabel.fontSize = 23;
             Move(p.PhaseLabel, 1720, 390, 180, 50);
@@ -228,8 +229,8 @@ namespace ProjectC.Client.Editor
             SetButton(p.EndTurn, "END TURN");
             Move(p.BattlePhase, 1720, 552, 180, 50);
             SetButton(p.BattlePhase, "BATTLE PHASE");
-            Move(Find<Text>(root, "AutoStartHint"), 1720, 610, 175, 65);
-            Find<Text>(root, "AutoStartHint").fontSize = 14;
+            Move(Find<TMP_Text>(root, "AutoStartHint"), 1720, 610, 175, 65);
+            Find<TMP_Text>(root, "AutoStartHint").fontSize = 14;
             Move(p.LobbyToggle, 1710, 24, 190, 44);
             SetButton(p.LobbyToggle, "MENU / LOBBY");
             Move(p.LogToggle, 26, 470, 160, 48);
@@ -264,7 +265,7 @@ namespace ProjectC.Client.Editor
             Move(p.DebugLabel, 570, 705, 250, 30);
             p.Resync.transform.SetParent(p.LobbyOverlay.transform, false);
             Move(p.Resync, 825, 700, 140, 36);
-            var help = Find<Text>(p.LobbyOverlay, "Help");
+            var help = Find<TMP_Text>(p.LobbyOverlay, "Help");
             help.text =
                 "Ready on both clients to begin. MENU / LOBBY closes this panel during a game.";
             // Background and leader hit areas are authored Images, not runtime graphics.
@@ -333,8 +334,8 @@ namespace ProjectC.Client.Editor
             foreach (var t in new[] { p.Detail.Rules, p.Detail.Forms })
             {
                 t.fontSize = 18;
-                t.alignment = TextAnchor.UpperLeft;
-                t.verticalOverflow = VerticalWrapMode.Overflow;
+                t.alignment = TextAlignmentOptions.TopLeft;
+                t.overflowMode = TextOverflowModes.Overflow;
             }
             var ds = Ensure<ScrollRect>(detailViewport);
             ds.viewport = (RectTransform)detailViewport.transform;
@@ -355,8 +356,8 @@ namespace ProjectC.Client.Editor
             history.SetActive(true);
             Move(history.GetComponent<RectTransform>(), -500, 150, 450, 700);
             Group(history);
-            Move(Find<Text>(history, "Header"), 20, 12, 310, 48);
-            Find<Text>(history, "Header").text = "BATTLE LOG";
+            Move(Find<TMP_Text>(history, "Header"), 20, 12, 310, 48);
+            Find<TMP_Text>(history, "Header").text = "BATTLE LOG";
             Button(history.transform, "CloseLog", "X", 370, 18, 50, 38);
             var vp = Find<RectTransform>(history, "Viewport");
             Move(vp, 18, 80, 414, 600);
@@ -378,11 +379,11 @@ namespace ProjectC.Client.Editor
             sr.anchorMin = sr.anchorMax = sr.pivot = new Vector2(0, .5f);
             sr.anchoredPosition = Vector2.zero;
             var tip = Label(arrow.transform, "Tip", ">", 100, -24, 50, 50, 48);
-            tip.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            tip.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Harmonic SDF.asset");
             tip.fontSize = 36;
-            tip.horizontalOverflow = HorizontalWrapMode.Overflow;
+            tip.textWrappingMode = TextWrappingModes.NoWrap;
             tip.color = Gold;
-            tip.alignment = TextAnchor.MiddleCenter;
+            tip.alignment = TextAlignmentOptions.Center;
             ((RectTransform)tip.transform).anchorMin = ((RectTransform)tip.transform).anchorMax =
                 new Vector2(0, .5f);
             ((RectTransform)tip.transform).pivot = new Vector2(.5f, .5f);

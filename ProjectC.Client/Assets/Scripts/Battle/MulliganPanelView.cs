@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,8 +14,8 @@ namespace ProjectC.Client
         public Button Confirm { get; private set; }
         public Button Keep { get; private set; }
         public Button Reconnect { get; private set; }
-        public Text Status { get; private set; }
-        Text feedback;
+        public TMP_Text Status { get; private set; }
+        TMP_Text feedback;
         StateView lastState;
         float deadline;
         MultiplayerDebugScreen Client => presenter.Client;
@@ -66,19 +67,19 @@ namespace ProjectC.Client
             return view;
         }
 
-        Text Label(string name, Vector2 position, Vector2 size, int fontSize)
+        TMP_Text Label(string name, Vector2 position, Vector2 size, int fontSize)
         {
-            var obj = new GameObject(name, typeof(RectTransform), typeof(Text));
+            var obj = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             obj.transform.SetParent(transform, false);
             var rect = (RectTransform)obj.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
             rect.sizeDelta = size;
             rect.anchoredPosition = position;
-            var text = obj.GetComponent<Text>();
+            var text = obj.GetComponent<TMP_Text>();
             text.font = presenter.TurnLabel.font;
             text.fontSize = fontSize;
             text.color = Color.white;
-            text.alignment = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
             return text;
         }
