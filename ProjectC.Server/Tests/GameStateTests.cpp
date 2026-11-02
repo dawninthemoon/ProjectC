@@ -7,6 +7,7 @@ void RunContentTests(int& testCount, int& failedTests);
 
 using namespace ProjectC::GameCore;
 
+void RunBattleUxTests(int& testCount, int& failedTests);
 void RunZoneTests(int& testCount, int& failedTests);
 void RunGameFlowTests(int& testCount, int& failedTests);
 void RunGameReplayTests(int& testCount, int& failedTests);
@@ -363,7 +364,10 @@ int main()
             gameState.Phase, TurnPhase::Battle, "AdvancePhaseOrder", "first phase", failedTests);
         AdvancePhase(gameState);
         ExpectEqual(
-            gameState.Phase, TurnPhase::End, "AdvancePhaseOrder", "second phase", failedTests);
+            gameState.Phase, TurnPhase::Main2, "AdvancePhaseOrder", "second phase", failedTests);
+        AdvancePhase(gameState);
+        ExpectEqual(
+            gameState.Phase, TurnPhase::End, "AdvancePhaseOrder", "third phase", failedTests);
         GameState const before = gameState;
         AdvancePhase(gameState);
         ExpectEqual(
@@ -663,6 +667,7 @@ int main()
                     failedTests);
     }
 
+    RunBattleUxTests(testCount, failedTests);
     RunZoneTests(testCount, failedTests);
     RunGameFlowTests(testCount, failedTests);
     RunGameReplayTests(testCount, failedTests);

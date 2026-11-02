@@ -26,6 +26,7 @@ void RunHyakkiComboTests()
     check(!catalog.ValidateDeck(invalid), "Manifest form excluded from main deck");
     auto config = catalog.Config;
     config.DrawPerTurn = 0;
+    config.EnableMulligan = false;
     auto deck = catalog.Decks.front().Cards;
     std::vector<int> ordered{1001, 1002, 1003, 1101, 1102, 1103};
     for (auto id : ordered)

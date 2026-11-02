@@ -272,6 +272,7 @@ namespace ProjectC.Client.Editor
             Label(root.transform, "CardKind", "MONSTER", 10, 122, 130, 18, 11, Gold);
             Label(root.transform, "CardStats", "ATK 3  HP 4", 10, 142, 130, 18, 12);
             Label(root.transform, "CardCount", "× 0", 10, 161, 130, 20, 13);
+            UpgradeCardPresentationAssets.ConfigureTile(root, 150);
             var prefab = PrefabUtility
                 .SaveAsPrefabAsset(root, Folder + "/DeckTile.prefab")
                 .GetComponent<DeckTileView>();
@@ -347,6 +348,7 @@ namespace ProjectC.Client.Editor
             Button(table, "CancelEdits", "변경 취소", 1390, 950, 230, 60);
             Button(table, "Save", "덱 저장", 1650, 950, 230, 60, true);
             Dialog(table);
+            UpgradeCardPresentationAssets.ConfigureEditor(root);
             SaveScene(root, "DeckEditorScene");
         }
 

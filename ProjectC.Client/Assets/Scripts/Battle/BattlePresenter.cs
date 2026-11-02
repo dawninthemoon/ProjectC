@@ -10,6 +10,8 @@ namespace ProjectC.Client
 {
     public sealed class BattlePresenter : MonoBehaviour
     {
+        private const int SecondsPerMinute = 60;
+        private const double MillisecondsPerSecond = 1000;
         public MultiplayerDebugScreen Client;
         public LobbyPanelView Lobby;
         public GameObject LobbyOverlay,
@@ -24,6 +26,28 @@ namespace ProjectC.Client
         public PlayerPanelView OwnPlayer,
             EnemyPlayer;
         public CardDetailView Detail;
+        private CardView _inspected;
+        private bool _inspectionFromChoice;
+        private TMP_Text _turnTimer;
+        private double _turnDeadline;
+        private bool _turnTimerRunning;
+        public void InspectCard(CardView card, bool fromChoice = false)
+        {
+            if (card == null)
+            {
+                return;
+            }
+            _inspected = card;
+            _inspectionFromChoice = fromChoice;
+            Detail.Show(card);
+        }
+
+        public void HideCardInfo()
+        {
+            _inspected = null;
+            Detail.Show(null);
+        }
+
         public BattleLogView Log;
         public BattleEffectsView Effects;
         public TMP_Text TurnLabel,
@@ -85,19 +109,15 @@ namespace ProjectC.Client
                     w.SetSelected(w.Card?.Id == SelectedCardId);
                 }
             }
-            Detail.Show(selected);
-            Detail.Place(widget.WorldCenter);
+            InspectCard(selected);
         }
 
-        float hoverAt;
-        CardWidget hoverWidget;
         StateView rendered;
         string match;
         int epoch;
         bool dirty = true,
             showLobby = true;
-        CardView selected,
-            hovered;
+        CardView selected;
         PlayerView mine,
             enemy;
         private const int MaximumPendingEvents = 256;
@@ -141,10 +161,20 @@ namespace ProjectC.Client
             Interaction.Initialize(this);
             Lobby?.Bind(Client);
             Summon.onClick.AddListener(() => Command("PlayCard"));
-            BattlePhase.onClick.AddListener(() => Command("AdvancePhase"));
+            BattlePhase.gameObject.SetActive(false);
             Attack.onClick.AddListener(() => Command("Attack"));
             DirectAttack.onClick.AddListener(() => Command("DirectAttack"));
-            EndTurn.onClick.AddListener(() => Command("EndTurn"));
+            EndTurn.onClick.AddListener(() =>
+            {
+                if (Interaction.State == BattleInputState.Idle || Interaction.State == BattleInputState.SelectingCardAction)
+                {
+                    Command(Client.State?.Phase == (int)BattlePhaseKind.Main2 || Client.State?.Phase == (int)BattlePhaseKind.End ? "EndTurn" : "AdvancePhase");
+                }
+            });
+            if (!this.Bind("TurnTimer", out _turnTimer))
+            {
+                throw new InvalidOperationException("Battle screen requires TurnTimer.");
+            }
             Cancel.onClick.AddListener(ClearSelection);
             LobbyToggle.onClick.AddListener(() =>
             {
@@ -169,8 +199,12 @@ namespace ProjectC.Client
             Client.SnapshotReceived += ReceiveSnapshot;
             Client.ViewInvalidated += Invalidate;
             Effects.ResetFeedback();
-            Detail.Show(null);
+            HideCardInfo();
             Mulligan = MulliganPanelView.Create(this);
+            if (Client.State != null)
+            {
+                ReceiveSnapshot(Client.State);
+            }
         }
 
         void OnDestroy()
@@ -186,6 +220,7 @@ namespace ProjectC.Client
 
         void Invalidate()
         {
+            _turnTimerRunning = false;
             StopAllCoroutines();
             _playing = false;
             _batches.Clear();
@@ -194,7 +229,7 @@ namespace ProjectC.Client
             dirty = true;
             events.Clear();
             Effects.ResetFeedback();
-            Detail.Show(null);
+            HideCardInfo();
         }
 
         private void OnDisable()
@@ -217,6 +252,10 @@ namespace ProjectC.Client
 
         private void ReceiveSnapshot(StateView snapshot)
         {
+            _turnTimerRunning = snapshot.TurnTimerRunning;
+            // Correct against the server's timestamp pair, then advance with a monotonic local clock.
+            _turnDeadline = Time.realtimeSinceStartupAsDouble + Math.Max(0,
+                (snapshot.TurnEndsAtUnixMs - Client.SnapshotServerTimeUnixMs) / MillisecondsPerSecond);
             if (_restorePresentation || _presentation.State == null
                 || (snapshot.Started && !_presentation.State.Started)
                 || snapshot.MulliganActive != _presentation.State.MulliganActive)
@@ -340,9 +379,7 @@ namespace ProjectC.Client
         public void ClearSelection()
         {
             SelectedCardId = TargetCardId = 0;
-            selected = hovered = null;
-            hoverWidget = null;
-            Detail.Show(null);
+            selected = null;
             foreach (var zone in Zones)
             {
                 if (zone != null)
@@ -367,22 +404,11 @@ namespace ProjectC.Client
 
         void Hover(CardWidget widget)
         {
-            if (
-                Interaction.State != BattleInputState.Idle
-                && Interaction.State != BattleInputState.SelectingCardAction
-            )
-            {
-                return;
-            }
-            hoverWidget = widget;
-            hoverAt = Time.unscaledTime;
+            // Hover animation and sorting belong to CardWidget; inspection is click-only.
         }
 
         void Unhover()
         {
-            hoverWidget = null;
-            hovered = null;
-            Detail.Show(null);
         }
 
         void LateUpdate()
@@ -412,7 +438,6 @@ namespace ProjectC.Client
                 Interaction.SnapshotChanged();
                 rendered = Client.State;
                 dirty = true;
-                hovered = null;
                 if (enteringGame)
                 {
                     showLobby = false;
@@ -440,15 +465,6 @@ namespace ProjectC.Client
             {
                 StartCoroutine(PlayPresentation());
             }
-            if (
-                hoverWidget != null
-                && Time.unscaledTime - hoverAt >= (Interaction.Settings?.HoverDelay ?? .2f)
-            )
-            {
-                hovered = hoverWidget.Card;
-                Detail.Show(hovered);
-                Detail.Place(hoverWidget.WorldCenter);
-            }
             if (!PresentationBusy)
             {
                 Interaction.RefreshServerChoice();
@@ -465,12 +481,19 @@ namespace ProjectC.Client
             }
             bool action = CanAct;
             Summon.interactable = action && selected != null && selected.CanSummon;
-            BattlePhase.interactable = action && rendered.Phase == 0;
+            BattlePhase.interactable = false;
             Attack.interactable =
                 action && selected != null && selected.CanAttack && TargetCardId != 0;
             DirectAttack.interactable =
-                action && selected != null && selected.CanAttack && enemy?.Field?.Length == 0;
-            EndTurn.interactable = action;
+                action && selected != null && selected.CanDirectAttack && enemy?.Field?.Length == 0;
+            EndTurn.interactable = action && (Interaction.State == BattleInputState.Idle
+                || Interaction.State == BattleInputState.SelectingCardAction);
+            EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get(
+                rendered?.Phase == (int)BattlePhaseKind.Main1 ? "ui.phase.to_battle"
+                : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.to_main2" : "ui.phase.end_turn");
+            int seconds = _turnTimerRunning ? Mathf.Max(0, (int)Math.Ceiling(_turnDeadline - Time.realtimeSinceStartupAsDouble)) : 0;
+            _turnTimer.text = _turnTimerRunning
+                ? BattleText.Get("ui.turn.remaining", $"{seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}") : "";
             ResultRematch.interactable = Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
             if (ConnectionLabel != null)
@@ -608,15 +631,9 @@ namespace ProjectC.Client
             {
                 TurnLabel.text = "RESOLVING / P" + rendered.ResolvingPlayerId;
             }
-            PhaseLabel.text =
-                "TURN "
-                + rendered.TurnNumber
-                + "  /  "
-                + (
-                    rendered.Phase == 0 ? "MAIN"
-                    : rendered.Phase == 1 ? "BATTLE"
-                    : "END"
-                );
+            PhaseLabel.text = BattleText.Get("ui.turn.phase", rendered.TurnNumber, BattleText.Get(
+                rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui.phase.main1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.battle"
+                : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui.phase.main2" : "ui.phase.end"));
             SelectionLabel.text =
                 selected == null
                     ? "Select a card"
@@ -635,6 +652,15 @@ namespace ProjectC.Client
                     zone.Layout?.Snap();
                 }
                 _snapPresentation = false;
+            }
+            if (_inspected != null && !_inspectionFromChoice)
+            {
+                var current = FindCard(_inspected.Id);
+                if (current != null)
+                {
+                    _inspected = current;
+                    Detail.Show(current);
+                }
             }
             if (rendered.TurnNumber != RenderedTurn && rendered.TurnStarted)
             {
@@ -669,13 +695,13 @@ namespace ProjectC.Client
             }
             if (e.Type == 19)
             {
-                Effects.Popup(CardPresentation.Name(card, "Spell"), "SPELL ACTIVATED / server confirmed");
+                Effects.Popup(CardPresentation.Name(card, BattleText.Get("ui.card.spell")), BattleText.Get("ui.effect.activate"));
             }
             if (e.Type == 13)
             {
                 Effects.Popup(
                     CardPresentation.Name(card, "Card effect"),
-                    "EFFECT ACTIVATED\n" + CardPresentation.Rules(card)
+                    BattleText.Get("ui.effect.activate") + "\n" + CardPresentation.Rules(card)
                 );
             }
             if (e.Type == 1)
@@ -693,9 +719,9 @@ namespace ProjectC.Client
             {
                 Effects.Popup("PLAYER DAMAGE", "-" + e.Damage + " / LIFE " + e.LifeAfter);
             }
-            if (e.Type == 7 && e.Phase != 0)
+            if (e.Type == 7 && e.Phase != (int)BattlePhaseKind.Main1)
             {
-                Effects.Phase(e.Phase == 1 ? "BATTLE" : "END");
+                Effects.Phase(BattleText.Get(e.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.battle" : e.Phase == (int)BattlePhaseKind.Main2 ? "ui.phase.main2" : "ui.phase.end"));
             }
             if (e.Type == 2)
             {

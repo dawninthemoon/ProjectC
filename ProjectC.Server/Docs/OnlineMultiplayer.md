@@ -4,6 +4,8 @@
 
 # Online Multiplayer — Match Management & Playable Client
 
+**2026-11-03 전투 UI/프로토콜 보완:** ProtocolVersion 2에서 Main2=3, 카드 `CanDirectAttack`, StateSnapshot envelope `ServerTimeUnixMs`, payload `TurnEndsAtUnixMs`/`TurnTimerRunning`을 추가했다. 백귀야행은 멀리건을 기본 활성화한다. 서버와 클라이언트를 함께 갱신한다. 시간 표시는 강제 턴 종료 규칙을 추가하지 않으며 상세 계약과 검증은 [BattleUX.md](../../ProjectC.Client/Docs/BattleUX.md)를 참조한다.
+
 2026-10-30. 현재 구현은 JSON WebSocket **ProtocolVersion 2**다. 이전 `local-1` 단일 매치 프로토콜(v1)과 호환되지 않으므로 서버와 Unity 클라이언트를 함께 다시 빌드한다. 기존 GameCore 규칙과 실행 타깃은 유지했다.
 
 ## 실행과 설정

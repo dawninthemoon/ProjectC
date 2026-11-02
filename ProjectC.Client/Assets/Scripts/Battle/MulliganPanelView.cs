@@ -45,7 +45,6 @@ namespace ProjectC.Client
                 view.cards[i] = card;
                 var cardRect = (RectTransform)card.transform;
                 cardRect.anchorMin = cardRect.anchorMax = new Vector2(.5f, .5f);
-                cardRect.sizeDelta = new Vector2(180, 218);
                 cardRect.anchoredPosition = new Vector2((i - 2) * 210, 20);
                 card.Clicked = view.Toggle;
                 card.Hovered = null;
@@ -195,10 +194,6 @@ namespace ProjectC.Client
                 {
                     bool selected = Client.MulliganSelection.Contains(own.Hand[i].Id);
                     cards[i].Bind(own.Hand[i], false, selected, false, false);
-                    cards[i].Status.text =
-                        own.MulliganComplete ? "확정 손패"
-                        : selected ? "교체 예정"
-                        : "유지";
                 }
             }
             var other = Array.Find(state.Players, p => p.PlayerId != Client.PlayerId);

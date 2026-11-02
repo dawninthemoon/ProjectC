@@ -79,6 +79,10 @@ int main(int argc, char** argv)
             {
                 config.MaxReplays = value;
             }
+            else if (option == "--turn-duration")
+            {
+                config.TurnDurationSeconds = static_cast<int>(value);
+            }
             else if (option == "--waiting-timeout")
             {
                 config.WaitingTimeoutSeconds = static_cast<int>(value);
@@ -108,6 +112,7 @@ int main(int argc, char** argv)
                   << "Usage: ProjectCNetworkServer [--port 7777] [--max-matches 64] [--data Data]\n"
                   << "  [--waiting-timeout 900] [--playing-timeout 1800] [--finished-timeout 300]\n"
                   << "  [--mulligan on|off] [--mulligan-timeout 60] [--mulligan-auto-keep on|off]\n"
+                  << "  [--turn-duration 180]\n"
                   << "  [--max-replays 128] [--replay-retention 3600]\n";
         return 1;
     }

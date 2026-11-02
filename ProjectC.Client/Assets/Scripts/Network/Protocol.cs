@@ -2,6 +2,14 @@ using System;
 
 namespace ProjectC.Client
 {
+    public enum BattlePhaseKind
+    {
+        Main1 = 0,
+        Battle = 1,
+        End = 2,
+        Main2 = 3,
+    }
+
     public enum MatchmakingState
     {
         Idle,
@@ -26,6 +34,7 @@ namespace ProjectC.Client
         public bool HasAttacked,
             CanSummon,
             CanAttack,
+            CanDirectAttack,
             SummoningSick;
         public ActivationView[] Activations;
     }
@@ -111,6 +120,8 @@ namespace ProjectC.Client
             SummoningSickness,
             MulliganActive;
         public int MulliganSecondsRemaining;
+        public long TurnEndsAtUnixMs;
+        public bool TurnTimerRunning;
         public string MatchStatus;
         public int ActivePlayerId,
             TurnNumber,
@@ -169,7 +180,7 @@ namespace ProjectC.Client
             PlayerId,
             WinnerPlayerId,
             GameNumber;
-        public long SequenceNumber;
+        public long SequenceNumber, ServerTimeUnixMs;
     }
 
     [Serializable]

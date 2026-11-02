@@ -43,6 +43,7 @@ target_link_libraries(ProjectCServer
 enable_testing()
 
 add_executable(ProjectCTests
+    Tests/BattleUxTests.cpp
     Tests/GameStateTests.cpp
     Tests/ZoneTests.cpp
     Tests/GameFlowTests.cpp

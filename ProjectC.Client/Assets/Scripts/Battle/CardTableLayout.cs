@@ -5,10 +5,6 @@ namespace ProjectC.Client
 {
     public sealed class CardTableLayout : MonoBehaviour
     {
-        private const float CardWidth = 180f;
-        private const float CardHeight = 218f;
-        private const float CompactWidth = 68f;
-        private const float CompactHeight = 88f;
         private const float FieldSpacing = 35f;
         private const float EdgePadding = 16f;
         private const float MinimumSpacing = 12f;
@@ -19,13 +15,30 @@ namespace ProjectC.Client
         private readonly Dictionary<CardWidget, Motion> _motions = new Dictionary<CardWidget, Motion>();
         private readonly List<CardWidget> _retired = new List<CardWidget>();
         public float Spacing { get; private set; }
-        public Vector2 CardSize => new Vector2(Compact ? CompactWidth : CardWidth, Compact ? CompactHeight : CardHeight);
+        public Vector2 CardSize => ((RectTransform)GetComponent<CardZoneView>().CardPrefab.transform).rect.size;
+
+        // Keep the authored aspect ratio and all badges visible as a hand grows.
+        // Flights and hover use the same uniform scale as the settled layout.
+        public float CardScale
+        {
+            get
+            {
+                int count = _cards?.Count ?? 0;
+                if (!Hand || count < 2)
+                {
+                    return 1;
+                }
+                float gap = Settings?.HandSpacing ?? 22f;
+                float available = Mathf.Max(MinimumSpacing, ((RectTransform)transform).rect.width - EdgePadding);
+                return Mathf.Min(1, available / (count * CardSize.x + (count - 1) * gap));
+            }
+        }
 
         private sealed class Motion
         {
             public Vector2 From, Target;
             public Quaternion FromRotation, Rotation;
-            public float Started;
+            public float Started, FromScale, Scale;
         }
 
         public void Arrange(List<CardWidget> widgets)
@@ -41,9 +54,9 @@ namespace ProjectC.Client
 
         public void GetSlot(int index, int count, out Vector2 position, out Quaternion rotation)
         {
-            float width = CardSize.x;
+            float width = CardSize.x * CardScale;
             Spacing = count < 2 ? 0 : Mathf.Min(
-                width + (Hand ? Settings?.HandSpacing ?? 22f : FieldSpacing),
+                width + (Hand ? (Settings?.HandSpacing ?? 22f) * CardScale : FieldSpacing),
                 Mathf.Max(MinimumSpacing, (((RectTransform)transform).rect.width - width - EdgePadding) / (count - 1)));
             float offset = index - (count - 1) * .5f;
             float ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
@@ -59,7 +72,7 @@ namespace ProjectC.Client
             GetSlot(index, count, out var position, out var rotation);
             rect.anchoredPosition = position;
             rect.localRotation = rotation;
-            rect.localScale = Vector3.one;
+            rect.localScale = Vector3.one * CardScale;
             _motions.Remove(card);
         }
 
@@ -94,13 +107,16 @@ namespace ProjectC.Client
                 if (!_motions.TryGetValue(card, out var motion))
                 {
                     motion = new Motion { Target = target, Rotation = rotation,
-                        From = rect.anchoredPosition, FromRotation = rect.localRotation, Started = Time.unscaledTime };
+                        From = rect.anchoredPosition, FromRotation = rect.localRotation,
+                        FromScale = rect.localScale.x, Scale = CardScale, Started = Time.unscaledTime };
                     _motions.Add(card, motion);
                 }
-                if (motion.Target != target || motion.Rotation != rotation)
+                if (motion.Target != target || motion.Rotation != rotation || motion.Scale != CardScale)
                 {
                     motion.From = rect.anchoredPosition;
                     motion.FromRotation = rect.localRotation;
+                    motion.FromScale = rect.localScale.x;
+                    motion.Scale = CardScale;
                     motion.Target = target;
                     motion.Rotation = rotation;
                     motion.Started = Time.unscaledTime;
@@ -110,6 +126,7 @@ namespace ProjectC.Client
                 float ease = Settings?.Ease(progress) ?? Mathf.SmoothStep(0, 1, progress);
                 rect.anchoredPosition = Vector2.LerpUnclamped(motion.From, target, ease);
                 rect.localRotation = Quaternion.SlerpUnclamped(motion.FromRotation, rotation, ease);
+                rect.localScale = Vector3.one * Mathf.LerpUnclamped(motion.FromScale, motion.Scale, ease);
             }
             // Recycled widgets must not retain a previous card's motion.
             _retired.Clear();

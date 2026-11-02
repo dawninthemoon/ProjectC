@@ -41,6 +41,9 @@ namespace ProjectC.Client
         readonly List<List<EffectTargetView>> targets = new List<List<EffectTargetView>>();
         readonly List<RaycastResult> hits = new List<RaycastResult>();
         Coroutine rollback;
+        private BattleHitArea[] _areas;
+        private BattleHitArea _dropArea;
+        private const float MinimumDropOverlap = .30f;
 
         public void Initialize(BattlePresenter value)
         {
@@ -49,7 +52,8 @@ namespace ProjectC.Client
             this.Bind("AttackArrow", out arrow);
             this.Bind("ContextAction", out context);
             this.Bind("EffectTargetPicker", out picker);
-            foreach (var area in GetComponentsInChildren<BattleHitArea>(true))
+            _areas = GetComponentsInChildren<BattleHitArea>(true);
+            foreach (var area in _areas)
             {
                 area.Controller = this;
             }
@@ -104,6 +108,7 @@ namespace ProjectC.Client
             {
                 source.ResetPointer();
             }
+            _dropArea = null;
             source = null;
             sourceId = 0;
             if (ghost != null)
@@ -137,6 +142,7 @@ namespace ProjectC.Client
 
         public void Click(CardWidget widget)
         {
+            presenter.InspectCard(widget.Card);
             if (State == BattleInputState.AwaitingServerResponse || widget.Card == null)
             {
                 return;
@@ -153,7 +159,7 @@ namespace ProjectC.Client
                             return;
                         }
                     }
-                    presenter.Log.ShowFeedback("That card is not an eligible target.");
+                    presenter.Log.ShowFeedback(BattleText.Get("ui.choice.invalid"));
                     return;
                 }
                 foreach (var target in activation.Selections[selectionIndex].Candidates)
@@ -164,7 +170,7 @@ namespace ProjectC.Client
                         return;
                     }
                 }
-                presenter.Log.ShowFeedback("That card is not an eligible target.");
+                presenter.Log.ShowFeedback(BattleText.Get("ui.choice.invalid"));
                 return;
             }
             ResetInput();
@@ -180,6 +186,11 @@ namespace ProjectC.Client
 
         public void ClickArea(BattleHitArea area)
         {
+            if (area.Kind == BattleHitArea.AreaKind.Background || area.Kind == BattleHitArea.AreaKind.OwnField)
+            {
+                presenter.HideCardInfo();
+                return;
+            }
             if (State == BattleInputState.AwaitingServerResponse)
             {
                 return;
@@ -220,7 +231,7 @@ namespace ProjectC.Client
                         return;
                     }
                 }
-                presenter.Log.ShowFeedback("That player is not an eligible target.");
+                presenter.Log.ShowFeedback(BattleText.Get("ui.choice.invalid"));
                 return;
             }
             ResetInput();
@@ -228,7 +239,7 @@ namespace ProjectC.Client
 
         void Begin(CardWidget widget, PointerEventData pointer)
         {
-            if (State == BattleInputState.AwaitingServerResponse || !presenter.CanAct)
+            if (State == BattleInputState.AwaitingServerResponse || State == BattleInputState.SelectingEffectTarget || !presenter.CanAct)
             {
                 return;
             }
@@ -243,14 +254,13 @@ namespace ProjectC.Client
             if (!summon && !attack)
             {
                 presenter.Log.ShowFeedback(
-                    "This card cannot act now. Check turn, phase and summoning sickness."
+                    BattleText.Get("ui.card.cannot_act")
                 );
                 return;
             }
             ResetInput();
             source = widget;
             sourceId = widget.Card.Id;
-            presenter.Detail.Show(null);
             State = summon
                 ? BattleInputState.DraggingHandCard
                 : BattleInputState.DraggingAttackTarget;
@@ -264,7 +274,6 @@ namespace ProjectC.Client
                     g.raycastTarget = false;
                 }
                 ghost.Bind(widget.Card, false, false, false, false);
-                ((RectTransform)ghost.transform).sizeDelta = new Vector2(180, 218);
                 source.Dim(true);
             }
             attackOrigin = widget.WorldCenter;
@@ -295,6 +304,7 @@ namespace ProjectC.Client
             if (State == BattleInputState.DraggingHandCard && ghost != null)
             {
                 ghost.transform.position = World(pointer);
+                UpdateDropArea();
             }
             if (State == BattleInputState.DraggingAttackTarget)
             {
@@ -327,6 +337,11 @@ namespace ProjectC.Client
             {
                 return;
             }
+            if (State == BattleInputState.DraggingHandCard)
+            {
+                ghost.transform.position = World(pointer);
+                UpdateDropArea();
+            }
             var hit = Hit(pointer);
             var card = hit?.GetComponentInParent<CardWidget>();
             var area = hit?.GetComponentInParent<BattleHitArea>();
@@ -335,10 +350,7 @@ namespace ProjectC.Client
             if (
                 presenter.CanAct
                 && State == BattleInputState.DraggingHandCard
-                && (
-                    area?.Kind == BattleHitArea.AreaKind.OwnField
-                    || presenter.IsOwnField(card?.Card?.Id ?? 0)
-                )
+                && _dropArea != null
             )
             {
                 command = "PlayCard";
@@ -353,6 +365,7 @@ namespace ProjectC.Client
                 else if (
                     area?.Kind == BattleHitArea.AreaKind.EnemyHero
                     && presenter.EnemyFieldEmpty
+                    && source.Card.CanDirectAttack
                 )
                 {
                     command = "DirectAttack";
@@ -375,7 +388,7 @@ namespace ProjectC.Client
             }
             else
             {
-                presenter.Log.ShowFeedback("Cancelled: drop on a highlighted target.");
+                presenter.Log.ShowFeedback(BattleText.Get("ui.drop.cancelled"));
                 ReturnCard();
             }
         }
@@ -441,7 +454,6 @@ namespace ProjectC.Client
             if (value.Interactive)
             {
                 context.gameObject.SetActive(false);
-                presenter.Detail.Show(null);
                 if (presenter.Client.SendPlayerAction(sourceId, value.EffectId))
                 {
                     State = BattleInputState.AwaitingServerResponse;
@@ -456,7 +468,6 @@ namespace ProjectC.Client
             selectionIndex = 0;
             targets.Clear();
             context.gameObject.SetActive(false);
-            presenter.Detail.Show(null);
             foreach (var selection in value.Selections)
             {
                 targets.Add(new List<EffectTargetView>());
@@ -503,21 +514,13 @@ namespace ProjectC.Client
             Hints();
         }
 
-        string TargetName(EffectTargetView target) =>
-            target.CardId == 0
-                ? "Player " + target.PlayerId
-                : CardPresentation.Name(presenter.FindCard(target.CardId), "#" + target.CardId)
-                    + " #"
-                    + target.CardId
-                    + " / "
-                    + (
-                        target.Zone == 1 ? "Hand"
-                        : target.Zone == 2 ? "Field"
-                        : "Graveyard"
-                    );
+        string TargetName(EffectTargetView target) => target.CardId == 0
+            ? BattleText.Get("ui.choice.player", target.PlayerId)
+            : CardPresentation.Name(presenter.FindCard(target.CardId));
 
         void Pick(EffectTargetView target)
         {
+            presenter.InspectCard(presenter.FindCard(target.CardId));
             var chosen = targets[selectionIndex];
             int index = chosen.FindIndex(t =>
                 t.CardId == target.CardId && t.PlayerId == target.PlayerId && t.Zone == target.Zone
@@ -526,6 +529,11 @@ namespace ProjectC.Client
             {
                 chosen.RemoveAt(index);
             }
+            else if (activation.Selections[selectionIndex].MaxCount == 1)
+            {
+                chosen.Clear();
+                chosen.Add(target);
+            }
             else if (chosen.Count < activation.Selections[selectionIndex].MaxCount)
             {
                 chosen.Add(target);
@@ -533,7 +541,7 @@ namespace ProjectC.Client
             else
             {
                 presenter.Log.ShowFeedback(
-                    "Maximum targets selected. Click a selected target to remove it."
+                    BattleText.Get("ui.choice.maximum")
                 );
             }
             picker.SetSelected(chosen);
@@ -613,7 +621,7 @@ namespace ProjectC.Client
             if (!serverChoice.CanCancel)
             {
                 presenter.Log.ShowFeedback(
-                    "New private cards were revealed. Complete this choice to continue."
+                    BattleText.Get("ui.choice.private")
                 );
                 return;
             }
@@ -626,9 +634,21 @@ namespace ProjectC.Client
 
         void PickServer(string token)
         {
+            var option = System.Array.Find(serverChoice.Candidates, candidate => candidate.Token == token);
+            if (option == null)
+            {
+                return;
+            }
+            // Preview only the card DTO authorized in this choice; never resolve private IDs locally.
+            presenter.InspectCard(option.Card, true);
             if (serverTargets.Contains(token))
             {
                 serverTargets.Remove(token);
+            }
+            else if (serverChoice.MaxCount == 1)
+            {
+                serverTargets.Clear();
+                serverTargets.Add(token);
             }
             else if (serverTargets.Count < serverChoice.MaxCount)
             {
@@ -651,6 +671,35 @@ namespace ProjectC.Client
             {
                 State = BattleInputState.AwaitingServerResponse;
                 picker.gameObject.SetActive(false);
+            }
+        }
+
+        private void UpdateDropArea()
+        {
+            _dropArea = null;
+            if (ghost == null || source?.Card == null || !presenter.CanAct)
+            {
+                return;
+            }
+            bool canDrop = source.Card.CanSummon || source.Card.Activations != null
+                && System.Array.Exists(source.Card.Activations, action => action.CanActivate);
+            if (!canDrop)
+            {
+                return;
+            }
+            float best = MinimumDropOverlap;
+            foreach (var area in _areas)
+            {
+                if (area.Kind != BattleHitArea.AreaKind.OwnField || !area.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+                float overlap = ScreenRectOverlap.Fraction(ghost.Face, (RectTransform)area.transform);
+                if (overlap >= best)
+                {
+                    best = overlap;
+                    _dropArea = area;
+                }
             }
         }
 
@@ -708,7 +757,7 @@ namespace ProjectC.Client
                     widget.SetHint(hint);
                 }
             }
-            foreach (var area in GetComponentsInChildren<BattleHitArea>(true))
+            foreach (var area in _areas)
             {
                 if (area.Kind == BattleHitArea.AreaKind.Background)
                 {
@@ -716,10 +765,11 @@ namespace ProjectC.Client
                 }
                 bool valid =
                     State == BattleInputState.DraggingHandCard
-                        && area.Kind == BattleHitArea.AreaKind.OwnField
+                        && area == _dropArea
                     || State == BattleInputState.DraggingAttackTarget
                         && area.Kind == BattleHitArea.AreaKind.EnemyHero
-                        && presenter.EnemyFieldEmpty;
+                        && presenter.EnemyFieldEmpty
+                        && source.Card.CanDirectAttack;
                 if (State == BattleInputState.SelectingEffectTarget && serverChoice == null)
                 {
                     foreach (var t in activation.Selections[selectionIndex].Candidates)

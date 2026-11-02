@@ -135,7 +135,7 @@ namespace ProjectC.Tests
             var drawn = _ui.Hand.Widgets.Single(w => w.Card?.Id == 50);
             Assert.IsTrue(drawn.IsInFlight);
             Assert.Greater(_ui.Effects.PopupsPresented, 0, "Description must start alongside draw");
-            Assert.AreEqual("EFFECT ACTIVATED\nDraw a card.", _ui.Effects.PopupBody.text);
+            Assert.AreEqual(BattleText.Get("ui.effect.activate") + "\nDraw a card.", _ui.Effects.PopupBody.text);
             Assert.IsFalse(drawn.GetComponent<CanvasGroup>().blocksRaycasts);
             drawn.OnPointerEnter(null);
             Assert.IsFalse(drawn.IsHovered, "Flying card cannot acquire a hover transform");

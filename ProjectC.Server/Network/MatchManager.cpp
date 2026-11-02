@@ -33,7 +33,8 @@ namespace ProjectC::Network
             }
         }
         catalog = std::make_shared<CardCatalog>(std::move(loaded));
-        if (this->config.MulliganTimeoutSeconds < MinimumPositiveTimeoutSeconds ||
+        if (this->config.TurnDurationSeconds < MinimumPositiveTimeoutSeconds ||
+            this->config.MulliganTimeoutSeconds < MinimumPositiveTimeoutSeconds ||
             this->config.MulliganTimeoutSeconds > MaximumMulliganTimeoutSeconds)
         {
             throw std::runtime_error("Invalid mulligan timeout");
@@ -199,7 +200,8 @@ namespace ProjectC::Network
                     identities,
                     [this](ReplayRecord record) { Archive(std::move(record)); },
                     config.MulliganTimeoutSeconds,
-                    config.MulliganAutoKeep);
+                    config.MulliganAutoKeep,
+                    config.TurnDurationSeconds);
                 auto* session = match.get();
                 matches.emplace(id, std::move(match));
                 std::cout << "Match " << id << " created activeMatches=" << matches.size() << std::endl;
@@ -290,13 +292,10 @@ namespace ProjectC::Network
                 id,
                 catalog,
                 identities,
-                [this](ReplayRecord record)
-                {
-                    Archive(std::move(record));
-                },
+                [this](ReplayRecord record) { Archive(std::move(record)); },
                 config.MulliganTimeoutSeconds,
-                config.MulliganAutoKeep
-            );
+                config.MulliganAutoKeep,
+                config.TurnDurationSeconds);
 
             auto* session = match.get();
             matches.emplace(id, std::move(match));

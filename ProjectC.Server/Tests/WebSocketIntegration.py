@@ -98,7 +98,7 @@ def public(state):
         player.pop('Hand')
         for zone in ('Field','Graveyard'):
             for card in player[zone]:
-                card.pop('CanSummon'); card.pop('CanAttack'); card.pop('Activations')
+                card.pop('CanSummon'); card.pop('CanAttack'); card.pop('CanDirectAttack'); card.pop('Activations')
     return result
 
 def quiet(peer):

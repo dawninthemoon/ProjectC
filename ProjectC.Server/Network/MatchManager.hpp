@@ -14,6 +14,7 @@ namespace ProjectC::Network
         int ReplayRetentionSeconds = 3600;
         std::optional<bool> EnableMulligan; // Overrides data only when explicitly configured.
         int MulliganTimeoutSeconds = 60;
+        int TurnDurationSeconds = 180;
         bool MulliganAutoKeep = true;
         std::string DataDirectory = DefaultDataDirectory();
     };

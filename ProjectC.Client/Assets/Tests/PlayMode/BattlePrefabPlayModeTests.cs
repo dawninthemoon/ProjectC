@@ -142,12 +142,13 @@ namespace ProjectC.Tests
             var hand = ui.Hand.Widgets[0];
             hand.OnPointerEnter(null);
             yield return new WaitForSecondsRealtime(.3f);
+            ui.Interaction.Click(hand);
             Assert.AreEqual(hand.Card.Name, ui.Detail.Title.text);
             Assert.IsTrue(ui.Detail.gameObject.activeSelf);
             Assert.Greater(hand.Face.localScale.x, 1);
             hand.OnPointerExit(null);
-            Assert.IsFalse(ui.Detail.gameObject.activeSelf);
-            Assert.AreEqual("SUMMONING SICKNESS", ui.OwnField.Widgets[1].Status.text);
+            Assert.IsTrue(ui.Detail.gameObject.activeSelf);
+            Assert.IsFalse(ui.OwnField.Widgets[1].Status.gameObject.activeSelf);
             ui.ClearSelection();
             yield return null;
             Assert.AreEqual(0, ui.TargetCardId);

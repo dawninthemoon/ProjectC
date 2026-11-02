@@ -59,7 +59,8 @@ namespace ProjectC.Tests
             MultiplayerDebugScreen client,
             string type,
             int card = 0,
-            int target = 0
+            int target = 0,
+            bool edgeDrop = false
         )
         {
             long sequence = client.Sequence;
@@ -100,8 +101,23 @@ namespace ProjectC.Tests
                         : ui.EnemyPlayer.transform.TransformPoint(
                             ((RectTransform)ui.EnemyPlayer.transform).rect.center
                         );
+                    if (edgeDrop && type == "PlayCard")
+                    {
+                        var area = Array.Find(ui.GetComponentsInChildren<BattleHitArea>(),
+                            entry => entry.Kind == BattleHitArea.AreaKind.OwnField);
+                        var slot = (RectTransform)area.transform;
+                        destination = slot.TransformPoint(new Vector3(slot.rect.center.x, slot.rect.yMin - 30, 0));
+                    }
                     pointer.position = RectTransformUtility.WorldToScreenPoint(null, destination);
                     widget.OnDrag(pointer);
+                    if (edgeDrop && type == "PlayCard")
+                    {
+                        var area = Array.Find(ui.GetComponentsInChildren<BattleHitArea>(),
+                            entry => entry.Kind == BattleHitArea.AreaKind.OwnField);
+                        var slot = (RectTransform)area.transform;
+                        Assert.IsFalse(RectTransformUtility.RectangleContainsScreenPoint(slot, pointer.position));
+                        Assert.Greater(ScreenRectOverlap.Fraction(ui.Interaction.Ghost.Face, slot), .30f);
+                    }
                     Assert.AreEqual(
                         type == "PlayCard"
                             ? BattleInputState.DraggingHandCard
@@ -138,6 +154,13 @@ namespace ProjectC.Tests
                         : ui.EnemyPlayer.transform.TransformPoint(
                             ((RectTransform)ui.EnemyPlayer.transform).rect.center
                         );
+                    if (edgeDrop && type == "PlayCard")
+                    {
+                        var area = Array.Find(ui.GetComponentsInChildren<BattleHitArea>(),
+                            entry => entry.Kind == BattleHitArea.AreaKind.OwnField);
+                        var slot = (RectTransform)area.transform;
+                        destination = slot.TransformPoint(new Vector3(slot.rect.center.x, slot.rect.yMin - 30, 0));
+                    }
                     pointer.position = RectTransformUtility.WorldToScreenPoint(null, destination);
                     widget.OnEndDrag(pointer);
                     Assert.AreEqual(
@@ -152,7 +175,19 @@ namespace ProjectC.Tests
                 }
                 else
                 {
-                    var button = type == "AdvancePhase" ? ui.BattlePhase : ui.EndTurn;
+                    if (type == "EndTurn")
+                    {
+                        while (client.State.Phase != 3 && client.State.Phase != 2)
+                        {
+                            long phaseSequence = client.Sequence;
+                            Assert.IsTrue(ui.EndTurn.interactable);
+                            ui.EndTurn.onClick.Invoke();
+                            yield return Until(() => client.Sequence == phaseSequence + 1);
+                            yield return null;
+                        }
+                        sequence = client.Sequence;
+                    }
+                    var button = ui.EndTurn;
                     Assert.IsTrue(button.interactable);
                     button.onClick.Invoke();
                 }
@@ -256,7 +291,7 @@ namespace ProjectC.Tests
             yield return null;
             var ui = a.GetComponent<BattlePresenter>();
             Assert.AreEqual(0, ui.OwnField.Widgets.Count);
-            Assert.IsFalse(ui.LobbyOverlay.activeSelf);
+            Assert.IsTrue(ui.LobbyOverlay == null || !ui.LobbyOverlay.activeSelf);
             Assert.AreEqual("YOUR TURN", ui.TurnLabel.text);
             foreach (var back in ui.EnemyHand.Widgets)
             {
@@ -266,6 +301,7 @@ namespace ProjectC.Tests
             var handCard = ui.Hand.Widgets[0];
             handCard.OnPointerEnter(null);
             yield return new WaitForSecondsRealtime(.3f);
+            ui.Interaction.Click(handCard);
             Assert.AreEqual(handCard.Card.Name, ui.Detail.Title.text);
             handCard.OnPointerExit(null);
             Assert.AreEqual(0, a.State.Players[1].Hand.Length);
@@ -289,7 +325,7 @@ namespace ProjectC.Tests
             yield return new WaitForSecondsRealtime(.3f);
             Assert.AreEqual(1, a.Sequence);
             Assert.IsNull(ui.Interaction.Ghost);
-            yield return Command(a, "PlayCard", aCard);
+            yield return Command(a, "PlayCard", aCard, 0, true);
             // Simulate a stale hint: server rejects the second normal summon and the ghost returns.
             yield return null;
             var stale = ui.Hand.Widgets.Find(w => w.gameObject.activeSelf);
@@ -514,9 +550,9 @@ namespace ProjectC.Tests
             actions[0].onClick.Invoke();
             Assert.AreEqual(BattleInputState.SelectingEffectTarget, ui.Interaction.State);
             var enemy = ui.EnemyField.Widgets[0];
-            Assert.AreEqual("VALID TARGET", enemy.Status.text);
+            Assert.IsFalse(enemy.Status.gameObject.activeSelf);
             enemy.OnPointerClick(null);
-            Assert.AreEqual("TARGET SELECTED", enemy.Status.text);
+            Assert.IsFalse(enemy.Status.gameObject.activeSelf);
             var picker = ui.GetComponentInChildren<EffectTargetPicker>();
             var confirm = picker.transform.Find("Confirm").GetComponent<UnityEngine.UI.Button>();
             Assert.IsTrue(confirm.interactable);

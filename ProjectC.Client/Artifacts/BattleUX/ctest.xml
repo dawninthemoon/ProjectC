@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="8"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="14"
+	timestamp="2026-11-03T00:42:08"
+	>
+	<testcase name="GameStateTests" classname="GameStateTests" time="0.157641" status="run">
+		<properties/>
+		<system-out>All 321 GameCore test groups passed!
+</system-out>
+	</testcase>
+	<testcase name="NetworkTests" classname="NetworkTests" time="4.5949" status="run">
+		<properties/>
+		<system-out>Match M1-cbf2d7fc created activeMatches=1
+Match M1-cbf2d7fc started game=1
+Match M1-cbf2d7fc game=1 replayVerified=true
+Match M1-cbf2d7fc closed reason=HostClosed
+Match M1-cbf2d7fc removed activeMatches=0
+Matchmaking completed: M1-615d38a8 activeMatches=1
+Match M1-615d38a8 started game=1
+Match M1-615d38a8 game=1 replayVerified=true
+Match M1-615d38a8 closed reason=HostClosed
+Match M1-615d38a8 removed activeMatches=0
+Battle UX: friendly/queue mulligan, reconnect, timeout, phase authority, turn clock and replay passed
+Matchmaking completed: M1-3bf2258e activeMatches=1
+Matchmaking completed: M2-b336360f activeMatches=2
+Matchmaking queue, duplicate, cancel, 
+Mulligan core: 0/1/5, no immediate redraw, validation, all command gates, order-independent RNG and replay passed
+Match M1-d64ff09a created activeMatches=1
+Match M1-d64ff09a started game=1
+Match M1-d64ff09a game=1 replayVerified=true
+Match M1-d64ff09a closed reason=HostClosed
+Match M1-d64ff09a removed activeMatches=0
+Match M1-cbf425c7 created activeMatches=1
+M...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="CardDataTests" classname="CardDataTests" time="0.250347" status="run">
+		<properties/>
+		<system-out>Sheet parsing, text keys, metadata, catalog parity and legacy loading passed
+</system-out>
+	</testcase>
+	<testcase name="CardDataExportCheck" classname="CardDataExportCheck" time="0.266304" status="run">
+		<properties/>
+		<system-out>Verified identical server/Unity catalog: hyakki-2026-11-02-v1-38a72942812f
+</system-out>
+	</testcase>
+	<testcase name="WebSocketIntegration" classname="WebSocketIntegration" time="3.29913" status="run">
+		<properties/>
+		<system-out>Real WebSocket: four players, two isolated matches, decks/effects, auto turns, reconnect, victory, rematch, lifecycle and validation passed
+</system-out>
+	</testcase>
+	<testcase name="ContentWebSocketIntegration" classname="ContentWebSocketIntegration" time="0.484362" status="run">
+		<properties/>
+		<system-out>Real WebSocket content: two matches, hidden exile, atomic private choice, reconnect, replay passed
+</system-out>
+	</testcase>
+	<testcase name="PersonalDeckWebSocketIntegration" classname="PersonalDeckWebSocketIntegration" time="0.368186" status="run">
+		<properties/>
+		<system-out>Personal deck WebSocket validation, privacy, reconnect, immutable match and replay passed
+</system-out>
+	</testcase>
+	<testcase name="MulliganWebSocketIntegration" classname="MulliganWebSocketIntegration" time="5.31513" status="run">
+		<properties/>
+		<system-out>Mulligan WebSocket concurrent decisions, reconnect, privacy, timeout and 3 replays passed
+</system-out>
+	</testcase>
+</testsuite>

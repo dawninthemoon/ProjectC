@@ -70,7 +70,7 @@ namespace ProjectC.Tests
                 yield return Until(() => b.State != null);
                 a.SetReady("Strikers");
                 b.SetReady("Wardens");
-                yield return Until(() => a.State.Started && b.State.Started);
+                yield return Until(() => a.State?.Started == true && b.State?.Started == true);
                 var ui = a.GetComponent<BattlePresenter>();
                 yield return null;
                 yield return Until(() => !ui.PresentationBusy);

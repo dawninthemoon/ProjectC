@@ -11,7 +11,8 @@
     "InitialYokaiPower": 2,
     "YokaiPowerPerTurn": 1,
     "MaxYokaiPower": 10,
-    "SummoningSickness": false
+    "SummoningSickness": false,
+    "EnableMulligan": true
   },
   "Decks": [
     {

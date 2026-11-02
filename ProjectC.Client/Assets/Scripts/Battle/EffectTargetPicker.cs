@@ -4,133 +4,101 @@ using Game.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace ProjectC.Client
 {
-    public sealed class EffectTargetPicker : MonoBehaviour
+    public sealed class EffectTargetPicker : MonoBehaviour, IPointerClickHandler
     {
-        public Button CandidatePrefab;
-        readonly List<Button> buttons = new List<Button>();
-        EffectSelectionView selection;
-        TMP_Text title;
-        ActionChoiceView serverChoice;
-
-        public void ShowServer(
-            ActionChoiceView value,
-            Action<string> pick,
-            Action confirm,
-            Action cancel
-        )
+        public void OnPointerClick(PointerEventData eventData)
         {
-            serverChoice = value;
-            this.Bind("Title", out title);
+            // Keep choice-panel clicks separate from battlefield background clicks.
+        }
+
+        public Button CandidatePrefab;
+        private readonly List<Button> _buttons = new List<Button>();
+        private EffectSelectionView _selection;
+        private ActionChoiceView _serverChoice;
+        private Button _confirm;
+
+        private void Begin(int count, int minimum, int maximum, bool cost, bool canCancel, Action confirm, Action cancel)
+        {
+            this.Bind("Title", out TMP_Text title);
             this.Bind("Candidates", out RectTransform content);
-            this.Bind("Confirm", out Button ok);
+            this.Bind("Confirm", out _confirm);
             this.Bind("Cancel", out Button back);
-            title.text =
-                (value.IsCost ? "COST TARGETS / will be paid" : "EFFECT TARGETS")
-                + $"\nChoose {value.MinCount}..{value.MaxCount}";
-            title.color = value.IsCost ? new Color(1, .7f, .4f) : new Color(.4f, .95f, .83f);
-            foreach (var button in buttons)
+            title.text = BattleText.Get(cost ? "ui.choice.cost" : "ui.choice.targets", minimum, maximum);
+            title.color = cost ? new Color(1, .7f, .4f) : Color.white;
+            while (_buttons.Count < count)
             {
-                button.gameObject.SetActive(false);
-                Destroy(button.gameObject);
+                _buttons.Add(Instantiate(CandidatePrefab, content));
             }
-            buttons.Clear();
-            foreach (var option in value.Candidates)
+            for (int i = 0; i < _buttons.Count; ++i)
             {
-                var button = Instantiate(CandidatePrefab, content);
-                buttons.Add(button);
-                button.GetComponentInChildren<TMP_Text>().text =
-                    CardPresentation.Name(option.Card, "Player " + option.PlayerId);
-                button.onClick.AddListener(() => pick(option.Token));
+                _buttons[i].gameObject.SetActive(i < count);
+                _buttons[i].onClick.RemoveAllListeners();
             }
-            ok.onClick.RemoveAllListeners();
-            ok.onClick.AddListener(() => confirm());
+            _confirm.onClick.RemoveAllListeners();
+            _confirm.onClick.AddListener(() => confirm());
+            _confirm.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.choice.confirm");
+            back.interactable = canCancel;
             back.onClick.RemoveAllListeners();
-            back.interactable = value.CanCancel;
             back.onClick.AddListener(() => cancel());
-            back.GetComponentInChildren<TMP_Text>().text = value.CanCancel
-                ? "CANCEL"
-                : "RESOLVE TO CONTINUE";
+            back.GetComponentInChildren<TMP_Text>().text = BattleText.Get(canCancel ? "ui.choice.cancel" : "ui.choice.required");
             gameObject.SetActive(true);
+        }
+
+        public void ShowServer(ActionChoiceView value, Action<string> pick, Action confirm, Action cancel)
+        {
+            _serverChoice = value;
+            _selection = null;
+            Begin(value.Candidates.Length, value.MinCount, value.MaxCount, value.IsCost, value.CanCancel, confirm, cancel);
+            for (int i = 0; i < value.Candidates.Length; ++i)
+            {
+                var option = value.Candidates[i];
+                _buttons[i].GetComponentInChildren<TMP_Text>().text = CardPresentation.Name(option.Card,
+                    BattleText.Get("ui.choice.player", option.PlayerId));
+                _buttons[i].onClick.AddListener(() => pick(option.Token));
+            }
+        }
+
+        public void Show(EffectSelectionView value, int index, Func<EffectTargetView, string> name,
+            Action<EffectTargetView> pick, Action confirm, Action cancel)
+        {
+            _selection = value;
+            _serverChoice = null;
+            Begin(value.Candidates.Length, value.MinCount, value.MaxCount, false, true, confirm, cancel);
+            for (int i = 0; i < value.Candidates.Length; ++i)
+            {
+                var target = value.Candidates[i];
+                _buttons[i].GetComponentInChildren<TMP_Text>().text = name(target);
+                _buttons[i].onClick.AddListener(() => pick(target));
+            }
+        }
+
+        private void Highlight(int index, bool selected)
+        {
+            _buttons[index].GetComponent<Image>().color = selected
+                ? new Color(.23f, .46f, .36f) : new Color(.1f, .18f, .24f);
         }
 
         public void SetServerSelected(List<string> selected)
         {
-            this.Bind("Confirm", out Button ok);
-            ok.interactable =
-                selected.Count >= serverChoice.MinCount && selected.Count <= serverChoice.MaxCount;
-            for (int i = 0; i < buttons.Count; ++i)
+            _confirm.interactable = selected.Count >= _serverChoice.MinCount && selected.Count <= _serverChoice.MaxCount;
+            for (int i = 0; i < _serverChoice.Candidates.Length; ++i)
             {
-                bool chosen = selected.Contains(serverChoice.Candidates[i].Token);
-                var label = buttons[i].GetComponentInChildren<TMP_Text>();
-                label.text =
-                    (chosen ? "✓ " : "") + CardPresentation.Name(serverChoice.Candidates[i].Card, "Player");
-                buttons[i].GetComponent<Image>().color = chosen
-                    ? new Color(.23f, .46f, .36f)
-                    : new Color(.1f, .18f, .24f);
+                Highlight(i, selected.Contains(_serverChoice.Candidates[i].Token));
             }
-        }
-
-        public void Show(
-            EffectSelectionView value,
-            int index,
-            Func<EffectTargetView, string> name,
-            Action<EffectTargetView> pick,
-            Action confirm,
-            Action cancel
-        )
-        {
-            selection = value;
-            serverChoice = null;
-            this.Bind("Title", out title);
-            this.Bind("Candidates", out RectTransform content);
-            this.Bind("Confirm", out Button ok);
-            this.Bind("Cancel", out Button back);
-            back.interactable = true;
-            back.GetComponentInChildren<TMP_Text>().text = "CANCEL";
-            title.color = Color.white;
-            title.text = $"EFFECT TARGETS / {index + 1}\nChoose {value.MinCount}..{value.MaxCount}";
-            foreach (var b in buttons)
-            {
-                b.gameObject.SetActive(false);
-                Destroy(b.gameObject);
-            }
-            buttons.Clear();
-            foreach (var target in value.Candidates)
-            {
-                var button = Instantiate(CandidatePrefab, content);
-                buttons.Add(button);
-                button.GetComponentInChildren<TMP_Text>().text = name(target);
-                button.onClick.AddListener(() => pick(target));
-            }
-            ok.onClick.RemoveAllListeners();
-            ok.onClick.AddListener(() => confirm());
-            back.onClick.RemoveAllListeners();
-            back.onClick.AddListener(() => cancel());
-            gameObject.SetActive(true);
         }
 
         public void SetSelected(List<EffectTargetView> selected)
         {
-            this.Bind("Confirm", out Button ok);
-            ok.interactable =
-                selected.Count >= selection.MinCount && selected.Count <= selection.MaxCount;
-            for (int i = 0; i < buttons.Count; ++i)
+            _confirm.interactable = selected.Count >= _selection.MinCount && selected.Count <= _selection.MaxCount;
+            for (int i = 0; i < _selection.Candidates.Length; ++i)
             {
-                var target = selection.Candidates[i];
-                bool chosen = selected.Exists(t =>
-                    t.PlayerId == target.PlayerId
-                    && t.CardId == target.CardId
-                    && t.Zone == target.Zone
-                );
-                var label = buttons[i].GetComponentInChildren<TMP_Text>();
-                string text = label.text.TrimStart('✓', ' ');
-                label.text = (chosen ? "✓ " : "") + text;
-                buttons[i].GetComponent<Image>().color = chosen
-                    ? new Color(.23f, .46f, .36f)
-                    : new Color(.1f, .18f, .24f);
+                var target = _selection.Candidates[i];
+                Highlight(i, selected.Exists(t => t.CardId == target.CardId
+                    && t.PlayerId == target.PlayerId && t.Zone == target.Zone));
             }
         }
     }

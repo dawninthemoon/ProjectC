@@ -321,7 +321,7 @@ Json Activations(GameState const& state, CardInstance const& card, int viewer, Z
         Json selections = Json::array();
         bool manifest = false, supported = true;
         bool allowed = state.Status == GameStatus::Running && state.ActivePlayerId == viewer &&
-                       state.TurnStarted && state.Phase == TurnPhase::Main && !card.IsDestroyed();
+                       state.TurnStarted && IsMainPhase(state.Phase) && !card.IsDestroyed();
         for (auto const& action : effect.Actions)
         {
             manifest |= action.Operation == EffectOperation::Transform;
@@ -383,11 +383,23 @@ Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int v
         bool summon =
             definition && definition->Type == CardType::Monster && zone == Zone::Hand &&
             card.OwnerId == viewer && state.ActivePlayerId == viewer && state.TurnStarted &&
-            state.Phase == TurnPhase::Main && state.Status == GameStatus::Running && owner &&
+            IsMainPhase(state.Phase) && state.Status == GameStatus::Running && owner &&
             owner->NormalSummonsThisTurn < 1 && owner->Field.size() < state.Config.FieldLimit;
         bool attack = zone == Zone::Field && card.OwnerId == viewer && state.TurnStarted &&
                       ValidateAttackSource(state, viewer, card.Id) == BattleResult::Success &&
                       ValidateAttackReadiness(state, card) == BattleResult::Success;
+        bool defenderHasMonsters = std::any_of(
+            state.Players.begin(),
+            state.Players.end(),
+            [&](PlayerState const& other)
+            {
+                return other.Id != viewer &&
+                       std::any_of(other.Field.begin(),
+                                   other.Field.end(),
+                                   [](CardInstance const& entry) { return !entry.IsDestroyed(); });
+            });
+        bool directAttack =
+            attack && !defenderHasMonsters && card.DirectAttackRestrictedTurn != state.TurnNumber;
         result.push_back(
             {{"Id", card.Id},
              {"DefinitionId", card.CurrentDefinitionId},
@@ -401,7 +413,8 @@ Json Cards(GameState const& state, std::vector<CardInstance> const& cards, int v
              {"ManifestationText", definition ? Manifestations(state, *definition) : ""},
              {"SummoningSick", zone == Zone::Field && IsSummoningSick(state, card)},
              {"CanSummon", summon},
-             {"CanAttack", attack},
+             {"CanAttack", attack && (defenderHasMonsters || directAttack)},
+             {"CanDirectAttack", directAttack},
              {"EffectCount", definition ? definition->Effects.size() : 0},
              {"Activations", Activations(state, card, viewer, zone)}});
     }
@@ -438,10 +451,11 @@ MatchSession::MatchSession(std::string id,
                            std::shared_ptr<IdentityAllocator> identities,
                            std::function<void(ReplayRecord)> archive,
                            int mulliganTimeoutSeconds,
-                           bool mulliganAutoKeep)
+                           bool mulliganAutoKeep,
+                           int turnDurationSeconds)
     : id(std::move(id)), catalog(std::move(catalog)), identities(std::move(identities)),
       archive(std::move(archive)), mulliganTimeoutSeconds(mulliganTimeoutSeconds),
-      mulliganAutoKeep(mulliganAutoKeep)
+      mulliganAutoKeep(mulliganAutoKeep), turnDurationSeconds(turnDurationSeconds)
 {
     auto players = this->identities->Players();
     for (int i = 0; i < 2; ++i)
@@ -491,7 +505,10 @@ Json MatchSession::Snapshot(int viewer) const
                  {"Graveyard", Cards(state, player.Graveyard, viewer, Zone::Graveyard)}});
         }
     }
-    return {{"MulliganActive", state.Preparation == PreparationPhase::Mulligan},
+    bool const timerRunning = status == MatchStatus::Playing && state.TurnStarted;
+    return {{"TurnEndsAtUnixMs", timerRunning ? turnEndsAtUnixMs : 0},
+            {"TurnTimerRunning", timerRunning},
+            {"MulliganActive", state.Preparation == PreparationPhase::Mulligan},
             {"MulliganSecondsRemaining",
              status == MatchStatus::Mulligan
                  ? std::max(0,
@@ -585,6 +602,9 @@ void MatchSession::SendSnapshot(std::shared_ptr<ClientSession> const& client,
 {
     auto message = Message("StateSnapshot", request);
     message["Payload"] = Snapshot(client->Player);
+    message["ServerTimeUnixMs"] = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                      std::chrono::system_clock::now().time_since_epoch())
+                                      .count();
     client->Send(message);
     SendChoice(client);
 }
@@ -758,7 +778,16 @@ void MatchSession::StartGame()
     }
     std::cout << "Match " << id << " started game=" << gameNumber << std::endl;
     Lobby();
+    ResetTurnDeadline();
     Broadcast(result.Events);
+}
+void MatchSession::ResetTurnDeadline()
+{
+    turnEndsAtUnixMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            (std::chrono::system_clock::now() + std::chrono::seconds(turnDurationSeconds))
+                .time_since_epoch())
+            .count();
 }
 void MatchSession::Tick(Clock::time_point now)
 {
@@ -791,6 +820,7 @@ void MatchSession::Tick(Clock::time_point now)
         if (state.Preparation == PreparationPhase::Playing)
         {
             status = MatchStatus::Playing;
+            ResetTurnDeadline();
         }
         if (state.Status == GameStatus::Finished)
         {
@@ -1598,6 +1628,7 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client, Json con
     auto pendingRequests =
         pendingAction ? pendingAction->Requests : std::vector<std::pair<int, std::string>>{};
     pendingAction.reset();
+    int const previousTurn = state.TurnNumber;
     state = std::move(candidate);
     bool completedMulligan =
         status == MatchStatus::Mulligan && state.Preparation == PreparationPhase::Playing;
@@ -1609,6 +1640,10 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client, Json con
     journal.Results.insert(journal.Results.end(), results.begin(), results.end());
     ++sequence;
     lastActivity = Clock::now();
+    if (completedMulligan || previousTurn != state.TurnNumber)
+    {
+        ResetTurnDeadline();
+    }
     if (state.Status == GameStatus::Finished)
     {
         status = MatchStatus::Finished;

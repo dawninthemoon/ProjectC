@@ -107,7 +107,7 @@ CommandResult ProcessCommand(GameState& state, ActivateEffectCommand const& comm
     {
         return CommandResult{.Code = CommandError::TurnNotStarted};
     }
-    if (state.Phase != TurnPhase::Main)
+    if (!IsMainPhase(state.Phase))
     {
         return CommandResult{.Code = CommandError::WrongPhase};
     }

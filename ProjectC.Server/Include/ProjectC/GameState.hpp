@@ -12,8 +12,14 @@ enum class TurnPhase
 {
     Main,
     Battle,
-    End
+    End,
+    Main2 // Appended: preserve existing wire values Main=0, Battle=1, End=2.
 };
+
+[[nodiscard]] constexpr bool IsMainPhase(TurnPhase phase)
+{
+    return phase == TurnPhase::Main || phase == TurnPhase::Main2;
+}
 
 enum class BattleResult
 {

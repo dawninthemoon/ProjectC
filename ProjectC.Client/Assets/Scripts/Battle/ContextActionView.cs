@@ -18,9 +18,9 @@ namespace ProjectC.Client
             foreach (var b in buttons)
             {
                 b.gameObject.SetActive(false);
-                Destroy(b.gameObject);
+                b.onClick.RemoveAllListeners();
             }
-            buttons.Clear();
+            int count = 0;
             if (widget?.Card?.Activations != null)
             {
                 foreach (var action in widget.Card.Activations)
@@ -29,26 +29,24 @@ namespace ProjectC.Client
                     {
                         continue;
                     }
-                    var button = Instantiate(ActionPrefab, content);
-                    buttons.Add(button);
-                    button.GetComponentInChildren<TMP_Text>().text =
-                        action.IsManifest ? "현현"
-                        : widget.Card.CardType == 1 ? "ACTIVATE"
-                        : "EFFECT #" + action.EffectId;
-                    if (action.YokaiCost > 0)
+                    if (count == buttons.Count)
                     {
-                        button.GetComponentInChildren<TMP_Text>().text +=
-                            " / YOKAI " + action.YokaiCost;
+                        buttons.Add(Instantiate(ActionPrefab, content));
                     }
+                    var button = buttons[count++];
+                    button.gameObject.SetActive(true);
+                    string label = BattleText.Effect(widget.Card, action);
+                    button.GetComponentInChildren<TMP_Text>().text = action.YokaiCost > 0
+                        ? BattleText.Get("ui.effect.cost", label, action.YokaiCost) : label;
                     button.onClick.AddListener(() => activate(action));
                 }
             }
-            gameObject.SetActive(buttons.Count > 0);
-            if (buttons.Count > 0)
+            gameObject.SetActive(count > 0);
+            if (count > 0)
             {
                 ((RectTransform)transform).SetSizeWithCurrentAnchors(
                     RectTransform.Axis.Vertical,
-                    buttons.Count * 48 + 20
+                    count * 48 + 20
                 );
                 PopupPosition.Place(
                     (RectTransform)transform,

@@ -195,6 +195,9 @@ void RunGameFlowTests(int& testCount, int& failedTests)
     rejected(state, DrawCommand{1}, CommandError::WrongPhase, "DrawInBattle");
     rejected(state, PlayCardCommand{1, 2}, CommandError::WrongPhase, "PlayInBattle");
     result = ProcessCommand(state, AdvancePhaseCommand{1});
+    check(result.Code == CommandError::Success && state.Phase == TurnPhase::Main2,
+          "AdvanceToMain2");
+    result = ProcessCommand(state, AdvancePhaseCommand{1});
     check(result.Code == CommandError::Success && state.Phase == TurnPhase::End, "AdvanceToEnd");
     rejected(state, AdvancePhaseCommand{1}, CommandError::WrongPhase, "AdvancePastEnd");
     expected = state;

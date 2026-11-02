@@ -3,6 +3,7 @@
 #include "ProjectC/GameReplay.hpp"
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -52,7 +53,8 @@ class MatchSession
                  std::shared_ptr<IdentityAllocator> identities,
                  std::function<void(ReplayRecord)> archive,
                  int mulliganTimeoutSeconds = 60,
-                 bool mulliganAutoKeep = true);
+                 bool mulliganAutoKeep = true,
+                 int turnDurationSeconds = 180);
     void Handle(std::shared_ptr<ClientSession> const& client, Json const& input);
     void Disconnect(std::shared_ptr<ClientSession> const& client);
     void Close(std::string const& reason);
@@ -101,6 +103,9 @@ class MatchSession
     int mulliganTimeoutSeconds;
     bool mulliganAutoKeep;
     Clock::time_point mulliganDeadline{};
+    int turnDurationSeconds;
+    std::int64_t turnEndsAtUnixMs = 0;
+    void ResetTurnDeadline();
     struct PendingAction
     {
         GameCore::PlayerActionCommand Command;

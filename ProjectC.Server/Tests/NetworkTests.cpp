@@ -154,6 +154,7 @@ void ContentChoiceTests()
         std::ifstream file(root / "HyakkiYagyo" / "Decks.json");
         file >> decks;
     }
+    decks["Config"]["EnableMulligan"] = false;
     decks["Config"]["InitialHandSize"] = 2;
     decks["Config"]["DrawPerTurn"] = 0;
     decks["Config"]["MinDeckSize"] = 4;
@@ -287,6 +288,7 @@ void PublicChoiceCancellationTests()
         std::ifstream file(root / "HyakkiYagyo" / "Decks.json");
         file >> decks;
     }
+    decks["Config"]["EnableMulligan"] = false;
     decks["Config"]["InitialHandSize"] = 10;
     decks["Config"]["DrawPerTurn"] = 0;
     decks["Config"]["MinDeckSize"] = decks["Config"]["MaxDeckSize"] = 10;
@@ -368,6 +370,7 @@ void PersonalDeckTests()
 {
     ServerConfig config;
     config.DataDirectory = (std::filesystem::path(DefaultDataDirectory()) / "HyakkiYagyo").string();
+    config.EnableMulligan = false;
     // Allow a deterministic draw-to-exhaustion finish for the rematch test without
     // changing production rules or depending on randomly drawn card effects.
     auto fixture = std::filesystem::temp_directory_path() / ("ProjectCPersonal-" + Token());
@@ -724,10 +727,87 @@ void MatchmakingTests()
         << "Matchmaking queue, duplicate, cancel, \n";
 }
 
+void BattleUxOnlineTests()
+{
+    for (bool queued : {false, true})
+    {
+        ServerConfig config;
+        config.DataDirectory =
+            (std::filesystem::path(DefaultDataDirectory()) / "HyakkiYagyo").string();
+        config.TurnDurationSeconds = 90;
+        config.MulliganTimeoutSeconds = 1;
+        MatchManager manager(config);
+        Peer a(manager), b(manager), restored(manager);
+        if (queued)
+        {
+            a.Send("QueueMatch", {{"DeckId", "HyakkiYagyo"}});
+            b.Send("QueueMatch", {{"DeckId", "HyakkiYagyo"}});
+        }
+        else
+        {
+            a.Send("CreateMatch", {{"DeckId", "HyakkiYagyo"}});
+            b.Send("JoinMatch", {{"MatchId", a.Client->MatchId}, {"DeckId", "HyakkiYagyo"}});
+        }
+        auto const room = a.Client->MatchId;
+        for (auto* peer : {&a, &b})
+        {
+            peer->Send("SetReady", {{"MatchId", room}, {"GameNumber", 0}, {"Ready", true}});
+        }
+        auto initial = a.Last("StateSnapshot")["Payload"];
+        Check(initial["MulliganActive"] == true && initial["TurnTimerRunning"] == false);
+        Check(initial["Players"][1]["Hand"].empty());
+        auto token = a.Last("SessionUpdated")["SessionToken"];
+        manager.Disconnect(a.Client);
+        restored.Send("JoinMatch", {{"MatchId", room}, {"SessionToken", token}});
+        Check(restored.Last("StateSnapshot")["Payload"]["MulliganActive"] == true);
+        auto submit = [&](Peer& peer, Json command)
+        {
+            peer.Send("SubmitCommand",
+                      {{"MatchId", room},
+                       {"GameNumber", 1},
+                       {"SequenceNumber", peer.Last("StateSnapshot")["SequenceNumber"]},
+                       {"Command", command}});
+        };
+        submit(restored, {{"Type", "SubmitMulligan"}, {"CardIds", Json::array()}});
+        if (queued)
+        {
+            // The queue uses the same timeout/automatic-keep path after reconnect.
+            manager.Cleanup(Clock::now() + std::chrono::seconds(2));
+        }
+        else
+        {
+            submit(b, {{"Type", "SubmitMulligan"}, {"CardIds", Json::array()}});
+        }
+        auto current = restored.Last("StateSnapshot");
+        auto view = current["Payload"];
+        Check(view["MulliganActive"] == false && view["TurnTimerRunning"] == true);
+        auto remaining = view["TurnEndsAtUnixMs"].get<std::int64_t>() -
+                         current["ServerTimeUnixMs"].get<std::int64_t>();
+        Check(remaining > 0 && remaining <= 90000);
+        Check(view["Players"][0]["MulliganComplete"] == true &&
+              view["Players"][1]["MulliganComplete"] == true);
+        submit(restored, {{"Type", "AdvancePhase"}});
+        Check(restored.Last("StateSnapshot")["Payload"]["Phase"] == 1);
+        submit(restored, {{"Type", "AdvancePhase"}});
+        Check(restored.Last("StateSnapshot")["Payload"]["Phase"] == 3);
+        submit(b, {{"Type", "AdvancePhase"}});
+        Check(b.Last("CommandRejected")["Reason"].get<std::string>().find("NotActivePlayer") !=
+              std::string::npos);
+        submit(restored, {{"Type", "EndTurn"}});
+        auto next = restored.Last("StateSnapshot")["Payload"];
+        Check(next["TurnNumber"] == 2 && next["Phase"] == 0 && next["TurnTimerRunning"] == true);
+        restored.Send("CloseMatch", {{"MatchId", room}, {"GameNumber", 1}});
+        Check(manager.Replays().front().Verify());
+    }
+    std::cout << "Battle UX: friendly/queue mulligan, reconnect, timeout, phase authority, turn "
+                 "clock and replay passed\n";
+}
+
 int main()
 {
     try
     {
+        BattleUxOnlineTests();
         MatchmakingTests();
         RunMulliganCoreTests();
         MulliganNetworkTests();

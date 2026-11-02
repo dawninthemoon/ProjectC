@@ -154,16 +154,16 @@ namespace ProjectC.Client.Editor
             layout.preferredWidth = back ? 80 : 180;
             layout.flexibleWidth = 0;
             var c = root.AddComponent<CardWidget>();
-            var face = Box(root.transform, "Face", 0, 0, 180, 215, new Color(.22f, .32f, .4f));
+            var face = Box(root.transform, "FrameImage", 0, 0, 180, 215, new Color(.22f, .32f, .4f));
             Stretch((RectTransform)face.transform);
             face.GetComponent<Image>().raycastTarget = true;
             c.Face = (RectTransform)face.transform;
-            c.Frame = face.GetComponent<Image>();
+            c.FrameImage = face.GetComponent<Image>();
             var inner = Box(face.transform, "Inset", 4, 4, 172, 207, Panel);
             Stretch((RectTransform)inner.transform, 4, 4, 4, 4);
-            c.Art = Box(
+            c.ArtworkImage = Box(
                     inner.transform,
-                    "PlaceholderArt",
+                    "ArtworkImage",
                     0,
                     0,
                     172,
@@ -171,9 +171,13 @@ namespace ProjectC.Client.Editor
                     new Color(.12f, .29f, .3f)
                 )
                 .GetComponent<Image>();
-            Stretch((RectTransform)c.Art.transform, 5, 38, 5, 52);
+            var artworkObject = c.ArtworkImage.gameObject;
+            Object.DestroyImmediate(c.ArtworkImage);
+            c.ArtworkImage = artworkObject.AddComponent<AspectFillImage>();
+            c.ArtworkImage.raycastTarget = false;
+            Stretch((RectTransform)c.ArtworkImage.transform, 5, 38, 5, 52);
             c.Symbol = Label(
-                c.Art.transform,
+                c.ArtworkImage.transform,
                 "Monogram",
                 back ? "?" : "S",
                 0,
@@ -212,6 +216,20 @@ namespace ProjectC.Client.Editor
             c.Stats.enableAutoSizing = true;
             c.Stats.fontSizeMin = 11;
             c.Stats.fontSizeMax = 18;
+            var attack = Object.Instantiate(c.Stats, inner.transform);
+            attack.name = "AttackBadge";
+            var attackRect = (RectTransform)attack.transform;
+            attackRect.anchorMax = new Vector2(.5f, 0);
+            attack.text = "3 ATK";
+            var health = Object.Instantiate(c.Stats, inner.transform);
+            health.name = "HealthBadge";
+            var healthRect = (RectTransform)health.transform;
+            healthRect.anchorMin = new Vector2(.5f, 0);
+            health.text = "5/5 HP";
+            c.Stats.text = "SPELL";
+            c.Stats.gameObject.SetActive(false);
+            attack.gameObject.SetActive(!back);
+            health.gameObject.SetActive(!back);
             c.Status = Label(inner.transform, "Status", "READY", 8, 183, 156, 22, 12, Gold);
             sr = (RectTransform)c.Status.transform;
             sr.anchorMin = Vector2.zero;
@@ -231,12 +249,14 @@ namespace ProjectC.Client.Editor
             // Compact backs show only a crest; never a face, name or definition.
             if (back)
             {
+                ((RectTransform)root.transform).sizeDelta = new Vector2(68, 88);
                 c.Title.gameObject.SetActive(false);
                 c.Stats.gameObject.SetActive(false);
                 c.Status.gameObject.SetActive(false);
-                Stretch((RectTransform)c.Art.transform, 6, 6, 6, 6);
+                Stretch((RectTransform)c.ArtworkImage.transform, 6, 6, 6, 6);
                 c.Symbol.fontSize = 26;
             }
+            UpgradeCardPresentationAssets.ConfigureBattle(root, back);
             var asset = PrefabUtility
                 .SaveAsPrefabAsset(root, Folder + "/" + root.name + ".prefab")
                 .GetComponent<CardWidget>();

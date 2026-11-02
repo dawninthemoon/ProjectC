@@ -201,7 +201,7 @@ namespace ProjectC.Client.Editor
             Move(p.EnemyHand, 470, 125, 980, 100);
             Move(p.EnemyField, 240, 248, 1440, 220);
             Move(p.OwnField, 240, 510, 1440, 230);
-            Move(p.Hand, 460, 805, 1000, 260);
+            Move(p.Hand, 420, 780, 1200, 244);
             foreach (var zone in new[] { p.Hand, p.OwnField, p.EnemyField, p.EnemyHand })
             {
                 var old = zone.GetComponent<HorizontalLayoutGroup>();
@@ -218,8 +218,8 @@ namespace ProjectC.Client.Editor
             Move(Find<RectTransform>(root, "Midline"), 240, 485, 1440, 2);
             Move(Find<TMP_Text>(root, "EnemyFieldCaption"), 250, 218, 550, 28);
             Move(Find<TMP_Text>(root, "OwnFieldCaption"), 250, 480, 550, 28);
-            Move(Find<TMP_Text>(root, "HandCaption"), 660, 770, 700, 28);
-            Find<TMP_Text>(root, "HandCaption").text = "YOUR HAND  /  drag a card onto your field";
+            Move(Find<TMP_Text>(root, "HandCaption"), 660, 748, 700, 28);
+            Find<TMP_Text>(root, "HandCaption").text = "YOUR HAND";
             Find<TMP_Text>(root, "Edition").text = "CARD BATTLE / LOCAL MULTIPLAYER";
             Move(p.TurnLabel, 1720, 330, 180, 55);
             p.TurnLabel.fontSize = 23;
@@ -460,7 +460,8 @@ namespace ProjectC.Client.Editor
                         p.Effects.DrawGroup.transform
                     );
             drawFace.name = "DrawFace";
-            Move(drawFace.GetComponent<RectTransform>(), 0, 0, 180, 218);
+            var drawRect = drawFace.GetComponent<RectTransform>();
+            drawRect.anchoredPosition = Vector2.zero;
             drawFace.GetComponent<CanvasGroup>().blocksRaycasts = false;
             drawFace.SetActive(false);
             Ensure<BattleInteractionController>(root).GhostPrefab = AssetDatabase
@@ -476,6 +477,7 @@ namespace ProjectC.Client.Editor
             history.transform.SetAsLastSibling();
             p.ResultPanel.transform.SetAsLastSibling();
             p.LobbyOverlay.transform.SetAsLastSibling();
+            UpgradeBattleUxAssets.Configure(root);
             PrefabUtility.SaveAsPrefabAsset(root, Folder + "BattleScreen.prefab");
             PrefabUtility.UnloadPrefabContents(root);
             // Existing scene is opened, not recreated: URP camera and input module are retained.

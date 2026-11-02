@@ -51,6 +51,7 @@ namespace ProjectC.Client
                         var current = Find(authoritative, card.Id);
                         card.CanSummon = current?.CanSummon ?? false;
                         card.CanAttack = current?.CanAttack ?? false;
+                        card.CanDirectAttack = current?.CanDirectAttack ?? false;
                         card.Activations = current?.Activations;
                     }
                 }

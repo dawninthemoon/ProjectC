@@ -27,7 +27,7 @@ bool ValidateGameState(GameState const& gameState)
         return false;
     }
     if (gameState.Phase != TurnPhase::Main && gameState.Phase != TurnPhase::Battle &&
-        gameState.Phase != TurnPhase::End)
+        gameState.Phase != TurnPhase::End && gameState.Phase != TurnPhase::Main2)
     {
         return false;
     }

@@ -531,6 +531,63 @@ namespace ProjectC.Tests
             yield return Command(a, b, "EndTurn");
         }
 
+        [UnityTest]
+        public IEnumerator AutomaticQueueMulliganReconnectAndTimeoutStartsBattle()
+        {
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../build/Debug/ProjectCNetworkServer.exe"));
+            var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            server = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path,
+                "--port " + port + " --mulligan-timeout 5 --data \""
+                + Path.Combine(Path.GetDirectoryName(path), "Data", "HyakkiYagyo") + "\"")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+            });
+            var started = server.StandardOutput.ReadLineAsync();
+            yield return Until(() => started.IsCompleted);
+            StringAssert.Contains("listening", started.Result);
+            var a = ClientApp.Instance.Network;
+            a.UsePersonalDeck = false;
+            opponentObject = new GameObject("Queue mulligan opponent", typeof(MultiplayerDebugScreen));
+            UnityEngine.Object.DontDestroyOnLoad(opponentObject);
+            var b = opponentObject.GetComponent<MultiplayerDebugScreen>();
+            string address = "ws://127.0.0.1:" + port;
+            a.ConnectTo(address);
+            b.ConnectTo(address);
+            yield return Until(() => a.Connected && b.Connected && a.Decks.Length > 0 && b.Decks.Length > 0);
+            a.QueueMatch();
+            b.QueueMatch();
+            yield return Until(() => !string.IsNullOrEmpty(a.CurrentMatch) && a.State != null && b.State != null);
+            a.SetReady("HyakkiYagyo");
+            b.SetReady("HyakkiYagyo");
+            yield return Until(() => a.State?.MulliganActive == true && b.State?.MulliganActive == true);
+            yield return Until(() => SceneManager.GetActiveScene().name == "BattleScene");
+            yield return null;
+            var battle = UnityEngine.Object.FindFirstObjectByType<BattlePresenter>();
+            Assert.IsTrue(battle.Mulligan.gameObject.activeSelf);
+            var before = a.State;
+            a.DisconnectNetwork();
+            yield return Until(() => !a.Connected && !a.Busy);
+            a.ReconnectNetwork();
+            yield return Until(() => a.Connected && a.State != null && a.State != before);
+            yield return null;
+            Assert.IsTrue(a.State.MulliganActive);
+            Assert.IsTrue(battle.Mulligan.gameObject.activeSelf);
+            yield return Until(() => !a.State.MulliganActive && !b.State.MulliganActive);
+            yield return null;
+            Assert.IsTrue(a.State.TurnStarted && a.State.TurnTimerRunning);
+            Assert.IsTrue(a.State.Players.All(player => player.MulliganComplete));
+            Assert.IsFalse(battle.Mulligan.gameObject.activeSelf);
+            Assert.IsFalse(battle.BattlePhase.gameObject.activeInHierarchy);
+            Assert.IsTrue(battle.EndTurn.interactable);
+            Assert.IsTrue(battle.Bind("TurnTimer", out TMP_Text timer));
+            Assert.IsNotEmpty(timer.text);
+        }
+
         static IEnumerator Command(
             MultiplayerDebugScreen actor,
             MultiplayerDebugScreen other,

@@ -152,11 +152,13 @@ namespace ProjectC.Tests
             var root = new GameObject("Localized inspector", typeof(RectTransform), typeof(CardDetailView));
             try
             {
-                foreach (string name in new[] { "Name", "Stats", "Rules", "Forms" })
+                foreach (string name in new[] { "Name", "Stats", "Rules", "Forms", "ArtPlaceholder", "CardType" })
                 {
                     var label = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
                     label.transform.SetParent(root.transform, false);
                 }
+                var artwork = new GameObject("ArtworkImage", typeof(RectTransform), typeof(AspectFillImage));
+                artwork.transform.SetParent(root.transform, false);
                 var view = root.GetComponent<CardDetailView>();
                 var card = new CardView
                 {
@@ -165,7 +167,7 @@ namespace ProjectC.Tests
                 };
                 view.Show(card);
                 Assert.AreEqual("백귀야행－월하의 요호", view.Title.text);
-                StringAssert.Contains("ATK 99", view.Stats.text, "Stats must remain server-authoritative");
+                StringAssert.Contains("99", view.Stats.text, "Stats must remain server-authoritative");
                 var links = view.Rules.GetComponent<KeywordLinkView>();
                 StringAssert.Contains("요력 2", links.Content.PlainText);
                 Assert.IsTrue(links.SelectKeyword("YokaiPower"));

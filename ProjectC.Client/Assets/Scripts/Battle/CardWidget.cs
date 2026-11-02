@@ -3,6 +3,7 @@ using Game.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace ProjectC.Client
@@ -25,10 +26,17 @@ namespace ProjectC.Client
             IDragHandler,
             IEndDragHandler
     {
+        private const float MinimumDisplayScale = .01f;
         public RectTransform Face;
-        public Image Frame,
-            Art,
-            Accent;
+        [FormerlySerializedAs("Frame")]
+        public Image FrameImage;
+        [FormerlySerializedAs("Art")]
+        public Image ArtworkImage;
+        public Image Accent;
+        private TMP_Text _attack;
+        private TMP_Text _health;
+        private Vector2 _facePosition;
+        private Vector3 _faceScale;
         public TMP_Text Title,
             Stats,
             Status,
@@ -65,17 +73,29 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (!this.Bind("Face", out Face))
+            if (!this.Bind("FrameImage", out Face))
             {
-                throw new InvalidOperationException("Card prefab requires Face");
+                throw new InvalidOperationException("Card prefab requires FrameImage");
             }
-            Frame = Face.GetComponent<Image>();
-            Face.Bind("PlaceholderArt", out Art);
-            Face.Bind("Accent", out Accent);
-            Face.Bind("Name", out Title);
-            Face.Bind("Stats", out Stats);
-            Face.Bind("Status", out Status);
-            Face.Bind("Monogram", out Symbol);
+            FrameImage = Face.GetComponent<Image>();
+            if (FrameImage == null
+                || !Face.Bind("ArtworkImage", out ArtworkImage)
+                || !Face.Bind("Accent", out Accent)
+                || !Face.Bind("Name", out Title)
+                || !Face.Bind("Stats", out Stats)
+                || !Face.Bind("Status", out Status)
+                || !Face.Bind("Monogram", out Symbol))
+            {
+                throw new InvalidOperationException("Card prefab requires frame, artwork, accent, name, stats, status and monogram components.");
+            }
+            Face.Bind("AttackBadge", out _attack);
+            Face.Bind("HealthBadge", out _health);
+            if (ArtworkImage is not AspectFillImage)
+            {
+                throw new InvalidOperationException("Card prefab ArtworkImage requires AspectFillImage.");
+            }
+            _facePosition = Face.anchoredPosition;
+            _faceScale = Face.localScale;
             opacity = GetComponent<CanvasGroup>();
             bound = true;
         }
@@ -89,14 +109,25 @@ namespace ProjectC.Client
             IsSelected = chosen;
             hint = target ? TargetHint.Available : TargetHint.None;
             Title.text = hidden ? "HIDDEN CARD" : CardPresentation.Name(card);
-            Stats.text =
-                card == null || hidden ? ""
-                : card.CardType == 1 ? "SPELL"
-                : $"{card.Attack} ATK   {card.Hp}/{card.MaxHp} HP";
-            Art.color =
-                hidden ? new Color(.07f, .13f, .2f)
-                : card != null && card.EffectCount > 0 ? new Color(.22f, .2f, .33f)
-                : new Color(.1f, .29f, .31f);
+            bool visible = card != null && !hidden;
+            bool hasStats = visible && card.CardType != 1;
+            if (hasStats && (_attack == null || _health == null))
+            {
+                throw new InvalidOperationException("Face card prefab requires AttackBadge and HealthBadge text components.");
+            }
+            Stats.gameObject.SetActive(false);
+            Stats.text = "";
+            Status.gameObject.SetActive(false);
+            Status.text = "";
+            if (_attack != null && _health != null)
+            {
+                _attack.transform.parent.gameObject.SetActive(hasStats);
+                _health.transform.parent.gameObject.SetActive(hasStats);
+                _attack.text = hasStats ? card.Attack.ToString() : "";
+                _health.text = hasStats ? card.Hp.ToString() : "";
+            }
+            // Hidden cards never resolve an artwork resource from a definition ID.
+            CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
             Symbol.text =
                 hidden ? "C"
                 : card != null && card.EffectCount > 0 ? "W"
@@ -135,7 +166,7 @@ namespace ProjectC.Client
             {
                 return;
             }
-            Frame.color =
+            Accent.color =
                 hint == TargetHint.Focused ? new Color(1, .8f, .35f)
                 : hint == TargetHint.Available ? new Color(.38f, .9f, .71f)
                 : hint == TargetHint.Unavailable ? new Color(.22f, .25f, .29f)
@@ -149,33 +180,8 @@ namespace ProjectC.Client
                 )
                     ? new Color(.24f, .64f, .58f)
                 : new Color(.28f, .36f, .43f);
-            Accent.color = Frame.color;
-            Status.text =
-                Hidden ? "HIDDEN"
-                : Card == null ? ""
-                : hint == TargetHint.Focused ? "TARGET SELECTED"
-                : hint == TargetHint.Available ? "VALID TARGET"
-                : hint == TargetHint.Unavailable ? "NOT A TARGET"
-                : IsSelected ? "SELECTED"
-                : InHand
-                    ? (
-                        Card.CardType == 1
-                            ? (
-                                Card.Activations != null
-                                && Array.Exists(Card.Activations, a => a.CanActivate)
-                                    ? "DRAG TO ACTIVATE"
-                                    : "NO LEGAL ACTIVATION"
-                            )
-                        : Card.CanSummon ? "DRAG TO SUMMON"
-                        : Card.Activations != null
-                        && Array.Exists(Card.Activations, a => a.CanActivate)
-                            ? "CLICK / SPECIAL ACTION"
-                        : "IN HAND"
-                    )
-                : Card.HasAttacked ? "ATTACK USED"
-                : Card.SummoningSick ? "SUMMONING SICKNESS"
-                : Card.CanAttack ? "DRAG TO ATTACK"
-                : "ON FIELD";
+            Status.text = "";
+            Status.gameObject.SetActive(false);
         }
 
         void Update()
@@ -190,14 +196,17 @@ namespace ProjectC.Client
                 : 0;
             Face.anchoredPosition = Vector2.Lerp(
                 Face.anchoredPosition,
-                new Vector2(0, lift),
+                _facePosition + new Vector2(0, lift),
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22)
             );
             pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
-            float scale = (IsHovered && !dragging ? (InHand ? 1.1f : 1.035f) : 1) + pulse * .08f;
+            float hoverScale = InHand
+                ? 1.1f / Mathf.Max(MinimumDisplayScale, transform.localScale.x)
+                : 1.035f;
+            float scale = (IsHovered && !dragging ? hoverScale : 1) + pulse * .08f;
             Face.localScale = Vector3.Lerp(
                 Face.localScale,
-                Vector3.one * scale,
+                _faceScale * scale,
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22)
             );
         }
@@ -290,8 +299,8 @@ namespace ProjectC.Client
         {
             IsInFlight = value;
             ResetPointer();
-            Face.anchoredPosition = Vector2.zero;
-            Face.localScale = Vector3.one;
+            Face.anchoredPosition = _facePosition;
+            Face.localScale = _faceScale;
             if (opacity != null)
             {
                 opacity.blocksRaycasts = opacity.interactable = !value;

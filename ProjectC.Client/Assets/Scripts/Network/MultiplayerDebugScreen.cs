@@ -251,6 +251,7 @@ namespace ProjectC.Client
         public void RequestSnapshot() => Resync();
 
         public StateView State => state;
+        public long SnapshotServerTimeUnixMs { get; private set; }
         public string CurrentMatch => matchId;
         public int GameNumber => gameNumber;
         public long Sequence => sequence;
@@ -906,6 +907,7 @@ namespace ProjectC.Client
                     }
                     // Selection is a view hint; discard it if its old card no longer exists in our visible zones.
                     RefreshSelection();
+                    SnapshotServerTimeUnixMs = message.ServerTimeUnixMs;
                     SnapshotReceived?.Invoke(state);
                     break;
                 case "MatchEnded":

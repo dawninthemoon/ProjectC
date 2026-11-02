@@ -205,7 +205,7 @@ namespace ProjectC.Client
                     rect.localRotation = Quaternion.Slerp(startRotation, destinationRotation, u);
                     float scale = Mathf.Lerp(DeckScale, 1, u)
                         + ((Settings?.DrawScale ?? 1.08f) - 1) * Mathf.Sin(Mathf.PI * u);
-                    rect.localScale = targetScale * scale;
+                    rect.localScale = targetScale * (scale * zone.Layout.CardScale);
                     yield return null;
                 }
             }

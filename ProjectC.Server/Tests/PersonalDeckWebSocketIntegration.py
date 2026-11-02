@@ -17,7 +17,7 @@ def run(server_path):
     with socket.socket() as probe:
         probe.bind(('127.0.0.1', 0))
         port = probe.getsockname()[1]
-    server = subprocess.Popen([server_path, '--port', str(port), '--data', data],
+    server = subprocess.Popen([server_path, '--port', str(port), '--mulligan', 'off', '--data', data],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     peers = []
     try:

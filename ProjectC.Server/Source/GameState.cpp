@@ -74,6 +74,9 @@ void AdvancePhase(GameState& gameState)
         gameState.Phase = TurnPhase::Battle;
         break;
     case TurnPhase::Battle:
+        gameState.Phase = TurnPhase::Main2;
+        break;
+    case TurnPhase::Main2:
         gameState.Phase = TurnPhase::End;
         break;
     case TurnPhase::End:

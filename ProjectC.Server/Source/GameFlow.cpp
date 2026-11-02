@@ -91,7 +91,7 @@ CommandResult ProcessCommand(GameState& state, DrawCommand const& command)
             {
                 return Reject(playerError);
             }
-            if (candidate.Phase != TurnPhase::Main)
+            if (!IsMainPhase(candidate.Phase))
             {
                 return Reject(CommandError::WrongPhase);
             }
@@ -128,7 +128,7 @@ CommandResult ProcessCommand(GameState& state, PlayCardCommand const& command)
             {
                 return Reject(playerError);
             }
-            if (candidate.Phase != TurnPhase::Main)
+            if (!IsMainPhase(candidate.Phase))
             {
                 return Reject(CommandError::WrongPhase);
             }

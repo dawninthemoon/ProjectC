@@ -488,8 +488,10 @@ void RunEffectTests(int& testCount, int& failedTests)
     state = Game({turnStart, turnEnd});
     std::vector<GameCommand> const turnCommands{AdvancePhaseCommand{1},
                                                 AdvancePhaseCommand{1},
+                                                AdvancePhaseCommand{1},
                                                 EndTurnCommand{1},
                                                 StartTurnCommand{2},
+                                                AdvancePhaseCommand{2},
                                                 AdvancePhaseCommand{2},
                                                 AdvancePhaseCommand{2},
                                                 EndTurnCommand{2},
@@ -497,7 +499,7 @@ void RunEffectTests(int& testCount, int& failedTests)
     before = state;
     auto const turns = ReplayCommands(state, turnCommands);
     check(turns.FinalState.Players[0].Life == 23 && turns.FinalState.Players[0].TurnsStarted == 2 &&
-              turns.Results[2].Events.back().EffectId == 3 &&
+              turns.Results[3].Events.back().EffectId == 3 &&
               turns.Results.back().Events.back().EffectId == 7 &&
               turns == ReplayCommands(before, turnCommands),
           "OwnerTurnStartEndTriggersAndReplay");
@@ -593,9 +595,11 @@ void RunEffectTests(int& testCount, int& failedTests)
     check(result.Result == BattleResult::SummoningSickness && result.Events.empty(),
           "FullRulesSicknessDeniesFirstAttack");
     for (GameCommand const& input : std::vector<GameCommand>{AdvancePhaseCommand{1},
+                                                             AdvancePhaseCommand{1},
                                                              EndTurnCommand{1},
                                                              StartTurnCommand{2},
                                                              PlayCardCommand{2, 6},
+                                                             AdvancePhaseCommand{2},
                                                              AdvancePhaseCommand{2},
                                                              AdvancePhaseCommand{2},
                                                              EndTurnCommand{2},
@@ -620,8 +624,10 @@ void RunEffectTests(int& testCount, int& failedTests)
               state.Players[1].Graveyard[0].Id == 6 && state.Players[1].Hand[0].Id == 7,
           "FullRulesMonsterBattleAndDestructionDrawTrigger");
     for (GameCommand const& input : std::vector<GameCommand>{AdvancePhaseCommand{1},
+                                                             AdvancePhaseCommand{1},
                                                              EndTurnCommand{1},
                                                              StartTurnCommand{2},
+                                                             AdvancePhaseCommand{2},
                                                              AdvancePhaseCommand{2},
                                                              AdvancePhaseCommand{2},
                                                              EndTurnCommand{2},

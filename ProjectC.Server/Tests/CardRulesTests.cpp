@@ -42,6 +42,10 @@ void NextTurn(GameState& state)
     {
         Run(state, AdvancePhaseCommand{player});
     }
+    if (state.Phase == TurnPhase::Main2)
+    {
+        Run(state, AdvancePhaseCommand{player});
+    }
     Run(state, EndTurnCommand{player});
     Run(state, StartTurnCommand{state.ActivePlayerId});
 }

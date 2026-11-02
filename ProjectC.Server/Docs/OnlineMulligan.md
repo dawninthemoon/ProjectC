@@ -4,7 +4,7 @@
 
 ## 실행과 설정
 
-기존 테스트/백귀야행 데이터의 기본 동작은 그대로다. 멀리건은 서버에서 명시적으로 활성화한다.
+2026-11-03부터 백귀야행 데이터는 `EnableMulligan: true`로 시작한다. 기본 소규모 테스트/Legacy 데이터는 기존대로 비활성화한다. 멀리건은 서버 설정이며 `--mulligan on|off`가 데이터 설정을 덮어쓴다. CreateMatch/JoinMatch와 QueueMatch는 동일한 MatchSession 준비 흐름을 사용한다.
 
 ```sh
 cmake -S ProjectC.Server -B build -DCMAKE_BUILD_TYPE=Debug

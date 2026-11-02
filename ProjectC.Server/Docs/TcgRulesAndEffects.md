@@ -2,6 +2,8 @@
 
 # Project C — 현재 TCG 규칙과 효과 실행 계약
 
+**2026-11-03 페이즈 추가:** Main 1 → Battle → Main 2 → End 순서다. 기존 값 Main=0, Battle=1, End=2를 보존하고 Main2=3을 추가했다. 두 메인 페이즈는 기존 메인 행동을 허용하며 일반 소환/효과 횟수는 페이즈 전환으로 초기화하지 않는다. 직접 공격은 카드별 공격 사용 여부와 카드별 부활 효과 제한을 별도로 검증한다. 상세 UI/프로토콜 변경은 [BattleUX.md](../../ProjectC.Client/Docs/BattleUX.md)를 참조한다.
+
 현재 GameCore는 기존 카드/Zone/Command/Event/Replay 구조 위에 확정 TCG 규칙을 추가한다.
 이 문서는 GameCore 규칙 계약을 다룬다. 현재 네트워크·Unity 구현은 [OnlineMultiplayer.md](OnlineMultiplayer.md)에 별도로 문서화한다. RP/응전 스택, Continuous/Replacement 실행, 귀화/RP 자원은 여전히 제외한다.
 

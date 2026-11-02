@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="51" result="Passed" total="51" passed="51" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:52:10Z" duration="53.3694904">
+  <test-suite type="TestSuite" id="1087" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:52:10Z" duration="53.369490" total="51" passed="51" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1081" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:52:10Z" duration="53.359220" total="51" passed="51" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="4836" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1082" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:52:10Z" duration="53.357564" total="51" passed="51" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1083" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:52:10Z" duration="53.356066" total="51" passed="51" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="BattlePrefabPlayModeTests" fullname="ProjectC.Tests.BattlePrefabPlayModeTests" classname="ProjectC.Tests.BattlePrefabPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:51:24Z" duration="7.231856" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1002" name="AuthoredPrefabHoverSelectionHiddenCardsAndFeedback" fullname="ProjectC.Tests.BattlePrefabPlayModeTests.AuthoredPrefabHoverSelectionHiddenCardsAndFeedback" methodname="AuthoredPrefabHoverSelectionHiddenCardsAndFeedback" classname="ProjectC.Tests.BattlePrefabPlayModeTests" runstate="Runnable" seed="1917355703" result="Passed" start-time="2026-11-02 15:51:16Z" end-time="2026-11-02 15:51:24Z" duration="7.216277" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1003" name="BattleUxPlayModeTests" fullname="ProjectC.Tests.BattleUxPlayModeTests" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-02 15:51:24Z" end-time="2026-11-02 15:51:27Z" duration="3.750194" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1007" name="ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" fullname="ProjectC.Tests.BattleUxPlayModeTests.ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" methodname="ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="73481526" result="Passed" start-time="2026-11-02 15:51:24Z" end-time="2026-11-02 15:51:24Z" duration="0.248659" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="InspectorIsClickPinnedAndTimerUsesServerCorrection" fullname="ProjectC.Tests.BattleUxPlayModeTests.InspectorIsClickPinnedAndTimerUsesServerCorrection" methodname="InspectorIsClickPinnedAndTimerUsesServerCorrection" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="420731510" result="Passed" start-time="2026-11-02 15:51:24Z" end-time="2026-11-02 15:51:27Z" duration="3.416289" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1008" name="OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" fullname="ProjectC.Tests.BattleUxPlayModeTests.OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" methodname="OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="901299276" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.034342" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1005" name="PinnedInspectorRefreshesFromUpdatedServerSnapshot" fullname="ProjectC.Tests.BattleUxPlayModeTests.PinnedInspectorRefreshesFromUpdatedServerSnapshot" methodname="PinnedInspectorRefreshesFromUpdatedServerSnapshot" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="1387906497" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.046372" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="ProjectionRefreshesIndependentDirectAttackPermission" fullname="ProjectC.Tests.BattleUxPlayModeTests.ProjectionRefreshesIndependentDirectAttackPermission" methodname="ProjectionRefreshesIndependentDirectAttackPermission" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="593832529" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.002134" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1009" name="CardLocalizationTests" fullname="ProjectC.Tests.CardLocalizationTests" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="23" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.037820" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1011" name="ActualNamesAndDescriptionsUseKeys" fullname="ProjectC.Tests.CardLocalizationTests.ActualNamesAndDescriptionsUseKeys" methodname="ActualNamesAndDescriptionsUseKeys" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1918782405" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.005785" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1010" name="ActualSheetLoadsNumericStringsAndEmbeddedEffects" fullname="ProjectC.Tests.CardLocalizationTests.ActualSheetLoadsNumericStringsAndEmbeddedEffects" methodname="ActualSheetLoadsNumericStringsAndEmbeddedEffects" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="432978002" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.002264" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1035" name="CatalogMismatchIsVisibleInAllDeckModes" fullname="ProjectC.Tests.CardLocalizationTests.CatalogMismatchIsVisibleInAllDeckModes" methodname="CatalogMismatchIsVisibleInAllDeckModes" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="2077249002" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.001703" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1028" name="DuplicateLocalizationKeysFail" fullname="ProjectC.Tests.CardLocalizationTests.DuplicateLocalizationKeysFail" methodname="DuplicateLocalizationKeysFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1437280161" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000913" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1021" name="InvalidArgumentIndicesAndTokensFail" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.002396" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1017" name="InvalidArgumentIndicesAndTokensFail(&quot;{2}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{2}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="810746771" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000474" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="InvalidArgumentIndicesAndTokensFail(&quot;{-1}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{-1}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="803451109" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000083" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1019" name="InvalidArgumentIndicesAndTokensFail(&quot;{0:eval()}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{0:eval()}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="282668621" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000126" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1020" name="InvalidArgumentIndicesAndTokensFail(&quot;{0&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{0&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1139377755" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000055" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1032" name="InvalidSheetFieldsAndDuplicateIdsFail" fullname="ProjectC.Tests.CardLocalizationTests.InvalidSheetFieldsAndDuplicateIdsFail" methodname="InvalidSheetFieldsAndDuplicateIdsFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1978608500" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.004491" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1030" name="KeywordAndNumericTokensKeepMetadata" fullname="ProjectC.Tests.CardLocalizationTests.KeywordAndNumericTokensKeepMetadata" methodname="KeywordAndNumericTokensKeepMetadata" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="552099049" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000894" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1034" name="KeywordRendererEscapesArgumentsAndPreservesLinks" fullname="ProjectC.Tests.CardLocalizationTests.KeywordRendererEscapesArgumentsAndPreservesLinks" methodname="KeywordRendererEscapesArgumentsAndPreservesLinks" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="734751098" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.001778" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1029" name="LanguageFallbackIsRequestedThenKoreanThenEnglish" fullname="ProjectC.Tests.CardLocalizationTests.LanguageFallbackIsRequestedThenKoreanThenEnglish" methodname="LanguageFallbackIsRequestedThenKoreanThenEnglish" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="74427046" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000262" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1027" name="MissingLocalizationKeyIsVisibleAndReportedOnce" fullname="ProjectC.Tests.CardLocalizationTests.MissingLocalizationKeyIsVisibleAndReportedOnce" methodname="MissingLocalizationKeyIsVisibleAndReportedOnce" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="2015190056" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000313" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1016" name="MissingPathWithoutDefaultFails" fullname="ProjectC.Tests.CardLocalizationTests.MissingPathWithoutDefaultFails" methodname="MissingPathWithoutDefaultFails" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1899782892" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000714" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1015" name="MultipleArgumentsAndAbsentPathDefault" fullname="ProjectC.Tests.CardLocalizationTests.MultipleArgumentsAndAbsentPathDefault" methodname="MultipleArgumentsAndAbsentPathDefault" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1061585529" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000257" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1026" name="OnlyReadOnlyDataPathsAreAccepted" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.001751" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1022" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[*].Amount&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[*].Amount&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="929986739" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000225" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1023" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[0];Run()&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[0];Run()&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="441782254" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000071" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1024" name="OnlyReadOnlyDataPathsAreAccepted(&quot;$.Attack&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;$.Attack&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1559948734" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000068" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1025" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[-1]&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[-1]&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1709595167" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000057" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1031" name="PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" fullname="ProjectC.Tests.CardLocalizationTests.PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" methodname="PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="644486938" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.004874" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1014" name="RealValueWinsOverDefaultIncludingZero" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.001543" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1012" name="RealValueWinsOverDefaultIncludingZero(3,&quot;3&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero(3,&quot;3&quot;)" methodname="RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1691438534" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000435" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="RealValueWinsOverDefaultIncludingZero(0,&quot;0&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero(0,&quot;0&quot;)" methodname="RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="212192520" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.000095" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1033" name="UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" fullname="ProjectC.Tests.CardLocalizationTests.UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" methodname="UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="516922048" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:27Z" duration="0.003158" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1036" name="CardPresentationPlayModeTests" fullname="ProjectC.Tests.CardPresentationPlayModeTests" classname="ProjectC.Tests.CardPresentationPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:30Z" duration="2.478455" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1037" name="BattleArtworkBadgesTransformSelectionAndHover" fullname="ProjectC.Tests.CardPresentationPlayModeTests.BattleArtworkBadgesTransformSelectionAndHover" methodname="BattleArtworkBadgesTransformSelectionAndHover" classname="ProjectC.Tests.CardPresentationPlayModeTests" runstate="Runnable" seed="565035376" result="Passed" start-time="2026-11-02 15:51:27Z" end-time="2026-11-02 15:51:29Z" duration="1.479214" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="DeckLibraryDeckContentsAndDetailShareArtwork" fullname="ProjectC.Tests.CardPresentationPlayModeTests.DeckLibraryDeckContentsAndDetailShareArtwork" methodname="DeckLibraryDeckContentsAndDetailShareArtwork" classname="ProjectC.Tests.CardPresentationPlayModeTests" runstate="Runnable" seed="817030221" result="Passed" start-time="2026-11-02 15:51:29Z" end-time="2026-11-02 15:51:30Z" duration="0.996085" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1051" name="DrawPresentationPlayModeTests" fullname="ProjectC.Tests.DrawPresentationPlayModeTests" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-11-02 15:51:30Z" end-time="2026-11-02 15:51:40Z" duration="10.366021" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1062" name="DestroyDuringDrawDoesNotLeaveRunningPresentation" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DestroyDuringDrawDoesNotLeaveRunningPresentation" methodname="DestroyDuringDrawDoesNotLeaveRunningPresentation" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="373572411" result="Passed" start-time="2026-11-02 15:51:30Z" end-time="2026-11-02 15:51:30Z" duration="0.045251" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1058" name="DrawDestroyDrawPreservesStateOrder" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawDestroyDrawPreservesStateOrder" methodname="DrawDestroyDrawPreservesStateOrder" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1024907131" result="Passed" start-time="2026-11-02 15:51:30Z" end-time="2026-11-02 15:51:32Z" duration="1.680294" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1056" name="DrawKeepsIdentityAndLandsInActualSlot" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-02 15:51:32Z" end-time="2026-11-02 15:51:36Z" duration="4.171212" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+              <test-case id="1052" name="DrawKeepsIdentityAndLandsInActualSlot(0)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(0)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="2144207911" result="Passed" start-time="2026-11-02 15:51:32Z" end-time="2026-11-02 15:51:33Z" duration="1.029600" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="DrawKeepsIdentityAndLandsInActualSlot(1)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(1)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="422937283" result="Passed" start-time="2026-11-02 15:51:33Z" end-time="2026-11-02 15:51:34Z" duration="1.044422" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1054" name="DrawKeepsIdentityAndLandsInActualSlot(5)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(5)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="2031535057" result="Passed" start-time="2026-11-02 15:51:34Z" end-time="2026-11-02 15:51:35Z" duration="1.045048" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1055" name="DrawKeepsIdentityAndLandsInActualSlot(9)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(9)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1335340626" result="Passed" start-time="2026-11-02 15:51:35Z" end-time="2026-11-02 15:51:36Z" duration="1.049526" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1061" name="DrawVisualCaptureAtTwoCanvasSizes" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawVisualCaptureAtTwoCanvasSizes" methodname="DrawVisualCaptureAtTwoCanvasSizes" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="22509894" result="Passed" start-time="2026-11-02 15:51:36Z" end-time="2026-11-02 15:51:37Z" duration="1.277120" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1059" name="HiddenDrawAndInvalidationRestoreLatestSnapshot" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.HiddenDrawAndInvalidationRestoreLatestSnapshot" methodname="HiddenDrawAndInvalidationRestoreLatestSnapshot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1426687686" result="Passed" start-time="2026-11-02 15:51:37Z" end-time="2026-11-02 15:51:37Z" duration="0.298632" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1057" name="OverlappingDrawsKeepSortingHoverAndSnapshotBatches" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.OverlappingDrawsKeepSortingHoverAndSnapshotBatches" methodname="OverlappingDrawsKeepSortingHoverAndSnapshotBatches" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="300044868" result="Passed" start-time="2026-11-02 15:51:37Z" end-time="2026-11-02 15:51:39Z" duration="1.854822" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1063" name="ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" methodname="ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1232810933" result="Passed" start-time="2026-11-02 15:51:39Z" end-time="2026-11-02 15:51:39Z" duration="0.000896" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1060" name="SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" methodname="SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1325409463" result="Passed" start-time="2026-11-02 15:51:39Z" end-time="2026-11-02 15:51:40Z" duration="1.034140" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1064" name="FrontEndPlayModeTests" fullname="ProjectC.Tests.FrontEndPlayModeTests" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-02 15:51:40Z" end-time="2026-11-02 15:51:49Z" duration="8.755120" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1071" name="AutomaticQueueMulliganReconnectAndTimeoutStartsBattle" fullname="ProjectC.Tests.FrontEndPlayModeTests.AutomaticQueueMulliganReconnectAndTimeoutStartsBattle" methodname="AutomaticQueueMulliganReconnectAndTimeoutStartsBattle" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" seed="1900484726" result="Passed" start-time="2026-11-02 15:51:40Z" end-time="2026-11-02 15:51:47Z" duration="6.498579" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1070" name="MulliganKeepClearsSelectionAndStarts" fullname="ProjectC.Tests.FrontEndPlayModeTests.MulliganKeepClearsSelectionAndStarts" methodname="MulliganKeepClearsSelectionAndStarts" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" seed="2034480267" result="Passed" start-time="2026-11-02 15:51:47Z" end-time="2026-11-02 15:51:48Z" duration="1.142043" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1069" name="MulliganSelectConfirmReconnectAndStart" fullname="ProjectC.Tests.FrontEndPlayModeTests.MulliganSelectConfirmReconnectAndStart" methodname="MulliganSelectConfirmReconnectAndStart" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" seed="1841521616" result="Passed" start-time="2026-11-02 15:51:48Z" end-time="2026-11-02 15:51:49Z" duration="1.109350" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1039" name="MultiplayerPlayModeTests" fullname="ProjectC.Tests.MultiplayerPlayModeTests" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-02 15:51:49Z" end-time="2026-11-02 15:52:10Z" duration="20.729911" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1041" name="DrawPresentationPreservesServerDragAttackAndRematch" fullname="ProjectC.Tests.MultiplayerPlayModeTests.DrawPresentationPreservesServerDragAttackAndRematch" methodname="DrawPresentationPreservesServerDragAttackAndRematch" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="1408968623" result="Passed" start-time="2026-11-02 15:51:49Z" end-time="2026-11-02 15:51:52Z" duration="3.110516" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="FourClientsTwoMatchesPlayRematchAndReconnect" fullname="ProjectC.Tests.MultiplayerPlayModeTests.FourClientsTwoMatchesPlayRematchAndReconnect" methodname="FourClientsTwoMatchesPlayRematchAndReconnect" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="1224184732" result="Passed" start-time="2026-11-02 15:51:52Z" end-time="2026-11-02 15:51:54Z" duration="1.596185" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Four Unity PlayMode clients: independent matches, effects, automatic turns, victory, rematch and reconnect passed
+]]></output>
+            </test-case>
+            <test-case id="1045" name="OldEpochAndForeignMatchSnapshotsAreIgnored" fullname="ProjectC.Tests.MultiplayerPlayModeTests.OldEpochAndForeignMatchSnapshotsAreIgnored" methodname="OldEpochAndForeignMatchSnapshotsAreIgnored" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="892962648" result="Passed" start-time="2026-11-02 15:51:54Z" end-time="2026-11-02 15:51:54Z" duration="0.001798" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1043" name="RealServerDrawUsesOwnHandAndOpponentBacks" fullname="ProjectC.Tests.MultiplayerPlayModeTests.RealServerDrawUsesOwnHandAndOpponentBacks" methodname="RealServerDrawUsesOwnHandAndOpponentBacks" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="1933279221" result="Passed" start-time="2026-11-02 15:51:54Z" end-time="2026-11-02 15:52:09Z" duration="15.242453" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1044" name="ServerDefinedEffectsUseClickTargetsAndManifestContext" fullname="ProjectC.Tests.MultiplayerPlayModeTests.ServerDefinedEffectsUseClickTargetsAndManifestContext" methodname="ServerDefinedEffectsUseClickTargetsAndManifestContext" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="1618013517" result="Passed" start-time="2026-11-02 15:52:09Z" end-time="2026-11-02 15:52:09Z" duration="0.276649" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1040" name="SpellDragPrivateChoiceReconnectAndCommit" fullname="ProjectC.Tests.MultiplayerPlayModeTests.SpellDragPrivateChoiceReconnectAndCommit" methodname="SpellDragPrivateChoiceReconnectAndCommit" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="854387451" result="Passed" start-time="2026-11-02 15:52:09Z" end-time="2026-11-02 15:52:10Z" duration="0.497198" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

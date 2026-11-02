@@ -18,6 +18,7 @@ namespace ProjectC.Client
         public TMP_Dropdown DeckList { get; private set; }
         public Transform DeckContent { get; private set; }
         public Transform LibraryContent { get; private set; }
+        private DeckTileView _detailCard;
         ClientApp app;
         TMP_Text count,
             status,
@@ -57,6 +58,11 @@ namespace ProjectC.Client
             this.Bind("DetailStats", out detailStats);
             this.Bind("DetailRules", out detailRules);
             this.Bind("DetailCrest", out detailCrest);
+            if (!this.Bind("DetailCard", out _detailCard))
+            {
+                throw new InvalidOperationException("Deck editor requires a DetailCard preview.");
+            }
+            _detailCard.gameObject.SetActive(false);
             Bind("Save", () => Save());
             Bind(
                 "CancelEdits",
@@ -425,6 +431,10 @@ namespace ProjectC.Client
         void Details(int id)
         {
             var card = app.Library.Find(id);
+            _detailCard.gameObject.SetActive(true);
+            _detailCard.Render(id, card, 0, false, null, null, false);
+            detailName.gameObject.SetActive(false);
+            detailCrest.gameObject.SetActive(false);
             detailName.text = card?.Name ?? "누락 카드 #" + id;
             detailCrest.text = card?.Type == "Monster" ? "妖" : "呪";
             detailStats.text =
@@ -433,12 +443,6 @@ namespace ProjectC.Client
                     : card.Type
                         + " / "
                         + card.Rarity
-                        + "\n"
-                        + (
-                            card.Type == "Monster"
-                                ? $"ATK {card.Attack}   HP {card.MaxHp}"
-                                : "일반 주문"
-                        )
                         + "\n"
                         + (
                             card.MainDeckEligible
