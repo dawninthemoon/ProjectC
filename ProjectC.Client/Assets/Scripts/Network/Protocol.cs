@@ -26,12 +26,14 @@ namespace ProjectC.Client
         public int ActivePlayerId, TurnNumber, Phase, WinnerPlayerId, FieldLimit, MaxYokaiPower, ResolvingPlayerId;
         public PlayerView[] Players;
     }
-    [Serializable] public class LobbyPlayerView { public int PlayerId; public bool Occupied, Connected, Ready, Rematch; }
+    [Serializable] public class LobbyPlayerView { public int PlayerId; public bool Occupied, Connected, Ready, Rematch, DeckSubmitted; }
     [Serializable] public class LobbyView { public string Status; public int HostPlayerId; public LobbyPlayerView[] Players; }
     [Serializable] public class DeckView { public string Id, Name; public int CardCount; }
     [Serializable] public class MessageView
     {
-        public string Type, MatchId, RequestId, SessionToken, Reason, DeckId;
+        public string Type, MatchId, RequestId, SessionToken, Reason, DeckId, Message, DeckName, CatalogVersion;
+        public bool PersonalDeckSelected, PersonalDeckSupported;
+        public int CardCount;
         public int ProtocolVersion, PlayerId, WinnerPlayerId, GameNumber;
         public long SequenceNumber;
     }

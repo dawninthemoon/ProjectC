@@ -65,7 +65,7 @@ namespace ProjectC.Tests
             var listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();int port=((System.Net.IPEndPoint)listener.LocalEndpoint).Port;listener.Stop();
             server=System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path,"--port "+port+" --data \""+Path.Combine(Path.GetDirectoryName(path),"TestData")+"\"") {UseShellExecute=false,RedirectStandardOutput=true,CreateNoWindow=true});
             var started=server.StandardOutput.ReadLineAsync();yield return Until(()=>started.IsCompleted);StringAssert.Contains("listening",started.Result);
-            var app=ClientApp.Instance;var a=app.Network;
+            var app=ClientApp.Instance;var a=app.Network;a.UsePersonalDeck=false;
             opponentObject=new GameObject("Opponent",typeof(MultiplayerDebugScreen));UnityEngine.Object.DontDestroyOnLoad(opponentObject);var b=opponentObject.GetComponent<MultiplayerDebugScreen>();
             var lobby=UnityEngine.Object.FindFirstObjectByType<LobbyScenePresenter>();Button(lobby,"BattleMenu").onClick.Invoke();
             lobby.Bind("MatchPanel",out LobbyPanelView panel);panel.Address.text="ws://127.0.0.1:"+port;panel.Connect.onClick.Invoke();b.ConnectTo(panel.Address.text);
@@ -77,6 +77,43 @@ namespace ProjectC.Tests
             yield return Command(a,b,"PlayCard",card);yield return Command(a,b,"EndTurn");yield return Command(b,a,"EndTurn");yield return Command(a,b,"AdvancePhase");yield return Command(a,b,"DirectAttack",card);
             Assert.IsTrue(a.State.Finished);yield return null;Assert.IsTrue(battle.ResultPanel.activeSelf);battle.ResultLeave.onClick.Invoke();
             yield return Until(()=>SceneManager.GetActiveScene().name=="LobbyScene");yield return null;Assert.AreSame(a,ClientApp.Instance.Network);Assert.IsTrue(a.Connected);Assert.IsEmpty(a.CurrentMatch);
+        }
+        [UnityTest] public IEnumerator PersonalDecksSubmitFreezeReconnectAndReject()
+        {
+            string path="";var args=Environment.GetCommandLineArgs();
+            for(int i=0;i+1<args.Length;++i) if(args[i]=="-projectcServerPath") path=args[i+1];
+            Assert.IsTrue(File.Exists(path),"Pass -projectcServerPath");
+            var listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();
+            int port=((System.Net.IPEndPoint)listener.LocalEndpoint).Port;listener.Stop();
+            server=System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path,"--port "+port+" --data \""+Path.Combine(Path.GetDirectoryName(path),"Data","HyakkiYagyo")+"\"") {UseShellExecute=false,RedirectStandardOutput=true});
+            var started=server.StandardOutput.ReadLineAsync();yield return Until(()=>started.IsCompleted);
+            StringAssert.Contains("listening",started.Result);
+            var app=ClientApp.Instance;var a=app.Network;
+            opponentObject=new GameObject("Personal opponent",typeof(MultiplayerDebugScreen));UnityEngine.Object.DontDestroyOnLoad(opponentObject);
+            var b=opponentObject.GetComponent<MultiplayerDebugScreen>();
+            a.ConnectTo("ws://127.0.0.1:"+port);b.ConnectTo("ws://127.0.0.1:"+port);
+            yield return Until(()=>a.Connected && b.Connected && a.Decks.Length>0 && b.Decks.Length>0);
+            a.CreateMatch();yield return Until(()=>a.State!=null);b.JoinMatch(a.CurrentMatch);yield return Until(()=>b.State!=null);
+            var panel=UnityEngine.Object.FindFirstObjectByType<LobbyPanelView>(FindObjectsInactive.Include);
+            panel.Render();Assert.IsFalse(panel.Ready.interactable,"Empty personal deck blocks readiness");
+            var deck=app.Starter.Copy();deck.Name="개인 A";Assert.IsTrue(app.Decks.Save(deck,out _));
+            panel.Render();Assert.IsTrue(panel.Ready.interactable);panel.Ready.onClick.Invoke();
+            yield return Until(()=>a.Lobby.Players.Any(p=>p.PlayerId==a.PlayerId && p.Ready));
+            var invalid=deck.Copy();invalid.Cards[0]=999999;string notice="";b.NoticeReceived+=text=>notice=text;
+            Assert.IsTrue(b.SubmitPersonalDeck(invalid,app.Library.CatalogVersion));
+            yield return Until(()=>notice.Contains("DeckUnknownCard"));Assert.IsFalse(b.Busy);
+            var second=deck.Copy();second.Name="개인 B";second.Cards[0]=2004;
+            Assert.IsTrue(b.SubmitPersonalDeck(second,app.Library.CatalogVersion));second.Cards.Clear();
+            yield return Until(()=>a.State?.Started==true && b.State?.Started==true);
+            yield return Until(()=>SceneManager.GetActiveScene().name=="BattleScene");
+            Assert.AreEqual("개인 A",a.ConfirmedDeckName);Assert.AreEqual("개인 B",b.ConfirmedDeckName);
+            Assert.AreEqual(0,a.State.Players[1].Hand.Length);Assert.AreEqual(0,b.State.Players[0].Hand.Length);
+            string before=JsonUtility.ToJson(a.State);deck.Cards.Clear();Assert.IsTrue(app.Decks.Save(deck,out _));
+            Assert.AreEqual(before,JsonUtility.ToJson(a.State));
+            a.DisconnectNetwork();yield return Until(()=>b.Lobby.Players.Any(p=>!p.Connected));
+            a.ConnectTo("ws://127.0.0.1:"+port);yield return Until(()=>a.Connected && a.Lobby.Players.All(p=>p.Connected));
+            Assert.AreEqual(before,JsonUtility.ToJson(a.State));
+            yield return Command(a,b,"EndTurn");
         }
         static IEnumerator Command(MultiplayerDebugScreen actor,MultiplayerDebugScreen other,string type,int card=0)
         {long sequence=actor.Sequence;Assert.IsTrue(actor.SendGameCommand(type,card));yield return Until(()=>actor.Sequence==sequence+1 && other.Sequence==sequence+1);yield return null;}

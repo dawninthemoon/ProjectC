@@ -39,3 +39,7 @@ add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
 add_test(NAME ContentWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 set_tests_properties(NetworkTests WebSocketIntegration ContentWebSocketIntegration PROPERTIES TIMEOUT 45)
+
+add_test(NAME PersonalDeckWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/PersonalDeckWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(PersonalDeckWebSocketIntegration PROPERTIES TIMEOUT 45)

@@ -155,10 +155,87 @@ void PublicChoiceCancellationTests()
     a.Send("CloseMatch",{{"MatchId",id},{"GameNumber",1}});Check(manager.Replays().front().Verify());
     std::cout<<"Public choice cancellation: no state commit, original request rejected, replay passed\n";
 }
+void PersonalDeckTests()
+{
+    ServerConfig config;config.DataDirectory=(std::filesystem::path(DefaultDataDirectory())/"HyakkiYagyo").string();
+    // Allow a deterministic draw-to-exhaustion finish for the rematch test without
+    // changing production rules or depending on randomly drawn card effects.
+    auto fixture=std::filesystem::temp_directory_path()/("ProjectCPersonal-"+Token());
+    std::filesystem::create_directory(fixture);
+    struct Cleanup {std::filesystem::path Path;~Cleanup(){std::filesystem::remove_all(Path);}} cleanup{fixture};
+    std::filesystem::copy_file(std::filesystem::path(config.DataDirectory)/"Cards.json",fixture/"Cards.json");
+    Json fixtureDecks;{std::ifstream file(std::filesystem::path(config.DataDirectory)/"Decks.json");file>>fixtureDecks;}
+    fixtureDecks["Config"]["HandLimit"]=128;
+    {std::ofstream file(fixture/"Decks.json");file<<fixtureDecks.dump();}
+    config.DataDirectory=fixture.string();
+    auto catalog=CardCatalog::Load(config.DataDirectory);
+    MatchManager manager(config);Peer a(manager),b(manager),outsider(manager);
+    a.Send("ListDecks");Check(a.Last("DeckCatalog")["PersonalDeckSupported"]==true);
+    a.Send("CreateMatch");auto id=a.Client->MatchId;b.Send("JoinMatch",{{"MatchId",id}});
+    auto cards=catalog.Decks[0].Cards;auto other=cards;other[0]=2004;
+    Json deck{{"MatchId",id},{"GameNumber",0},{"CatalogVersion",catalog.Version},{"DeckName","나의 덱"},{"DefinitionIds",cards}};
+    auto reject=[&](Json payload,std::string code) {a.Send("SubmitDeck",payload);Check(a.Last("DeckRejected")["Reason"]==code);Check(!a.Last("DeckRejected")["Message"].get<std::string>().empty());};
+    auto bad=deck;bad["CatalogVersion"]="old";reject(bad,"CatalogVersionMismatch");
+    bad=deck;bad["DefinitionIds"][0]=999999;reject(bad,"DeckUnknownCard");
+    bad=deck;bad["DefinitionIds"].erase(0);reject(bad,"DeckCardCount");
+    bad=deck;bad["DefinitionIds"].push_back(1001);reject(bad,"DeckCardCount");
+    bad=deck;bad["DefinitionIds"][3]=1001;reject(bad,"DeckCopyLimit");
+    bad=deck;bad["DefinitionIds"][0]=1007;reject(bad,"DeckIneligibleCard");
+    for(auto value:{Json(-1),Json(1.5),Json("1001"),Json(true),Json(100000000000ULL)})
+    {bad=deck;bad["DefinitionIds"][0]=value;reject(bad,"InvalidDeckPayload");}
+    bad=deck;bad["Attack"]=999;reject(bad,"InvalidDeckPayload");
+    bad=deck;bad["DefinitionIds"]=Json::object();reject(bad,"InvalidDeckPayload");
+    bad=deck;bad["DeckName"]="\n";reject(bad,"InvalidDeckPayload");
+    outsider.Send("SubmitDeck",deck);Check(outsider.Last("ServerError")["Reason"]=="NotJoined");
+    a.Send("SubmitDeck",deck);auto accepted=a.Last("DeckAccepted");
+    auto repeated=deck;repeated["Type"]="SubmitDeck";repeated["ProtocolVersion"]=2;repeated["RequestId"]=std::to_string(a.Counter);
+    manager.Receive(a.Client,repeated.dump());Check(a.Last("DeckAccepted")==accepted);
+    repeated["DeckName"]="changed";manager.Receive(a.Client,repeated.dump());Check(a.Last("DeckRejected")["Reason"]=="RequestIdConflict");
+    auto token=a.Last("MatchCreated")["SessionToken"];manager.Disconnect(a.Client);Peer resumed(manager);
+    resumed.Send("JoinMatch",{{"MatchId",id},{"SessionToken",token},{"DeckId","HyakkiYagyo"}});
+    Check(resumed.Last("LobbyState")["PersonalDeckSelected"]==true);
+    resumed.Send("SetReady",{{"MatchId",id},{"GameNumber",0},{"Ready",true}});
+    resumed.Send("SubmitDeck",deck);Check(resumed.Last("DeckRejected")["Reason"]=="DeckLocked");
+    deck["DefinitionIds"]=other;deck["DeckName"]="상대 덱";b.Send("SubmitDeck",deck);
+    Check(resumed.Last("LobbyState")["Payload"]["Players"][1]["DeckSubmitted"]==true);
+    for(auto const& message:resumed.Messages) Check(message.dump().find("상대 덱")==std::string::npos);
+    b.Send("SetReady",{{"MatchId",id},{"GameNumber",0},{"Ready",true}});
+    auto before=manager.Find(id)->Snapshot(resumed.Client->Player);
+    Check(before["Started"]==true && before["Players"][1]["Hand"].empty());
+    deck["GameNumber"]=1;deck["DefinitionIds"][0]=1007;
+    resumed.Send("SubmitDeck",deck);Check(resumed.Last("DeckRejected")["Reason"]=="DeckLocked");
+    Check(manager.Find(id)->Snapshot(resumed.Client->Player)==before);
+    token=resumed.Last("SessionUpdated")["SessionToken"];manager.Disconnect(resumed.Client);Peer restored(manager);
+    restored.Send("JoinMatch",{{"MatchId",id},{"SessionToken",token}});
+    Check(manager.Find(id)->Snapshot(restored.Client->Player)==before);
+    restored.Send("SubmitCommand",{{"MatchId",id},{"GameNumber",1},{"SequenceNumber",1},{"Command",{{"Type","EndTurn"}}}});
+    Check(restored.Last("CommandAccepted")["SequenceNumber"]==2);
+    for(int turn=0;manager.Find(id)->Status()==MatchStatus::Playing && turn<100;++turn)
+    {
+        auto snapshot=manager.Find(id)->Snapshot(restored.Client->Player);
+        auto& actor=snapshot["ActivePlayerId"]==restored.Client->Player?restored:b;
+        actor.Send("SubmitCommand",{{"MatchId",id},{"GameNumber",1},{"SequenceNumber",actor.Last("StateSnapshot")["SequenceNumber"]},{"Command",{{"Type","EndTurn"}}}});
+    }
+    Check(manager.Find(id)->Status()==MatchStatus::Finished);
+    for(auto* peer:{&restored,&b}) peer->Send("Rematch",{{"MatchId",id},{"GameNumber",1}});
+    Check(restored.Last("StateSnapshot")["GameNumber"]==2 && manager.Find(id)->Status()==MatchStatus::Playing);
+    restored.Send("CloseMatch",{{"MatchId",id},{"GameNumber",2}});
+    Check(manager.Replays().size()==2 && manager.Replays().back().Verify());
+    auto const& replay=manager.Replays().front();Check(replay.Verify());
+    for(int i=0;i<2;++i)
+    {
+        std::vector<int> actual;auto const& p=replay.InitialState.Players[i];
+        for(auto const& zone:{p.Deck,p.Hand}) for(auto const& c:zone) actual.push_back(c.CurrentDefinitionId);
+        auto expected=i==0?cards:other;std::sort(actual.begin(),actual.end());std::sort(expected.begin(),expected.end());Check(actual==expected);
+    }
+    auto incompatible=catalog;incompatible.Config.MaxCardCopies=4;Check(incompatible.PersonalDeckError(cards)=="DeckRulesMismatch");
+    std::cout<<"Personal decks: validation, idempotency, privacy, lock, reconnect, distinct compositions and replay passed\n";
+}
 int main()
 {
 try
 {
+    PersonalDeckTests();
     InteractionTests();
     RunHyakkiComboTests();
     ContentChoiceTests();

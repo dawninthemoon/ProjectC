@@ -5,6 +5,8 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <bcrypt.h>
+#elif defined(__APPLE__)
+#include <sys/random.h>
 #else
 #include <sys/random.h>
 #include <cerrno>
@@ -46,6 +48,8 @@ std::string Token()
 #ifdef _WIN32
     if (BCryptGenRandom(nullptr, bytes, sizeof(bytes), BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0)
         throw std::runtime_error("EntropyFailure");
+#elif defined(__APPLE__)
+    if (getentropy(bytes, sizeof(bytes)) != 0) throw std::runtime_error("EntropyFailure");
 #else
     std::size_t offset = 0;
     while (offset < sizeof(bytes))

@@ -17,6 +17,7 @@ namespace ProjectC.Client
     public sealed class CardLibrary
     {
         readonly Dictionary<int,LibraryCard> cards=new Dictionary<int,LibraryCard>();
+        public string CatalogVersion {get;private set;}="";
         public IEnumerable<LibraryCard> Cards => cards.Values.OrderBy(c=>c.Id);
         public LibraryCard Find(int id) => cards.TryGetValue(id,out var card)?card:null;
         public static JObject ParseObject(string text)
@@ -35,7 +36,7 @@ namespace ProjectC.Client
         {
             var root=ParseObject(text);var items=root["Cards"] as JArray;
             if(items==null || items.Count>10000) throw new FormatException("Cards 배열이 필요합니다.");
-            var library=new CardLibrary();
+            var library=new CardLibrary {CatalogVersion=(string)root["CatalogVersion"]??""};
             foreach(var item in items)
             {
                 int id=Integer(item["Id"]);

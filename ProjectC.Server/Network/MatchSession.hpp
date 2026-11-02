@@ -55,6 +55,8 @@ private:
         int Player = 0;
         std::string Token;
         std::string DeckId;
+        std::optional<DeckDefinition> PersonalDeck;
+        std::map<std::string, std::pair<std::string, Json>> DeckRequests;
         bool Ready = false;
         bool Rematch = false;
         std::weak_ptr<ClientSession> Client;

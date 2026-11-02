@@ -2,6 +2,7 @@
 #include "ProjectC/Zone.hpp"
 #include "ProjectC/GameCommand.hpp"
 #include <fstream>
+#include <algorithm>
 #include <filesystem>
 #include <map>
 #include <random>
@@ -124,8 +125,9 @@ CardCatalog CardCatalog::Load(std::string const& directory)
 }
 CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
 {
-    Fields(cards,{"Cards"}); Fields(decks,{"Config","Decks"});
+    Fields(cards,{"Cards","CatalogVersion"}); Fields(decks,{"Config","Decks"});
     CardCatalog catalog;
+    if(cards.contains("CatalogVersion")) catalog.Version=String(cards,"CatalogVersion",64);
     auto const& config=decks.at("Config");
     Fields(config,{"InitialLife","InitialHandSize","DrawPerTurn","FieldLimit","HandLimit","MinDeckSize","MaxDeckSize","MaxCardCopies","InitialYokaiPower","YokaiPowerPerTurn","MaxYokaiPower","SummoningSickness"});
     catalog.Config.InitialLife=static_cast<int>(Number(config,"InitialLife",100000));
@@ -197,6 +199,20 @@ bool CardCatalog::ValidateDeck(std::vector<CardDefinitionId> const& cards) const
     }
     return true;
 }
+std::string CardCatalog::PersonalDeckError(std::vector<CardDefinitionId> const& cards) const
+{
+    if(Config.MinDeckSize!=30 || Config.MaxDeckSize!=30 || Config.MaxCardCopies!=3) return "DeckRulesMismatch";
+    if(cards.size()!=30) return "DeckCardCount";
+    std::map<int,std::size_t> counts;
+    for(auto id:cards)
+    {
+        auto definition=std::find_if(Definitions.begin(),Definitions.end(),[&](auto const& d){return d.Id==id;});
+        if(definition==Definitions.end()) return "DeckUnknownCard";
+        if(!definition->MainDeckEligible) return "DeckIneligibleCard";
+        if(++counts[id]>Config.MaxCardCopies) return "DeckCopyLimit";
+    }
+    return ValidateDeck(cards)?"":"DeckRulesMismatch";
+}
 Json CardCatalog::PublicDecks() const
 {
     Json result=Json::array();
@@ -205,13 +221,23 @@ Json CardCatalog::PublicDecks() const
 }
 GameState CardCatalog::Initialize(std::array<int,2> players, std::array<std::string,2> const& decks, std::uint64_t seed, int firstCardId) const
 {
+    std::array<std::vector<CardDefinitionId>,2> cards;
+    for(int i=0;i<2;++i)
+    {
+        auto deck=FindDeck(decks[i]);
+        if(!deck) throw std::runtime_error("Invalid selected deck");
+        cards[i]=deck->Cards;
+    }
+    return InitializeCards(players,cards,seed,firstCardId);
+}
+GameState CardCatalog::InitializeCards(std::array<int,2> players, std::array<std::vector<CardDefinitionId>,2> const& decks, std::uint64_t seed, int firstCardId) const
+{
     std::mt19937_64 random(seed);
     std::array<PlayerSetup,2> setup;
     for(int i=0;i<2;++i)
     {
-        auto deck=FindDeck(decks[i]);
-        if(!deck || !ValidateDeck(deck->Cards)) throw std::runtime_error("Invalid selected deck");
-        setup[i]={players[i],deck->Cards};
+        if(!ValidateDeck(decks[i])) throw std::runtime_error("Invalid selected deck");
+        setup[i]={players[i],decks[i]};
         for(std::size_t n=setup[i].Deck.size();n>1;--n)
         {
             auto const bound=static_cast<std::uint64_t>(n);

@@ -31,7 +31,34 @@ namespace ProjectC.Client
         public LobbyView Lobby => lobby;
         public DeckView[] Decks => decks;
         public string SelectedDeck { get => selectedDeck; set => selectedDeck = value; }
-        public bool Busy => pending || resyncing || connecting;
+        string deckRequestId;
+        string serverCatalogVersion="";
+        bool personalDeckSupported;
+        public bool UsePersonalDeck {get;set;}=true;
+        public bool PersonalMode => UsePersonalDeck && ClientApp.Instance!=null && ClientApp.Instance.Network==this;
+        public string ConfirmedDeckName {get;private set;}="";
+        public string DeckProblem
+        {
+            get
+            {
+                if(!PersonalMode) return "";
+                var app=ClientApp.Instance;
+                var validation=DeckValidator.Validate(app.Decks.Selected,app.Library);
+                if(!validation.CanPlay) return validation.Summary;
+                if(!personalDeckSupported) return "서버가 개인 덱 규칙을 지원하지 않습니다. 백귀야행 서버에 접속하세요.";
+                if(app.Library.CatalogVersion!=serverCatalogVersion) return "서버와 카드 카탈로그 버전이 다릅니다.";
+                return "";
+            }
+        }
+        public string DeckSummary => PersonalMode?(ClientApp.Instance.Decks.Selected?.Name??"개인 덱 없음")+" · "+(ClientApp.Instance.Decks.Selected?.Cards.Count??0)+"장":"서버 덱 / "+selectedDeck;
+        public void CycleDeck()
+        {
+            if(PersonalMode) {UsePersonalDeck=false;if(decks.Length>0) selectedDeck=decks[0].Id;return;}
+            int index=Array.FindIndex(decks,d=>d.Id==selectedDeck);
+            if(index+1>=decks.Length && ClientApp.Instance!=null) UsePersonalDeck=true;
+            else if(decks.Length>0) selectedDeck=decks[(index+1)%decks.Length].Id;
+        }
+        public bool Busy => pending || resyncing || connecting || deckRequestId!=null;
         public void LeaveMatch() => LobbyAction("LeaveMatch");
         public void CloseMatch() => LobbyAction("CloseMatch");
         public void RequestSnapshot() => Resync();
@@ -50,18 +77,39 @@ namespace ProjectC.Client
         }
         void ClearMatch()
         {
-            token = null; matchId = ""; playerId = 0; lobby = null; ResetEpoch(0);
+            deckRequestId=null;ConfirmedDeckName="";token = null; matchId = ""; playerId = 0; lobby = null; ResetEpoch(0);
         }
         internal bool Connected => transport != null && transport.Connected;
         internal void ConnectTo(string serverAddress) { address = serverAddress; Connect(); }
-        internal void DisconnectNetwork() { PendingChoice=null;commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke(); transport?.Dispose(); connecting = pending = resyncing = false; }
+        internal void DisconnectNetwork() { deckRequestId=null; PendingChoice=null;commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke(); transport?.Dispose(); connecting = pending = resyncing = false; }
         internal void CreateMatch() { pending = true; Send(Request("CreateMatch") + ",\"DeckId\":" + Quote(selectedDeck)); }
         internal void JoinMatch(string id) { pending = true; Send(Request("JoinMatch") + ",\"MatchId\":" + Quote(id) + ",\"DeckId\":" + Quote(selectedDeck)); }
-        internal void SetReady(string deck, bool ready = true) { selectedDeck = deck; LobbyAction("SetReady", ",\"Ready\":" + (ready ? "true" : "false") + ",\"DeckId\":" + Quote(deck)); }
-        internal void RequestRematch() { LobbyAction("Rematch", ",\"DeckId\":" + Quote(selectedDeck)); }
+        internal void SetReady(string deck, bool ready = true)
+        {
+            if(Busy || !Connected) return;
+            selectedDeck=deck;
+            if(ready && PersonalMode)
+            {
+                if(!string.IsNullOrEmpty(DeckProblem)) {Note(DeckProblem);return;}
+                var app=ClientApp.Instance;SubmitPersonalDeck(app.Decks.Selected,app.Library.CatalogVersion);return;
+            }
+            LobbyAction("SetReady", ",\"Ready\":"+(ready?"true":"false")+(ready?",\"DeckId\":"+Quote(deck):""));
+        }
+        internal bool SubmitPersonalDeck(PersonalDeck deck,string version)
+        {
+            if(Busy || !Connected || string.IsNullOrEmpty(matchId) || deck==null) return false;
+            var copy=deck.Copy();deckRequestId=Guid.NewGuid().ToString("N");pending=true;
+            var payload=new Newtonsoft.Json.Linq.JObject {
+                ["Type"]="SubmitDeck",["ProtocolVersion"]=2,["RequestId"]=deckRequestId,
+                ["MatchId"]=matchId,["GameNumber"]=gameNumber,["CatalogVersion"]=version,
+                ["DeckName"]=copy.Name,["DefinitionIds"]=new Newtonsoft.Json.Linq.JArray(copy.Cards)};
+            _=transport.SendAsync(payload.ToString(Newtonsoft.Json.Formatting.None));return true;
+        }
+        internal void RequestRematch() { LobbyAction("Rematch", !UsePersonalDeck || string.IsNullOrEmpty(ConfirmedDeckName)?",\"DeckId\":" + Quote(selectedDeck):""); }
         internal bool SendGameCommand(string type, int card = 0, int target = 0) { cardId = card; targetId = target; return Submit(type); }
         void Connect()
         {
+            deckRequestId=null;serverCatalogVersion="";personalDeckSupported=false;
             transport?.Dispose();
             if (boundAddress != address || string.IsNullOrEmpty(token)) ClearMatch();
             boundAddress = address;
@@ -132,10 +180,10 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
-                    connecting = pending = resyncing = false; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
+                    deckRequestId=null;connecting = pending = resyncing = false; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
                     if (string.IsNullOrEmpty(token)) ClearMatch();
                 }
-                if (notice.StartsWith("Send failed")) { pending=false; commandRequestId=null; CommandFinished?.Invoke(false,notice); }
+                if (notice.StartsWith("Send failed")) { deckRequestId=null;pending=false; commandRequestId=null; CommandFinished?.Invoke(false,notice); }
             }
             while (transport.Messages.TryDequeue(out var json))
             {
@@ -147,18 +195,26 @@ namespace ProjectC.Client
         {
             var message = JsonUtility.FromJson<MessageView>(json);
             if (message.ProtocolVersion != 2) throw new InvalidOperationException("Server/client protocol mismatch; rebuild both");
-            if (message.Type == "DeckCatalog") { decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; if(decks.Length>0 && !Array.Exists(decks,d=>d.Id==selectedDeck)) selectedDeck=decks[0].Id;return; }
+            if (message.Type == "DeckCatalog") { serverCatalogVersion=message.CatalogVersion;personalDeckSupported=message.PersonalDeckSupported;decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; if(decks.Length>0 && !Array.Exists(decks,d=>d.Id==selectedDeck)) selectedDeck=decks[0].Id;return; }
             if (message.Type == "MatchCreated" || message.Type == "MatchJoined")
             {
                 matchId = message.MatchId; playerId = message.PlayerId; token = message.SessionToken;
                 if (!string.IsNullOrEmpty(message.DeckId)) selectedDeck = message.DeckId;
                 ResetEpoch(message.GameNumber); Note("Joined " + matchId + " as Player " + playerId); return;
             }
+            if(message.Type=="DeckAccepted" || message.Type=="DeckRejected")
+            {
+                if(message.MatchId!=matchId || message.GameNumber!=gameNumber || message.RequestId!=deckRequestId) return;
+                deckRequestId=null;pending=false;
+                if(message.Type=="DeckRejected") {Note(message.Reason+": "+message.Message);return;}
+                ConfirmedDeckName=message.DeckName;
+                LobbyAction("SetReady",",\"Ready\":true");return;
+            }
             if (message.Type == "ServerError" || message.Type == "CommandRejected")
             {
                 if (!string.IsNullOrEmpty(message.MatchId) && !string.IsNullOrEmpty(matchId) && message.MatchId != matchId) return;
                 if (message.GameNumber > 0 && message.GameNumber < gameNumber) return;
-                if(commandRequestId==null || message.RequestId==commandRequestId || message.Type=="ServerError") pending = resyncing = false; Note("Rejected: " + Reason(message.Reason));
+                if(commandRequestId==null || message.RequestId==commandRequestId || message.Type=="ServerError") pending = resyncing = false; if(message.RequestId==deckRequestId) deckRequestId=null; Note("Rejected: " + (string.IsNullOrEmpty(message.Message)?Reason(message.Reason):message.Reason+": "+message.Message));
                 if(commandRequestId!=null && (message.RequestId==commandRequestId || message.Type=="ServerError"))
                 { commandRequestId=null; acceptedSequence=-1; CommandFinished?.Invoke(false,Reason(message.Reason)); }
                 if (message.Reason == "InvalidSession" || message.Reason == "MatchNotFound") { ClearMatch(); return; }
@@ -172,7 +228,7 @@ namespace ProjectC.Client
             switch (message.Type)
             {
                 case "SessionUpdated": token = message.SessionToken; break;
-                case "LobbyState": lobby = JsonUtility.FromJson<LobbyMessage>(json).Payload; if(commandRequestId==null) pending = false; break;
+                case "LobbyState": ConfirmedDeckName=message.PersonalDeckSelected?message.DeckName:"";lobby = JsonUtility.FromJson<LobbyMessage>(json).Payload; if(commandRequestId==null) pending = false; break;
                 case "LobbyAccepted": if(commandRequestId==null) pending = false; break;
                 case "MatchStarted": Note("Game " + gameNumber + " started"); break;
                 case "GameEvents":

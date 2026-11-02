@@ -37,7 +37,7 @@ void MatchManager::Receive(std::shared_ptr<ClientSession> const& client, std::st
         if(type=="ListDecks")
         {
             Fields(input,{"Type","ProtocolVersion","RequestId"});
-            auto response=Envelope("DeckCatalog",request); response["Payload"]=catalog->PublicDecks(); client->Send(response); return;
+            auto response=Envelope("DeckCatalog",request); response["Payload"]=catalog->PublicDecks(); response["CatalogVersion"]=catalog->Version; response["PersonalDeckSupported"]=!catalog->Version.empty() && catalog->Config.MinDeckSize==30 && catalog->Config.MaxDeckSize==30 && catalog->Config.MaxCardCopies==3; client->Send(response); return;
         }
         if(type=="CreateMatch")
         {
@@ -64,7 +64,7 @@ void MatchManager::Receive(std::shared_ptr<ClientSession> const& client, std::st
     }
     catch(std::exception const&)
     {
-        auto error=Envelope("ServerError",request,client->MatchId); error["Reason"]="InvalidRequest"; client->Send(error);
+        auto error=Envelope("ServerError",request,client->MatchId); error["Reason"]="InvalidRequest"; error["Message"]="요청 JSON 또는 패킷 형식이 올바르지 않습니다."; client->Send(error);
     }
 }
 void MatchManager::Disconnect(std::shared_ptr<ClientSession> const& client)

@@ -241,12 +241,14 @@ void MatchSession::Lobby() const
     auto message=Message("LobbyState");
     Json players=Json::array();
     for(auto const& seat:seats) players.push_back({{"PlayerId",seat.Player},{"Occupied",!seat.Token.empty() || !seat.Client.expired()},
-        {"Connected",!seat.Client.expired()},{"Ready",seat.Ready},{"Rematch",seat.Rematch}});
+        {"Connected",!seat.Client.expired()},{"Ready",seat.Ready},{"DeckSubmitted",seat.PersonalDeck.has_value() || seat.Ready},{"Rematch",seat.Rematch}});
     // Opponents see readiness, never the selected deck ID/composition.
     message["Payload"]={{"Status",StatusName(status)},{"HostPlayerId",hostPlayer},{"Players",players}};
     for(auto const& seat:seats) if(auto client=seat.Client.lock())
     {
-        auto personal=message;personal["DeckId"]=seat.DeckId;client->Send(personal);
+        auto personal=message;personal["DeckId"]=seat.DeckId;personal["PersonalDeckSelected"]=seat.PersonalDeck.has_value();
+        if(seat.PersonalDeck) {personal["DeckName"]=seat.PersonalDeck->Name;personal["CardCount"]=seat.PersonalDeck->Cards.size();}
+        client->Send(personal);
     }
 }
 void MatchSession::Broadcast(std::vector<GameEvent> const& events)
@@ -285,8 +287,9 @@ void MatchSession::StartGame()
         throw std::runtime_error("Players not ready");
     if(gameNumber>=1000000) throw std::runtime_error("Game limit");
     std::uint64_t seed=std::stoull(Token().substr(0,16),nullptr,16);
-    auto count=catalog->FindDeck(seats[0].DeckId)->Cards.size()+catalog->FindDeck(seats[1].DeckId)->Cards.size();
-    auto fresh=catalog->Initialize({seats[0].Player,seats[1].Player},{seats[0].DeckId,seats[1].DeckId},seed,identities->Cards(count));
+    std::array<std::vector<CardDefinitionId>,2> decks;
+    for(int i=0;i<2;++i) decks[i]=seats[i].PersonalDeck?seats[i].PersonalDeck->Cards:catalog->FindDeck(seats[i].DeckId)->Cards;
+    auto fresh=catalog->InitializeCards({seats[0].Player,seats[1].Player},decks,seed,identities->Cards(decks[0].size()+decks[1].size()));
     std::array<std::string,2> tokens{Token(),Token()};
     auto initial=fresh;
     GameCommand command=StartTurnCommand{fresh.ActivePlayerId};
@@ -362,7 +365,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
             seats[index].Token=Token();
         }
         client->Player=seats[index].Player;client->MatchId=id;seats[index].Client=client;
-        if(!deck.empty() && status==MatchStatus::WaitingForPlayers) {seats[index].DeckId=deck;seats[index].Ready=false;}
+        if(!deck.empty() && !input.contains("SessionToken") && status==MatchStatus::WaitingForPlayers) {seats[index].DeckId=deck;seats[index].Ready=false;}
         auto joined=Message(type=="CreateMatch"?"MatchCreated":"MatchJoined",request);
         joined["PlayerId"]=client->Player;joined["SessionToken"]=seats[index].Token;joined["DeckId"]=seats[index].DeckId;client->Send(joined);
         lastActivity=Clock::now();Lobby();SendSnapshot(client,request);return;
@@ -375,6 +378,49 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
         Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","PlayerId"});Lobby();SendSnapshot(client,request);return;
     }
     if(type=="SubmitCommand") {Submit(client,input);return;}
+    if(type=="SubmitDeck")
+    {
+        auto& seat=seats[index];
+        auto fail=[&](std::string const& code,std::string const& text) {
+            auto response=Message("DeckRejected",request);response["Reason"]=code;response["Message"]=text;client->Send(response);
+        };
+        try
+        {
+            Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber","CatalogVersion","DeckName","DefinitionIds"});
+            if(Number(input,"GameNumber",1000000)!=static_cast<unsigned>(gameNumber)) {fail("StaleGame","매치 상태가 변경되었습니다. 다시 동기화하세요.");return;}
+            auto fingerprint=input.dump();
+            if(auto found=seat.DeckRequests.find(request);found!=seat.DeckRequests.end())
+            {
+                if(found->second.first!=fingerprint) fail("RequestIdConflict","같은 요청 ID로 다른 덱을 제출할 수 없습니다.");
+                else client->Send(found->second.second);
+                return;
+            }
+            if(status!=MatchStatus::WaitingForPlayers || seat.Ready) {fail("DeckLocked","준비를 취소한 뒤 덱을 제출하세요. 진행 중인 대전의 덱은 변경할 수 없습니다.");return;}
+            if(seat.DeckRequests.size()>=128) {fail("RequestLimit","덱 제출 횟수를 초과했습니다. 새 매치를 생성하세요.");return;}
+            if(catalog->Version.empty() || String(input,"CatalogVersion",64)!=catalog->Version) {fail("CatalogVersionMismatch","서버와 카드 카탈로그 버전이 다릅니다. 클라이언트와 서버 데이터를 확인하세요.");return;}
+            auto const& name=input.at("DeckName");
+            if(!name.is_string()) throw std::runtime_error("DeckName");
+            auto text=name.get<std::string>();
+            if(text.empty() || text.size()>240 || text.find_first_not_of(" ")==std::string::npos) throw std::runtime_error("DeckName");
+            for(unsigned char c:text) if(c<32 || c==127) throw std::runtime_error("DeckName");
+            auto const& values=input.at("DefinitionIds");
+            if(!values.is_array() || values.size()>128) throw std::runtime_error("DefinitionIds");
+            std::vector<CardDefinitionId> cards;
+            for(auto const& value:values) cards.push_back(static_cast<int>(Number(Json{{"Id",value}},"Id",1000000)));
+            auto error=catalog->PersonalDeckError(cards);
+            if(!error.empty())
+            {
+                std::string message=error=="DeckCardCount"?"덱은 정확히 30장이어야 합니다.":error=="DeckUnknownCard"?"서버에 존재하지 않는 카드 ID입니다.":error=="DeckIneligibleCard"?"현현 전용 카드는 메인 덱에 넣을 수 없습니다.":error=="DeckCopyLimit"?"동일 카드는 최대 3장입니다.":"현재 매치는 개인 덱의 30장/3장 규칙을 지원하지 않습니다.";
+                fail(error,message);return;
+            }
+            seat.PersonalDeck=DeckDefinition{"",text,std::move(cards)};
+            auto response=Message("DeckAccepted",request);response["DeckName"]=text;response["CardCount"]=30;
+            seat.DeckRequests.emplace(request,std::make_pair(fingerprint,response));
+            lastActivity=Clock::now();client->Send(response);Lobby();
+        }
+        catch(std::exception const&) {fail("InvalidDeckPayload","덱 제출 형식이 올바르지 않습니다. 이름과 카드 ID 목록을 확인하세요.");}
+        return;
+    }
     if(type=="SetReady") Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber","Ready","DeckId"});
     else if(type=="Rematch") Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber","DeckId"});
     else Fields(input,{"Type","ProtocolVersion","RequestId","MatchId","GameNumber"});
@@ -386,6 +432,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
         if(status!=MatchStatus::WaitingForPlayers && status!=MatchStatus::Ready) {reject("MatchNotWaiting");return;}
         auto ready=Boolean(input,"Ready");auto deck=input.contains("DeckId")?String(input,"DeckId",64):seat.DeckId;
         if(!catalog->FindDeck(deck)) {reject("InvalidDeck");return;}
+        if(input.contains("DeckId")) seat.PersonalDeck.reset();
         seat.DeckId=deck;seat.Ready=ready;lastActivity=Clock::now();accepted();
         status=MatchStatus::WaitingForPlayers;
         if(seats[0].Ready && seats[1].Ready && !seats[0].Client.expired() && !seats[1].Client.expired()) status=MatchStatus::Ready;
@@ -403,6 +450,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
         if(seats[0].Client.expired() || seats[1].Client.expired()) {reject("PlayersDisconnected");return;}
         auto deck=input.contains("DeckId")?String(input,"DeckId",64):seat.DeckId;
         if(!catalog->FindDeck(deck)) {reject("InvalidDeck");return;}
+        if(input.contains("DeckId")) seat.PersonalDeck.reset();
         seat.DeckId=deck;seat.Rematch=true;lastActivity=Clock::now();accepted();Lobby();
         if(seats[0].Rematch && seats[1].Rematch) {for(auto& entry:seats) entry.Ready=true;StartGame();}
         return;
@@ -416,7 +464,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
     {
         auto left=Message("MatchLeft",request);client->Send(left);
         if(status==MatchStatus::Playing || status==MatchStatus::Finished) {Close("PlayerLeft");return;}
-        client->Player=0;client->MatchId.clear();seat.Client.reset();seat.Token.clear();seat.Ready=false;seat.Rematch=false;seat.Requests.clear();
+        client->Player=0;client->MatchId.clear();seat.Client.reset();seat.Token.clear();seat.Ready=false;seat.Rematch=false;seat.Requests.clear();seat.PersonalDeck.reset();seat.DeckRequests.clear();
         auto const& other=seats[1-index];
         if(other.Token.empty()) Close("EmptyLobby");
         else {if(hostPlayer==seat.Player) hostPlayer=other.Player;lastActivity=Clock::now();status=MatchStatus::WaitingForPlayers;Lobby();}
