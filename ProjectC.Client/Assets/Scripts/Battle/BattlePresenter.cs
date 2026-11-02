@@ -20,9 +20,10 @@ namespace ProjectC.Client
         public int SelectedCardId { get; private set; }
         public int TargetCardId { get; private set; }
         public int RenderedTurn { get; private set; }
+        public MulliganPanelView Mulligan {get;private set;}
         public BattleInteractionController Interaction { get; private set; }
         public CardZoneView[] Zones => new[]{Hand,OwnField,EnemyField,EnemyHand,OwnGraveyard,EnemyGraveyard};
-        public bool CanAct => Client.Connected && !Client.Busy && Client.State != null && Client.State.Started && !Client.State.Finished && Client.State.ResolvingPlayerId==0 && Client.State.ActivePlayerId==Client.PlayerId && !LobbyOverlay.activeSelf && !GraveyardPanel.activeSelf;
+        public bool CanAct => Client.Connected && !Client.Busy && Client.State != null && Client.State.Started && !Client.State.Finished && !Client.State.MulliganActive && Client.State.ResolvingPlayerId==0 && Client.State.ActivePlayerId==Client.PlayerId && !LobbyOverlay.activeSelf && !GraveyardPanel.activeSelf;
         public int EnemyId => enemy?.PlayerId ?? 0;
         public bool EnemyFieldEmpty => enemy?.Field?.Length==0;
         public bool IsOwnField(int id) => id!=0 && mine?.Field!=null && System.Array.Exists(mine.Field,c=>c.Id==id);
@@ -58,6 +59,7 @@ namespace ProjectC.Client
             ResultRematch.onClick.AddListener(Client.RequestRematch); ResultLeave.onClick.AddListener(Client.LeaveMatch);
             Client.NoticeReceived += Log.Add; Client.EventReceived += ReceiveEvent; Client.ViewInvalidated+=Invalidate;
             Effects.ResetFeedback(); Detail.Show(null);
+            Mulligan=MulliganPanelView.Create(this);
         }
         void OnDestroy() { if (Client != null) { Client.NoticeReceived -= Log.Add; Client.EventReceived -= ReceiveEvent;Client.ViewInvalidated-=Invalidate; } }
         void Invalidate() { events.Clear();Effects.ResetFeedback();Detail.Show(null); }
@@ -87,7 +89,7 @@ namespace ProjectC.Client
             while (events.Count > 0) Present(events.Dequeue());
             if(hoverWidget!=null && Time.unscaledTime-hoverAt>=(Interaction.Settings?.HoverDelay??.2f)) { hovered=hoverWidget.Card;Detail.Show(hovered);Detail.Place(hoverWidget.WorldCenter); }
             Interaction.RefreshServerChoice();
-            Lobby.Render();
+            Lobby.Render();Mulligan.Render();
             bool started = rendered != null && rendered.Started;
             LobbyOverlay.SetActive(showLobby || !started);
             ResultPanel.SetActive(started && rendered.Finished && !showLobby);

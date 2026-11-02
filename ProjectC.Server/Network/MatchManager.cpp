@@ -3,8 +3,14 @@
 #include <stdexcept>
 namespace ProjectC::Network
 {
-MatchManager::MatchManager(ServerConfig config) : config(std::move(config)), catalog(std::make_shared<CardCatalog>(CardCatalog::Load(this->config.DataDirectory)))
+MatchManager::MatchManager(ServerConfig config) : config(std::move(config))
 {
+    auto loaded=CardCatalog::Load(this->config.DataDirectory);
+    if(this->config.EnableMulligan) loaded.Config.EnableMulligan=*this->config.EnableMulligan;
+    if(!GameCore::ValidateConfig(loaded.Config)) throw std::runtime_error("Mulligan requires an initial hand of five and valid turn draw capacity");
+    for(auto const& deck:loaded.Decks) if(loaded.Config.EnableMulligan && deck.Cards.size()<10) throw std::runtime_error("Mulligan requires at least ten cards");
+    catalog=std::make_shared<CardCatalog>(std::move(loaded));
+    if(this->config.MulliganTimeoutSeconds<1 || this->config.MulliganTimeoutSeconds>3600) throw std::runtime_error("Invalid mulligan timeout");
     if(this->config.MaxMatches==0 || this->config.MaxMatches>1024 || this->config.MaxReplays==0
         || this->config.WaitingTimeoutSeconds<1 || this->config.PlayingTimeoutSeconds<1
         || this->config.FinishedTimeoutSeconds<1 || this->config.ReplayRetentionSeconds<1)
@@ -47,7 +53,7 @@ void MatchManager::Receive(std::shared_ptr<ClientSession> const& client, std::st
             Cleanup();
             if(matches.size()>=config.MaxMatches) {reject("MatchLimit");return;}
             auto id="M"+std::to_string(++nextMatch)+"-"+Token().substr(0,8);
-            auto match=std::make_unique<MatchSession>(id,catalog,identities,[this](ReplayRecord record){Archive(std::move(record));});
+            auto match=std::make_unique<MatchSession>(id,catalog,identities,[this](ReplayRecord record){Archive(std::move(record));},config.MulliganTimeoutSeconds,config.MulliganAutoKeep);
             auto* session=match.get(); matches.emplace(id,std::move(match));
             std::cout << "Match " << id << " created activeMatches=" << matches.size() << std::endl;
             try {session->Handle(client,input);} catch(...) {matches.erase(id);throw;}
@@ -58,6 +64,7 @@ void MatchManager::Receive(std::shared_ptr<ClientSession> const& client, std::st
         if(found==matches.end()) {reject("MatchNotFound");return;}
         if(!client->MatchId.empty() && client->MatchId!=id) {reject("NotInMatch");return;}
         if(type!="JoinMatch" && client->MatchId!=id) {reject("NotJoined");return;}
+        found->second->Tick(Clock::now());
         found->second->Handle(client,input);
         // Closed sessions are collected after the handler, never during a live session method.
         Cleanup();
@@ -78,9 +85,10 @@ void MatchManager::Cleanup(Clock::time_point now)
     for(auto it=matches.begin();it!=matches.end();)
     {
         auto& match=*it->second;
-        int timeout=match.Status()==MatchStatus::Playing?config.PlayingTimeoutSeconds:
+        match.Tick(now);
+        int timeout=(match.Status()==MatchStatus::Playing || match.Status()==MatchStatus::Mulligan)?config.PlayingTimeoutSeconds:
             match.Status()==MatchStatus::Finished?config.FinishedTimeoutSeconds:config.WaitingTimeoutSeconds;
-        if(match.Status()!=MatchStatus::Closed && now-match.LastActivity()>=std::chrono::seconds(timeout)) match.Close("Expired");
+        if(match.Status()!=MatchStatus::Closed && match.Status()!=MatchStatus::Mulligan && now-match.LastActivity()>=std::chrono::seconds(timeout)) match.Close("Expired");
         if(match.Status()==MatchStatus::Closed)
         {
             auto id=it->first; it=matches.erase(it);

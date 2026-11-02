@@ -112,6 +112,7 @@ namespace ProjectC::GameCore
 
     CommandResult ProcessCommand(GameState& gameState, AttackCommand const& command)
     {
+        if (gameState.Preparation == PreparationPhase::Mulligan) return CommandResult{ .Code = CommandError::MulliganPending };
         GameState candidate = gameState;
         CommandResult result = ExecuteAttack(candidate, command);
         return Detail::CommitCommand(gameState, std::move(candidate), std::move(result));

@@ -30,7 +30,7 @@ add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Data $<TARGET_FILE_DIR:ProjectCNetworkServer>/Data)
 add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LegacyData $<TARGET_FILE_DIR:ProjectCNetworkServer>/TestData)
-add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/HyakkiComboTests.cpp)
+add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/HyakkiComboTests.cpp Tests/MulliganTests.cpp)
 target_link_libraries(ProjectCNetworkTests PRIVATE ProjectCNetwork)
 add_test(NAME NetworkTests COMMAND ProjectCNetworkTests)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -43,3 +43,6 @@ set_tests_properties(NetworkTests WebSocketIntegration ContentWebSocketIntegrati
 add_test(NAME PersonalDeckWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/PersonalDeckWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 set_tests_properties(PersonalDeckWebSocketIntegration PROPERTIES TIMEOUT 45)
+add_test(NAME MulliganWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/MulliganWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(MulliganWebSocketIntegration PROPERTIES TIMEOUT 45)

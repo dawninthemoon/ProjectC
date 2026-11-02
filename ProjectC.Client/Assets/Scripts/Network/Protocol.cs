@@ -18,10 +18,13 @@ namespace ProjectC.Client
     {
         public int PlayerId, Life, HandCount, DeckCount, YokaiPower, HiddenExileCount;
         public CardView[] Hand, Field, Graveyard, Exile;
+        public bool MulliganComplete;
+        public int[] MulliganSelectedIds;
     }
     [Serializable] public class StateView
     {
-        public bool Started, TurnStarted, Finished, SummoningSickness;
+        public bool Started, TurnStarted, Finished, SummoningSickness, MulliganActive;
+        public int MulliganSecondsRemaining;
         public string MatchStatus;
         public int ActivePlayerId, TurnNumber, Phase, WinnerPlayerId, FieldLimit, MaxYokaiPower, ResolvingPlayerId;
         public PlayerView[] Players;

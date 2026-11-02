@@ -115,6 +115,52 @@ namespace ProjectC.Tests
             Assert.AreEqual(before,JsonUtility.ToJson(a.State));
             yield return Command(a,b,"EndTurn");
         }
+        [UnityTest] public IEnumerator MulliganSelectConfirmReconnectAndStart() {yield return MulliganFlow(false);}
+        [UnityTest] public IEnumerator MulliganKeepClearsSelectionAndStarts() {yield return MulliganFlow(true);}
+        IEnumerator MulliganFlow(bool keep)
+        {
+            string path="";var args=Environment.GetCommandLineArgs();
+            for(int i=0;i+1<args.Length;++i) if(args[i]=="-projectcServerPath") path=args[i+1];
+            Assert.IsTrue(File.Exists(path),"Pass -projectcServerPath");
+            var listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();int port=((System.Net.IPEndPoint)listener.LocalEndpoint).Port;listener.Stop();
+            server=System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path,"--port "+port+" --mulligan on --data \""+Path.Combine(Path.GetDirectoryName(path),"Data","HyakkiYagyo")+"\"") {UseShellExecute=false,RedirectStandardOutput=true});
+            var startup=server.StandardOutput.ReadLineAsync();yield return Until(()=>startup.IsCompleted);StringAssert.Contains("listening",startup.Result);
+            var app=ClientApp.Instance;var a=app.Network;Assert.IsTrue(app.Decks.Save(app.Starter.Copy(),out _));
+            opponentObject=new GameObject("Mulligan opponent",typeof(MultiplayerDebugScreen));UnityEngine.Object.DontDestroyOnLoad(opponentObject);var b=opponentObject.GetComponent<MultiplayerDebugScreen>();
+            string address="ws://127.0.0.1:"+port;a.ConnectTo(address);b.ConnectTo(address);
+            yield return Until(()=>a.Connected && b.Connected && a.Decks.Length>0 && b.Decks.Length>0);
+            a.CreateMatch();yield return Until(()=>a.State!=null);b.JoinMatch(a.CurrentMatch);yield return Until(()=>b.State!=null);
+            a.SetReady(a.SelectedDeck);b.SetReady(b.SelectedDeck);
+            yield return Until(()=>a.State?.MulliganActive==true && b.State?.MulliganActive==true);
+            yield return Until(()=>SceneManager.GetActiveScene().name=="BattleScene");yield return null;
+            var battle=UnityEngine.Object.FindFirstObjectByType<BattlePresenter>();var ui=battle.Mulligan;
+            Assert.AreEqual("교체 확정",ui.Confirm.GetComponentInChildren<Text>().text);
+            Assert.AreEqual("그대로 시작",ui.Keep.GetComponentInChildren<Text>().text);
+            Assert.IsTrue(ui.gameObject.activeSelf);Assert.IsFalse(battle.CanAct);Assert.IsFalse(battle.EndTurn.interactable);
+            Assert.AreEqual(5,a.State.Players[0].Hand.Length);Assert.IsFalse(a.State.TurnStarted);
+            var widget=ui.GetComponentsInChildren<CardWidget>()[0];int selected=widget.Card.Id;
+            widget.Clicked(widget);Assert.Contains(selected,a.MulliganSelection.ToList());Assert.IsTrue(widget.IsSelected);
+            widget.Clicked(widget);Assert.IsFalse(widget.IsSelected);widget.Clicked(widget);
+            if(!keep) yield return Capture(battle.GetComponent<Canvas>(),"MulliganOverlay.png");
+            var before=a.State;a.DisconnectNetwork();yield return Until(()=>b.Lobby.Players.Any(p=>!p.Connected));yield return null;
+            Assert.IsTrue(ui.Reconnect.interactable);ui.Reconnect.onClick.Invoke();
+            yield return Until(()=>a.Connected && a.State!=null && a.State!=before);yield return null;
+            Assert.Contains(selected,a.MulliganSelection.ToList());
+            if(keep) ui.Keep.onClick.Invoke();else ui.Confirm.onClick.Invoke();
+            yield return Until(()=>a.State.Players[0].MulliganComplete);yield return null;
+            Assert.IsTrue(ui.gameObject.activeSelf);Assert.IsFalse(ui.Confirm.interactable);Assert.IsFalse(a.State.TurnStarted);
+            if(keep) Assert.AreEqual(0,a.State.Players[0].MulliganSelectedIds.Length);
+            else Assert.IsFalse(a.State.Players[0].Hand.Any(c=>c.Id==selected));
+            before=a.State;a.DisconnectNetwork();yield return Until(()=>b.Lobby.Players.Any(p=>!p.Connected));a.ConnectTo(address);
+            yield return Until(()=>a.Connected && a.State!=null && a.State!=before);Assert.IsTrue(a.State.Players[0].MulliganComplete);
+            var replaced=b.State.Players[1].Hand.Select(c=>c.Id).ToArray();Assert.IsTrue(b.SubmitMulligan(replaced));
+            yield return Until(()=>!a.State.MulliganActive && !b.State.MulliganActive);yield return null;
+            Assert.IsFalse(ui.gameObject.activeSelf);Assert.IsTrue(battle.CanAct);Assert.IsTrue(a.State.TurnStarted);
+            Assert.AreEqual(6,a.State.Players[0].Hand.Length);Assert.AreEqual(2,a.State.Players[0].YokaiPower);
+            Assert.IsFalse(b.State.Players[1].Hand.Any(c=>replaced.Contains(c.Id)));
+            Assert.IsEmpty(a.State.Players[1].Hand);Assert.IsEmpty(a.State.Players[1].MulliganSelectedIds);
+            yield return Command(a,b,"EndTurn");
+        }
         static IEnumerator Command(MultiplayerDebugScreen actor,MultiplayerDebugScreen other,string type,int card=0)
         {long sequence=actor.Sequence;Assert.IsTrue(actor.SendGameCommand(type,card));yield return Until(()=>actor.Sequence==sequence+1 && other.Sequence==sequence+1);yield return null;}
         static IEnumerator Capture(Canvas canvas,string name)

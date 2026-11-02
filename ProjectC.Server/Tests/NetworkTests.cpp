@@ -6,6 +6,7 @@
 #include <fstream>
 using namespace ProjectC::Network;
 void RunHyakkiComboTests();
+void RunMulliganCoreTests();
 void Check(bool value, std::source_location where=std::source_location::current()) {if(!value) throw std::runtime_error("Network assertion at line "+std::to_string(where.line()));}
 ServerConfig LegacyConfig()
 {
@@ -231,10 +232,59 @@ void PersonalDeckTests()
     auto incompatible=catalog;incompatible.Config.MaxCardCopies=4;Check(incompatible.PersonalDeckError(cards)=="DeckRulesMismatch");
     std::cout<<"Personal decks: validation, idempotency, privacy, lock, reconnect, distinct compositions and replay passed\n";
 }
+void MulliganNetworkTests()
+{
+    ServerConfig config;config.DataDirectory=(std::filesystem::path(DefaultDataDirectory())/"HyakkiYagyo").string();config.EnableMulligan=true;
+    MatchManager manager(config);Peer a(manager),b(manager);
+    a.Send("CreateMatch");auto id=a.Client->MatchId;b.Send("JoinMatch",{{"MatchId",id}});
+    for(auto* peer:{&a,&b}) peer->Send("SetReady",{{"MatchId",id},{"GameNumber",0},{"Ready",true}});
+    Check(manager.Find(id)->Status()==MatchStatus::Mulligan);
+    auto first=a.Last("StateSnapshot")["Payload"];Check(first["MulliganActive"]==true && first["TurnStarted"]==false && first["Players"][0]["Hand"].size()==5);
+    auto submit=[&](Peer& peer,Json cards,int seq=1) {peer.Send("SubmitCommand",{{"MatchId",id},{"GameNumber",1},{"SequenceNumber",seq},{"Command",{{"Type","SubmitMulligan"},{"CardIds",cards}}}});};
+    int card=first["Players"][0]["Hand"][0]["Id"];
+    int enemy=b.Last("StateSnapshot")["Payload"]["Players"][1]["Hand"][0]["Id"];
+    for(auto cards:{Json::array({card,card}),Json::array({enemy}),Json::array({999999})})
+    {submit(a,cards);Check(a.Last("CommandRejected")["Reason"]=="GameRule:InvalidMulliganSelection:Battle:0");}
+    a.Send("SubmitCommand",{{"MatchId",id},{"GameNumber",1},{"SequenceNumber",1},{"Command",{{"Type","EndTurn"}}}});
+    Check(a.Last("CommandRejected")["Reason"]=="MulliganPending");
+    submit(a,Json::array({card}));Check(a.Last("CommandAccepted")["SequenceNumber"]==2);
+    auto after=a.Last("StateSnapshot")["Payload"];Check(after["Players"][0]["MulliganSelectedIds"]==Json::array({card}));
+    for(auto const& c:after["Players"][0]["Hand"]) Check(c["Id"]!=card);
+    Check(b.Last("StateSnapshot")["Payload"]["Players"][0]["MulliganSelectedIds"].empty());
+    Check(b.Last("StateSnapshot")["Payload"]["Players"][0]["Hand"].empty());
+    submit(a,Json::array());Check(a.Last("CommandRejected")["Reason"]=="GameRule:MulliganAlreadyComplete:Battle:0");
+    auto token=a.Last("SessionUpdated")["SessionToken"];manager.Disconnect(a.Client);Peer restored(manager);
+    restored.Send("JoinMatch",{{"MatchId",id},{"SessionToken",token}});
+    auto recovered=restored.Last("StateSnapshot")["Payload"];
+    Check(recovered["Players"]==after["Players"] && recovered["TurnStarted"]==false);
+    // The second player deliberately submits from the same sequence as the first.
+    submit(b,Json::array(),1);Check(b.Last("CommandAccepted")["SequenceNumber"]==3);
+    Check(manager.Find(id)->Status()==MatchStatus::Playing);
+    auto final=restored.Last("StateSnapshot")["Payload"];
+    Check(final["TurnStarted"]==true && final["Players"][0]["HandCount"]==6 && final["Players"][0]["YokaiPower"]==2);
+    restored.Send("CloseMatch",{{"MatchId",id},{"GameNumber",1}});Check(manager.Replays().front().Verify());
+    for(bool keep:{true,false})
+    {
+        config.MulliganTimeoutSeconds=1;config.MulliganAutoKeep=keep;
+        MatchManager timeout(config);Peer x(timeout),y(timeout);x.Send("CreateMatch");auto room=x.Client->MatchId;y.Send("JoinMatch",{{"MatchId",room}});
+        for(auto* peer:{&x,&y}) peer->Send("SetReady",{{"MatchId",room},{"GameNumber",0},{"Ready",true}});
+        timeout.Disconnect(y.Client);timeout.Cleanup(Clock::now()+std::chrono::seconds(2));
+        if(keep)
+        {
+            Check(timeout.Find(room)->Status()==MatchStatus::Playing);
+            x.Send("CloseMatch",{{"MatchId",room},{"GameNumber",1}});
+        }
+        else Check(timeout.Find(room)==nullptr && x.Last("MatchClosed")["Reason"]=="MulliganTimeout");
+        Check(timeout.Replays().front().Verify());
+    }
+    std::cout<<"Mulligan network: concurrent sequences, owner privacy, reconnect, automatic keep/close and replay passed\n";
+}
 int main()
 {
 try
 {
+    RunMulliganCoreTests();
+    MulliganNetworkTests();
     PersonalDeckTests();
     InteractionTests();
     RunHyakkiComboTests();

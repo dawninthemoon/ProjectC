@@ -24,6 +24,7 @@ namespace ProjectC::GameCore
         int YokaiPowerPerTurn = 0;
         int MaxYokaiPower = 0;
         bool SummoningSickness = true;
+        bool EnableMulligan = false;
 
         bool operator==(GameConfig const&) const = default;
     };

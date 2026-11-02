@@ -26,6 +26,8 @@ namespace ProjectC::GameCore
         std::vector<CardInstance> Exile;
         std::vector<CardInstance> HiddenExile;
         int YokaiPower = 0;
+        bool MulliganComplete = true;
+        std::vector<CardInstanceId> MulliganSelected; // Owner-only recovery metadata.
         std::vector<EffectUsage> EffectUses;
         std::vector<std::string> GraveyardArchetypesThisTurn;
 

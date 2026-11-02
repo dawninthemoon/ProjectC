@@ -14,6 +14,7 @@ namespace ProjectC.Client
         int playerId, gameNumber, cardId, targetId;
         long sequence, lastEvents;
         bool connecting, pending, resyncing;
+        public readonly HashSet<int> MulliganSelection = new HashSet<int>();
         public ActionChoiceView PendingChoice { get; private set; }
         StateView state;
         LobbyView lobby;
@@ -72,7 +73,7 @@ namespace ProjectC.Client
         void ResetEpoch(int game)
         {
             PendingChoice=null; commandRequestId=null; acceptedSequence=-1; ViewInvalidated?.Invoke();
-            gameNumber = game; sequence = lastEvents = 0; state = null;
+            MulliganSelection.Clear();gameNumber = game; sequence = lastEvents = 0; state = null;
             cardId = targetId = 0; selectedCard = null; pending = resyncing = false;
         }
         void ClearMatch()
@@ -149,6 +150,15 @@ namespace ProjectC.Client
             }
             return SubmitJson("{\"Type\":\"ActivateEffect\",\"CardId\":" + source + ",\"EffectId\":" + effect + ",\"Targets\":[" + string.Join(",",groups) + "]}");
         }
+        internal void ReconnectNetwork() { if(!Connected && !Busy) Connect(); }
+        internal bool SubmitMulligan(IEnumerable<int> cards)
+        {
+            if(state?.MulliganActive!=true) return false;
+            var own=Array.Find(state.Players,p=>p.PlayerId==playerId);
+            if(own==null || own.MulliganComplete) return false;
+            var values=new Newtonsoft.Json.Linq.JArray(cards);
+            return SubmitJson(new Newtonsoft.Json.Linq.JObject {["Type"]="SubmitMulligan",["CardIds"]=values}.ToString(Newtonsoft.Json.Formatting.None));
+        }
         internal bool SendPlayerAction(int source,int effect) => SubmitJson("{\"Type\":\"PlayerAction\",\"CardId\":"+source+",\"EffectId\":"+effect+"}");
         internal bool SendCancelChoice() => PendingChoice!=null && PendingChoice.CanCancel && SubmitJson("{\"Type\":\"CancelAction\",\"ChoiceId\":"+Quote(PendingChoice.ChoiceId)+"}");
         internal bool SendChoice(List<string> choices)
@@ -198,9 +208,10 @@ namespace ProjectC.Client
             if (message.Type == "DeckCatalog") { serverCatalogVersion=message.CatalogVersion;personalDeckSupported=message.PersonalDeckSupported;decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload; if(decks.Length>0 && !Array.Exists(decks,d=>d.Id==selectedDeck)) selectedDeck=decks[0].Id;return; }
             if (message.Type == "MatchCreated" || message.Type == "MatchJoined")
             {
+                var savedMulligan=matchId==message.MatchId && gameNumber==message.GameNumber?new List<int>(MulliganSelection):new List<int>();
                 matchId = message.MatchId; playerId = message.PlayerId; token = message.SessionToken;
                 if (!string.IsNullOrEmpty(message.DeckId)) selectedDeck = message.DeckId;
-                ResetEpoch(message.GameNumber); Note("Joined " + matchId + " as Player " + playerId); return;
+                ResetEpoch(message.GameNumber);foreach(var id in savedMulligan) MulliganSelection.Add(id); Note("Joined " + matchId + " as Player " + playerId); return;
             }
             if(message.Type=="DeckAccepted" || message.Type=="DeckRejected")
             {
@@ -283,6 +294,10 @@ namespace ProjectC.Client
         static string Reason(string reason)
         {
             if (reason == null) return "Unknown reason";
+            if(reason.Contains("MulliganPending")) return "양쪽 플레이어가 멀리건을 완료해야 합니다.";
+            if(reason.Contains("MulliganAlreadyComplete")) return "이미 멀리건을 완료했습니다.";
+            if(reason.Contains("MulliganClosed")) return "멀리건 시간이 종료되었거나 이미 전투가 시작되었습니다.";
+            if(reason.Contains("InvalidMulliganSelection")) return "본인 손패에서 중복 없이 0~5장을 선택하세요.";
             if (reason.Contains("WrongPhase")) return "This action is unavailable in the current phase.";
             if (reason.Contains("NotActivePlayer")) return "Wait for your turn.";
             if (reason.Contains("NormalSummonLimit")) return "One normal summon per turn.";
@@ -316,6 +331,7 @@ namespace ProjectC.Client
                 case 15: return "Card manifested";
                 case 16: return "Card healed";
                 case 18: return "Player "+e.TargetPlayerId+" Yokai power: "+e.YokaiPowerAfter;
+                case 20: return "Player "+e.TargetPlayerId+" 멀리건 완료";
                 case 19: return "Normal spell activated";
                 case 17: return "Card #" + e.TargetCardId + " stats changed (ATK " + e.AttackAfter + ")";
                 default: return "Game event " + e.Type;

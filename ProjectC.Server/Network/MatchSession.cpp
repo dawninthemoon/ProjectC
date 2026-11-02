@@ -30,7 +30,7 @@ std::string RuleReason(CommandError error)
         "InsufficientCards", "HandFull", "FieldFull", "DrawDisabled", "InvalidDefinition",
         "InvalidLifeChange", "TurnOverflow", "NormalSummonLimit", "DefenderHasMonsters",
         "EffectNotFound", "InvalidTarget", "InvalidTargetCount", "UnsupportedEffect",
-        "InvalidEffect", "InvalidTransformation", "TriggerLimitReached", "InsufficientResource", "InvalidCost", "UsageLimitReached", "ConditionNotMet", "ChoiceRequired", "DirectAttackRestricted"};
+        "InvalidEffect", "InvalidTransformation", "TriggerLimitReached", "InsufficientResource", "InvalidCost", "UsageLimitReached", "ConditionNotMet", "ChoiceRequired", "DirectAttackRestricted", "MulliganPending", "MulliganClosed", "MulliganAlreadyComplete", "InvalidMulliganSelection"};
     return names[static_cast<int>(error)];
 }
 char const* StatusName(MatchStatus status)
@@ -38,6 +38,7 @@ char const* StatusName(MatchStatus status)
     switch(status) {
     case MatchStatus::WaitingForPlayers:return "WaitingForPlayers";
     case MatchStatus::Ready:return "Ready";
+    case MatchStatus::Mulligan:return "Mulligan";
     case MatchStatus::Playing:return "Playing";
     case MatchStatus::Finished:return "Finished";
     default:return "Closed";
@@ -179,8 +180,8 @@ bool ReplayRecord::Verify() const
     return replay.FinalState==FinalState && replay.Results==Results;
 }
 MatchSession::MatchSession(std::string id, std::shared_ptr<CardCatalog const> catalog,
-    std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive)
-    : id(std::move(id)),catalog(std::move(catalog)),identities(std::move(identities)),archive(std::move(archive))
+    std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive, int mulliganTimeoutSeconds, bool mulliganAutoKeep)
+    : id(std::move(id)),catalog(std::move(catalog)),identities(std::move(identities)),archive(std::move(archive)),mulliganTimeoutSeconds(mulliganTimeoutSeconds),mulliganAutoKeep(mulliganAutoKeep)
 {
     auto players=this->identities->Players();
     for(int i=0;i<2;++i) {seats[i].Player=players[i];seats[i].DeckId=this->catalog->Decks[i%this->catalog->Decks.size()].Id;}
@@ -199,10 +200,12 @@ Json MatchSession::Snapshot(int viewer) const
 {
     Json players=Json::array();
     if(gameNumber>0) for(auto const& player:state.Players)
-        players.push_back({{"PlayerId",player.Id},{"Life",player.Life},{"HandCount",player.Hand.size()},
+        players.push_back({{"PlayerId",player.Id},{"MulliganComplete",player.MulliganComplete},{"MulliganSelectedIds",player.Id==viewer?Json(player.MulliganSelected):Json::array()},{"Life",player.Life},{"HandCount",player.Hand.size()},
             {"DeckCount",player.Deck.size()},{"YokaiPower",player.YokaiPower},{"HiddenExileCount",player.HiddenExile.size()},{"Exile",Cards(state,player.Exile,viewer,Zone::Exile)},{"Hand",player.Id==viewer?Cards(state,player.Hand,viewer,Zone::Hand):Json::array()},
             {"Field",Cards(state,player.Field,viewer,Zone::Field)},{"Graveyard",Cards(state,player.Graveyard,viewer,Zone::Graveyard)}});
-    return {{"ResolvingPlayerId",pendingAction?pendingAction->Choice.Player:0},{"MaxYokaiPower",state.Config.MaxYokaiPower},{"SummoningSickness",state.Config.SummoningSickness},{"FieldLimit",state.Config.FieldLimit},{"Started",gameNumber>0},{"MatchStatus",StatusName(status)},{"Players",players},
+    return {{"MulliganActive",state.Preparation==PreparationPhase::Mulligan},
+        {"MulliganSecondsRemaining",status==MatchStatus::Mulligan?std::max(0,static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(mulliganDeadline-Clock::now()).count())+1):0},
+        {"ResolvingPlayerId",pendingAction?pendingAction->Choice.Player:0},{"MaxYokaiPower",state.Config.MaxYokaiPower},{"SummoningSickness",state.Config.SummoningSickness},{"FieldLimit",state.Config.FieldLimit},{"Started",gameNumber>0},{"MatchStatus",StatusName(status)},{"Players",players},
         {"ActivePlayerId",state.ActivePlayerId},{"TurnNumber",state.TurnNumber},{"TurnStarted",state.TurnStarted},
         {"Phase",static_cast<int>(state.Phase)},{"Finished",status==MatchStatus::Finished},{"WinnerPlayerId",state.WinnerPlayerId}};
 }
@@ -293,15 +296,18 @@ void MatchSession::StartGame()
     std::array<std::string,2> tokens{Token(),Token()};
     auto initial=fresh;
     GameCommand command=StartTurnCommand{fresh.ActivePlayerId};
-    auto result=ProcessCommand(fresh,command);
+    CommandResult result;
+    if(!catalog->Config.EnableMulligan) result=ProcessCommand(fresh,command);
     if(result.Code!=CommandError::Success) throw std::runtime_error("Start game failed");
-    pendingAction.reset();state=std::move(fresh);sequence=0;++gameNumber;status=MatchStatus::Playing;lastActivity=Clock::now();
+    pendingAction.reset();state=std::move(fresh);sequence=0;++gameNumber;status=catalog->Config.EnableMulligan?MatchStatus::Mulligan:MatchStatus::Playing;lastActivity=Clock::now();
+    mulliganDeadline=lastActivity+std::chrono::seconds(mulliganTimeoutSeconds);
     journal={};journal.MatchId=id;journal.GameNumber=gameNumber;journal.Seed=seed;journal.InitialState=std::move(initial);archived=false;
-    journal.Commands.push_back(command);journal.Results.push_back(result);++sequence;
+    if(!catalog->Config.EnableMulligan) {journal.Commands.push_back(command);journal.Results.push_back(result);}
+    ++sequence;
     if(state.Status==GameStatus::Finished) {status=MatchStatus::Finished;Archive();}
     for(int i=0;i<2;++i)
     {
-        seats[i].Token=status==MatchStatus::Finished?"":tokens[i];seats[i].Ready=status==MatchStatus::Playing;seats[i].Requests.clear();seats[i].Rematch=false;
+        seats[i].Token=status==MatchStatus::Finished?"":tokens[i];seats[i].Ready=status==MatchStatus::Playing || status==MatchStatus::Mulligan;seats[i].Requests.clear();seats[i].Rematch=false;
         if(auto client=seats[i].Client.lock())
         {
             auto updated=Message("SessionUpdated");updated["SessionToken"]=seats[i].Token;updated["PlayerId"]=client->Player;client->Send(updated);
@@ -310,6 +316,23 @@ void MatchSession::StartGame()
     }
     std::cout << "Match " << id << " started game=" << gameNumber << std::endl;
     Lobby();Broadcast(result.Events);
+}
+void MatchSession::Tick(Clock::time_point now)
+{
+    if(status!=MatchStatus::Mulligan || now<mulliganDeadline) return;
+    if(!mulliganAutoKeep) {Close("MulliganTimeout");return;}
+    for(auto const& seat:seats)
+    {
+        if(FindPlayer(state,seat.Player)->MulliganComplete) continue;
+        GameCommand command=SubmitMulliganCommand{seat.Player,{}};
+        auto result=ProcessCommand(state,command);
+        if(result.Code!=CommandError::Success) {Close("MulliganFailed");return;}
+        journal.Commands.push_back(command);journal.Results.push_back(result);++sequence;lastActivity=now;
+        if(state.Preparation==PreparationPhase::Playing) status=MatchStatus::Playing;
+        if(state.Status==GameStatus::Finished) {status=MatchStatus::Finished;Archive();for(auto& entry:seats) {entry.Token.clear();entry.Ready=false;}}
+        Broadcast(result.Events);
+    }
+    Lobby();
 }
 void MatchSession::Disconnect(std::shared_ptr<ClientSession> const& client)
 {
@@ -463,7 +486,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client,Json cons
     if(type=="LeaveMatch")
     {
         auto left=Message("MatchLeft",request);client->Send(left);
-        if(status==MatchStatus::Playing || status==MatchStatus::Finished) {Close("PlayerLeft");return;}
+        if(status==MatchStatus::Playing || status==MatchStatus::Mulligan || status==MatchStatus::Finished) {Close("PlayerLeft");return;}
         client->Player=0;client->MatchId.clear();seat.Client.reset();seat.Token.clear();seat.Ready=false;seat.Rematch=false;seat.Requests.clear();seat.PersonalDeck.reset();seat.DeckRequests.clear();
         auto const& other=seats[1-index];
         if(other.Token.empty()) Close("EmptyLobby");
@@ -486,9 +509,14 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
     }
     if(requests.size()>=4096) {reject("RequestLimit");return;}
     auto cacheReject=[&](std::string const& reason){auto response=Message("CommandRejected",request);response["Reason"]=reason;requests.emplace(request,std::make_pair(fingerprint,response));client->Send(response);};
-    if(status!=MatchStatus::Playing) {cacheReject("MatchNotPlaying");return;}
-    if(Number(input,"SequenceNumber",9007199254740991ULL)!=sequence) {cacheReject("StaleSequence");return;}
+    if(status!=MatchStatus::Playing && status!=MatchStatus::Mulligan) {cacheReject("MatchNotPlaying");return;}
     auto const& command=input.at("Command");auto name=String(command,"Type");
+    auto submittedSequence=Number(input,"SequenceNumber",9007199254740991ULL);
+    // Concurrent private decisions commute. Accept an earlier snapshot from this
+    // preparation epoch only; all ordinary actions still require the exact sequence.
+    bool concurrentMulligan=status==MatchStatus::Mulligan && name=="SubmitMulligan" && submittedSequence>=1 && submittedSequence<=sequence;
+    if(submittedSequence!=sequence && !concurrentMulligan) {cacheReject("StaleSequence");return;}
+    if(status==MatchStatus::Mulligan && name!="SubmitMulligan") {cacheReject("MulliganPending");return;}
     int player=client->Player;int opponent=seats[1-SeatIndex(player)].Player;
     GameCommand parsed;
     if(pendingAction)
@@ -520,6 +548,15 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
             targets.push_back(found->second);
         }
         auto action=pendingAction->Command;action.Choices.push_back(std::move(targets));parsed=std::move(action);
+    }
+    else if(name=="SubmitMulligan")
+    {
+        Fields(command,{"Type","CardIds"});
+        auto const& cards=command.at("CardIds");
+        if(!cards.is_array() || cards.size()>5) {cacheReject("InvalidMulliganSelection");return;}
+        SubmitMulliganCommand mulligan{player,{}};
+        for(auto const& card:cards) mulligan.Cards.push_back(static_cast<int>(Number(Json{{"Id",card}},"Id",2147483647)));
+        parsed=std::move(mulligan);
     }
     else if(name=="PlayerAction")
     {Fields(command,{"Type","CardId","EffectId"});parsed=PlayerActionCommand{player,static_cast<int>(Number(command,"CardId",2147483647)),static_cast<int>(Number(command,"EffectId",2147483647)),{}};}
@@ -591,6 +628,8 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
     }
     auto pendingRequests=pendingAction?pendingAction->Requests:std::vector<std::pair<int,std::string>>{};
     pendingAction.reset();state=std::move(candidate);
+    bool completedMulligan=status==MatchStatus::Mulligan && state.Preparation==PreparationPhase::Playing;
+    if(completedMulligan) status=MatchStatus::Playing;
     journal.Commands.insert(journal.Commands.end(),commands.begin(),commands.end());journal.Results.insert(journal.Results.end(),results.begin(),results.end());
     ++sequence;lastActivity=Clock::now();
     if(state.Status==GameStatus::Finished)
@@ -606,6 +645,6 @@ void MatchSession::Submit(std::shared_ptr<ClientSession> const& client,Json cons
         if(auto cached=seat.Requests.find(key);cached!=seat.Requests.end()) cached->second.second=accepted;
         if(auto peer=seat.Client.lock()) peer->Send(accepted);
     }
-    Broadcast(events);if(status==MatchStatus::Finished) Lobby();
+    Broadcast(events);if(completedMulligan || status==MatchStatus::Finished) Lobby();
 }
 }

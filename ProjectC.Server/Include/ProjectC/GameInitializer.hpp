@@ -23,5 +23,5 @@ namespace ProjectC::GameCore
     // On failure, output is unchanged. On success, StartTurnCommand begins the first turn.
     [[nodiscard]] InitializationResult InitializeGame(GameState& output, GameConfig const& config,
         std::vector<CardDefinition> const& definitions,
-        std::array<PlayerSetup, 2> const& players, PlayerId firstPlayerId);
+        std::array<PlayerSetup, 2> const& players, PlayerId firstPlayerId, std::uint64_t randomSeed = 0);
 }

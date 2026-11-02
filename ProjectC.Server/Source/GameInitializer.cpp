@@ -12,6 +12,7 @@ namespace ProjectC::GameCore
     {
         return config.InitialLife > 0 && config.InitialHandSize <= config.HandLimit
             && config.TriggerResolutionLimit > 0
+            && (!config.EnableMulligan || (config.InitialHandSize==5 && config.DrawPerTurn<=config.HandLimit-config.InitialHandSize))
             && config.InitialYokaiPower>=0 && config.YokaiPowerPerTurn>=0 && config.MaxYokaiPower>=config.InitialYokaiPower;
     }
 
@@ -23,6 +24,11 @@ namespace ProjectC::GameCore
         if (gameState.Phase != TurnPhase::Main && gameState.Phase != TurnPhase::Battle
             && gameState.Phase != TurnPhase::End) return false;
         if (!gameState.TurnStarted && gameState.Phase != TurnPhase::Main) return false;
+        if(gameState.Preparation!=PreparationPhase::Playing && gameState.Preparation!=PreparationPhase::Mulligan) return false;
+        if(gameState.Preparation==PreparationPhase::Mulligan && (!gameState.Config.EnableMulligan || gameState.TurnStarted
+            || gameState.TurnNumber!=1 || gameState.Phase!=TurnPhase::Main || gameState.Status!=GameStatus::Running
+            || (gameState.Players[0].MulliganComplete && gameState.Players[1].MulliganComplete))) return false;
+        if(gameState.Preparation==PreparationPhase::Playing && (!gameState.Players[0].MulliganComplete || !gameState.Players[1].MulliganComplete)) return false;
         int livingPlayers = 0;
         PlayerId survivor = 0;
         for (PlayerState const& player : gameState.Players)
@@ -65,7 +71,7 @@ namespace ProjectC::GameCore
 
     InitializationResult InitializeGame(GameState& output, GameConfig const& config,
         std::vector<CardDefinition> const& definitions,
-        std::array<PlayerSetup, 2> const& players, PlayerId firstPlayerId)
+        std::array<PlayerSetup, 2> const& players, PlayerId firstPlayerId, std::uint64_t randomSeed)
     {
         if (!ValidateConfig(config)) return InitializationResult::InvalidConfig;
         if (players[0].Id <= 0 || players[1].Id <= 0 || players[0].Id == players[1].Id
@@ -73,10 +79,13 @@ namespace ProjectC::GameCore
             return InitializationResult::InvalidPlayers;
         GameState candidate;
         candidate.Config = config;
+        candidate.Preparation=config.EnableMulligan?PreparationPhase::Mulligan:PreparationPhase::Playing;
+        if(config.EnableMulligan) candidate.MulliganRandom={randomSeed ^ 0x243f6a8885a308d3ULL, randomSeed ^ 0x13198a2e03707344ULL};
         candidate.Definitions = definitions;
         candidate.ActivePlayerId = firstPlayerId;
         for (std::size_t index = 0; index < players.size(); ++index)
         {
+            candidate.Players[index].MulliganComplete=!config.EnableMulligan;
             candidate.Players[index].Id = players[index].Id;
             candidate.Players[index].Life = config.InitialLife;
             candidate.Players[index].YokaiPower = config.InitialYokaiPower;
@@ -86,7 +95,7 @@ namespace ProjectC::GameCore
         for (std::size_t index = 0; index < players.size(); ++index)
         {
             PlayerState& player = candidate.Players[index];
-            if (players[index].Deck.size() < config.InitialHandSize)
+            if (players[index].Deck.size() < config.InitialHandSize || (config.EnableMulligan && players[index].Deck.size()<config.InitialHandSize*2))
                 return InitializationResult::InsufficientCards;
             for (CardDefinitionId const id : players[index].Deck)
             {

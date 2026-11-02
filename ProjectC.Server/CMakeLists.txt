@@ -16,6 +16,7 @@ add_library(ProjectCGameCore STATIC
     Source/GameInitializer.cpp
     Source/GameFlow.cpp
     Source/GameReplay.cpp
+    Source/Mulligan.cpp
     Source/GameOperations.cpp
     Source/TargetSelection.cpp
     Source/EffectActivation.cpp

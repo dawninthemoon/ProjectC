@@ -129,7 +129,7 @@ CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
     CardCatalog catalog;
     if(cards.contains("CatalogVersion")) catalog.Version=String(cards,"CatalogVersion",64);
     auto const& config=decks.at("Config");
-    Fields(config,{"InitialLife","InitialHandSize","DrawPerTurn","FieldLimit","HandLimit","MinDeckSize","MaxDeckSize","MaxCardCopies","InitialYokaiPower","YokaiPowerPerTurn","MaxYokaiPower","SummoningSickness"});
+    Fields(config,{"InitialLife","InitialHandSize","DrawPerTurn","FieldLimit","HandLimit","MinDeckSize","MaxDeckSize","MaxCardCopies","InitialYokaiPower","YokaiPowerPerTurn","MaxYokaiPower","SummoningSickness","EnableMulligan"});
     catalog.Config.InitialLife=static_cast<int>(Number(config,"InitialLife",100000));
     catalog.Config.InitialHandSize=Number(config,"InitialHandSize",128);
     catalog.Config.DrawPerTurn=Number(config,"DrawPerTurn",128);
@@ -142,6 +142,7 @@ CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
     if(config.contains("YokaiPowerPerTurn")) catalog.Config.YokaiPowerPerTurn=static_cast<int>(Number(config,"YokaiPowerPerTurn",100000));
     if(config.contains("MaxYokaiPower")) catalog.Config.MaxYokaiPower=static_cast<int>(Number(config,"MaxYokaiPower",100000));
     if(config.contains("SummoningSickness")) catalog.Config.SummoningSickness=Boolean(config,"SummoningSickness");
+    if(config.contains("EnableMulligan")) catalog.Config.EnableMulligan=Boolean(config,"EnableMulligan");
     catalog.Config.AllowManualDraw=false;
     if(!ValidateConfig(catalog.Config) || catalog.Config.MinDeckSize==0 || catalog.Config.MinDeckSize>catalog.Config.MaxDeckSize
         || catalog.Config.MaxCardCopies==0 || catalog.Config.FieldLimit==0) throw std::runtime_error("Invalid deck configuration");
@@ -178,7 +179,7 @@ CardCatalog CardCatalog::FromJson(Json const& cards, Json const& decks)
     for(auto const& deck:catalog.Decks)
     {
         auto sample=catalog.Initialize({1,2},{deck.Id,deck.Id},1,1);
-        if(!ValidateGameState(sample) || ProcessCommand(sample,StartTurnCommand{1}).Code!=CommandError::Success)
+        if(!ValidateGameState(sample) || (!sample.Config.EnableMulligan && ProcessCommand(sample,StartTurnCommand{1}).Code!=CommandError::Success))
             throw std::runtime_error("Invalid card definitions or initial draw configuration");
     }
     return catalog;
@@ -248,7 +249,7 @@ GameState CardCatalog::InitializeCards(std::array<int,2> players, std::array<std
         }
     }
     GameState state;
-    if(InitializeGame(state,Config,Definitions,setup,players[0])!=InitializationResult::Success) throw std::runtime_error("Invalid card data");
+    if(InitializeGame(state,Config,Definitions,setup,players[0],seed)!=InitializationResult::Success) throw std::runtime_error("Invalid card data");
     for(auto& player:state.Players) for(auto zone:{Zone::Deck,Zone::Hand,Zone::Field,Zone::Graveyard})
         for(auto& card:*GetZone(player,zone)) card.Id+=firstCardId-1;
     return state;

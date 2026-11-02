@@ -16,7 +16,7 @@ struct ClientSession
     int Player = 0;
     std::string MatchId; // Bound by server; never assigned from SubmitCommand.
 };
-enum class MatchStatus { WaitingForPlayers, Ready, Playing, Finished, Closed };
+enum class MatchStatus { WaitingForPlayers, Ready, Mulligan, Playing, Finished, Closed };
 struct IdentityAllocator
 {
     int NextPlayer = 1;
@@ -40,10 +40,11 @@ class MatchSession
 {
 public:
     MatchSession(std::string id, std::shared_ptr<CardCatalog const> catalog,
-        std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive);
+        std::shared_ptr<IdentityAllocator> identities, std::function<void(ReplayRecord)> archive, int mulliganTimeoutSeconds = 60, bool mulliganAutoKeep = true);
     void Handle(std::shared_ptr<ClientSession> const& client, Json const& input);
     void Disconnect(std::shared_ptr<ClientSession> const& client);
     void Close(std::string const& reason);
+    void Tick(Clock::time_point now);
     Json Snapshot(int viewer) const;
     Json Message(std::string const& type, std::string const& request = "") const;
     MatchStatus Status() const { return status; }
@@ -75,6 +76,9 @@ private:
     int hostPlayer = 0;
     ReplayRecord journal;
     bool archived = true;
+    int mulliganTimeoutSeconds;
+    bool mulliganAutoKeep;
+    Clock::time_point mulliganDeadline{};
     struct PendingAction
     {
         GameCore::PlayerActionCommand Command;

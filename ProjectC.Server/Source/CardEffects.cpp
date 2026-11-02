@@ -45,6 +45,7 @@ namespace ProjectC::GameCore
 
     CommandResult ProcessCommand(GameState& state, ActivateEffectCommand const& command)
     {
+        if (state.Preparation == PreparationPhase::Mulligan) return CommandResult{ .Code = CommandError::MulliganPending };
         if (state.Status == GameStatus::Finished) return CommandResult{ .Code = CommandError::GameFinished };
         if (!ValidateGameState(state)) return CommandResult{ .Code = CommandError::InvalidState };
         PlayerState const* owner = FindPlayer(state, command.Player);
@@ -87,6 +88,7 @@ namespace ProjectC::GameCore
 
     CommandResult ProcessCommand(GameState& state, TransformCommand const& command)
     {
+        if (state.Preparation == PreparationPhase::Mulligan) return CommandResult{ .Code = CommandError::MulliganPending };
         if (state.Status == GameStatus::Finished) return CommandResult{ .Code = CommandError::GameFinished };
         if (!ValidateGameState(state)) return CommandResult{ .Code = CommandError::InvalidState };
         GameState candidate = state;

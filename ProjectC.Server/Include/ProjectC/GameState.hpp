@@ -59,6 +59,8 @@ namespace ProjectC::GameCore
         bool operator==(EffectSelectionContext const&) const = default;
     };
 
+    enum class PreparationPhase { Playing, Mulligan };
+
     struct GameState
     {
         std::array<PlayerState, 2> Players;
@@ -72,6 +74,8 @@ namespace ProjectC::GameCore
         bool TurnStarted = false;
         GameEndReason EndReason = GameEndReason::None;
         EffectSelectionContext SelectionContext;
+        PreparationPhase Preparation = PreparationPhase::Playing;
+        std::array<std::uint64_t,2> MulliganRandom{}; // Server-private deterministic streams, never a network DTO.
 
         bool operator==(GameState const&) const = default;
     };

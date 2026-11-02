@@ -12,6 +12,9 @@ struct ServerConfig
     int PlayingTimeoutSeconds = 1800;
     int FinishedTimeoutSeconds = 300;
     int ReplayRetentionSeconds = 3600;
+    std::optional<bool> EnableMulligan; // Overrides data only when explicitly configured.
+    int MulliganTimeoutSeconds = 60;
+    bool MulliganAutoKeep = true;
     std::string DataDirectory = DefaultDataDirectory();
 };
 class MatchManager

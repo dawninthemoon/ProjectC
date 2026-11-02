@@ -19,6 +19,7 @@ namespace ProjectC::GameCore
             if (state.Status == GameStatus::Finished) return Reject(CommandError::GameFinished);
             if (!ValidateGameState(state))
                 return Reject(CommandError::InvalidState);
+            if (state.Preparation == PreparationPhase::Mulligan) return CommandResult{ .Code = CommandError::MulliganPending };
             GameState candidate = state;
             CommandResult result = action(candidate);
             return Detail::CommitCommand(state, std::move(candidate), std::move(result));

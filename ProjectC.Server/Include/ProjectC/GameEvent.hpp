@@ -26,7 +26,7 @@ namespace ProjectC::GameCore
         EffectResolved,
         CardTransformed,
         CardHealed,
-        StatsModified, YokaiPowerChanged, SpellActivated
+        StatsModified, YokaiPowerChanged, SpellActivated, MulliganCompleted
     };
 
     struct GameEvent

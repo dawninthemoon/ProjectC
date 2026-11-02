@@ -19,7 +19,7 @@ namespace ProjectC::GameCore
         EffectNotFound, InvalidTarget, InvalidTargetCount, UnsupportedEffect,
         InvalidEffect, InvalidTransformation, TriggerLimitReached,
         InsufficientResource, InvalidCost, UsageLimitReached, ConditionNotMet, ChoiceRequired,
-        DirectAttackRestricted
+        DirectAttackRestricted, MulliganPending, MulliganClosed, MulliganAlreadyComplete, InvalidMulliganSelection
     };
 
     struct AttackCommand
@@ -93,9 +93,16 @@ namespace ProjectC::GameCore
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, TransformCommand const& command);
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, PlayerActionCommand const& command);
 
+    struct SubmitMulliganCommand
+    {
+        PlayerId Player = 0;
+        std::vector<CardInstanceId> Cards;
+    };
+    [[nodiscard]] CommandResult ProcessCommand(GameState& state, SubmitMulliganCommand const& command);
+
     using GameCommand = std::variant<AttackCommand, DrawCommand, PlayCardCommand,
         StartTurnCommand, EndTurnCommand, AdvancePhaseCommand, ChangeLifeCommand,
-        DirectAttackCommand, ActivateEffectCommand, TransformCommand, PlayerActionCommand>;
+        DirectAttackCommand, ActivateEffectCommand, TransformCommand, PlayerActionCommand, SubmitMulliganCommand>;
 
     [[nodiscard]] CommandResult ProcessCommand(GameState& gameState, GameCommand const& command);
 }
