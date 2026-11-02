@@ -49,6 +49,12 @@ namespace ProjectC.Client
             CardArtProvider.Apply(_artwork, _placeholder, card.DefinitionId);
             _placeholder.text = "?";
             _type.text = BattleText.Get(card.CardType == 1 ? "ui.card.spell" : "ui.card.monster");
+            string costs = ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem)
+                ? "" : CardPresentation.Costs(CardPresentation.Library.Find(card.DefinitionId));
+            if (!string.IsNullOrEmpty(costs))
+            {
+                _type.text += " / " + costs;
+            }
             Stats.gameObject.SetActive(card.CardType != 1);
             Stats.text =
                 card.CardType == 1

@@ -15,10 +15,60 @@ namespace ProjectC.Tests
         static LocalizationService Localize() => LocalizationService.Load(Resource("ProjectC_Data - Localize"));
 
         [Test]
+        public void NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback()
+        {
+            var library = CardLibrary.LoadResources();
+            var source = CardDataLoader.Load(Resource("ProjectC_Data - CardData"));
+            var localize = Localize();
+            foreach (int id in Enumerable.Range(3001, 6).Concat(Enumerable.Range(4001, 6)))
+            {
+                var row = source.Cards.Single(card => (int)card["Id"] == id);
+                var card = library.Find(id);
+                Assert.IsNotNull(card, "Missing definition " + id);
+                Assert.AreEqual(localize.GetText((string)row["NameKey"]), card.Name);
+                Assert.AreEqual(localize.GetText((string)row["DescriptionKey"]), card.Description);
+                Assert.IsFalse(card.Description.Contains("{0}"));
+                Assert.AreEqual((int?)row["Attack"] ?? 0, card.Attack);
+                Assert.AreEqual((int?)row["MaxHp"] ?? 0, card.MaxHp);
+                CollectionAssert.AreEqual(row["Archetypes"].Values<string>(), card.Archetypes);
+                Assert.AreSame(Resources.Load<Sprite>("CardSprite/CardSprite_" + id), CardArtProvider.Load(id));
+            }
+            CollectionAssert.AreEqual(new[] { 1 }, library.Find(3003).ActivationYokaiCosts);
+            CollectionAssert.AreEqual(new[] { 2 }, library.Find(4003).ActivationYokaiCosts);
+            StringAssert.Contains("2", CardPresentation.Costs(library.Find(4003)));
+        }
+
+        [Test]
+        public void EverySamplePreservesExportedNameCompositionAndCopyLimits()
+        {
+            var library = CardLibrary.LoadResources();
+            var samples = CardLibrary.Samples(Resource("CardData/HyakkiDecks"), library);
+            var rows = JArray.Parse(Resource("ProjectC_Data - DeckData"));
+            CollectionAssert.AreEquivalent(new[] { "HyakkiYagyo", "HyakkiSample", "CrimsonSample", "FrostSample" },
+                samples.Select(deck => deck.DeckId));
+            foreach (var sample in samples)
+            {
+                Assert.IsTrue(DeckValidator.Validate(sample, library).CanPlay);
+                if (sample.DeckId == "HyakkiYagyo")
+                {
+                    continue;
+                }
+                var exported = rows.Where(row => (string)row["DeckId"] == sample.DeckId).ToArray();
+                Assert.AreEqual((string)exported[0]["\uB371 \uC774\uB984"], sample.Name);
+                var expected = exported.SelectMany(row => Enumerable.Repeat(int.Parse((string)row["CardId"]),
+                    int.Parse((string)row["\uB9E4\uC218"])));
+                CollectionAssert.AreEquivalent(expected, sample.Cards);
+                var copy = sample.Copy();
+                copy.Cards.Clear();
+                Assert.AreEqual(30, sample.Cards.Count, "Personal edits must not mutate sample templates");
+            }
+        }
+
+        [Test]
         public void ActualSheetLoadsNumericStringsAndEmbeddedEffects()
         {
             var data = CardDataLoader.Load(Resource("ProjectC_Data - CardData"));
-            Assert.AreEqual(17, data.Cards.Count);
+            Assert.AreEqual(JArray.Parse(Resource("ProjectC_Data - CardData")).Count, data.Cards.Count);
             Assert.AreEqual(JTokenType.Integer, data.Cards[0]["Id"].Type);
             Assert.AreEqual(1001, (int)data.Cards[0]["Id"]);
             Assert.AreEqual(2, (int)data.Cards[0]["Attack"]);
@@ -132,7 +182,7 @@ namespace ProjectC.Tests
             Assert.AreNotEqual(library.Find(1006).Name, library.Find(1007).Name);
             Assert.AreNotEqual(library.Find(1006).Description, library.Find(1007).Description);
             StringAssert.Contains("피해 2", library.Find(1007).Description);
-            Assert.AreEqual(17, library.Cards.Count());
+            Assert.AreEqual(JArray.Parse(Resource("ProjectC_Data - CardData")).Count, library.Cards.Count());
         }
 
         [Test]

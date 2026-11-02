@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.6861045">
+  <test-suite type="TestSuite" id="1090" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="69" result="Failed" site="Child" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.686105" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1084" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/build/CardIntegrationValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="69" result="Failed" site="Child" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.675666" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="25760" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1085" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="69" result="Failed" site="Child" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.673124" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1086" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="69" result="Failed" site="Child" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.671543" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1066" name="FrontEndPlayModeTests" fullname="ProjectC.Tests.FrontEndPlayModeTests" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" testcasecount="8" result="Failed" site="Child" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.668740" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1071" name="PersonalDecksSubmitFreezeReconnectAndReject" fullname="ProjectC.Tests.FrontEndPlayModeTests.PersonalDecksSubmitFreezeReconnectAndReject" methodname="PersonalDecksSubmitFreezeReconnectAndReject" classname="ProjectC.Tests.FrontEndPlayModeTests" runstate="Runnable" seed="292058177" result="Failed" start-time="2026-11-02 17:00:56Z" end-time="2026-11-02 17:01:12Z" duration="16.652693" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Scene condition timed out at test line 641
+  Expected: less than 20.4013977f
+  But was:  20.4017143f
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.FrontEndPlayModeTests+<Until>d__6.MoveNext () [0x0002a] in C:\Dev\ProjectC\build\CardIntegrationValidation\Assets\Tests\PlayMode\FrontEndPlayModeTests.cs:76
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

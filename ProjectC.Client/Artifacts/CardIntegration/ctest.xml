@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="9"
+	failures="1"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="13"
+	timestamp="2026-11-03T01:51:17"
+	>
+	<testcase name="GameStateTests" classname="GameStateTests" time="0.136964" status="run">
+		<properties/>
+		<system-out>All 321 GameCore test groups passed!
+</system-out>
+	</testcase>
+	<testcase name="NetworkTests" classname="NetworkTests" time="3.23229" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out>Match M1-6e8700bf created activeMatches=1
+Match M1-6e8700bf started game=1
+Match M1-6e8700bf game=1 replayVerified=true
+Match M1-6e8700bf closed reason=HostClosed
+Match M1-6e8700bf removed activeMatches=0
+Matchmaking completed: M1-0dad3bb0 activeMatches=1
+Match M1-0dad3bb0 started game=1
+Match M1-0dad3bb0 game=1 replayVerified=true
+Match M1-0dad3bb0 closed reason=HostClosed
+Match M1-0dad3bb0 removed activeMatches=0
+Battle UX: friendly/queue mulligan, reconnect, timeout, phase authority, turn clock and replay passed
+Matchmaking completed: M1-c179b025 activeMatches=1
+Matchmaking completed: M2-9f03f9df activeMatches=2
+Matchmaking queue, duplicate, cancel, 
+Mulligan core: 0/1/5, no immediate redraw, validation, all command gates, order-independent RNG and replay passed
+Match M1-0ec4b7b1 created activeMatches=1
+Match M1-0ec4b7b1 started game=1
+Match M1-0ec4b7b1 game=1 replayVerified=true
+Match M1-0ec4b7b1 closed reason=HostClosed
+Match M1-0ec4b7b1 removed activeMatches=0
+Match M1-601bdb71 created activeMatches=1
+Match M1-601bdb71 started game=1
+Match M1-601bdb71 game=1 replayVerified=true
+Match M1-601bdb71 closed reason=HostClosed
+Match M1-601bdb71 removed activeMatches=0
+Match M1-74518e62 created activeMatches=1
+Match M1-74518e62 started game=1
+Match M1-74518e62 game=1 replayVerified=true
+Match M1-74518e62 closed reason=MulliganTimeout
+Match M1-74518e62 removed activeMatches=0
+Mulligan network: concurrent sequences, owner privacy, reconnect, automatic keep/close and replay passed
+Match M1-b2ac7a31 created activeMatches=1
+Match M1-b2ac7a31 started game=1
+Match M1-b2ac7a31 game=1 replayVerified=true
+Match M1-b2ac7a31 finished game=1 winner=2
+Match M1-b2ac7a31 started game=2
+Match M1-b2ac7a31 game=2 replayVerified=true
+Match M1-b2ac7a31 closed reason=HostClosed
+Match M1-b2ac7a31 removed activeMatches=0
+Personal decks: validation, idempotency, privacy, lock, reconnect, distinct compositions and replay passed
+[TEST] InteractionTests
+Match M1-7aaef22a created activeMatches=1
+Match M1-7aaef22a started game=1
+Match M1-7aaef22a game=1 replayVerified=true
+Match M1-7aaef22a closed reason=HostClosed
+Match M1-7aaef22a removed activeMatches=0
+Activated effects: candidates, privacy, multi-target, tampering, manifestation and replay passed
+[TEST] HyakkiComboTests
+Hyakki JSON combo: search, discard, special summon, revive, tribute, salvage, manifestation and replay passed
+New faction assertion at line 89
+</system-out>
+	</testcase>
+	<testcase name="CardDataTests" classname="CardDataTests" time="0.191686" status="run">
+		<properties/>
+		<system-out>Sheet parsing, text keys, metadata, catalog parity and legacy loading passed
+</system-out>
+	</testcase>
+	<testcase name="CardDataExportCheck" classname="CardDataExportCheck" time="0.224655" status="run">
+		<properties/>
+		<system-out>Verified server/Unity cards and decks: hyakki-2026-11-02-v1-d50a83de4717
+</system-out>
+	</testcase>
+	<testcase name="WebSocketIntegration" classname="WebSocketIntegration" time="3.25877" status="run">
+		<properties/>
+		<system-out>Real WebSocket: four players, two isolated matches, decks/effects, auto turns, reconnect, victory, rematch, lifecycle and validation passed
+</system-out>
+	</testcase>
+	<testcase name="ContentWebSocketIntegration" classname="ContentWebSocketIntegration" time="0.520287" status="run">
+		<properties/>
+		<system-out>Real WebSocket content: two matches, hidden exile, atomic private choice, reconnect, replay passed
+</system-out>
+	</testcase>
+	<testcase name="PersonalDeckWebSocketIntegration" classname="PersonalDeckWebSocketIntegration" time="0.412738" status="run">
+		<properties/>
+		<system-out>Personal deck WebSocket validation, privacy, reconnect, immutable match and replay passed
+</system-out>
+	</testcase>
+	<testcase name="MulliganWebSocketIntegration" classname="MulliganWebSocketIntegration" time="5.29912" status="run">
+		<properties/>
+		<system-out>Mulligan WebSocket concurrent decisions, reconnect, privacy, timeout and 3 replays passed
+</system-out>
+	</testcase>
+	<testcase name="CardDataValidationTests" classname="CardDataValidationTests" time="0.424579" status="run">
+		<properties/>
+		<system-out>test_all_effect_json_and_original_deck_config_are_preserved (TestExportCardData.ExportTests.test_all_effect_json_and_original_deck_config_are_preserved) ... ok
+test_deck_errors_identify_the_export_and_row (TestExportCardData.ExportTests.test_deck_errors_identify_the_export_and_row) ... ok
+test_duplicate_ids_and_unknown_references_are_rejected (TestExportCardData.ExportTests.test_duplicate_ids_and_unknown_references_are_rejected) ... ok
+test_invalid_effect_enums_costs_targets_and_fields_are_rejected (TestExportCardData.ExportTests.test_invalid_effect_enums_costs_targets_and_fields_are_rejected) ... ok
+test_localization_and_description_index_errors_are_rejected (TestExportCardData.ExportTests.test_localization_and_description_index_errors_are_rejected) ... ok
+test_new_authoring_descriptions_are_not_rewritten (TestExportCardData.ExportTests.test_new_authoring_descriptions_are_not_rewritten) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.102s
+
+OK
+</system-out>
+	</testcase>
+</testsuite>

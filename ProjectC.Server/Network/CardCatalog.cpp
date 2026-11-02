@@ -209,6 +209,41 @@ TargetRule Rule(Json const& value)
     {
         rule.MaxAttack = static_cast<int>(Number(value, "MaxAttack", 100000));
     }
+    if (rule.Zones.empty() || rule.MinCount > rule.MaxCount || rule.MaxCount == 0)
+    {
+        throw std::runtime_error("Targets: empty zones or invalid selection count");
+    }
+    auto requireZone = [&](Zone zone)
+    {
+        if (rule.Zones != std::vector<Zone>{zone})
+        {
+            throw std::runtime_error("Targets.Category conflicts with Targets.Zones");
+        }
+    };
+    switch (rule.Category)
+    {
+    case TargetCategory::FriendlyDeck:
+        requireZone(Zone::Deck);
+        break;
+    case TargetCategory::FriendlyHand:
+        requireZone(Zone::Hand);
+        break;
+    case TargetCategory::FriendlyGraveyard:
+    case TargetCategory::EnemyGraveyard:
+        requireZone(Zone::Graveyard);
+        break;
+    case TargetCategory::FriendlyMonster:
+    case TargetCategory::EnemyMonster:
+    case TargetCategory::AnyMonster:
+        requireZone(Zone::Field);
+        if (rule.Type == CardType::Spell)
+        {
+            throw std::runtime_error("Monster target category cannot target CardType Spell");
+        }
+        break;
+    default:
+        break;
+    }
     return rule;
 }
 EffectDefinition Effect(Json const& value)
@@ -291,6 +326,11 @@ EffectDefinition Effect(Json const& value)
                 !entry.contains("Targets"))
             {
                 throw std::runtime_error("Card cost requires target rule");
+            }
+            if (cost.Kind != CostKind::Discard && cost.Kind != CostKind::Tribute &&
+                !entry.contains("Amount"))
+            {
+                throw std::runtime_error("Resource cost requires Amount");
             }
             effect.Costs.push_back(cost);
         }
@@ -396,8 +436,15 @@ std::string DefaultDataDirectory()
 }
 CardCatalog CardCatalog::Load(std::string const& directory)
 {
-    return FromJson(File(std::filesystem::path(directory) / "Cards.json"),
-                    File(std::filesystem::path(directory) / "Decks.json"));
+    try
+    {
+        return FromJson(File(std::filesystem::path(directory) / "Cards.json"),
+                        File(std::filesystem::path(directory) / "Decks.json"));
+    }
+    catch (std::exception const& error)
+    {
+        throw std::runtime_error(directory + "/Cards.json or Decks.json: " + error.what());
+    }
 }
 CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
 {
@@ -573,7 +620,17 @@ CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
             Array(entry["Effects"], 16);
             for (auto const& effect : entry["Effects"])
             {
-                auto parsed = Effect(effect);
+                EffectDefinition parsed;
+                try
+                {
+                    parsed = Effect(effect);
+                }
+                catch (std::exception const& error)
+                {
+                    throw std::runtime_error("Card " + std::to_string(card.Id) + ".Effects[" +
+                                             std::to_string(card.Effects.size()) +
+                                             "]: " + error.what());
+                }
                 if (card.Type == CardType::Spell && !effect.contains("ActivationZone"))
                 {
                     parsed.ActivationZone = Zone::Hand;

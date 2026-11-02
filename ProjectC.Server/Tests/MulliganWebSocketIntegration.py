@@ -8,10 +8,11 @@ import time
 from WebSocketIntegration import Peer
 
 
-def start_pair(port):
+def start_pair(port, deck_id=None):
     a, b = Peer(port), Peer(port)
-    a.send('CreateMatch'); a.until('MatchCreated'); a.until('StateSnapshot')
-    b.send('JoinMatch', MatchId=a.match); b.until('MatchJoined'); b.until('StateSnapshot')
+    deck = dict(DeckId=deck_id) if deck_id else {}
+    a.send('CreateMatch', **deck); a.until('MatchCreated'); a.until('StateSnapshot')
+    b.send('JoinMatch', MatchId=a.match, **deck); b.until('MatchJoined'); b.until('StateSnapshot')
     for peer in (a, b):
         peer.send('SetReady', MatchId=peer.match, GameNumber=0, Ready=True)
         peer.until('LobbyAccepted')
@@ -78,11 +79,28 @@ def run(server_path):
         while e.state['MulliganActive']: e.until('StateSnapshot')
         assert all(p['MulliganComplete'] for p in e.state['Players']) and e.state['TurnStarted']
         e.send('CloseMatch', MatchId=e.match, GameNumber=1); e.until('MatchClosed')
+        with open(os.path.join(data, 'Decks.json'), encoding='utf-8') as file:
+            samples = {deck['Id']: deck for deck in json.load(file)['Decks']}
+        for deck_id in ('HyakkiSample', 'CrimsonSample', 'FrostSample'):
+            host, guest = start_pair(port, deck_id); peers.extend([host, guest])
+            host.send('ListDecks')
+            listed = host.until('DeckCatalog')['Payload']
+            assert set(samples) == {deck['Id'] for deck in listed}
+            for peer in (host, guest):
+                own = next(player for player in peer.state['Players'] if player['PlayerId'] == peer.player)
+                assert all(card['DefinitionId'] in samples[deck_id]['Cards'] for card in own['Hand'])
+                assert all(player['Hand'] == [] for player in peer.state['Players'] if player['PlayerId'] != peer.player)
+                mulligan(peer, [])
+            for peer in (host, guest):
+                peer.until('CommandAccepted')
+                while peer.state['MulliganActive']: peer.until('StateSnapshot')
+                assert peer.state['TurnStarted'] and peer.seq == 3
+            host.send('CloseMatch', MatchId=host.match, GameNumber=1); host.until('MatchClosed')
     finally:
         for peer in peers: peer.close()
         server.terminate(); output, _ = server.communicate(timeout=5)
-    assert output.count('replayVerified=true') == 3, output
-    print('Mulligan WebSocket concurrent decisions, reconnect, privacy, timeout and 3 replays passed')
+    assert output.count('replayVerified=true') == 6, output
+    print('Mulligan WebSocket: concurrent decisions, reconnect, privacy, timeout, three sample decks and 6 replays passed')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="9"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="14"
+	timestamp="2026-11-03T02:04:22"
+	>
+	<testcase name="GameStateTests" classname="GameStateTests" time="0.123364" status="run">
+		<properties/>
+		<system-out>All 321 GameCore test groups passed!
+</system-out>
+	</testcase>
+	<testcase name="NetworkTests" classname="NetworkTests" time="4.3289" status="run">
+		<properties/>
+		<system-out>Match M1-a38123fe created activeMatches=1
+Match M1-a38123fe started game=1
+Match M1-a38123fe game=1 replayVerified=true
+Match M1-a38123fe closed reason=HostClosed
+Match M1-a38123fe removed activeMatches=0
+Matchmaking completed: M1-d0ad3309 activeMatches=1
+Match M1-d0ad3309 started game=1
+Match M1-d0ad3309 game=1 replayVerified=true
+Match M1-d0ad3309 closed reason=HostClosed
+Match M1-d0ad3309 removed activeMatches=0
+Battle UX: friendly/queue mulligan, reconnect, timeout, phase authority, turn clock and replay passed
+Matchmaking completed: M1-52d86a58 activeMatches=1
+Matchmaking completed: M2-51adfc65 activeMatches=2
+Matchmaking queue, duplicate, cancel, 
+Mulligan core: 0/1/5, no immediate redraw, validation, all command gates, order-independent RNG and replay passed
+Match M1-186bf524 created activeMatches=1
+Match M1-186bf524 started game=1
+Match M1-186bf524 game=1 replayVerified=true
+Match M1-186bf524 closed reason=HostClosed
+Match M1-186bf524 removed activeMatches=0
+Match M1-24e95595 created activeMatches=1
+M...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="CardDataTests" classname="CardDataTests" time="0.180207" status="run">
+		<properties/>
+		<system-out>Sheet parsing, text keys, metadata, catalog parity and legacy loading passed
+</system-out>
+	</testcase>
+	<testcase name="CardDataExportCheck" classname="CardDataExportCheck" time="0.218692" status="run">
+		<properties/>
+		<system-out>Verified server/Unity cards and decks: hyakki-2026-11-02-v1-d50a83de4717
+</system-out>
+	</testcase>
+	<testcase name="WebSocketIntegration" classname="WebSocketIntegration" time="3.2181" status="run">
+		<properties/>
+		<system-out>Real WebSocket: four players, two isolated matches, decks/effects, auto turns, reconnect, victory, rematch, lifecycle and validation passed
+</system-out>
+	</testcase>
+	<testcase name="ContentWebSocketIntegration" classname="ContentWebSocketIntegration" time="0.491835" status="run">
+		<properties/>
+		<system-out>Real WebSocket content: two matches, hidden exile, atomic private choice, reconnect, replay passed
+</system-out>
+	</testcase>
+	<testcase name="PersonalDeckWebSocketIntegration" classname="PersonalDeckWebSocketIntegration" time="0.412012" status="run">
+		<properties/>
+		<system-out>Personal deck WebSocket validation, privacy, reconnect, immutable match and replay passed
+</system-out>
+	</testcase>
+	<testcase name="MulliganWebSocketIntegration" classname="MulliganWebSocketIntegration" time="5.50961" status="run">
+		<properties/>
+		<system-out>Mulligan WebSocket: concurrent decisions, reconnect, privacy, timeout, three sample decks and 6 replays passed
+</system-out>
+	</testcase>
+	<testcase name="CardDataValidationTests" classname="CardDataValidationTests" time="0.362123" status="run">
+		<properties/>
+		<system-out>test_all_effect_json_and_original_deck_config_are_preserved (TestExportCardData.ExportTests.test_all_effect_json_and_original_deck_config_are_preserved) ... ok
+test_deck_errors_identify_the_export_and_row (TestExportCardData.ExportTests.test_deck_errors_identify_the_export_and_row) ... ok
+test_duplicate_ids_and_unknown_references_are_rejected (TestExportCardData.ExportTests.test_duplicate_ids_and_unknown_references_are_rejected) ... ok
+test_invalid_effect_enums_costs_targets_and_fields_are_rejected (TestExportCardData.ExportTests.test_invalid_effect_enums_costs_targets_and_fields_are_rejected) ... ok
+test_localization_and_description_index_errors_are_rejected (TestExportCardData.ExportTests.test_localization_and_description_index_errors_are_rejected) ... ok
+test_new_authoring_descriptions_are_not_rewritten (TestExportCardData.ExportTests.test_new_authoring_descriptions_are_not_rewritten) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.105s
+
+OK
+</system-out>
+	</testcase>
+</testsuite>

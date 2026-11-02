@@ -16,6 +16,7 @@ namespace ProjectC.Client
         public string ServerAddress { get; set; } = "ws://127.0.0.1:7777";
         public bool Navigating { get; private set; }
         public PersonalDeck Starter { get; private set; }
+        public System.Collections.Generic.IReadOnlyList<PersonalDeck> Samples { get; private set; } = Array.Empty<PersonalDeck>();
 
         void Awake()
         {
@@ -32,9 +33,8 @@ namespace ProjectC.Client
             try
             {
                 Library = CardLibrary.LoadResources();
-                Starter = CardLibrary.Starter(
-                    Resources.Load<TextAsset>("CardData/HyakkiDecks").text
-                );
+                Samples = CardLibrary.Samples(Resources.Load<TextAsset>("CardData/HyakkiDecks").text, Library);
+                Starter = Samples[0];
             }
             catch (Exception exception)
             {

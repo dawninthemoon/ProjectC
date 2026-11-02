@@ -6,6 +6,7 @@
 #include <stdexcept>
 using namespace ProjectC::Network;
 void RunHyakkiComboTests();
+void RunNewFactionTests();
 void RunMulliganCoreTests();
 void Check(bool value, std::source_location where = std::source_location::current())
 {
@@ -817,6 +818,7 @@ int main()
 
         std::cout << "[TEST] HyakkiComboTests" << std::endl;
         RunHyakkiComboTests();
+        RunNewFactionTests();
 
         std::cout << "[TEST] ContentChoiceTests" << std::endl;
         ContentChoiceTests();

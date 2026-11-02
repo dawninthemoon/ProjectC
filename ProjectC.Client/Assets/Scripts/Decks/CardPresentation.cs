@@ -29,6 +29,9 @@ namespace ProjectC.Client
                 ?? new FormattedCardText(new[] { new TextSegment(card.RulesText ?? "") });
         }
 
+        public static string Costs(LibraryCard card) => card == null ? "" : string.Join(" / ",
+            card.ActivationYokaiCosts.Distinct().Select(cost => BattleText.Get("ui.card.yokai_cost", cost)));
+
         public static string Rules(CardView card) => card == null ? "" : Description(card).PlainText;
 
         public static string Manifestations(CardView card)

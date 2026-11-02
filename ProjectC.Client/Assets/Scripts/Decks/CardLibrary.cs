@@ -26,6 +26,12 @@ namespace ProjectC.Client
             ? new FormattedCardText(new[] { new TextSegment(LegacyDescription ?? "") })
             : Formatter.Format(Localization.GetText(DescriptionKey), Data, Data["DescriptionArgs"] as JArray);
         public string Description => DescriptionText.PlainText;
+        // Printed cost feedback only. The server validates and pays actual activation costs.
+        public int[] ActivationYokaiCosts => (Data?["Effects"] as JArray ?? new JArray())
+            .Where(effect => (string)effect["Type"] == "Activated")
+            .Select(effect => (effect["Costs"] as JArray ?? new JArray())
+                .Where(cost => (string)cost["Kind"] == "YokaiPower")
+                .Sum(cost => (int?)cost["Amount"] ?? 0)).ToArray();
         public int[] AllowedManifestations => Data?["AllowedManifestations"]?.Values<int>().ToArray() ?? Array.Empty<int>();
         public JObject CopyData() => (JObject)Data.DeepClone();
         public bool MainDeckEligible;
@@ -187,6 +193,42 @@ namespace ProjectC.Client
                 Name = (string)item["Name"] ?? "백귀야행",
                 Cards = values.Select(Integer).ToList(),
             };
+        }
+
+        public static IReadOnlyList<PersonalDeck> Samples(string text, CardLibrary library)
+        {
+            var rows = ParseObject(text)["Decks"] as JArray;
+            if (rows == null || rows.Count == 0)
+            {
+                throw new FormatException("Sample deck array is missing.");
+            }
+            var result = new List<PersonalDeck>();
+            var ids = new HashSet<string>();
+            foreach (var row in rows.OfType<JObject>())
+            {
+                string id = CardDataLoader.RequiredText(row, "Id");
+                if (!ids.Add(id) || !(row["Cards"] is JArray values))
+                {
+                    throw new FormatException("Duplicate or invalid sample deck: " + id);
+                }
+                var deck = new PersonalDeck
+                {
+                    DeckId = id,
+                    Name = CardDataLoader.RequiredText(row, "Name"),
+                    Cards = values.Select(Integer).ToList(),
+                };
+                var validation = DeckValidator.Validate(deck, library);
+                if (!validation.CanPlay)
+                {
+                    throw new FormatException("Invalid sample deck " + id + ": " + validation.Summary);
+                }
+                result.Add(deck);
+            }
+            if (result.Count != rows.Count)
+            {
+                throw new FormatException("Sample deck entries must be objects.");
+            }
+            return result.AsReadOnly();
         }
 
         static string Describe(JToken card)

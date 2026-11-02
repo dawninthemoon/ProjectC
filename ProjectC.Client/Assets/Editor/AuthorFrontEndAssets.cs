@@ -349,6 +349,7 @@ namespace ProjectC.Client.Editor
             Button(table, "Save", "덱 저장", 1650, 950, 230, 60, true);
             Dialog(table);
             UpgradeCardPresentationAssets.ConfigureEditor(root);
+            UpgradeSampleDeckAssets.Configure(root);
             SaveScene(root, "DeckEditorScene");
         }
 

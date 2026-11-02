@@ -19,7 +19,10 @@ void RunHyakkiComboTests()
             throw std::runtime_error(message);
         }
     };
-    check(catalog.Definitions.size() == 17 && catalog.Decks.front().Cards.size() == 30,
+    check(std::count_if(catalog.Definitions.begin(),
+                        catalog.Definitions.end(),
+                        [](auto const& card) { return card.Id < 3000; }) == 17 &&
+              catalog.Decks.front().Cards.size() == 30,
           "Content catalog");
     auto invalid = catalog.Decks.front().Cards;
     invalid[0] = 1007;

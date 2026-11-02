@@ -52,7 +52,7 @@ int main()
         auto sheet = Read(repo / "ProjectC.Client" / "Assets" / "Resources" /
                           "ProjectC_Data - CardData.json");
         auto raw = CardCatalog::FromJson(sheet, decks);
-        Check(raw.Definitions.size() == 17, "Sheet card count");
+        Check(raw.Definitions.size() == sheet.size(), "Sheet card count");
         auto const& first = raw.Definitions.front();
         Check(first.Id == 1001 && first.Attack == 2 && first.MaxHp == 2,
               "Numeric strings must become integers");
@@ -75,6 +75,39 @@ int main()
         Check(unity == Read(data / "HyakkiYagyo" / "Cards.json"),
               "Server and Unity catalogs differ");
         auto bad = sheet;
+        auto runtimeCards = Read(data / "HyakkiYagyo" / "Cards.json");
+        for (auto const* field : {"Operation", "Trigger", "Amount", "Zones"})
+        {
+            auto invalid = runtimeCards;
+            auto& effect = invalid["Cards"][0]["Effects"][0];
+            if (std::string(field) == "Operation")
+            {
+                effect["Actions"][0][field] = "Unsupported";
+            }
+            else if (std::string(field) == "Trigger")
+            {
+                effect[field] = "OnTypo";
+            }
+            else if (std::string(field) == "Amount")
+            {
+                effect["Costs"] = Json::array({{{"Kind", "YokaiPower"}}});
+            }
+            else
+            {
+                effect["Actions"][0]["Targets"][field] = Json::array();
+            }
+            std::string diagnostic;
+            try
+            {
+                CardCatalog::FromJson(invalid, decks);
+            }
+            catch (std::exception const& error)
+            {
+                diagnostic = error.what();
+            }
+            Check(diagnostic.find("Card 1001.Effects[0]") != std::string::npos,
+                  "Invalid effect must report its card and effect location");
+        }
         bad[0]["Id"] = "1001.5";
         Rejected(bad, decks);
         bad = sheet;

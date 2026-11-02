@@ -16,6 +16,7 @@ namespace ProjectC.Client
         public TMP_InputField NameInput { get; private set; }
         public TMP_InputField Search { get; private set; }
         public TMP_Dropdown DeckList { get; private set; }
+        public TMP_Dropdown SampleList { get; private set; }
         public Transform DeckContent { get; private set; }
         public Transform LibraryContent { get; private set; }
         private DeckTileView _detailCard;
@@ -78,6 +79,14 @@ namespace ProjectC.Client
             Bind("CopyDeck", () => Guard(Duplicate));
             Bind("DeleteDeck", Delete);
             Bind("ImportStarter", () => Guard(ImportStarter));
+            if (!this.Bind("SampleDeckList", out TMP_Dropdown samples))
+            {
+                throw new InvalidOperationException("Deck editor requires SampleDeckList.");
+            }
+            SampleList = samples;
+            SampleList.ClearOptions();
+            SampleList.AddOptions(app.Samples.Select(deck => deck.Name).ToList());
+            SampleList.interactable = app.Samples.Count > 0;
             this.BindButton(
                 "TypeFilter",
                 out typeFilter,
@@ -263,7 +272,7 @@ namespace ProjectC.Client
                 status.text = app.Error;
                 return;
             }
-            var deck = app.Starter.Copy();
+            var deck = app.Samples[SampleList.value].Copy();
             deck.DeckId = Guid.NewGuid().ToString("N");
             if (app.Decks.Save(deck, out var error))
             {
@@ -443,6 +452,7 @@ namespace ProjectC.Client
                     : card.Type
                         + " / "
                         + card.Rarity
+                        + (card.ActivationYokaiCosts.Length == 0 ? "" : " / " + CardPresentation.Costs(card))
                         + "\n"
                         + (
                             card.MainDeckEligible

@@ -68,14 +68,47 @@ namespace ProjectC.Tests
             return button;
         }
 
-        static IEnumerator Until(Func<bool> condition)
+        static IEnumerator Until(Func<bool> condition, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
         {
             float end = Time.realtimeSinceStartup + 15;
             while (!condition())
             {
-                Assert.Less(Time.realtimeSinceStartup, end, "Scene condition timed out");
+                Assert.Less(Time.realtimeSinceStartup, end, "Scene condition timed out at test line " + line);
                 yield return null;
             }
+        }
+
+        [UnityTest]
+        public IEnumerator NewSampleDecksCanBeCopiedEditedAndInspectedInActualScene()
+        {
+            var app = ClientApp.Instance;
+            yield return SceneManager.LoadSceneAsync("DeckEditorScene");
+            yield return null;
+            var ui = UnityEngine.Object.FindFirstObjectByType<DeckEditorPresenter>();
+            Assert.AreEqual(app.Samples.Count, ui.SampleList.options.Count);
+            foreach (string id in new[] { "CrimsonSample", "FrostSample" })
+            {
+                int index = app.Samples.ToList().FindIndex(deck => deck.DeckId == id);
+                ui.SampleList.value = index;
+                Button(ui, "ImportStarter").onClick.Invoke();
+                Assert.AreEqual(app.Samples[index].Name, ui.Session.Draft.Name);
+                CollectionAssert.AreEqual(app.Samples[index].Cards, ui.Session.Draft.Cards);
+                Assert.AreNotEqual(id, ui.Session.Draft.DeckId);
+                Assert.IsFalse(ui.Session.Dirty);
+                int cardId = id == "CrimsonSample" ? 3003 : 4003;
+                var tile = ui.LibraryContent.GetComponentsInChildren<DeckTileView>().Single(card => card.CardId == cardId);
+                tile.OnPointerEnter(null);
+                Assert.IsTrue(ui.Bind("DetailCard", out DeckTileView preview));
+                Assert.AreEqual(cardId, preview.CardId);
+                Assert.IsTrue(preview.gameObject.activeSelf);
+                Assert.IsTrue(ui.Bind("DetailStats", out TMP_Text stats));
+                StringAssert.Contains(CardPresentation.Costs(app.Library.Find(cardId)), stats.text);
+                Assert.IsTrue(preview.Bind("ArtworkImage", out AspectFillImage art));
+                Assert.IsTrue(preview.Bind("Crest", out TMP_Text placeholder));
+                Assert.IsTrue(CardArtProvider.Load(cardId) == art.sprite);
+                Assert.AreEqual(art.sprite == null, placeholder.gameObject.activeSelf);
+            }
+            yield return Capture(ui.GetComponent<Canvas>(), "NewFactionDeckEditor.png");
         }
 
         [UnityTest]
@@ -391,6 +424,12 @@ namespace ProjectC.Tests
             yield return Until(() => SceneManager.GetActiveScene().name == "BattleScene");
             Assert.AreEqual("개인 A", a.ConfirmedDeckName);
             Assert.AreEqual("개인 B", b.ConfirmedDeckName);
+            if (a.State.MulliganActive)
+            {
+                Assert.IsTrue(a.SubmitMulligan(Array.Empty<int>()));
+                Assert.IsTrue(b.SubmitMulligan(Array.Empty<int>()));
+                yield return Until(() => a.State?.MulliganActive == false && b.State?.MulliganActive == false);
+            }
             Assert.AreEqual(0, a.State.Players[1].Hand.Length);
             Assert.AreEqual(0, b.State.Players[0].Hand.Length);
             string before = JsonUtility.ToJson(a.State);
@@ -535,6 +574,14 @@ namespace ProjectC.Tests
         public IEnumerator AutomaticQueueMulliganReconnectAndTimeoutStartsBattle()
         {
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../build/Debug/ProjectCNetworkServer.exe"));
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; ++i)
+            {
+                if (args[i] == "-projectcServerPath")
+                {
+                    path = args[i + 1];
+                }
+            }
             var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
             listener.Start();
             int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
