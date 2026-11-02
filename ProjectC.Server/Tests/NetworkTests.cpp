@@ -636,17 +636,114 @@ void MulliganNetworkTests()
     std::cout << "Mulligan network: concurrent sequences, owner privacy, reconnect, automatic "
                  "keep/close and replay passed\n";
 }
+
+void MatchmakingTests()
+{
+    MatchManager manager(LegacyConfig());
+    Peer a(manager), b(manager), c(manager), d(manager), e(manager);
+
+    a.Send("QueueMatch", {{"DeckId", "Strikers"}});
+
+    Check(a.Last("MatchmakingQueued")["QueuePosition"] == 1);
+    Check(a.Client->MatchId.empty());
+    Check(manager.ActiveCount() == 0);
+
+    // 2. 중복 매칭 신청 방지
+    a.Send("QueueMatch", {{"DeckId", "Strikers"}});
+
+    Check(a.Last("ServerError")["Reason"] == "AlreadyQueued");
+
+    // 3. 매칭 취소
+    a.Send("CancelQueue");
+
+    Check(a.Last("MatchmakingCancelled")["Type"] ==
+          "MatchmakingCancelled");
+
+    // 이미 취소한 플레이어가 다시 취소하면 거부
+    a.Send("CancelQueue");
+
+    Check(a.Last("ServerError")["Reason"] == "NotQueued");
+
+    // 4. 다시 매칭 신청
+    a.Send("QueueMatch", {{"DeckId", "Strikers"}});
+
+    Check(manager.ActiveCount() == 0);
+
+    // 두 번째 플레이어 매칭 신청
+    b.Send("QueueMatch", {{"DeckId", "Wardens"}});
+
+    // 매칭이 생성되어야 함
+    Check(manager.ActiveCount() == 1);
+
+    // 두 플레이어의 MatchId가 같아야 함
+    auto matchId = a.Client->MatchId;
+
+    Check(!matchId.empty());
+    Check(b.Client->MatchId == matchId);
+
+    // 서로 다른 플레이어 ID를 발급받아야 함
+    Check(a.Client->Player != 0);
+    Check(b.Client->Player != 0);
+    Check(a.Client->Player != b.Client->Player);
+
+    // 양쪽 모두 매칭 성공 메시지를 받아야 함
+    Check(a.Last("MatchmakingFound")["MatchId"] == matchId);
+    Check(b.Last("MatchmakingFound")["MatchId"] == matchId);
+
+    // 기존 MatchSession이 생성되었는지 확인
+    auto* match = manager.Find(matchId);
+
+    Check(match != nullptr);
+    Check(match->Status() == MatchStatus::WaitingForPlayers);
+
+    // 5. 대기 중 연결 종료 처리
+    c.Send("QueueMatch");
+
+    Check(c.Last("MatchmakingQueued")["Type"] ==
+          "MatchmakingQueued");
+
+    manager.Disconnect(c.Client);
+
+    // 새로운 플레이어가 신청해도 혼자서는 매칭되지 않아야 함
+    d.Send("QueueMatch");
+
+    Check(d.Client->MatchId.empty());
+    Check(manager.ActiveCount() == 1);
+
+    // 다른 플레이어가 들어오면 정상 매칭
+    e.Send("QueueMatch");
+
+    Check(manager.ActiveCount() == 2);
+    Check(!d.Client->MatchId.empty());
+    Check(d.Client->MatchId == e.Client->MatchId);
+
+    // 기존 경기와 다른 MatchSession이어야 함
+    Check(d.Client->MatchId != matchId);
+
+    std::cout
+        << "Matchmaking queue, duplicate, cancel, \n";
+}
+
 int main()
 {
     try
     {
+        MatchmakingTests();
         RunMulliganCoreTests();
         MulliganNetworkTests();
         PersonalDeckTests();
+        std::cout << "[TEST] InteractionTests" << std::endl;
         InteractionTests();
+
+        std::cout << "[TEST] HyakkiComboTests" << std::endl;
         RunHyakkiComboTests();
+
+        std::cout << "[TEST] ContentChoiceTests" << std::endl;
         ContentChoiceTests();
+
+        std::cout << "[TEST] PublicChoiceCancellationTests" << std::endl;
         PublicChoiceCancellationTests();
+        
         MatchManager manager(LegacyConfig());
         Peer a(manager), b(manager), c(manager), d(manager), outsider(manager);
         a.Send("CreateMatch");

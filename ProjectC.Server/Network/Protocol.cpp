@@ -3,8 +3,8 @@
 #include <set>
 #include <stdexcept>
 #ifdef _WIN32
-#include <bcrypt.h>
 #include <windows.h>
+#include <bcrypt.h>
 #elif defined(__APPLE__)
 #include <sys/random.h>
 #else
