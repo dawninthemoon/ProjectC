@@ -33,17 +33,50 @@ namespace ProjectC.Client
             _attempt = StartCoroutine(Connect());
         }
 
+        public void RestartConnection()
+        {
+            if (_attempt != null)
+            {
+                StopCoroutine(_attempt);
+                _attempt = null;
+            }
+            Retry();
+        }
+
         private IEnumerator Connect()
         {
             // Yield first so even an already connected session cannot leave a stale handle.
             yield return null;
+            while (_app.IsChangingAccount)
+            {
+                yield return null;
+            }
+            int generation = _app.AccountGeneration;
+            if (_app.AccountLoggedOut)
+            {
+                _attempt = null;
+                _loading.gameObject.SetActive(false);
+                _app.ShowPopup("현재 계정 프로필에서 로그아웃했습니다.",
+                    new PopupAction("현재 프로필로 로그인", () => _app.ChangeAccountProfile(_app.AccountProfileId)));
+                yield break;
+            }
             if (_app.UseWebsite)
             {
                 _loading.text = "로그인 세션 확인 중";
                 var login = _app.PrepareWebsiteAsync();
                 while (!login.IsCompleted)
                 {
+                    if (generation != _app.AccountGeneration)
+                    {
+                        _attempt = null;
+                        yield break;
+                    }
                     yield return null;
+                }
+                if (generation != _app.AccountGeneration)
+                {
+                    _attempt = null;
+                    yield break;
                 }
                 if (login.IsFaulted || login.IsCanceled)
                 {
@@ -61,6 +94,11 @@ namespace ProjectC.Client
             int previousDots = -1;
             while (!_app.Network.ConnectionReady && Time.realtimeSinceStartup < deadline)
             {
+                if (generation != _app.AccountGeneration)
+                {
+                    _attempt = null;
+                    yield break;
+                }
                 if (!string.IsNullOrEmpty(_app.Network.ConnectionError))
                 {
                     break;

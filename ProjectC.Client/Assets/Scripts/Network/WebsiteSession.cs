@@ -87,6 +87,8 @@ namespace ProjectC.Client
         private readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
         private StoredWebsiteSession _session;
         private bool _loaded;
+        private bool _retired;
+        public string AccountProfileId { get; private set; } = AccountProfiles.Default;
         public string AccessToken => _session?.accessToken;
         public WebsiteUser User { get; private set; }
         public WebsiteRank Rank { get; private set; }
@@ -104,8 +106,15 @@ namespace ProjectC.Client
             : "마지막 조회 랭크 (이번 경기 반영 미확인): ") + Rank;
 
         public WebsiteSession(string baseUrl, int timeoutSeconds)
-            : this(baseUrl, timeoutSeconds, new SecureSessionStore(baseUrl.TrimEnd('/')))
+            : this(baseUrl, timeoutSeconds, AccountProfiles.Default)
         {
+        }
+
+        public WebsiteSession(string baseUrl, int timeoutSeconds, string accountProfileId)
+            : this(baseUrl, timeoutSeconds, new SecureSessionStore(baseUrl.TrimEnd('/'), accountProfileId))
+        {
+            AccountProfileId = AccountProfiles.DevelopmentFeaturesEnabled
+                ? AccountProfiles.Validate(accountProfileId) : AccountProfiles.Default;
         }
 
         internal WebsiteSession(string baseUrl, int timeoutSeconds, ISessionStore store)
@@ -120,8 +129,13 @@ namespace ProjectC.Client
             _store = store;
         }
 
-        private async Task<JToken> RequestAsync(string method, string path, JToken body = null, string accessToken = null)
+        private async Task<JToken> RequestAsync(string method, string path, JToken body = null, string accessToken = null,
+            bool allowRetired = false)
         {
+            if (_retired && !allowRetired)
+            {
+                throw new ObjectDisposedException(nameof(WebsiteSession));
+            }
             using (var request = new UnityWebRequest(_baseUrl + path, method))
             {
                 request.timeout = _timeoutSeconds;
@@ -156,6 +170,10 @@ namespace ProjectC.Client
             await _sessionLock.WaitAsync();
             try
             {
+                if (_retired)
+                {
+                    throw new ObjectDisposedException(nameof(WebsiteSession));
+                }
                 if (!_loaded)
                 {
                     string stored = _store.Read();
@@ -315,9 +333,16 @@ namespace ProjectC.Client
             await _sessionLock.WaitAsync();
             try
             {
+                if (!_loaded)
+                {
+                    string stored = _store.Read();
+                    _session = stored == null ? null : JsonConvert.DeserializeObject<StoredWebsiteSession>(stored);
+                    _loaded = true;
+                }
                 if (!string.IsNullOrEmpty(_session?.refreshToken) && !_session.refreshInFlight)
                 {
-                    await RequestAsync("POST", "/api/auth/revoke", new JObject { ["refreshToken"] = _session.refreshToken });
+                    await RequestAsync("POST", "/api/auth/revoke", new JObject { ["refreshToken"] = _session.refreshToken },
+                        allowRetired: true);
                 }
                 _store.Delete();
                 _session = null;
@@ -330,6 +355,14 @@ namespace ProjectC.Client
             {
                 _sessionLock.Release();
             }
+        }
+
+        public async Task RetireAsync()
+        {
+            _retired = true;
+            // Do not cancel an in-flight rotation: its replacement pair must reach the OS store.
+            await _sessionLock.WaitAsync();
+            _sessionLock.Release();
         }
     }
 }

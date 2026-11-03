@@ -176,5 +176,6 @@ python Tools/TestWebsiteIntegration.py ProjectC.Server/out/build/x64-Debug/Proje
   있지만 이전 경기의 RP/MMR 변화 팝업을 다시 재생하는 조회 API는 없다.
 - 실제 Render TLS/절전 후 시작 지연, 영구 디스크 재배포 복원, 두 Windows 빌드의 그래픽 UI·오디오·팝업은
   수동 확인해야 한다. 운영 DB를 사용하는 테스트는 실행하지 않았다.
-- 같은 Windows 로그인으로 실행한 두 프로세스는 기본적으로 같은 자격 증명/게스트 계정을 복구한다.
-  두 계정의 수동 대전은 별도 PC 또는 서로 다른 Windows 로그인으로 확인한다. 같은 계정의 중복 대전은 거부한다.
+- 같은 Windows 로그인에서도 개발 계정 프로필을 다르게 지정하면 별도 게스트로 테스트할 수 있다.
+  [개발용 다중 계정 프로필](../../ProjectC.Client/Docs/DevelopmentAccountProfiles.md)을 따른다.
+  동일 프로필의 두 프로세스는 같은 계정을 복구하며 서버의 중복 대전 방지는 유지된다.

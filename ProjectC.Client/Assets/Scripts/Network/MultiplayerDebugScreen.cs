@@ -56,6 +56,7 @@ namespace ProjectC.Client
         private bool _authenticated;
         private string _authenticateRequestId;
         private bool _preparingWebsiteQueue;
+        private int _accountConnectionGeneration;
         public bool PersonalMode =>
             UsePersonalDeck && ClientApp.Instance != null && ClientApp.Instance.Network == this;
         public string ConfirmedDeckName { get; private set; } = "";
@@ -267,12 +268,14 @@ namespace ProjectC.Client
                 return;
             }
             _preparingWebsiteQueue = true;
+            int generation = _accountConnectionGeneration;
             try
             {
                 var website = ClientApp.Instance.Website;
                 string deckId = website.SelectedDeckId;
                 await website.EnsureSessionAsync();
-                if (!ConnectionReady || !string.IsNullOrEmpty(matchId))
+                if (generation != _accountConnectionGeneration || !ReferenceEquals(website, ClientApp.Instance.Website)
+                    || !ConnectionReady || !string.IsNullOrEmpty(matchId))
                 {
                     return;
                 }
@@ -287,12 +290,18 @@ namespace ProjectC.Client
             }
             catch (Exception)
             {
-                ResetMatchmaking(MatchmakingState.Error, "로그인 세션 갱신에 실패했습니다.");
-                ClientApp.Instance.ShowPopup(MatchmakingError);
+                if (generation == _accountConnectionGeneration)
+                {
+                    ResetMatchmaking(MatchmakingState.Error, "로그인 세션 갱신에 실패했습니다.");
+                    ClientApp.Instance.ShowPopup(MatchmakingError);
+                }
             }
             finally
             {
-                _preparingWebsiteQueue = false;
+                if (generation == _accountConnectionGeneration)
+                {
+                    _preparingWebsiteQueue = false;
+                }
             }
         }
 
@@ -482,6 +491,26 @@ namespace ProjectC.Client
             ViewInvalidated?.Invoke();
             transport?.Dispose();
             connecting = pending = resyncing = false;
+        }
+
+        internal void ResetAccountConnection()
+        {
+            ++_accountConnectionGeneration;
+            DisconnectNetwork();
+            // Abandon the old transport's queued messages and account-bound reconnect token.
+            // Ordinary disconnect/reconnect still uses the existing SessionToken flow.
+            transport = null;
+            _authenticated = false;
+            _authenticateRequestId = null;
+            _deckCatalogReceived = false;
+            _preparingWebsiteQueue = false;
+            boundAddress = null;
+            serverCatalogVersion = "";
+            personalDeckSupported = false;
+            decks = Array.Empty<DeckView>();
+            _serverDeckSelected = false;
+            ConnectionError = "";
+            ClearMatch();
         }
 
         internal void CreateMatch()

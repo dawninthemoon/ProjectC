@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ProjectC.Client
@@ -22,9 +23,32 @@ namespace ProjectC.Client
         private const int MaximumCredentialBytes = 2560;
         private readonly string _target;
 
-        public SecureSessionStore(string apiUrl)
+        public SecureSessionStore(string apiUrl, string accountProfileId = AccountProfiles.Default)
         {
-            _target = "ProjectC.Session/" + apiUrl;
+            _target = TargetFor(apiUrl, accountProfileId);
+        }
+
+        internal static string TargetFor(string apiUrl, string accountProfileId)
+        {
+            if (string.IsNullOrWhiteSpace(apiUrl))
+            {
+                throw new ArgumentException("Website API URL is required.", nameof(apiUrl));
+            }
+            string profile = AccountProfiles.DevelopmentFeaturesEnabled
+                ? AccountProfiles.Validate(accountProfileId) : AccountProfiles.Default;
+            string url = apiUrl.TrimEnd('/');
+            if (profile == AccountProfiles.Default)
+            {
+                // Keep the exact legacy production target. No credential migration/deletion.
+                return "ProjectC.Session/" + url;
+            }
+            using (var hash = SHA256.Create())
+            {
+                // Separate namespace and fixed-length URL hash avoid ambiguous URL/profile pairs.
+                string digest = BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(url)))
+                    .Replace("-", "").ToLowerInvariant();
+                return "ProjectC.Session.Profile/" + profile + "/" + digest;
+            }
         }
 
         public string Read()
