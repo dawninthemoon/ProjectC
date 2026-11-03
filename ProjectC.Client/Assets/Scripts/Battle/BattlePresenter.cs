@@ -568,7 +568,7 @@ namespace ProjectC.Client
                 if (Client.WebsiteMode && ClientApp.Instance.Website != null)
                 {
                     ResultLabel.text += "\n" + ClientApp.Instance.Website.ResultStatus
-                        + "\n" + ClientApp.Instance.Website.Rank;
+                        + "\n" + ClientApp.Instance.Website.ResultRankSummary;
                 }
             }
             bool action = CanAct;

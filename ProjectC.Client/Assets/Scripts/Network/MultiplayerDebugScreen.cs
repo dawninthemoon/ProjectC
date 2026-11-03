@@ -790,6 +790,10 @@ namespace ProjectC.Client
 
         void Update()
         {
+            if (WebsiteMode)
+            {
+                ClientApp.Instance.Website?.CheckResultConfirmation(Time.realtimeSinceStartupAsDouble);
+            }
             TryAutomaticReady();
             if (transport == null)
             {
@@ -825,6 +829,10 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    if (WebsiteMode && State?.Finished == true)
+                    {
+                        ClientApp.Instance.Website?.MarkResultUnconfirmed();
+                    }
                     _authenticated = false;
                     _deckCatalogReceived = false;
                     if (string.IsNullOrEmpty(ConnectionError))
@@ -1151,6 +1159,10 @@ namespace ProjectC.Client
                     SnapshotReceived?.Invoke(state);
                     break;
                 case "MatchEnded":
+                    if (WebsiteMode)
+                    {
+                        ClientApp.Instance.Website?.WaitForResultConfirmation(Time.realtimeSinceStartupAsDouble);
+                    }
                     token = null;
                     pending = false;
                     Note(

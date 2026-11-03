@@ -1,5 +1,8 @@
 # Unity / Battle Server / Website API 통합
 
+Render Free 배포는 [임시 결과 큐 배포 안내](RenderFreeDeployment.md)를 따른다.
+영구 디스크 없이 실행할 수 있지만, 컨테이너 교체 시 미전송 결과의 복구는 보장하지 않는다.
+
 ## 구현 범위와 계약
 
 Website 저장소 `dawninthemoon/ProjectC-Website`의 `docs/battle-server-api.md`와 로컬 체크아웃
@@ -94,12 +97,13 @@ Unity HTTP와 연결 화면은 설정된 타임아웃을 사용한다. C++ HTTP�
 
 `BATTLE_RESULT_OUTBOX` 아래 매치 UUID별 JSON에 **동일 결과 본문, 종료 시각, 스냅샷**을 보존한다.
 임시 파일 flush/fsync 후 원자적으로 교체하며, 시작 시 쓰기 가능 여부를 검사한다.
-요청 횟수도 HTTP 호출 전에 저장한다. 재시작 뒤 미완료 작업을 다시 읽는다.
+요청 횟수도 HTTP 호출 전에 저장한다. **파일시스템이 보존된 재시작에 한해** 미완료 작업을 다시 읽는다.
+Free 컨테이너 재시작·재배포·절전으로 파일이 사라지면 아직 API에 전달되지 않은 결과는 복구하지 못한다.
 전송 실패/5xx/429는 4, 8, 16, 32, 64초 간격으로 최대 총 6회 요청한다.
 4xx 계약 오류 및 횟수 초과 작업은 자동 삭제하지 않는다. 성공한 200 응답만 완료 처리한다.
 로그에는 matchId, HTTP 상태, libcurl 오류 번호, 시도 횟수만 남긴다.
 
-운영자가 실패 원인을 해결한 뒤 서버를 중지하고 해당 JSON의 `attempts`와 `nextAttempt`만 0으로
+로컬 또는 파일 접근이 가능한 영구 디스크 환경에서 운영자가 실패 원인을 해결한 뒤 서버를 중지하고 해당 JSON의 `attempts`와 `nextAttempt`만 0으로
 되돌려 재시도할 수 있다. `body`의 MatchId/endedAt/참가자/스냅샷/결과는 바꾸지 않는다.
 409 충돌은 기존 DB 결과를 조사해야 하며 자동 덮어쓰기를 하지 않는다.
 파일에는 계정·덱 식별자가 있으므로 공개 저장소/공개 HTTP 경로에 두지 않는다.
@@ -113,7 +117,8 @@ Battle Server에 다음을 설정한다.
 | `BATTLE_API_KEY` | 이미 등록된 Website API와 동일한 키. 환경 변수로만 주입 |
 | `WEBSITE_API_URL` | `https://projectc-api.onrender.com` (키가 있으면 이 주소가 기본값) |
 | `PROJECTC_DATA_DIRECTORY` | `/ProjectC/Data/HyakkiYagyo` |
-| `BATTLE_RESULT_OUTBOX` | 영구 디스크의 쓰기 가능한 디렉터리, 예: `/ProjectC/BattleOutbox` |
+| `BATTLE_RESULT_OUTBOX` | 쓰기 가능한 디렉터리. Docker 기본값 `/ProjectC/BattleOutbox`; Free에서는 임시 디스크 |
+| `BATTLE_RESULT_STORAGE` | Free/기본값 `ephemeral`. 실제 영구 디스크를 연결한 환경에서만 `persistent`로 선언 |
 
 Website 연동 시 기본 전투 테스트용 Data 프로필은 시작 단계에서 거부한다.
 API와 C++/Unity의 `hyakki-2026-11-02-v1-fc4b30ed6ac5` 카탈로그를 맞춘다.
@@ -122,8 +127,9 @@ API와 C++/Unity의 `hyakki-2026-11-02-v1-fc4b30ed6ac5` 카탈로그를 맞춘�
 배포 절차:
 
 1. Website API의 현재 계약/카탈로그 배포를 확인한다. 이번 변경에는 DB migration이 없다.
-2. Render Battle 서비스에 위 환경 변수를 적용하고 큐 디렉터리에 **영구 디스크**를 연결한다.
-   디렉터리는 컨테이너 UID 10001에 쓰기 가능해야 한다. 임시 파일시스템은 재배포를 견디지 못한다.
+2. Render Battle 서비스에 위 환경 변수를 적용한다. **Free는 영구 디스크 없이** `ephemeral`로 실행한다.
+   디렉터리는 컨테이너 UID 10001에 쓰기 가능해야 한다. Free의 미전송 파일은 재배포/재시작/절전으로 사라질 수 있다.
+   영구 디스크를 사용하는 유료 환경에서는 실제 마운트 경로를 지정한 뒤 `persistent`로 선언한다.
 3. 기존 저장소 루트 컨텍스트와 `ProjectC.Server/Dockerfile`로 이미지를 빌드·배포한다.
    Dockerfile에 빌드용 libcurl 개발 패키지, 런타임 libcurl·CA 인증서를 추가했다.
    기존 7777 포트와 WebSocket 서비스 설정을 유지한다.
@@ -136,10 +142,10 @@ API와 C++/Unity의 `hyakki-2026-11-02-v1-fc4b30ed6ac5` 카탈로그를 맞춘�
 
 ## 검증 및 남은 수동 확인
 
-- Windows CMake 빌드 및 CTest: 기존 9개와 새 WebsiteBattleIntegration. NetworkTests에는
+- Windows CMake 빌드 및 CTest: 기존 9개와 WebsiteBattleIntegration, OutboxRecoveryIntegration 총 11개. NetworkTests에는
   Surrender/Disconnect/양쪽 연결 종료의 유예·승자·리플레이 검증을 추가했다.
-- Unity PlayMode: 기존 MatchmakingPlayModeTests와 새 WebsiteSessionPlayModeTests 총 10개.
-- Ubuntu 24.04 Docker Release 이미지 빌드 및 이미지 빌드 안의 CTest 10개 통과.
+- Unity PlayMode: MatchmakingPlayModeTests와 WebsiteSessionPlayModeTests 총 12개.
+- Ubuntu 24.04 Docker Release 이미지 빌드 및 이미지 빌드 안의 CTest 11개 통과.
 - `Tools/TestWebsiteIntegration.py`: 별도 PostgreSQL 17 Docker 컨테이너와 실제 Website NestJS를 실행한다.
   Website의 `npm test`, `npm run test:e2e`, `npm run build` 후 실제 C++ WebSocket 전투를 진행한다.
   커밋 직후 첫 결과 응답을 503으로 바꾸어 응답 유실·DB 멱등성을 검증한다. 테스트 DB/컨테이너는 제거한다.
@@ -166,7 +172,7 @@ python Tools/TestWebsiteIntegration.py ProjectC.Server/out/build/x64-Debug/Proje
 - 로컬 덱 편집과 Website CRUD의 양방향 동기화·기존 Website 덱 덮어쓰기는 구현 범위에 넣지 않았다.
   Website 덱 조회/선택과 명시적인 새 덱 업로드를 지원한다.
 - 서버 재시작으로 진행 중 매치 자체를 복원하는 기능은 기존에도 없으며 추가하지 않았다.
-  종료되어 디스크에 기록된 결과는 복원된다. 결과 저장이 재시작 뒤 완료된 경우 최신 랭크는 조회할 수
+  종료되어 디스크에 기록된 결과도 해당 파일시스템이 남아 있을 때만 복원된다. 결과 저장이 재시작 뒤 완료된 경우 최신 랭크는 조회할 수
   있지만 이전 경기의 RP/MMR 변화 팝업을 다시 재생하는 조회 API는 없다.
 - 실제 Render TLS/절전 후 시작 지연, 영구 디스크 재배포 복원, 두 Windows 빌드의 그래픽 UI·오디오·팝업은
   수동 확인해야 한다. 운영 DB를 사용하는 테스트는 실행하지 않았다.

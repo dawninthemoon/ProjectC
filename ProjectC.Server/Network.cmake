@@ -59,3 +59,7 @@ add_test(NAME CardDataValidationTests COMMAND ${Python3_EXECUTABLE} -m unittest 
 add_test(NAME WebsiteBattleIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WebsiteBattleIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 set_tests_properties(WebsiteBattleIntegration PROPERTIES TIMEOUT 120)
+
+add_test(NAME OutboxRecoveryIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/OutboxRecoveryIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(OutboxRecoveryIntegration PROPERTIES TIMEOUT 90)

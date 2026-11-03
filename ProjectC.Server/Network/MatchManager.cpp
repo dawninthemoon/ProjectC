@@ -20,7 +20,8 @@ MatchManager::MatchManager(ServerConfig config) : config(std::move(config))
     {
         website = std::make_unique<WebsiteApi>(this->config.WebsiteApiUrl,
                                                this->config.BattleApiKey,
-                                               this->config.ResultOutboxDirectory);
+                                               this->config.ResultOutboxDirectory,
+                                               this->config.ResultOutboxPersistent);
     }
     auto loaded = CardCatalog::Load(this->config.DataDirectory);
     if (this->config.EnableMulligan)

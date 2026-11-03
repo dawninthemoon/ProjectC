@@ -26,6 +26,8 @@ RUN useradd --create-home --uid 10001 ProjectCUser \
     && mkdir /ProjectC/BattleOutbox \
     && chown ProjectCUser:ProjectCUser /ProjectC/BattleOutbox
 USER ProjectCUser
+ENV BATTLE_RESULT_OUTBOX=/ProjectC/BattleOutbox \
+    BATTLE_RESULT_STORAGE=ephemeral
 EXPOSE 7777
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["./ProjectCNetworkServer"]

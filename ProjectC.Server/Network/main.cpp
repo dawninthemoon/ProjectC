@@ -51,6 +51,15 @@ int main(int argc, char** argv)
         {
             config.ResultOutboxDirectory = path;
         }
+        if (auto storage = std::getenv("BATTLE_RESULT_STORAGE"))
+        {
+            std::string_view mode(storage);
+            if (mode != "ephemeral" && mode != "persistent")
+            {
+                throw std::runtime_error("BATTLE_RESULT_STORAGE must be ephemeral or persistent");
+            }
+            config.ResultOutboxPersistent = mode == "persistent";
+        }
 
         for (int i = 1; i < argc; i += 2)
         {

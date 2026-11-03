@@ -67,9 +67,20 @@ namespace ProjectC.Client
         }
     }
 
+    public enum WebsiteResultState
+    {
+        None,
+        AwaitingConfirmation,
+        Unconfirmed,
+        Stored,
+        Complete,
+    }
+
     public sealed class WebsiteSession
     {
         private const int RefreshMarginSeconds = 120;
+        private const double ResultConfirmationTimeoutSeconds = 180;
+        private double? _resultConfirmationDeadline;
         private readonly string _baseUrl;
         private readonly int _timeoutSeconds;
         private readonly ISessionStore _store;
@@ -83,7 +94,14 @@ namespace ProjectC.Client
         public string SelectedDeckId { get; private set; }
         public WebsiteDeck SelectedDeck => Decks.FirstOrDefault(deck => deck.id == SelectedDeckId);
         public WebsiteRankChange LastRankChange { get; private set; }
-        public string ResultStatus { get; private set; } = "";
+        public WebsiteResultState ResultState { get; private set; }
+        public string ResultStatus => ResultState == WebsiteResultState.Complete ? "랭크 갱신 확인 · " + LastRankChange
+            : ResultState == WebsiteResultState.Stored ? "경기 결과 저장 확인 · 최신 랭크 조회 미완료"
+            : ResultState == WebsiteResultState.Unconfirmed ? "경기 결과 저장 미확인 · 랭크 반영 여부를 확인할 수 없습니다."
+            : ResultState == WebsiteResultState.AwaitingConfirmation ? "경기 결과 저장 확인 대기 중"
+            : "";
+        public string ResultRankSummary => (ResultState == WebsiteResultState.Complete ? "최신 랭크: "
+            : "마지막 조회 랭크 (이번 경기 반영 미확인): ") + Rank;
 
         public WebsiteSession(string baseUrl, int timeoutSeconds)
             : this(baseUrl, timeoutSeconds, new SecureSessionStore(baseUrl.TrimEnd('/')))
@@ -221,7 +239,15 @@ namespace ProjectC.Client
 
         public async Task RefreshRankAsync()
         {
+            var acknowledgedChange = LastRankChange;
+            bool canConfirmResult = ResultState == WebsiteResultState.Stored;
             Rank = (await UserRequestAsync("GET", "/api/rank/me")).ToObject<WebsiteRank>();
+            // A successful rank GET alone does not prove that this match was committed.
+            if (canConfirmResult && ResultState == WebsiteResultState.Stored
+                && ReferenceEquals(acknowledgedChange, LastRankChange))
+            {
+                ResultState = WebsiteResultState.Complete;
+            }
         }
 
         public void CycleDeck()
@@ -245,7 +271,32 @@ namespace ProjectC.Client
         public void BeginResult()
         {
             LastRankChange = null;
-            ResultStatus = "경기 결과 저장 대기 중";
+            _resultConfirmationDeadline = null;
+            ResultState = WebsiteResultState.AwaitingConfirmation;
+        }
+
+        public void WaitForResultConfirmation(double now)
+        {
+            if (ResultState == WebsiteResultState.AwaitingConfirmation && !_resultConfirmationDeadline.HasValue)
+            {
+                _resultConfirmationDeadline = now + ResultConfirmationTimeoutSeconds;
+            }
+        }
+
+        public void CheckResultConfirmation(double now)
+        {
+            if (_resultConfirmationDeadline.HasValue && now >= _resultConfirmationDeadline.Value)
+            {
+                MarkResultUnconfirmed();
+            }
+        }
+
+        public void MarkResultUnconfirmed()
+        {
+            if (ResultState == WebsiteResultState.AwaitingConfirmation)
+            {
+                ResultState = WebsiteResultState.Unconfirmed;
+            }
         }
 
         public async Task ApplyRankChangeAsync(WebsiteRankChange change)
@@ -255,7 +306,7 @@ namespace ProjectC.Client
                 return;
             }
             LastRankChange = change;
-            ResultStatus = change.ToString();
+            ResultState = WebsiteResultState.Stored;
             await RefreshRankAsync();
         }
 

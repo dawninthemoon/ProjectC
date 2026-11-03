@@ -38,7 +38,8 @@ std::size_t Append(char* data, std::size_t size, std::size_t count, void* contex
     return bytes;
 }
 
-// Flush before the atomic rename; the queue must survive process/host restarts.
+// Flush before the atomic rename. Recovery requires the underlying filesystem to survive;
+// fsync cannot preserve files when a hosting platform discards an ephemeral container.
 void Persist(std::filesystem::path const& path, Json const& value)
 {
     auto temporary = path;
@@ -149,7 +150,10 @@ std::string ApiResponse::Reason() const
         return "WebsiteUnavailable";
     }
 }
-WebsiteApi::WebsiteApi(std::string url, std::string key, std::filesystem::path outbox)
+WebsiteApi::WebsiteApi(std::string url,
+                       std::string key,
+                       std::filesystem::path outbox,
+                       bool persistentStorage)
     : url(std::move(url)), key(std::move(key)), outbox(std::move(outbox))
 {
     bool local = (this->url.starts_with("http://127.0.0.1:") ||
@@ -169,10 +173,24 @@ WebsiteApi::WebsiteApi(std::string url, std::string key, std::filesystem::path o
     {
         throw std::runtime_error("HTTP initialization failed");
     }
+    if (this->outbox.empty())
+    {
+        throw std::runtime_error("BATTLE_RESULT_OUTBOX must name a writable directory");
+    }
+    this->outbox = std::filesystem::absolute(this->outbox).lexically_normal();
     std::filesystem::create_directories(this->outbox);
     auto probe = this->outbox / ("probe-" + Token() + ".tmp");
     Persist(probe, Json::object());
     std::filesystem::remove(probe);
+    // This is an operator declaration, not a claim that a persistent mount was detected.
+    std::cout << "Result outbox path=" << this->outbox.string()
+              << " storage=" << (persistentStorage ? "persistent" : "ephemeral")
+              << " recoveryRequiresRetainedFilesystem=true\n";
+    if (!persistentStorage)
+    {
+        std::cout << "Ephemeral outbox: unacknowledged results can be lost on container "
+                     "replacement, restart or spin-down\n";
+    }
     worker = std::thread([this] { Run(); });
 }
 WebsiteApi::~WebsiteApi()

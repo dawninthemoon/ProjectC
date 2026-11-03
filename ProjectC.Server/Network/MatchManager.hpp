@@ -21,6 +21,7 @@ struct ServerConfig
     std::string WebsiteApiUrl; // Empty retains the isolated development server.
     std::string BattleApiKey;
     std::string ResultOutboxDirectory = "BattleOutbox";
+    bool ResultOutboxPersistent = false;
 };
 
 struct MatchmakingEntry

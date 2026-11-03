@@ -29,6 +29,7 @@ namespace ProjectC.Tests
         private int _guests, _refreshes, _sessions, _rankReads;
         private volatile bool _failRefresh;
         private volatile bool _stopping;
+        private volatile bool _failRankReads;
         private const string Player = "11111111-1111-4111-8111-111111111111";
         private const string Deck = "22222222-2222-4222-8222-222222222222";
 
@@ -37,6 +38,7 @@ namespace ProjectC.Tests
         {
             _guests = _refreshes = _sessions = _rankReads = 0;
             _failRefresh = _stopping = false;
+            _failRankReads = false;
             var probe = new TcpListener(IPAddress.Loopback, 0);
             probe.Start();
             int port = ((IPEndPoint)probe.LocalEndpoint).Port;
@@ -87,6 +89,7 @@ namespace ProjectC.Tests
                         else if (path == "/api/rank/me")
                         {
                             ++_rankReads;
+                            status = _failRankReads ? 503 : 200;
                             response = "{\"tier\":\"Bronze\",\"division\":5,\"rp\":20,\"mmr\":1016}";
                         }
                         else if (path == "/api/auth/revoke")
@@ -180,6 +183,50 @@ namespace ProjectC.Tests
             Assert.AreEqual(2, _refreshes);
             Assert.AreEqual(1, _sessions);
             Assert.AreEqual("recovered", restored.AccessToken);
+        }
+
+        [Test]
+        public void ResultTimeoutAndConnectionLossCannotConfirmRank()
+        {
+            var session = new WebsiteSession(_url, 5, new MemoryStore());
+            session.BeginResult();
+            session.WaitForResultConfirmation(100);
+            session.CheckResultConfirmation(279);
+            Assert.AreEqual(WebsiteResultState.AwaitingConfirmation, session.ResultState);
+            session.CheckResultConfirmation(280);
+            Assert.AreEqual(WebsiteResultState.Unconfirmed, session.ResultState);
+            Assert.IsNull(session.LastRankChange);
+            StringAssert.Contains("미확인", session.ResultRankSummary);
+            session.BeginResult();
+            session.MarkResultUnconfirmed();
+            Assert.AreEqual(WebsiteResultState.Unconfirmed, session.ResultState);
+        }
+
+        [UnityTest]
+        public IEnumerator RankQueryAloneAndQueryFailureDoNotReportCompletion()
+        {
+            var session = new WebsiteSession(_url, 5, new MemoryStore());
+            yield return Complete(session.EnsureSessionAsync());
+            session.BeginResult();
+            yield return Complete(session.RefreshRankAsync());
+            Assert.AreEqual(WebsiteResultState.AwaitingConfirmation, session.ResultState);
+            Assert.IsNull(session.LastRankChange);
+            session.MarkResultUnconfirmed();
+            yield return Complete(session.RefreshRankAsync());
+            Assert.AreEqual(WebsiteResultState.Unconfirmed, session.ResultState);
+            _failRankReads = true;
+            yield return Complete(session.ApplyRankChangeAsync(new WebsiteRankChange
+            {
+                playerId = Player, rpDelta = 20, mmrBefore = 1000, mmrAfter = 1016,
+            }), false);
+            Assert.AreEqual(WebsiteResultState.Stored, session.ResultState);
+            StringAssert.Contains("미완료", session.ResultStatus);
+            StringAssert.DoesNotContain("랭크 갱신 확인", session.ResultStatus);
+            _failRankReads = false;
+            yield return Complete(session.RefreshRankAsync());
+            Assert.AreEqual(WebsiteResultState.Complete, session.ResultState);
+            session.MarkResultUnconfirmed();
+            Assert.AreEqual(WebsiteResultState.Complete, session.ResultState);
         }
 
         [Test]

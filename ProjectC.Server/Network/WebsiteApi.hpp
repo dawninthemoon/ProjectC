@@ -26,7 +26,10 @@ struct ApiResponse
 class WebsiteApi
 {
   public:
-    WebsiteApi(std::string url, std::string key, std::filesystem::path outbox);
+    WebsiteApi(std::string url,
+               std::string key,
+               std::filesystem::path outbox,
+               bool persistentStorage = false);
     ~WebsiteApi();
     std::future<ApiResponse> Post(std::string path, Json body);
     void StoreResult(Json const& body);
