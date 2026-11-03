@@ -20,6 +20,8 @@ namespace ProjectC.Client
         private ActionChoiceView _serverChoice;
         private Button _confirm;
         private CardGalleryView _gallery;
+        private Button _cancel;
+        private bool _submitting;
 
         private void Begin(bool canCancel, Action confirm, Action cancel)
         {
@@ -27,6 +29,8 @@ namespace ProjectC.Client
             this.Bind("Candidates", out RectTransform content);
             this.Bind("Confirm", out _confirm);
             this.Bind("Cancel", out Button back);
+            _cancel = back;
+            _submitting = false;
             title.gameObject.SetActive(false);
             // Cards and heroes are selected directly; private-zone cards use the gallery.
             // Preserve the authored hierarchy without displaying a duplicate text-button list.
@@ -79,14 +83,27 @@ namespace ProjectC.Client
         public void SetServerSelected(List<string> selected)
         {
             _gallery?.SetSelected(selected);
-            _confirm.interactable = selected.Count >= _serverChoice.MinCount && selected.Count <= _serverChoice.MaxCount;
+            _confirm.interactable = !_submitting && selected.Count >= _serverChoice.MinCount && selected.Count <= _serverChoice.MaxCount;
         }
 
         public void SetSelected(List<EffectTargetView> selected)
         {
             var keys = selected.ConvertAll(CardGalleryView.TargetKey);
             _gallery?.SetSelected(keys);
-            _confirm.interactable = selected.Count >= _selection.MinCount && selected.Count <= _selection.MaxCount;
+            _confirm.interactable = !_submitting && selected.Count >= _selection.MinCount && selected.Count <= _selection.MaxCount;
+        }
+
+        public void SetSubmitting(bool submitting)
+        {
+            _submitting = submitting;
+            if (_confirm != null && submitting)
+            {
+                _confirm.interactable = false;
+            }
+            if (_cancel != null)
+            {
+                _cancel.interactable = !submitting && (_serverChoice == null || _serverChoice.CanCancel);
+            }
         }
     }
 }

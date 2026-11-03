@@ -126,11 +126,8 @@ namespace ProjectC.Tests
                 Assert.IsNotNull(picker);
                 int index = Array.FindIndex(a.PendingChoice.Candidates, x => x.CardId != other);
                 Assert.GreaterOrEqual(index, 0);
-                picker
-                    .transform.Find("Viewport/Candidates")
-                    .GetChild(index)
-                    .GetComponent<Button>()
-                    .onClick.Invoke();
+                var candidates = ui.GetComponentInChildren<CardGalleryView>().GetComponentsInChildren<CardWidget>();
+                candidates[index].Clicked(candidates[index]);
                 var confirm = picker.transform.Find("Confirm").GetComponent<Button>();
                 Assert.IsTrue(confirm.interactable);
 #if UNITY_EDITOR

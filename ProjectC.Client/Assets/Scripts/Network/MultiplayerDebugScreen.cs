@@ -26,6 +26,7 @@ namespace ProjectC.Client
             resyncing;
         public readonly HashSet<int> MulliganSelection = new HashSet<int>();
         public ActionChoiceView PendingChoice { get; private set; }
+        public GameplayInputCoordinator Input { get; } = new GameplayInputCoordinator();
         StateView state;
         LobbyView lobby;
         DeckView[] decks = Array.Empty<DeckView>();
@@ -445,6 +446,7 @@ namespace ProjectC.Client
 
         void ResetEpoch(int game)
         {
+            Input.Reset();
             PendingChoice = null;
             commandRequestId = null;
             acceptedSequence = -1;
@@ -480,6 +482,8 @@ namespace ProjectC.Client
 
         internal void DisconnectNetwork()
         {
+            transport?.Dispose();
+            Input.Reset();
             if (Matchmaking == MatchmakingState.Queuing)
             {
                 ResetMatchmaking(MatchmakingState.Error, "매칭 대기 중 연결이 종료되었습니다. 다시 접속하세요.");
@@ -489,7 +493,6 @@ namespace ProjectC.Client
             commandRequestId = null;
             acceptedSequence = -1;
             ViewInvalidated?.Invoke();
-            transport?.Dispose();
             connecting = pending = resyncing = false;
         }
 
@@ -688,11 +691,14 @@ namespace ProjectC.Client
             {
                 return;
             }
+            resyncing = true;
+            Input.Reset();
+            Input.ApplySnapshot(state, playerId, false);
             PendingChoice = null;
             commandRequestId = null;
             acceptedSequence = -1;
             ViewInvalidated?.Invoke();
-            resyncing = true;
+            Input.CommandSent(false);
             Send(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId));
         }
 
@@ -796,13 +802,40 @@ namespace ProjectC.Client
 
         bool SubmitJson(string command)
         {
-            if (!Connected || Busy || string.IsNullOrEmpty(matchId))
+            if (!isActiveAndEnabled || !Connected || Busy || string.IsNullOrEmpty(matchId))
+            {
+                return false;
+            }
+            var payload = Newtonsoft.Json.Linq.JObject.Parse(command);
+            string type = payload.Value<string>("Type");
+            GameplayInputAction action;
+            switch (type)
+            {
+                case "PlayCard": action = GameplayInputAction.PlayCard; break;
+                case "PlayerAction": action = GameplayInputAction.ActivateEffect; break;
+                case "ActivateEffect": action = Input.HasLocalSelection ? GameplayInputAction.ConfirmSelection : GameplayInputAction.ActivateEffect; break;
+                case "Attack":
+                case "DirectAttack": action = GameplayInputAction.Attack; break;
+                case "AdvancePhase": action = GameplayInputAction.AdvancePhase; break;
+                case "EndTurn": action = GameplayInputAction.EndTurn; break;
+                case "ResolveChoice": action = GameplayInputAction.ConfirmSelection; break;
+                case "CancelAction": action = GameplayInputAction.CancelSelection; break;
+                case "SubmitMulligan": action = GameplayInputAction.SubmitMulligan; break;
+                default: return false;
+            }
+            if (!Input.CanExecute(action))
+            {
+                return false;
+            }
+            if ((type == "ResolveChoice" || type == "CancelAction")
+                && (PendingChoice == null || payload.Value<string>("ChoiceId") != PendingChoice.ChoiceId))
             {
                 return false;
             }
             commandRequestId = Guid.NewGuid().ToString("N");
             acceptedSequence = -1;
             pending = true;
+            Input.CommandSent(action == GameplayInputAction.ConfirmSelection || action == GameplayInputAction.CancelSelection);
             Send(
                 Request("SubmitCommand", commandRequestId)
                     + ",\"MatchId\":"
@@ -858,6 +891,8 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    PendingChoice = null;
+                    Input.Reset();
                     if (WebsiteMode && State?.Finished == true)
                     {
                         ClientApp.Instance.Website?.MarkResultUnconfirmed();
@@ -1072,6 +1107,7 @@ namespace ProjectC.Client
                 {
                     commandRequestId = null;
                     acceptedSequence = -1;
+                    Input.CommandRejected();
                     CommandFinished?.Invoke(false, Reason(message.Reason));
                 }
                 if (message.Reason == "InvalidSession" || message.Reason == "MatchNotFound")
@@ -1144,7 +1180,14 @@ namespace ProjectC.Client
                     {
                         break;
                     }
-                    PendingChoice = JsonUtility.FromJson<ActionChoiceMessage>(json).Payload;
+                    var nextChoice = JsonUtility.FromJson<ActionChoiceMessage>(json).Payload;
+                    if (PendingChoice?.ChoiceId == nextChoice.ChoiceId && commandRequestId != null
+                        && Input.SelectionPhase == SelectionInputPhase.WaitingForServer)
+                    {
+                        break;
+                    }
+                    PendingChoice = nextChoice;
+                    Input.SetServerChoice(PendingChoice);
                     commandRequestId = null;
                     acceptedSequence = -1;
                     pending = resyncing = false;
@@ -1162,11 +1205,14 @@ namespace ProjectC.Client
                     }
                     state = JsonUtility.FromJson<SnapshotMessage>(json).Payload;
                     sequence = lastEvents = message.SequenceNumber;
+                    bool commandSettled = resyncing || commandRequestId == null
+                        || (acceptedSequence >= 0 && sequence >= acceptedSequence);
                     resyncing = false;
-                    if (state.ResolvingPlayerId == 0)
+                    if ((state.ResolvingPlayerId == 0 && commandSettled) || state.Finished)
                     {
                         PendingChoice = null;
                     }
+                    Input.ApplySnapshot(state, playerId, commandSettled);
                     if (
                         commandRequestId != null
                         && acceptedSequence >= 0
@@ -1188,6 +1234,9 @@ namespace ProjectC.Client
                     SnapshotReceived?.Invoke(state);
                     break;
                 case "MatchEnded":
+                    PendingChoice = null;
+                    Input.Reset();
+                    Input.ApplySnapshot(state, playerId, true);
                     if (WebsiteMode)
                     {
                         ClientApp.Instance.Website?.WaitForResultConfirmation(Time.realtimeSinceStartupAsDouble);
@@ -1368,7 +1417,40 @@ namespace ProjectC.Client
 
         void OnDestroy()
         {
+            Input.Reset();
             transport?.Dispose();
+        }
+
+        private void OnEnable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += SceneLoaded;
+            RestoreInputState();
+        }
+
+        private void OnDisable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SceneLoaded;
+            Input.Reset();
+        }
+
+        private void SceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            RestoreInputState();
+        }
+
+        private void RestoreInputState()
+        {
+            // Scene-owned scopes expire; reconstruct only the server's current restrictions.
+            Input.Reset();
+            Input.ApplySnapshot(state, playerId, false);
+            if (PendingChoice != null)
+            {
+                Input.SetServerChoice(PendingChoice);
+            }
+            if (Busy)
+            {
+                Input.CommandSent(PendingChoice != null);
+            }
         }
     }
 }

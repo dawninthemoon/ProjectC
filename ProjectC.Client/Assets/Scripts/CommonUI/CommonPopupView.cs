@@ -24,6 +24,7 @@ namespace ProjectC.Client
         private RectTransform _buttons;
         private Button _template;
         private readonly List<Button> _pool = new List<Button>();
+        private IDisposable _inputScope;
 
         public void Show(string message, params PopupAction[] actions)
         {
@@ -37,6 +38,9 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("CommonPopup requires Message, Buttons and ActionTemplate bindings.");
             }
             _message.text = message;
+            var nextScope = ClientApp.Instance?.Network?.Input.PushScope("CommonPopup", Array.Empty<GameplayInputAction>());
+            _inputScope?.Dispose();
+            _inputScope = nextScope;
             _template.gameObject.SetActive(false);
             while (_pool.Count < actions.Length)
             {
@@ -65,6 +69,7 @@ namespace ProjectC.Client
 
         public void Hide()
         {
+            ReleaseInput();
             foreach (var button in _pool)
             {
                 button.onClick.RemoveAllListeners();
@@ -72,5 +77,14 @@ namespace ProjectC.Client
             // The blocker belongs to this root; hiding closes the entire modal.
             gameObject.SetActive(false);
         }
+
+        private void ReleaseInput()
+        {
+            _inputScope?.Dispose();
+            _inputScope = null;
+        }
+
+        private void OnDisable() => ReleaseInput();
+        private void OnDestroy() => ReleaseInput();
     }
 }

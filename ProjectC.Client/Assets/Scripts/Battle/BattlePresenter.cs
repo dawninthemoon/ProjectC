@@ -46,7 +46,7 @@ namespace ProjectC.Client
 
         public void InspectCard(CardView card, bool fromChoice = false)
         {
-            if (card == null)
+            if (card == null || !Client.Input.CanExecute(GameplayInputAction.OpenCardDetails))
             {
                 return;
             }
@@ -86,6 +86,7 @@ namespace ProjectC.Client
         public int RenderedTurn { get; private set; }
         public MulliganPanelView Mulligan { get; private set; }
         public BattleInteractionController Interaction { get; private set; }
+        public ModalBlocker Modal { get; private set; }
         public CardZoneView[] Zones =>
             new[] { Hand, OwnField, EnemyField, EnemyHand, OwnGraveyard, EnemyGraveyard };
         public bool CanAct =>
@@ -95,6 +96,7 @@ namespace ProjectC.Client
             && Client.State.Started
             && !Client.State.Finished
             && !Client.State.MulliganActive
+            && !Client.Input.HasSelection
             && !(Mulligan?.Reviewing ?? false)
             && Client.State.ResolvingPlayerId == 0
             && Client.State.ActivePlayerId == Client.PlayerId
@@ -176,6 +178,7 @@ namespace ProjectC.Client
             this.Bind("EnemyPlayer", out EnemyPlayer);
             this.Bind("CardInspector", out Detail);
             this.Bind("RecentEvents", out Log);
+            Modal = ModalBlocker.Create((RectTransform)transform);
             Interaction = GetComponent<BattleInteractionController>();
             Interaction.Initialize(this);
             _handRect = (RectTransform)Hand.transform;
@@ -203,6 +206,10 @@ namespace ProjectC.Client
             }
             Cancel.onClick.AddListener(() =>
             {
+                if (Client.Input.HasSelection || !Client.Input.CanExecute(GameplayInputAction.CancelSelection))
+                {
+                    return;
+                }
                 if (SelectedCardId != 0)
                 {
                     ClientAudio.Play(SoundCue.CardDeselect);
@@ -211,6 +218,10 @@ namespace ProjectC.Client
             });
             LobbyToggle.onClick.AddListener(() =>
             {
+                if (!Client.Input.CanExecute(GameplayInputAction.OpenBattleMenu))
+                {
+                    return;
+                }
                 if (ClientApp.Instance != null)
                 {
                     ClientApp.Instance.Navigate("LobbyScene");
@@ -223,7 +234,13 @@ namespace ProjectC.Client
             GraveyardToggle.onClick.AddListener(() =>
                 _gallery.ShowPublicZones()
             );
-            LogToggle.onClick.AddListener(Log.Toggle);
+            LogToggle.onClick.AddListener(() =>
+            {
+                if (Client.Input.CanExecute(GameplayInputAction.ToggleBattleLog))
+                {
+                    Log.Toggle();
+                }
+            });
             Resync?.onClick.AddListener(Client.RequestSnapshot);
             ResultRematch.onClick.AddListener(Client.RequestRematch);
             ResultLeave.onClick.AddListener(Client.LeaveMatch);
@@ -572,14 +589,16 @@ namespace ProjectC.Client
                 }
             }
             bool action = CanAct;
-            Summon.interactable = action && selected != null && selected.CanSummon;
+            Summon.interactable = action && Client.Input.CanExecute(GameplayInputAction.PlayCard) && selected != null && selected.CanSummon;
             BattlePhase.interactable = false;
             Attack.interactable =
-                action && selected != null && selected.CanAttack && TargetCardId != 0;
+                action && Client.Input.CanExecute(GameplayInputAction.Attack) && selected != null && selected.CanAttack && TargetCardId != 0;
             DirectAttack.interactable =
-                action && selected != null && selected.CanDirectAttack && enemy?.Field?.Length == 0;
+                action && Client.Input.CanExecute(GameplayInputAction.Attack) && selected != null && selected.CanDirectAttack && enemy?.Field?.Length == 0;
             EndTurn.interactable = action && (Interaction.State == BattleInputState.Idle
-                || Interaction.State == BattleInputState.SelectingCardAction);
+                || Interaction.State == BattleInputState.SelectingCardAction)
+                && Client.Input.CanExecute(rendered?.Phase == (int)BattlePhaseKind.Main2 || rendered?.Phase == (int)BattlePhaseKind.End
+                    ? GameplayInputAction.EndTurn : GameplayInputAction.AdvancePhase);
             EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get(
                 rendered?.Phase == (int)BattlePhaseKind.Main1 ? "ui.phase.to_battle"
                 : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.to_main2" : "ui.phase.end_turn");

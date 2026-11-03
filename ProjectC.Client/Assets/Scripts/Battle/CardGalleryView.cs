@@ -18,6 +18,8 @@ namespace ProjectC.Client
         private readonly List<CardWidget> _cards = new List<CardWidget>();
         private readonly List<string> _tokens = new List<string>();
         public bool Choosing { get; private set; }
+        private IDisposable _browseScope;
+        private ModalBlocker.Lease _browseModal;
 
         public void Initialize(BattlePresenter presenter)
         {
@@ -33,12 +35,14 @@ namespace ProjectC.Client
 
         public void Close()
         {
+            ReleaseBrowse();
             gameObject.SetActive(false);
             Choosing = false;
         }
 
         private void Begin(string title, bool choosing)
         {
+            ReleaseBrowse();
             Choosing = choosing;
             _title.text = title;
             _title.gameObject.SetActive(!choosing);
@@ -81,9 +85,15 @@ namespace ProjectC.Client
 
         public void ShowPublicZones(bool exile = false)
         {
+            if (!_presenter.Client.Input.CanExecute(GameplayInputAction.OpenPublicZone))
+            {
+                return;
+            }
             _presenter.Interaction.ResetInput();
             _presenter.SetHandExpanded(false);
             Begin(exile ? BattleText.Get("ui.gallery.exile") : BattleText.Get("ui.gallery.grave"), false);
+            _browseScope = _presenter.Client.Input.PushScope("PublicCardGallery", new[] { GameplayInputAction.OpenCardDetails });
+            _browseModal = _presenter.Modal.Acquire(this, null, (RectTransform)transform, (RectTransform)_presenter.Detail.transform);
             int index = 0;
             foreach (var player in _presenter.Client.State?.Players ?? Array.Empty<PlayerView>())
             {
@@ -145,5 +155,16 @@ namespace ProjectC.Client
                 _cards[i].SetSelected(selected.Contains(_tokens[i]));
             }
         }
+
+        private void ReleaseBrowse()
+        {
+            _browseScope?.Dispose();
+            _browseScope = null;
+            _browseModal?.Dispose();
+            _browseModal = null;
+        }
+
+        private void OnDisable() => ReleaseBrowse();
+        private void OnDestroy() => ReleaseBrowse();
     }
 }

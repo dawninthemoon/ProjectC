@@ -45,6 +45,8 @@ namespace ProjectC.Client
         private BattleHitArea _dropArea;
         private readonly Vector3[] _heroCorners = new Vector3[4];
         private const float MinimumDropOverlap = .30f;
+        private ModalBlocker.Lease _selectionModal;
+        private bool _listeningInput;
 
         public void Initialize(BattlePresenter value)
         {
@@ -60,15 +62,95 @@ namespace ProjectC.Client
             }
             presenter.Client.CommandFinished += Finished;
             presenter.Client.ViewInvalidated += ResetInput;
+            ListenInput();
             ResetInput();
+        }
+
+        private void ListenInput()
+        {
+            if (!_listeningInput && presenter != null)
+            {
+                presenter.Client.Input.Changed += PermissionsChanged;
+                _listeningInput = true;
+                PermissionsChanged();
+            }
+        }
+
+        private void PermissionsChanged()
+        {
+            if (presenter.Client.Input.HasSelection)
+            {
+                if (_selectionModal == null)
+                {
+                    var gallery = presenter.GetComponentInChildren<CardGalleryView>(true);
+                    _selectionModal = presenter.Modal.Acquire(this, PassThroughSelection,
+                        picker != null ? (RectTransform)picker.transform : null,
+                        gallery != null ? (RectTransform)gallery.transform : null,
+                        presenter.Detail != null ? (RectTransform)presenter.Detail.transform : null);
+                }
+                picker?.SetSubmitting(presenter.Client.Input.SelectionPhase != SelectionInputPhase.Selecting);
+            }
+            else
+            {
+                _selectionModal?.Dispose();
+                _selectionModal = null;
+                if (serverChoice != null && (presenter.Client.State?.Finished == true || !presenter.Client.Connected))
+                {
+                    ResetInput();
+                }
+            }
+        }
+
+        private bool PassThroughSelection(Vector2 point, Camera camera)
+        {
+            foreach (var zone in presenter.Zones)
+            {
+                foreach (var widget in zone.Widgets)
+                {
+                    int kind = widget.InHand ? (int)PresentationZone.Hand : (int)PresentationZone.Field;
+                    if (widget.Card != null && widget.gameObject.activeInHierarchy
+                        && presenter.Client.Input.CanSelectCard(kind, widget.Card.Id)
+                        && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)widget.transform, point, camera))
+                    {
+                        return true;
+                    }
+                }
+            }
+            foreach (var area in _areas)
+            {
+                int player = area.Kind == BattleHitArea.AreaKind.OwnHero ? presenter.Client.PlayerId
+                    : area.Kind == BattleHitArea.AreaKind.EnemyHero ? presenter.EnemyId : 0;
+                if (player != 0 && presenter.Client.Input.CanSelectPlayer(player)
+                    && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)area.transform, point, camera))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void OnEnable() => ListenInput();
+
+        private void OnDisable()
+        {
+            if (_listeningInput)
+            {
+                presenter.Client.Input.Changed -= PermissionsChanged;
+                _listeningInput = false;
+            }
+            ResetInput();
+            _selectionModal?.Dispose();
+            _selectionModal = null;
         }
 
         void OnDestroy()
         {
+            _selectionModal?.Dispose();
             if (presenter != null)
             {
                 presenter.Client.CommandFinished -= Finished;
                 presenter.Client.ViewInvalidated -= ResetInput;
+                presenter.Client.Input.Changed -= PermissionsChanged;
             }
         }
 
@@ -104,6 +186,7 @@ namespace ProjectC.Client
 
         public void ResetInput()
         {
+            presenter?.Client.Input.CancelLocalSelection();
             if (rollback != null)
             {
                 StopCoroutine(rollback);
@@ -153,6 +236,12 @@ namespace ProjectC.Client
             {
                 return;
             }
+            int zone = widget.InHand ? (int)PresentationZone.Hand : (int)PresentationZone.Field;
+            if (!presenter.Client.Input.CanSelectCard(zone, widget.Card.Id)
+                || (presenter.Client.Input.HasSelection && State != BattleInputState.SelectingEffectTarget))
+            {
+                return;
+            }
             if (State == BattleInputState.SelectingEffectTarget)
             {
                 if (serverChoice != null)
@@ -193,6 +282,10 @@ namespace ProjectC.Client
 
         public void FocusHand(CardWidget widget)
         {
+            if (!presenter.Client.Input.CanExecute(GameplayInputAction.SelectHandCard) || presenter.Client.Input.HasSelection)
+            {
+                return;
+            }
             if (!widget.InHand || presenter.Hand.Layout.Compact
                 || (State != BattleInputState.Idle && State != BattleInputState.SelectingCardAction))
             {
@@ -214,6 +307,11 @@ namespace ProjectC.Client
 
         public void ClickArea(BattleHitArea area)
         {
+            if (presenter.Client.Input.HasSelection && area.Kind != BattleHitArea.AreaKind.OwnHero
+                && area.Kind != BattleHitArea.AreaKind.EnemyHero)
+            {
+                return;
+            }
             if (area.Kind == BattleHitArea.AreaKind.Background || area.Kind == BattleHitArea.AreaKind.OwnField)
             {
                 if (State == BattleInputState.SelectingEffectTarget || State == BattleInputState.AwaitingServerResponse)
@@ -276,6 +374,10 @@ namespace ProjectC.Client
 
         void Begin(CardWidget widget, PointerEventData pointer)
         {
+            if (!presenter.Client.Input.CanExecute(widget.InHand ? GameplayInputAction.PlayCard : GameplayInputAction.Attack))
+            {
+                return;
+            }
             if (State == BattleInputState.AwaitingServerResponse || State == BattleInputState.SelectingEffectTarget || !presenter.CanAct)
             {
                 return;
@@ -432,6 +534,11 @@ namespace ProjectC.Client
         {
             if (State != BattleInputState.AwaitingServerResponse)
             {
+                // A destroyed/hidden local picker has no draft to retry after rejection.
+                if (!accepted && activation == null)
+                {
+                    presenter.Client.Input.CancelLocalSelection();
+                }
                 return;
             }
             if (accepted)
@@ -441,6 +548,21 @@ namespace ProjectC.Client
             else
             {
                 presenter.Log.ShowFeedback(reason);
+                if (presenter.Client.Input.HasSelection)
+                {
+                    State = BattleInputState.SelectingEffectTarget;
+                    if (serverChoice != null)
+                    {
+                        picker.ShowServer(serverChoice, PickServer, ConfirmServer, CancelSelection);
+                        picker.SetServerSelected(serverTargets);
+                    }
+                    else if (activation != null)
+                    {
+                        selectionIndex = Mathf.Min(selectionIndex, activation.Selections.Length - 1);
+                        ShowTargets();
+                    }
+                    return;
+                }
                 ReturnCard();
             }
         }
@@ -482,7 +604,7 @@ namespace ProjectC.Client
 
         void SelectAction(ActivationView value)
         {
-            if (!presenter.CanAct || !value.CanActivate)
+            if (!presenter.CanAct || !value.CanActivate || !presenter.Client.Input.CanExecute(GameplayInputAction.ActivateEffect))
             {
                 return;
             }
@@ -537,6 +659,7 @@ namespace ProjectC.Client
 
         void ShowTargets()
         {
+            presenter.Client.Input.SetLocalChoice(activation.Selections[selectionIndex]);
             picker.Show(
                 activation.Selections[selectionIndex],
                 selectionIndex,
@@ -555,6 +678,12 @@ namespace ProjectC.Client
 
         void Pick(EffectTargetView target)
         {
+            var action = target.CardId == 0 && target.Zone == (int)PresentationZone.Field
+                ? GameplayInputAction.SelectPlayer : GameplayInputCoordinator.CardSelectionAction(target.Zone);
+            if (!presenter.Client.Input.CanExecute(action))
+            {
+                return;
+            }
             presenter.InspectCard(presenter.FindCard(target.CardId));
             var chosen = targets[selectionIndex];
             int index = chosen.FindIndex(t =>
@@ -591,6 +720,10 @@ namespace ProjectC.Client
 
         void Confirm()
         {
+            if (!presenter.Client.Input.CanExecute(GameplayInputAction.ConfirmSelection))
+            {
+                return;
+            }
             var rule = activation.Selections[selectionIndex];
             int count = targets[selectionIndex].Count;
             if (count < rule.MinCount || count > rule.MaxCount)
@@ -609,10 +742,10 @@ namespace ProjectC.Client
 
         void SendEffect()
         {
-            picker.gameObject.SetActive(false);
             if (presenter.Client.SendEffect(sourceId, activation.EffectId, targets))
             {
                 State = BattleInputState.AwaitingServerResponse;
+                picker.SetSubmitting(true);
                 Hints();
             }
             else
@@ -654,6 +787,10 @@ namespace ProjectC.Client
 
         void CancelSelection()
         {
+            if (presenter.Client.Input.HasSelection && !presenter.Client.Input.CanExecute(GameplayInputAction.CancelSelection))
+            {
+                return;
+            }
             if (serverChoice == null)
             {
                 if (presenter.SelectedCardId != 0 || State != BattleInputState.Idle)
@@ -674,14 +811,24 @@ namespace ProjectC.Client
             {
                 ClientAudio.Play(SoundCue.CardDeselect);
                 State = BattleInputState.AwaitingServerResponse;
-                picker.gameObject.SetActive(false);
+                picker.SetSubmitting(true);
             }
         }
 
         void PickServer(string token)
         {
+            if (serverChoice == null || presenter.Client.Input.SelectionPhase != SelectionInputPhase.Selecting)
+            {
+                return;
+            }
             var option = System.Array.Find(serverChoice.Candidates, candidate => candidate.Token == token);
             if (option == null)
+            {
+                return;
+            }
+            var action = option.CardId == 0 && option.Zone == (int)PresentationZone.Field
+                ? GameplayInputAction.SelectPlayer : GameplayInputCoordinator.CardSelectionAction(option.Zone);
+            if (!presenter.Client.Input.CanExecute(action))
             {
                 return;
             }
@@ -712,6 +859,10 @@ namespace ProjectC.Client
 
         void ConfirmServer()
         {
+            if (serverChoice == null || !presenter.Client.Input.CanExecute(GameplayInputAction.ConfirmSelection))
+            {
+                return;
+            }
             if (
                 serverTargets.Count < serverChoice.MinCount
                 || serverTargets.Count > serverChoice.MaxCount
@@ -722,7 +873,7 @@ namespace ProjectC.Client
             if (presenter.Client.SendChoice(serverTargets))
             {
                 State = BattleInputState.AwaitingServerResponse;
-                picker.gameObject.SetActive(false);
+                picker.SetSubmitting(true);
             }
         }
 
