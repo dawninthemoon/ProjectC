@@ -587,10 +587,8 @@ void MulliganNetworkTests()
     Check(a.Last("CommandAccepted")["SequenceNumber"] == 2);
     auto after = a.Last("StateSnapshot")["Payload"];
     Check(after["Players"][0]["MulliganSelectedIds"] == Json::array({card}));
-    for (auto const& c : after["Players"][0]["Hand"])
-    {
-        Check(c["Id"] != card);
-    }
+    // While the other player is deciding, the owner still sees the original hand.
+    Check(after["Players"][0]["Hand"] == first["Players"][0]["Hand"]);
     Check(b.Last("StateSnapshot")["Payload"]["Players"][0]["MulliganSelectedIds"].empty());
     Check(b.Last("StateSnapshot")["Payload"]["Players"][0]["Hand"].empty());
     submit(a, Json::array());
