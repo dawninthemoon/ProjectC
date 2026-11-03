@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build and test Docker image
-        run: docker build -t projectc-server:ci ./ProjectC.Server
+        run: docker build -f ProjectC.Server/Dockerfile -t projectc-server:ci .
       - name: Verify container stays alive and stops gracefully
         run: |
           docker run -d --name projectc -p 127.0.0.1:7777:7777 projectc-server:ci
