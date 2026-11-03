@@ -27,6 +27,10 @@ namespace ProjectC.Client
         [SerializeField, Min(0)] private float _handRotation = 7f;
         [SerializeField] private AnimationCurve _animationEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+        [Header("Summon presentation")]
+        [SerializeField, Range(.5f, .8f)] private float _summonDuration = .66f;
+        public float SummonDuration => _summonDuration;
+
         public float DrawInterval => _drawInterval;
         public float DrawArcHeight => _drawArcHeight;
         public float DrawScale => _drawScale;

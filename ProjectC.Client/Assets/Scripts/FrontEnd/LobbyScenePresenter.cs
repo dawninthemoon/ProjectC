@@ -15,7 +15,8 @@ namespace ProjectC.Client
             feedback,
             serverDeck;
         Button resume;
-        bool wasStarted;
+        private Button _environment;
+        private Button _deckManager;
 
         void Start()
         {
@@ -23,7 +24,10 @@ namespace ProjectC.Client
             this.Bind("MatchPanel", out matchmaking);
             matchPanel = matchmaking.gameObject;
             matchmaking.Bind(app.Network);
-            matchmaking.Address.text = app.ServerAddress;
+            if (!app.Network.ConnectionReady)
+            {
+                app.Navigate("ConnectionScene");
+            }
             this.Bind("SettingsPanel", out settings);
             this.Bind("SelectedPersonalDeck", out selected);
             this.Bind("Notice", out feedback);
@@ -37,7 +41,7 @@ namespace ProjectC.Client
                     matchPanel.SetActive(!matchPanel.activeSelf);
                 }
             );
-            this.BindButton("DeckManager", out Button _, () => app.Navigate("DeckEditorScene"));
+            this.BindButton("DeckManager", out _deckManager, () => app.Navigate("DeckEditorScene"));
             this.BindButton(
                 "SettingsMenu",
                 out Button _,
@@ -64,14 +68,19 @@ namespace ProjectC.Client
             this.Bind("Fullscreen", out Toggle fullscreen);
             fullscreen.SetIsOnWithoutNotify(Screen.fullScreen);
             fullscreen.onValueChanged.AddListener(value => Screen.fullScreen = value);
+            if (!this.Bind("ConnectionEnvironment", out _environment))
+            {
+                throw new System.InvalidOperationException("SettingsPanel requires ConnectionEnvironment button.");
+            }
+            _environment.onClick.AddListener(() => app.SetEnvironment(app.Environment == ServerEnvironment.Local
+                ? ServerEnvironment.Production : ServerEnvironment.Local));
             app.Network.NoticeReceived += Notice;
-            wasStarted = app.Network.State?.Started == true && !app.Network.State.Finished;
             feedback.text = app.Error + app.Decks.Warning;
         }
 
         void Notice(string text)
         {
-            feedback.text = text;
+            feedback.text = app.Network.MatchmakingError;
         }
 
         void OnDestroy()
@@ -79,7 +88,10 @@ namespace ProjectC.Client
             if (app != null)
             {
                 app.Network.NoticeReceived -= Notice;
-                app.ServerAddress = matchmaking.Address.text;
+                if (app.Network.Matchmaking == MatchmakingState.Queuing)
+                {
+                    app.Network.CancelQueue();
+                }
             }
         }
 
@@ -103,20 +115,18 @@ namespace ProjectC.Client
                                 ? "구성 완료"
                                 : "미완성 덱"
                         )
-                        + "\n준비 시 선택한 개인 덱을 서버에 제출합니다.";
-            serverDeck.text =
-                "온라인 대전 덱: "
-                + app.Network.DeckSummary
-                + "\n덱 버튼으로 개인 덱 / 서버 테스트 덱을 전환합니다.";
-            resume.gameObject.SetActive(
-                app.Network.State?.Started == true && !app.Network.State.Finished
-            );
+                        + "\n선택한 덱으로 대전합니다.";
+            serverDeck.text = "덱 선택 버튼으로 사용할 덱을 바꿀 수 있습니다.";
+            _environment.GetComponentInChildren<TMP_Text>().text = "서버: " + app.Environment + " · 변경 시 재연결";
+            bool joined = !string.IsNullOrEmpty(app.Network.CurrentMatch);
+            _environment.interactable = !app.Network.Busy && !joined;
+            _deckManager.interactable = !app.Network.Busy && !joined;
+            resume.gameObject.SetActive(false);
             bool started = app.Network.State?.Started == true && !app.Network.State.Finished;
-            if (started && !wasStarted)
+            if (app.Network.ConnectionReady && (started || (joined && app.Network.Matchmaking == MatchmakingState.Matched)))
             {
                 app.Navigate("BattleScene");
             }
-            wasStarted = started;
         }
     }
 }

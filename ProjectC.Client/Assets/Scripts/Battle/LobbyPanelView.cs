@@ -26,6 +26,7 @@ namespace ProjectC.Client
         MultiplayerDebugScreen client;
         Button _queueMatch;
         Button _cancelQueue;
+        private bool _streamlined;
 
         public void Bind(MultiplayerDebugScreen value)
         {
@@ -57,6 +58,20 @@ namespace ProjectC.Client
             {
                 Debug.LogError("LobbyPanelView requires QueueMatch and CancelQueue Button children. Run Project C/Upgrade lobby matchmaking UI.", this);
             }
+            _streamlined = GetComponentInParent<LobbyScenePresenter>() != null;
+            if (_streamlined)
+            {
+                foreach (string name in new[] { "ServerAddress", "Connect", "Disconnect", "MatchId", "MatchHint", "Create", "Join", "Ready", "Seats", "Rematch", "Leave", "Close" })
+                {
+                    var child = transform.Find(name);
+                    if (child != null)
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+                Deck.onClick.AddListener(client.CycleDeck);
+                return;
+            }
             Connect.onClick.AddListener(() => client.ConnectTo(Address.text.Trim()));
             Disconnect.onClick.AddListener(client.DisconnectNetwork);
             Create.onClick.AddListener(client.CreateMatch);
@@ -83,10 +98,48 @@ namespace ProjectC.Client
             return false;
         }
 
+        private void RenderMatchmaking()
+        {
+            bool searching = client.Matchmaking == MatchmakingState.Queuing;
+            bool joined = !string.IsNullOrEmpty(client.CurrentMatch);
+            DeckLabel.text = client.HasDeckSelection ? client.DeckSummary : "덱 선택";
+            Deck.interactable = !client.Busy && !joined;
+            _queueMatch.gameObject.SetActive(!searching);
+            _queueMatch.interactable = client.ConnectionReady && !client.Busy && !joined && client.CanQueueSelectedDeck;
+            _cancelQueue.gameObject.SetActive(searching);
+            _cancelQueue.interactable = client.Connected && !client.CancellingQueue;
+            if (searching)
+            {
+                const int SecondsPerMinute = 60;
+                int seconds = Mathf.FloorToInt(client.QueueSeconds);
+                Connection.text = (client.CancellingQueue ? "검색 취소 중" : "대전 상대 검색 중")
+                    + $" · {seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}";
+            }
+            else if (client.Matchmaking == MatchmakingState.Matched)
+            {
+                Connection.text = "대전 준비 중";
+            }
+            else if (!string.IsNullOrEmpty(client.MatchmakingError))
+            {
+                Connection.text = client.MatchmakingError;
+            }
+            else
+            {
+                Connection.text = !string.IsNullOrEmpty(client.CatalogProblem) ? client.CatalogProblem
+                    : !client.HasDeckSelection ? "대전에 사용할 덱을 선택하세요."
+                    : !client.CanQueueSelectedDeck ? client.DeckProblem : "대전 상대를 검색할 수 있습니다.";
+            }
+        }
+
         public void Render()
         {
             if (client == null)
             {
+                return;
+            }
+            if (_streamlined)
+            {
+                RenderMatchmaking();
                 return;
             }
             bool available = client.Connected && !client.Busy;

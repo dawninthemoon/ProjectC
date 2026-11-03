@@ -1,0 +1,42 @@
+{
+  "new_summon_tests": {
+    "total": "5",
+    "passed": "5",
+    "failed": "0",
+    "skipped": "0"
+  },
+  "existing_related_checks": {
+    "total": 22,
+    "passed": 21,
+    "failed": 1
+  },
+  "known_failed_check": "BattleAudioPlayModeTests.RealServerEffectsAndTransformationProduceTheirCues assumes immediate selection before reveal; same assertions pass with presentation wait in validation copy only.",
+  "wait_probe_result": "Passed",
+  "gameview_timing": "Measured summon: 0.6565843 seconds; captured frames=60",
+  "player_proof": "Real macOS player; public event fixture; duration=0.7333508; shader supported=True",
+  "pool_capacity": 4,
+  "original_server_and_protocol_unchanged": true,
+  "full_suite_run": false,
+  "new_cases": [
+    {
+      "name": "ProjectC.Tests.SummonPresentationPlayModeTests.RapidSummonsAndIncomingStatsCommitInOrder",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.SummonPresentationPlayModeTests.RealServerSummonShowsGatherRingBurstAndReadableSettledCard",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.SummonPresentationPlayModeTests.SameBatchSummonsOverlapAndLaterRemovalWaitsForReveal",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.SummonPresentationPlayModeTests.SkipAndDisableRestoreLatestSnapshotWithoutResidualEffects",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.SummonPresentationPlayModeTests.VfxPoolReusesInstancesAndMissingVfxDoesNotBlockReveal",
+      "result": "Passed"
+    }
+  ]
+}

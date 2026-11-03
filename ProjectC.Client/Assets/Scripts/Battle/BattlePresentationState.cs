@@ -58,6 +58,12 @@ namespace ProjectC.Client
             }
         }
 
+        public static bool IsFieldEntry(EventView e)
+        {
+            return e.Type == (int)PresentationEvent.Move && e.TargetCardId != 0
+                && e.FromZone != (int)PresentationZone.Field && e.ToZone == (int)PresentationZone.Field;
+        }
+
         public static bool IsDraw(EventView e)
         {
             return e.Type == (int)PresentationEvent.Move

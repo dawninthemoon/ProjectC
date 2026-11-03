@@ -98,6 +98,10 @@ namespace ProjectC.Client
         private Coroutine _turnRoutine;
         private readonly HashSet<CardZoneView> _flightZones = new HashSet<CardZoneView>();
         public int ActiveDraws { get; private set; }
+        public int ActiveSummons { get; private set; }
+        public int SummonsPresented { get; private set; }
+        private BattleVfxPlayer _vfx;
+        private int _feedbackGeneration;
         private const float MinimumDuration = .01f;
         private const float DeckScale = .48f;
         bool bound;
@@ -132,6 +136,7 @@ namespace ProjectC.Client
             DrawCard = (RectTransform)DrawGroup.transform;
             this.Bind("YourHand", out OwnHand);
             this.Bind("OpponentHand", out OpponentHand);
+            this.Bind("BattleVfxLayer", out _vfx);
             bound = true;
             foreach (var group in new[] { TurnGroup, PopupGroup, DrawGroup, dim })
             {
@@ -143,7 +148,9 @@ namespace ProjectC.Client
         {
             BindReferences();
             ++turnGeneration;
+            ++_feedbackGeneration;
             StopAllCoroutines();
+            _vfx?.ResetEffects();
             _popupRoutine = null;
             _turnRoutine = null;
             foreach (var zone in _flightZones)
@@ -154,7 +161,7 @@ namespace ProjectC.Client
                 }
             }
             _flightZones.Clear();
-            ActiveDraws = 0;
+            ActiveDraws = ActiveSummons = 0;
             TurnGroup.alpha = PopupGroup.alpha = DrawGroup.alpha = dim.alpha = 0;
         }
 
@@ -193,6 +200,68 @@ namespace ProjectC.Client
             ClientAudio.Play(SoundCue.Draw);
             _flightZones.Add(zone);
             StartCoroutine(DrawAnimation(zone, widget, own));
+        }
+
+        public void Summon(CardZoneView zone, CardWidget widget, float duration)
+        {
+            BindReferences();
+            if (zone == null || widget == null || zone.Layout == null)
+            {
+                return;
+            }
+            _flightZones.Add(zone);
+            StartCoroutine(SummonAnimation(zone, widget, Mathf.Max(MinimumDuration, duration), _feedbackGeneration));
+        }
+
+        private IEnumerator SummonAnimation(CardZoneView zone, CardWidget widget, float duration, int generation)
+        {
+            ++ActiveSummons;
+            ++SummonsPresented;
+            BattleVfxCue cue = null;
+            try
+            {
+                widget.SetInFlight(true);
+                var rect = (RectTransform)widget.transform;
+                var opacity = widget.GetComponent<CanvasGroup>();
+                cue = _vfx?.AcquireSummon();
+                for (float elapsed = 0; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+                {
+                    int index = zone.Widgets.IndexOf(widget);
+                    if (widget == null || index < 0 || generation != _feedbackGeneration)
+                    {
+                        yield break;
+                    }
+                    float progress = elapsed / duration;
+                    zone.Layout.Place(widget, index, zone.Widgets.Count);
+                    var center = widget.WorldCenter;
+                    float reveal = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.38f, .82f, progress));
+                    rect.localScale *= Mathf.Lerp(.72f, 1, reveal) + Mathf.Sin(reveal * Mathf.PI) * .06f;
+                    if (opacity != null)
+                    {
+                        opacity.alpha = reveal;
+                    }
+                    cue?.Sample(center, progress);
+                    yield return null;
+                }
+            }
+            finally
+            {
+                _vfx?.Release(cue);
+                if (widget != null)
+                {
+                    widget.SetInFlight(false);
+                    int index = zone != null ? zone.Widgets.IndexOf(widget) : -1;
+                    if (index >= 0 && zone.isActiveAndEnabled)
+                    {
+                        zone.Layout.Place(widget, index, zone.Widgets.Count);
+                        zone.RestoreSorting();
+                    }
+                }
+                if (generation == _feedbackGeneration)
+                {
+                    ActiveSummons = Mathf.Max(0, ActiveSummons - 1);
+                }
+            }
         }
 
         private void OnDisable()

@@ -70,7 +70,7 @@ namespace ProjectC.Client
             float offset = index - (count - 1) * .5f;
             float ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
             position = new Vector2(offset * Spacing, Hand && !Compact ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
-            rotation = Quaternion.Euler(0, 0, Hand && !Compact ? -ratio * (Settings?.HandRotation ?? 12f) : 0);
+            rotation = Quaternion.identity;
         }
 
         public void Place(CardWidget card, int index, int count)

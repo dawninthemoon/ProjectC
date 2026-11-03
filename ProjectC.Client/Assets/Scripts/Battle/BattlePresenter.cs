@@ -11,6 +11,9 @@ namespace ProjectC.Client
     public sealed class BattlePresenter : MonoBehaviour
     {
         private const int SecondsPerMinute = 60;
+        private const float DefaultSummonDuration = .66f;
+        private const float MaximumSummonSpeed = 2f;
+        private const float SummonSpeedPerPendingBatch = .2f;
         private const double MillisecondsPerSecond = 1000;
         public MultiplayerDebugScreen Client;
         public LobbyPanelView Lobby;
@@ -264,6 +267,20 @@ namespace ProjectC.Client
             HideCardInfo();
         }
 
+        public void SkipPresentation()
+        {
+            // Reuse the same cleanup as reconnect, then commit the authoritative snapshot.
+            Invalidate();
+            Interaction.ResetInput();
+            ClearSelection();
+            rendered = Client.State;
+            _presentation.Reset(Client.State);
+            _restorePresentation = false;
+            _turnTimerRunning = Client.State?.TurnTimerRunning ?? false;
+            RenderBoard();
+            dirty = false;
+        }
+
         private void OnDisable()
         {
             if (Effects != null && Detail != null)
@@ -334,6 +351,7 @@ namespace ProjectC.Client
                     _batches.Clear();
                     events.Clear();
                     _presentation.Reset(Client.State);
+                    _snapPresentation = true;
                     dirty = true;
                     break;
                 }
@@ -351,7 +369,17 @@ namespace ProjectC.Client
                 foreach (var e in batch.Events)
                 {
                     bool draw = BattlePresentationState.IsDraw(e);
+                    bool fieldEntry = BattlePresentationState.IsFieldEntry(e);
                     bool stateChange = BattlePresentationState.IsStateChange(e);
+                    // Summon metadata follows its field-entry movement immediately so its
+                    // sound stays synchronized. Later mutations wait for the reveal.
+                    if (stateChange && !fieldEntry && e.Type != (int)PresentationEvent.Summon)
+                    {
+                        while (Effects.ActiveSummons > 0)
+                        {
+                            yield return null;
+                        }
+                    }
                     // Information can start while cards fly. The next actual state
                     // transition waits for preceding draws to land, preserving causality.
                     if (!draw && stateChange && drawing)
@@ -374,6 +402,13 @@ namespace ProjectC.Client
                         RenderBoard();
                     }
                     Present(e);
+                    if (fieldEntry)
+                    {
+                        var zone = e.TargetPlayerId == Client.PlayerId ? OwnField : EnemyField;
+                        var widget = zone.Widgets.Find(w => w.Card?.Id == e.TargetCardId);
+                        float speed = Mathf.Min(MaximumSummonSpeed, 1 + _batches.Count * SummonSpeedPerPendingBatch);
+                        Effects.Summon(zone, widget, (Effects.Settings?.SummonDuration ?? DefaultSummonDuration) / speed);
+                    }
                     if (draw)
                     {
                         bool own = e.TargetPlayerId == Client.PlayerId;
@@ -387,7 +422,7 @@ namespace ProjectC.Client
                         }
                     }
                 }
-                while (Effects.ActiveDraws > 0)
+                while (Effects.ActiveDraws > 0 || Effects.ActiveSummons > 0)
                 {
                     yield return null;
                 }
@@ -517,7 +552,7 @@ namespace ProjectC.Client
             Lobby?.Render();
             Mulligan.Render();
             bool started = rendered != null && rendered.Started;
-            LobbyOverlay?.SetActive(showLobby || !started);
+            LobbyOverlay?.SetActive((showLobby || !started) && !Client.AutomaticMatchInProgress);
             bool resultVisible = started && rendered.Finished && !showLobby;
             ResultPanel.SetActive(resultVisible);
             if (resultVisible && !_resultWasVisible)
@@ -727,7 +762,8 @@ namespace ProjectC.Client
         {
             int id = e.TargetCardId != 0 ? e.TargetCardId : e.SourceCardId;
             knownCards.TryGetValue(id, out var card);
-            if (BattlePresentationState.IsStateChange(e) && !BattlePresentationState.IsDraw(e))
+            if (BattlePresentationState.IsStateChange(e) && !BattlePresentationState.IsDraw(e)
+                && !BattlePresentationState.IsFieldEntry(e) && e.Type != (int)PresentationEvent.Summon)
             {
                 foreach (var zone in Zones)
                 {
@@ -739,13 +775,6 @@ namespace ProjectC.Client
                         }
                     }
                 }
-            }
-            if (e.Type == 11)
-            {
-                Effects.Popup(
-                    CardPresentation.Name(card, "Monster summoned"),
-                    "SUMMONED\n" + CardPresentation.Rules(card)
-                );
             }
             if (e.Type == 19)
             {

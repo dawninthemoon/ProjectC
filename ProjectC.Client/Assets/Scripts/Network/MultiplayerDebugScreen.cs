@@ -105,23 +105,46 @@ namespace ProjectC.Client
 
         public void CycleDeck()
         {
-            if (PersonalMode)
+            if (Busy || !string.IsNullOrEmpty(matchId))
             {
-                UsePersonalDeck = false;
-                if (decks.Length > 0)
-                {
-                    selectedDeck = decks[0].Id;
-                }
                 return;
             }
-            int index = Array.FindIndex(decks, d => d.Id == selectedDeck);
-            if (index + 1 >= decks.Length && ClientApp.Instance != null)
+            var personal = ClientApp.Instance?.Decks.Decks;
+            if (PersonalMode && personal != null)
             {
-                UsePersonalDeck = true;
+                int index = -1;
+                for (int i = 0; i < personal.Count; ++i)
+                {
+                    if (personal[i].DeckId == ClientApp.Instance.Decks.SelectedId)
+                    {
+                        index = i;
+                    }
+                }
+                if (index + 1 < personal.Count)
+                {
+                    SelectPersonalDeck(personal[index + 1].DeckId);
+                    return;
+                }
+                if (decks.Length > 0)
+                {
+                    SelectServerDeck(decks[0].Id);
+                }
             }
-            else if (decks.Length > 0)
+            else
             {
-                selectedDeck = decks[(index + 1) % decks.Length].Id;
+                int index = _serverDeckSelected ? Array.FindIndex(decks, deck => deck.Id == selectedDeck) : -1;
+                if (index + 1 < decks.Length)
+                {
+                    SelectServerDeck(decks[index + 1].Id);
+                }
+                else if (personal != null && personal.Count > 0)
+                {
+                    SelectPersonalDeck(personal[0].DeckId);
+                }
+                else if (decks.Length > 0)
+                {
+                    SelectServerDeck(decks[0].Id);
+                }
             }
         }
 
@@ -136,6 +159,20 @@ namespace ProjectC.Client
         string _cancelQueueRequestId;
         float _queueStartedAt;
 
+        public bool ConnectionReady => Connected && !connecting && _deckCatalogReceived;
+        public string ConnectionError { get; private set; } = "";
+        private bool _deckCatalogReceived;
+        private bool _serverDeckSelected;
+        private PersonalDeck _queuedPersonalDeck;
+        private string _queuedCatalogVersion;
+        private string _queuedServerDeck;
+        private bool _autoReadyPending;
+        public bool AutomaticMatchInProgress { get; private set; }
+        public bool HasDeckSelection => PersonalMode ? ClientApp.Instance.Decks.Selected != null
+            : _serverDeckSelected && Array.Exists(decks, deck => deck.Id == selectedDeck);
+        public bool CanQueueSelectedDeck => HasDeckSelection && string.IsNullOrEmpty(CatalogProblem)
+            && (!PersonalMode || string.IsNullOrEmpty(DeckProblem));
+
         public bool Busy => pending || resyncing || connecting || deckRequestId != null
             || Matchmaking == MatchmakingState.Queuing;
 
@@ -146,12 +183,75 @@ namespace ProjectC.Client
             QueuePosition = 0;
             _queueRequestId = null;
             _cancelQueueRequestId = null;
+            if (value == MatchmakingState.Idle)
+            {
+                _queuedPersonalDeck = null;
+                _autoReadyPending = false;
+                AutomaticMatchInProgress = false;
+            }
+        }
+
+        private void TryAutomaticReady()
+        {
+            if (!_autoReadyPending || !AutomaticMatchInProgress || Matchmaking != MatchmakingState.Matched
+                || !ConnectionReady || Busy || string.IsNullOrEmpty(matchId) || lobby?.Players == null)
+            {
+                return;
+            }
+            var own = Array.Find(lobby.Players, player => player.PlayerId == playerId);
+            if (own == null || !own.Occupied)
+            {
+                return;
+            }
+            _autoReadyPending = false;
+            if (own.Ready || state?.Started == true)
+            {
+                return;
+            }
+            if (_queuedPersonalDeck != null)
+            {
+                SubmitPersonalDeck(_queuedPersonalDeck, _queuedCatalogVersion);
+            }
+            else
+            {
+                LobbyAction("SetReady", ",\"Ready\":true,\"DeckId\":" + Quote(_queuedServerDeck));
+            }
+        }
+
+        public void SelectPersonalDeck(string id)
+        {
+            if (Busy || !string.IsNullOrEmpty(matchId) || ClientApp.Instance == null)
+            {
+                return;
+            }
+            if (!ClientApp.Instance.Decks.Select(id, out var error))
+            {
+                Note(error);
+                return;
+            }
+            UsePersonalDeck = true;
+        }
+
+        public void SelectServerDeck(string id)
+        {
+            if (Busy || !string.IsNullOrEmpty(matchId) || !Array.Exists(decks, deck => deck.Id == id))
+            {
+                return;
+            }
+            UsePersonalDeck = false;
+            selectedDeck = id;
+            _serverDeckSelected = true;
         }
 
         internal void QueueMatch()
         {
             if (!Connected || Busy || !string.IsNullOrEmpty(matchId))
             {
+                return;
+            }
+            if (!HasDeckSelection)
+            {
+                ResetMatchmaking(MatchmakingState.Error, "대전에 사용할 덱을 선택하세요.");
                 return;
             }
             if (!string.IsNullOrEmpty(CatalogProblem))
@@ -167,6 +267,11 @@ namespace ProjectC.Client
                 return;
             }
             ResetMatchmaking(MatchmakingState.Queuing);
+            _queuedPersonalDeck = PersonalMode ? ClientApp.Instance.Decks.Selected.Copy() : null;
+            _queuedCatalogVersion = PersonalMode ? ClientApp.Instance.Library.CatalogVersion : null;
+            _queuedServerDeck = PersonalMode ? null : selectedDeck;
+            _autoReadyPending = true;
+            AutomaticMatchInProgress = true;
             _queueStartedAt = Time.realtimeSinceStartup;
             _queueRequestId = Guid.NewGuid().ToString("N");
             // QueueMatch accepts server catalog IDs only. Local personal decks are
@@ -421,7 +526,23 @@ namespace ProjectC.Client
 
         void Connect()
         {
-            ResetMatchmaking(MatchmakingState.Idle);
+            if (connecting || Connected)
+            {
+                return;
+            }
+            ConnectionError = "";
+            _deckCatalogReceived = false;
+            bool restoreAutomaticMatch = AutomaticMatchInProgress && !string.IsNullOrEmpty(token) && boundAddress == address;
+            if (restoreAutomaticMatch)
+            {
+                Matchmaking = MatchmakingState.Matched;
+                MatchmakingError = "";
+                _autoReadyPending = state?.Started != true;
+            }
+            else
+            {
+                ResetMatchmaking(MatchmakingState.Idle);
+            }
             deckRequestId = null;
             serverCatalogVersion = "";
             personalDeckSupported = false;
@@ -604,6 +725,7 @@ namespace ProjectC.Client
 
         void Update()
         {
+            TryAutomaticReady();
             if (transport == null)
             {
                 return;
@@ -611,6 +733,10 @@ namespace ProjectC.Client
             while (transport.Notices.TryDequeue(out var notice))
             {
                 Note(notice);
+                if (notice != "Connected" && notice != "Disconnected")
+                {
+                    ConnectionError = notice;
+                }
                 if (notice == "Connected")
                 {
                     connecting = false;
@@ -628,6 +754,15 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    _deckCatalogReceived = false;
+                    if (string.IsNullOrEmpty(ConnectionError))
+                    {
+                        ConnectionError = "연결이 종료되었습니다.";
+                    }
+                    if (AutomaticMatchInProgress && State?.Started != true)
+                    {
+                        _autoReadyPending = true;
+                    }
                     bool wasQueuing = Matchmaking == MatchmakingState.Queuing
                         || Matchmaking == MatchmakingState.Error;
                     deckRequestId = null;
@@ -699,6 +834,7 @@ namespace ProjectC.Client
                     Note(CatalogProblem);
                 }
                 decks = JsonUtility.FromJson<DeckCatalogMessage>(json).Payload;
+                _deckCatalogReceived = true;
                 if (decks.Length > 0 && !Array.Exists(decks, d => d.Id == selectedDeck))
                 {
                     selectedDeck = decks[0].Id;
@@ -747,6 +883,12 @@ namespace ProjectC.Client
                 pending = false;
                 if (message.Type == "DeckRejected")
                 {
+                    if (AutomaticMatchInProgress)
+                    {
+                        Matchmaking = MatchmakingState.Error;
+                        MatchmakingError = "선택한 덱을 서버에 제출할 수 없습니다. " + message.Message;
+                        _autoReadyPending = false;
+                    }
                     Note(message.Reason + ": " + message.Message);
                     return;
                 }
@@ -779,6 +921,12 @@ namespace ProjectC.Client
                 if (message.RequestId == deckRequestId)
                 {
                     deckRequestId = null;
+                }
+                if (AutomaticMatchInProgress && state?.Started != true)
+                {
+                    Matchmaking = MatchmakingState.Error;
+                    MatchmakingError = "대전을 준비할 수 없습니다. " + message.Message;
+                    _autoReadyPending = false;
                 }
                 Note(
                     "Rejected: "

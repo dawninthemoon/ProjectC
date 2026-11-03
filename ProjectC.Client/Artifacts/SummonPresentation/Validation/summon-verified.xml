@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="5" result="Passed" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.4800709">
+  <test-suite type="TestSuite" id="1112" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="86" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.480071" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1106" name="ProjectC.Client.PlayModeTests.dll" fullname="/private/tmp/ProjectC-BattlefieldValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="86" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.475807" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="97687" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1107" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="86" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.474802" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1108" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="86" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.473899" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1098" name="SummonPresentationPlayModeTests" fullname="ProjectC.Tests.SummonPresentationPlayModeTests" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:40Z" duration="14.472549" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1099" name="RapidSummonsAndIncomingStatsCommitInOrder" fullname="ProjectC.Tests.SummonPresentationPlayModeTests.RapidSummonsAndIncomingStatsCommitInOrder" methodname="RapidSummonsAndIncomingStatsCommitInOrder" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" seed="1493589167" result="Passed" start-time="2026-11-03 08:11:25Z" end-time="2026-11-03 08:11:29Z" duration="3.655404" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1103" name="RealServerSummonShowsGatherRingBurstAndReadableSettledCard" fullname="ProjectC.Tests.SummonPresentationPlayModeTests.RealServerSummonShowsGatherRingBurstAndReadableSettledCard" methodname="RealServerSummonShowsGatherRingBurstAndReadableSettledCard" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" seed="2101812294" result="Passed" start-time="2026-11-03 08:11:29Z" end-time="2026-11-03 08:11:38Z" duration="8.430864" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+]]></output>
+            </test-case>
+            <test-case id="1100" name="SameBatchSummonsOverlapAndLaterRemovalWaitsForReveal" fullname="ProjectC.Tests.SummonPresentationPlayModeTests.SameBatchSummonsOverlapAndLaterRemovalWaitsForReveal" methodname="SameBatchSummonsOverlapAndLaterRemovalWaitsForReveal" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" seed="939256569" result="Passed" start-time="2026-11-03 08:11:38Z" end-time="2026-11-03 08:11:38Z" duration="0.876027" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1101" name="SkipAndDisableRestoreLatestSnapshotWithoutResidualEffects" fullname="ProjectC.Tests.SummonPresentationPlayModeTests.SkipAndDisableRestoreLatestSnapshotWithoutResidualEffects" methodname="SkipAndDisableRestoreLatestSnapshotWithoutResidualEffects" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" seed="1850479768" result="Passed" start-time="2026-11-03 08:11:38Z" end-time="2026-11-03 08:11:39Z" duration="0.212058" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1102" name="VfxPoolReusesInstancesAndMissingVfxDoesNotBlockReveal" fullname="ProjectC.Tests.SummonPresentationPlayModeTests.VfxPoolReusesInstancesAndMissingVfxDoesNotBlockReveal" methodname="VfxPoolReusesInstancesAndMissingVfxDoesNotBlockReveal" classname="ProjectC.Tests.SummonPresentationPlayModeTests" runstate="Runnable" seed="1519748313" result="Passed" start-time="2026-11-03 08:11:39Z" end-time="2026-11-03 08:11:40Z" duration="1.290827" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

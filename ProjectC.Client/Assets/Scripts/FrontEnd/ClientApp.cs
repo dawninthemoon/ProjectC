@@ -13,7 +13,15 @@ namespace ProjectC.Client
         public CardLibrary Library { get; private set; }
         public DeckRepository Decks { get; private set; }
         public string Error { get; private set; } = "";
-        public string ServerAddress { get; set; } = "ws://127.0.0.1:7777";
+        public string ServerAddress { get; set; } = ServerConnectionSettings.ProductionAddress;
+        private const string EnvironmentPreference = "ProjectC.Connection.Environment";
+        [SerializeField] private ServerConnectionSettings _connectionSettings;
+        private CommonPopupView _popup;
+        private bool _hadLiveConnection;
+        private string _reportedMatchError = "";
+        public ServerEnvironment Environment { get; private set; } = ServerEnvironment.Production;
+        public float ConnectionTimeoutSeconds => _connectionSettings != null
+            ? _connectionSettings.TimeoutSeconds : ServerConnectionSettings.DefaultTimeoutSeconds;
         public bool Navigating { get; private set; }
         public PersonalDeck Starter { get; private set; }
         public System.Collections.Generic.IReadOnlyList<PersonalDeck> Samples { get; private set; } = Array.Empty<PersonalDeck>();
@@ -28,6 +36,12 @@ namespace ProjectC.Client
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Network = GetComponent<MultiplayerDebugScreen>();
+            _connectionSettings = _connectionSettings != null ? _connectionSettings
+                : Resources.Load<ServerConnectionSettings>("Network/ServerConnectionSettings");
+            int environment = PlayerPrefs.GetInt(EnvironmentPreference,
+                (int)(_connectionSettings != null ? _connectionSettings.DefaultEnvironment : ServerEnvironment.Production));
+            Environment = environment == (int)ServerEnvironment.Local ? ServerEnvironment.Local : ServerEnvironment.Production;
+            ServerAddress = ServerConnectionSettings.AddressFor(Environment);
             Decks = new DeckRepository(StorageOverride ?? Application.persistentDataPath);
             Decks.Load();
             try
@@ -47,6 +61,68 @@ namespace ProjectC.Client
         void Loaded(Scene scene, LoadSceneMode mode)
         {
             Navigating = false;
+            _popup?.Hide();
+        }
+
+        public void ShowPopup(string message, params PopupAction[] actions)
+        {
+            if (_popup == null)
+            {
+                var prefab = Resources.Load<GameObject>("UI/CommonPopup");
+                if (prefab == null)
+                {
+                    throw new InvalidOperationException("Resources/UI/CommonPopup.prefab is required.");
+                }
+                _popup = Instantiate(prefab, transform).GetComponent<CommonPopupView>();
+                if (_popup == null)
+                {
+                    throw new InvalidOperationException("CommonPopup prefab requires CommonPopupView.");
+                }
+            }
+            _popup.Show(message, actions);
+        }
+
+        public void SetEnvironment(ServerEnvironment environment)
+        {
+            if (environment == Environment)
+            {
+                return;
+            }
+            Environment = environment;
+            ServerAddress = ServerConnectionSettings.AddressFor(environment);
+            PlayerPrefs.SetInt(EnvironmentPreference, (int)environment);
+            PlayerPrefs.Save();
+            _hadLiveConnection = false;
+            Network.DisconnectNetwork();
+            Navigate("ConnectionScene");
+        }
+
+        private void Update()
+        {
+            if (Network.ConnectionReady)
+            {
+                _hadLiveConnection = true;
+            }
+            else if (_hadLiveConnection && !Network.Connected && !Navigating
+                && SceneManager.GetActiveScene().name != "ConnectionScene")
+            {
+                _hadLiveConnection = false;
+                Navigate("ConnectionScene");
+            }
+            if (Network.AutomaticMatchInProgress && Network.Matchmaking == MatchmakingState.Error
+                && Network.Connected && _reportedMatchError != Network.MatchmakingError)
+            {
+                _reportedMatchError = Network.MatchmakingError;
+                ShowPopup(Network.MatchmakingError, new PopupAction("로비로", () =>
+                {
+                    Network.LeaveMatch();
+                    Navigate("LobbyScene");
+                }));
+            }
+            if (Network.Matchmaking != MatchmakingState.Error)
+            {
+                _reportedMatchError = "";
+            }
         }
 
         public void Navigate(string scene)

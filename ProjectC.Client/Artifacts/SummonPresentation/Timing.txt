@@ -1,0 +1,1 @@
+Measured summon: 0.6565843 seconds; captured frames=60

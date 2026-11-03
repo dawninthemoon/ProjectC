@@ -74,6 +74,10 @@ namespace ProjectC.Client
 
         void Update()
         {
+            if (Keyboard.current?.spaceKey.wasPressedThisFrame == true && presenter.PresentationBusy)
+            {
+                presenter.SkipPresentation();
+            }
             if (
                 Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && State != BattleInputState.AwaitingServerResponse
