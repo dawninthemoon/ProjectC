@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:55Z" duration="5.3160643">
+  <test-suite type="TestSuite" id="1094" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="71" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:55Z" duration="5.316064" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1088" name="ProjectC.Client.PlayModeTests.dll" fullname="/private/tmp/ProjectC-BattlefieldValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="71" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:55Z" duration="5.312490" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="63165" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1089" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="71" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:55Z" duration="5.312023" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1090" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="71" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:55Z" duration="5.311548" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1009" name="BattlefieldOnlinePlayModeTests" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:52Z" duration="2.234636" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1010" name="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" methodname="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" seed="280079985" result="Passed" start-time="2026-11-03 03:19:50Z" end-time="2026-11-03 03:19:52Z" duration="2.229142" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1011" name="BattlefieldScenePlayModeTests" fullname="ProjectC.Tests.BattlefieldScenePlayModeTests" classname="ProjectC.Tests.BattlefieldScenePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-03 03:19:52Z" end-time="2026-11-03 03:19:55Z" duration="3.075179" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1012" name="SceneBackdropPreservesOverlayRaycastsAndHandSelection" fullname="ProjectC.Tests.BattlefieldScenePlayModeTests.SceneBackdropPreservesOverlayRaycastsAndHandSelection" methodname="SceneBackdropPreservesOverlayRaycastsAndHandSelection" classname="ProjectC.Tests.BattlefieldScenePlayModeTests" runstate="Runnable" seed="969551688" result="Passed" start-time="2026-11-03 03:19:52Z" end-time="2026-11-03 03:19:55Z" duration="3.073919" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

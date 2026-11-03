@@ -20,7 +20,7 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.19, g: 0.23, b: 0.3, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 1
-  m_ReflectionIntensity: 1
+  m_ReflectionIntensity: 0.35
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
   m_UseRadianceAmbientProbe: 0
@@ -809,6 +809,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Asset: {fileID: 37987606}
   m_ActionId: 9caa3d8a-6b2f-4e8e-8bad-6ede561bd9be
+--- !u!1001 &1043936265
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1817013880116413106, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7539884442273933763, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
+      propertyPath: m_Name
+      value: YokaiShrineStage
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5c18768bc2dc749e389622a9ec485466, type: 3}
 --- !u!1 &1258651190
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,7 +1043,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.035, g: 0.06, b: 0.09, a: 1}
+  m_BackGroundColor: {r: 0.012, g: 0.02, b: 0.035, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1007,9 +1064,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  near clip plane: 0.1
+  far clip plane: 100
+  field of view: 34
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -1035,8 +1092,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2044116900}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.46206272, y: 0, z: 0, w: 0.88684726}
+  m_LocalPosition: {x: 0, y: 24, z: -18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1094,6 +1151,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 224337328811173021, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3543226613171711848, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3851049244069287482, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -1178,11 +1243,43 @@ PrefabInstance:
       propertyPath: m_Name
       value: Project C - Card Battle
       objectReference: {fileID: 0}
+    - target: {fileID: 4330125637616387407, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747383868994400416, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6757671337744134661, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5075048548583614241, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2132159148}
   m_SourcePrefab: {fileID: 100100000, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+--- !u!1 &2132159147 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5075048548583614241, guid: 48515de2fd2d4a54f9641f192885cfd4, type: 3}
+  m_PrefabInstance: {fileID: 2132159146}
+  m_PrefabAsset: {fileID: 0}
+--- !u!225 &2132159148
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132159147}
+  m_Enabled: 1
+  m_Alpha: 0.04
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1190,3 +1287,4 @@ SceneRoots:
   - {fileID: 2132159146}
   - {fileID: 2044116902}
   - {fileID: 1258651193}
+  - {fileID: 1043936265}
