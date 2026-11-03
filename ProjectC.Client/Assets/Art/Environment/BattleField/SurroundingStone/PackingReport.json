@@ -1,0 +1,21 @@
+{
+  "dimensions": [
+    4096,
+    4096
+  ],
+  "packing": {
+    "R": "ARM.B metallic",
+    "G": "ARM.R ambient occlusion",
+    "B": "0 (unused)",
+    "A": "1 - clamp(Roughness EXR.Y, 0, 1)"
+  },
+  "roughness_mean": 0.9502840042114258,
+  "normal_y_height_gradient_correlation_256": 0.4895443958796485,
+  "normal_flip_green_channel": false,
+  "source_sha256": {
+    "floor_pattern_01_arm_4k.jpg": "494b53d17db116e7f1e6bde88454a1ca15faa16a9d9fb4eae77414cf5ac97bb8",
+    "floor_pattern_01_rough_4k.exr": "8444296a4bea585f904a6e71179a7e5fe0c6d0b12e751f919b57c44ca90e0360",
+    "floor_pattern_01_nor_gl_4k.exr": "181fcf4e5b6f73fccb94fd68dda207cae1feee04c3570dd87a0b4b34d539bd01",
+    "floor_pattern_01_bump_4k.exr": "0ca186b63c45c3430e9e899be76a687b63649a8584dc0a75e91b402f00a25f32"
+  }
+}

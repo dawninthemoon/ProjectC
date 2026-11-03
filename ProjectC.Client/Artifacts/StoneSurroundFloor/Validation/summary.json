@@ -1,0 +1,40 @@
+{
+  "resolution": [
+    1920,
+    1080
+  ],
+  "model_view_pixels_all_channels_below_8": 0,
+  "model_view_perimeter_dark_pixels": 0,
+  "floor_world_size": [
+    40,
+    26
+  ],
+  "floor_y": -0.06,
+  "camera_view_world_size_at_16_9": [
+    30.22222222222222,
+    17
+  ],
+  "tile_world_size": [
+    8,
+    8
+  ],
+  "runtime_texture_limit": 2048,
+  "original_and_packed_map_resolution": 4096,
+  "tests": {
+    "total": "2",
+    "passed": "2",
+    "failed": "0",
+    "skipped": "0"
+  },
+  "test_cases": [
+    {
+      "name": "ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.BattlefieldScenePlayModeTests.SceneBackdropPreservesOverlayRaycastsAndHandSelection",
+      "result": "Passed"
+    }
+  ],
+  "full_test_suite_rerun": false
+}
