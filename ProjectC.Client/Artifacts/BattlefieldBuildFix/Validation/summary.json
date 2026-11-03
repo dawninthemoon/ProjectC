@@ -1,0 +1,26 @@
+{
+  "platform": "macOS Universal x86_64 + arm64 / Metal",
+  "player_build": "Succeeded",
+  "player_renderer": "UniversalRenderer",
+  "player_capture_resolution": [
+    1920,
+    1080
+  ],
+  "normal_build_contains_smoke_harness": false,
+  "tests": {
+    "total": "2",
+    "passed": "2",
+    "failed": "0",
+    "skipped": "0"
+  },
+  "cases": [
+    {
+      "name": "ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.BattlefieldScenePlayModeTests.SceneBackdropPreservesOverlayRaycastsAndHandSelection",
+      "result": "Passed"
+    }
+  ]
+}
