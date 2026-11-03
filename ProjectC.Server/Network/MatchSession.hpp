@@ -15,6 +15,10 @@ struct ClientSession
 {
     std::function<void(Json const&)> Send;
     int Player = 0;
+    std::string WebsitePlayerId; // Verified UUID; unrelated to the GameCore player number.
+    bool Connected = true;
+    bool ApiPending = false;
+    std::uint64_t ApiGeneration = 0;
     std::string MatchId; // Bound by server; never assigned from SubmitCommand.
 };
 enum class MatchStatus
@@ -43,6 +47,8 @@ struct ReplayRecord
     std::vector<GameCore::CommandResult> Results;
     GameCore::GameState FinalState;
     Clock::time_point StoredAt = Clock::now();
+    std::string ResultReason;
+    int ResultWinner = 0;
     bool Verify() const;
 };
 class MatchSession
@@ -59,6 +65,12 @@ class MatchSession
     void Disconnect(std::shared_ptr<ClientSession> const& client);
     void Close(std::string const& reason);
     void Tick(Clock::time_point now);
+    void SetRankedDecks(std::array<Json, 2> const& decks);
+    void DeliverRankChanges(Json const& changes);
+    bool Ranked() const
+    {
+        return ranked;
+    }
     Json Snapshot(int viewer) const;
     Json Message(std::string const& type, std::string const& request = "") const;
     MatchStatus Status() const
@@ -79,6 +91,9 @@ class MatchSession
     {
         int Player = 0;
         std::string Token;
+        std::string WebsitePlayerId;
+        Json RankChange;
+        Clock::time_point DisconnectedAt{};
         std::string DeckId;
         std::optional<DeckDefinition> PersonalDeck;
         std::map<std::string, std::pair<std::string, Json>> DeckRequests;
@@ -87,6 +102,10 @@ class MatchSession
         std::weak_ptr<ClientSession> Client;
         std::map<std::string, std::pair<std::string, Json>> Requests;
     };
+    bool ranked = false;
+    std::string resultReason;
+    int resultWinner = 0;
+    void FinishRanked(std::string reason, int winner);
     std::string id;
     std::shared_ptr<CardCatalog const> catalog;
     std::shared_ptr<IdentityAllocator> identities;

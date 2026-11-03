@@ -1,5 +1,6 @@
 #include "MatchManager.hpp"
 #include <charconv>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <limits>
@@ -28,6 +29,29 @@ int main(int argc, char** argv)
     }
     try
     {
+        if (auto directory = std::getenv("PROJECTC_DATA_DIRECTORY"))
+        {
+            config.DataDirectory = directory;
+        }
+        if (auto url = std::getenv("WEBSITE_API_URL"))
+        {
+            config.WebsiteApiUrl = url;
+        }
+        if (auto key = std::getenv("BATTLE_API_KEY"))
+        {
+            config.BattleApiKey = key;
+        }
+        // A deployed server with a key must never silently fall back to unauthenticated
+        // matchmaking.
+        if (!config.BattleApiKey.empty() && config.WebsiteApiUrl.empty())
+        {
+            config.WebsiteApiUrl = "https://projectc-api.onrender.com";
+        }
+        if (auto path = std::getenv("BATTLE_RESULT_OUTBOX"))
+        {
+            config.ResultOutboxDirectory = path;
+        }
+
         for (int i = 1; i < argc; i += 2)
         {
             if (i + 1 >= argc)

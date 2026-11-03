@@ -52,13 +52,25 @@ class Peer:
         self.raw(json.dumps(data))
         return data
     def read(self):
-        first, second = self.exact(2)
-        size = second & 127
-        if size == 126: size = struct.unpack('!H', self.exact(2))[0]
-        elif size == 127: size = struct.unpack('!Q', self.exact(8))[0]
-        payload = self.exact(size)
-        if first & 15 == 8: raise EOFError('websocket close')
-        assert first == 0x81, first
+        # Beast may fragment larger snapshots as hands/graveyards grow.
+        payload = b''
+        initial = True
+        while True:
+            first, second = self.exact(2)
+            size = second & 127
+            if size == 126: size = struct.unpack('!H', self.exact(2))[0]
+            elif size == 127: size = struct.unpack('!Q', self.exact(8))[0]
+            chunk = self.exact(size)
+            opcode = first & 15
+            if opcode == 8: raise EOFError('websocket close')
+            if opcode == 9:
+                mask = os.urandom(4)
+                self.socket.sendall(bytes([0x8A, 0x80 | size]) + mask + bytes(v ^ mask[i % 4] for i, v in enumerate(chunk)))
+                continue
+            assert opcode == (1 if initial else 0), first
+            payload += chunk
+            initial = False
+            if first & 0x80: break
         result = json.loads(payload)
         self.audit.append(result)
         kind = result['Type']

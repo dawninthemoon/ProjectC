@@ -41,7 +41,19 @@ namespace ProjectC.Client
                     matchPanel.SetActive(!matchPanel.activeSelf);
                 }
             );
-            this.BindButton("DeckManager", out _deckManager, () => app.Navigate("DeckEditorScene"));
+            this.BindButton("DeckManager", out _deckManager, () =>
+            {
+                if (app.UseWebsite)
+                {
+                    app.ShowPopup("개인 덱 관리", new PopupAction("덱 편집", () => app.Navigate("DeckEditorScene")),
+                        new PopupAction("선택한 로컬 덱 업로드", app.UploadSelectedDeck),
+                        new PopupAction("온라인 목록 새로고침", app.RefreshWebsiteData));
+                }
+                else
+                {
+                    app.Navigate("DeckEditorScene");
+                }
+            });
             this.BindButton(
                 "SettingsMenu",
                 out Button _,
@@ -116,11 +128,18 @@ namespace ProjectC.Client
                                 : "미완성 덱"
                         )
                         + "\n선택한 덱으로 대전합니다.";
+            if (app.UseWebsite && app.Website != null)
+            {
+                var website = app.Website;
+                selected.text = (website.User?.displayName ?? "로그인 중") + "\n" + website.Rank
+                    + "\n선택 덱: " + (website.SelectedDeck?.name ?? "없음")
+                    + "\n" + string.Join(" / ", System.Linq.Enumerable.Select(website.Decks, deck => deck.name));
+            }
             serverDeck.text = "덱 선택 버튼으로 사용할 덱을 바꿀 수 있습니다.";
             _environment.GetComponentInChildren<TMP_Text>().text = "서버: " + app.Environment + " · 변경 시 재연결";
             bool joined = !string.IsNullOrEmpty(app.Network.CurrentMatch);
-            _environment.interactable = !app.Network.Busy && !joined;
-            _deckManager.interactable = !app.Network.Busy && !joined;
+            _environment.interactable = !app.WebsiteBusy && !app.Network.Busy && !joined;
+            _deckManager.interactable = !app.WebsiteBusy && !app.Network.Busy && !joined;
             resume.gameObject.SetActive(false);
             bool started = app.Network.State?.Started == true && !app.Network.State.Finished;
             if (app.Network.ConnectionReady && (started || (joined && app.Network.Matchmaking == MatchmakingState.Matched)))

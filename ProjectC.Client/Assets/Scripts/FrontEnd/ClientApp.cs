@@ -10,6 +10,88 @@ namespace ProjectC.Client
         public static ClientApp Instance { get; private set; }
         internal static string StorageOverride;
         public MultiplayerDebugScreen Network { get; private set; }
+        public WebsiteSession Website { get; private set; }
+        public bool UseWebsite => Environment == ServerEnvironment.Production || _connectionSettings?.LocalWebsiteEnabled == true;
+        public bool WebsiteBusy { get; private set; }
+        public async System.Threading.Tasks.Task PrepareWebsiteAsync()
+        {
+            if (!UseWebsite)
+            {
+                return;
+            }
+            if (Website == null)
+            {
+                string url = _connectionSettings != null ? _connectionSettings.ApiAddressFor(Environment)
+                    : Environment == ServerEnvironment.Local ? ServerConnectionSettings.LocalApiAddress : ServerConnectionSettings.ProductionApiAddress;
+                Website = new WebsiteSession(url, Mathf.CeilToInt(ConnectionTimeoutSeconds));
+            }
+            await Website.EnsureSessionAsync();
+            await Website.LoadUserDataAsync();
+        }
+        public async void RefreshWebsiteData()
+        {
+            if (WebsiteBusy || Network.Busy)
+            {
+                return;
+            }
+            WebsiteBusy = true;
+            try
+            {
+                await PrepareWebsiteAsync();
+            }
+            catch (Exception)
+            {
+                ShowPopup("사용자 정보를 불러올 수 없습니다.", new PopupAction("재시도", RefreshWebsiteData));
+            }
+            finally
+            {
+                WebsiteBusy = false;
+            }
+        }
+        public async void UploadSelectedDeck()
+        {
+            if (WebsiteBusy || Network.Busy || !string.IsNullOrEmpty(Network.CurrentMatch))
+            {
+                return;
+            }
+            var deck = Decks.Selected?.Copy();
+            var validation = DeckValidator.Validate(deck, Library);
+            if (!validation.CanPlay)
+            {
+                ShowPopup(validation.Summary);
+                return;
+            }
+            WebsiteBusy = true;
+            try
+            {
+                await PrepareWebsiteAsync();
+                await Website.UploadDeckAsync(deck);
+                ShowPopup("Website에 덱을 저장했습니다.");
+            }
+            catch (Exception)
+            {
+                // POST is not retried: a lost response may already have created the deck.
+                ShowPopup("덱 저장을 확인할 수 없습니다. 목록을 새로고침해 확인하세요.", new PopupAction("목록 새로고침", RefreshWebsiteData));
+            }
+            finally
+            {
+                WebsiteBusy = false;
+            }
+        }
+        public async void ReceiveRankChange(WebsiteRankChange change)
+        {
+            try
+            {
+                if (Website != null)
+                {
+                    await Website.ApplyRankChangeAsync(change);
+                }
+            }
+            catch (Exception)
+            {
+                ShowPopup("경기 결과는 저장되었으나 최신 랭크를 불러오지 못했습니다.", new PopupAction("새로고침", RefreshWebsiteData));
+            }
+        }
         public CardLibrary Library { get; private set; }
         public DeckRepository Decks { get; private set; }
         public string Error { get; private set; } = "";
@@ -41,7 +123,8 @@ namespace ProjectC.Client
             int environment = PlayerPrefs.GetInt(EnvironmentPreference,
                 (int)(_connectionSettings != null ? _connectionSettings.DefaultEnvironment : ServerEnvironment.Production));
             Environment = environment == (int)ServerEnvironment.Local ? ServerEnvironment.Local : ServerEnvironment.Production;
-            ServerAddress = ServerConnectionSettings.AddressFor(Environment);
+            ServerAddress = _connectionSettings != null ? _connectionSettings.BattleAddressFor(Environment)
+                : ServerConnectionSettings.AddressFor(Environment);
             Decks = new DeckRepository(StorageOverride ?? Application.persistentDataPath);
             Decks.Load();
             try
@@ -79,7 +162,8 @@ namespace ProjectC.Client
                     throw new InvalidOperationException("CommonPopup prefab requires CommonPopupView.");
                 }
             }
-            _popup.Show(message, actions);
+            _popup.Show(message, actions == null || actions.Length == 0
+                ? new[] { new PopupAction("확인", null) } : actions);
         }
 
         public void SetEnvironment(ServerEnvironment environment)
@@ -89,7 +173,9 @@ namespace ProjectC.Client
                 return;
             }
             Environment = environment;
-            ServerAddress = ServerConnectionSettings.AddressFor(environment);
+            Website = null;
+            ServerAddress = _connectionSettings != null ? _connectionSettings.BattleAddressFor(environment)
+                : ServerConnectionSettings.AddressFor(environment);
             PlayerPrefs.SetInt(EnvironmentPreference, (int)environment);
             PlayerPrefs.Save();
             _hadLiveConnection = false;

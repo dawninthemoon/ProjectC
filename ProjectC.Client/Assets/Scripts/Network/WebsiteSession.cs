@@ -1,0 +1,284 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using UnityEngine.Networking;
+
+namespace ProjectC.Client
+{
+    public sealed class WebsiteDeck
+    {
+        public string id, name, catalogVersion;
+        public WebsiteCard[] cards;
+        public PersonalDeck ToPersonalDeck()
+        {
+            return new PersonalDeck
+            {
+                DeckId = id,
+                Name = name,
+                Cards = cards.SelectMany(card => Enumerable.Repeat(card.cardId, card.quantity)).ToList(),
+            };
+        }
+    }
+
+    public sealed class WebsiteCard
+    {
+        public int cardId, quantity;
+    }
+
+    public sealed class WebsiteUser
+    {
+        public string playerId, displayName, createdAt;
+    }
+
+    public sealed class WebsiteRank
+    {
+        public string tier, promotionStatus;
+        public int division, rp, mmr;
+        public override string ToString() => $"{tier} {division} · {rp} RP · MMR {mmr}";
+    }
+
+    public sealed class WebsiteRankChange
+    {
+        public string playerId, tier, promotionStatus;
+        public int division, rp, rpDelta, mmrBefore, mmrAfter;
+        public override string ToString() => $"RP {rpDelta:+0;-0;0} · MMR {mmrAfter - mmrBefore:+0;-0;0}";
+    }
+
+    internal sealed class StoredWebsiteSession
+    {
+        public string accessToken, refreshToken, expiresAt, refreshExpiresAt;
+        public WebsiteUser user;
+        public bool refreshInFlight;
+    }
+
+    public sealed class WebsiteApiException : Exception
+    {
+        public long Status { get; }
+        public WebsiteApiException(long status) : base(status == 401
+            ? "로그인 세션을 복구할 수 없습니다. 계정 복구가 필요합니다."
+            : $"Website API 연결에 실패했습니다. (HTTP {status})")
+        {
+            Status = status;
+        }
+    }
+
+    public sealed class WebsiteSession
+    {
+        private const int RefreshMarginSeconds = 120;
+        private readonly string _baseUrl;
+        private readonly int _timeoutSeconds;
+        private readonly ISessionStore _store;
+        private readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
+        private StoredWebsiteSession _session;
+        private bool _loaded;
+        public string AccessToken => _session?.accessToken;
+        public WebsiteUser User { get; private set; }
+        public WebsiteRank Rank { get; private set; }
+        public IReadOnlyList<WebsiteDeck> Decks { get; private set; } = Array.Empty<WebsiteDeck>();
+        public string SelectedDeckId { get; private set; }
+        public WebsiteDeck SelectedDeck => Decks.FirstOrDefault(deck => deck.id == SelectedDeckId);
+        public WebsiteRankChange LastRankChange { get; private set; }
+        public string ResultStatus { get; private set; } = "";
+
+        public WebsiteSession(string baseUrl, int timeoutSeconds)
+            : this(baseUrl, timeoutSeconds, new SecureSessionStore(baseUrl.TrimEnd('/')))
+        {
+        }
+
+        internal WebsiteSession(string baseUrl, int timeoutSeconds, ISessionStore store)
+        {
+            var uri = new Uri(baseUrl);
+            if (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback))
+            {
+                throw new ArgumentException("Website API requires HTTPS or loopback HTTP.");
+            }
+            _baseUrl = baseUrl.TrimEnd('/');
+            _timeoutSeconds = timeoutSeconds;
+            _store = store;
+        }
+
+        private async Task<JToken> RequestAsync(string method, string path, JToken body = null, string accessToken = null)
+        {
+            using (var request = new UnityWebRequest(_baseUrl + path, method))
+            {
+                request.timeout = _timeoutSeconds;
+                request.downloadHandler = new DownloadHandlerBuffer();
+                if (body != null)
+                {
+                    request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body.ToString(Formatting.None)));
+                    request.SetRequestHeader("Content-Type", "application/json");
+                }
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    request.SetRequestHeader("Authorization", "Bearer " + accessToken);
+                }
+                request.redirectLimit = 0;
+                var operation = request.SendWebRequest();
+                while (!operation.isDone)
+                {
+                    await Task.Yield();
+                }
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    // Upstream response/error text may contain private data. Never log it.
+                    throw new WebsiteApiException(request.responseCode);
+                }
+                return string.IsNullOrEmpty(request.downloadHandler.text) ? JValue.CreateNull()
+                    : JToken.Parse(request.downloadHandler.text);
+            }
+        }
+
+        public async Task EnsureSessionAsync(bool forceRefresh = false, string expectedAccessToken = null)
+        {
+            await _sessionLock.WaitAsync();
+            try
+            {
+                if (!_loaded)
+                {
+                    string stored = _store.Read();
+                    _session = stored == null ? null : JsonConvert.DeserializeObject<StoredWebsiteSession>(stored);
+                    if (stored != null && _session == null)
+                    {
+                        throw new InvalidOperationException("Stored login session is invalid; account recovery is required.");
+                    }
+                    _loaded = true;
+                }
+                if (forceRefresh && expectedAccessToken != null && AccessToken != expectedAccessToken)
+                {
+                    forceRefresh = false;
+                }
+                if (_session != null && !_session.refreshInFlight && !forceRefresh
+                    && DateTimeOffset.TryParse(_session.expiresAt, out var expires)
+                    && expires > DateTimeOffset.UtcNow.AddSeconds(RefreshMarginSeconds))
+                {
+                    User = _session.user;
+                    return;
+                }
+                JToken response;
+                if (_session == null)
+                {
+                    response = await RequestAsync("POST", "/api/auth/guest", new JObject { ["displayName"] = "Guest" });
+                }
+                else if (string.IsNullOrEmpty(_session.refreshToken) || _session.refreshInFlight)
+                {
+                    // Recover an uncertain rotation using an independent family; never reuse
+                    // the old refresh token after response loss (API revokes reused families).
+                    response = await RequestAsync("POST", "/api/auth/session", accessToken: _session.accessToken);
+                }
+                else
+                {
+                    _session.refreshInFlight = true;
+                    _store.Write(JsonConvert.SerializeObject(_session));
+                    response = await RequestAsync("POST", "/api/auth/refresh", new JObject { ["refreshToken"] = _session.refreshToken });
+                }
+                var replacement = response.ToObject<StoredWebsiteSession>();
+                if (string.IsNullOrEmpty(replacement?.accessToken) || string.IsNullOrEmpty(replacement.refreshToken)
+                    || !Guid.TryParse(replacement.user?.playerId, out _))
+                {
+                    throw new InvalidOperationException("Website API returned an invalid session.");
+                }
+                _store.Write(JsonConvert.SerializeObject(replacement));
+                _session = replacement;
+                User = replacement.user;
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
+
+        private async Task<JToken> UserRequestAsync(string method, string path, JToken body = null)
+        {
+            await EnsureSessionAsync();
+            string usedToken = AccessToken;
+            try
+            {
+                return await RequestAsync(method, path, body, usedToken);
+            }
+            catch (WebsiteApiException error) when (error.Status == 401)
+            {
+                // Concurrent callers reuse the first caller's freshly rotated session.
+                await EnsureSessionAsync(true, usedToken);
+                return await RequestAsync(method, path, body, AccessToken);
+            }
+        }
+
+        public async Task LoadUserDataAsync()
+        {
+            User = (await UserRequestAsync("GET", "/api/users/me")).ToObject<WebsiteUser>();
+            Decks = (await UserRequestAsync("GET", "/api/decks")).ToObject<WebsiteDeck[]>();
+            if (SelectedDeck == null)
+            {
+                SelectedDeckId = Decks.FirstOrDefault()?.id;
+            }
+            await RefreshRankAsync();
+        }
+
+        public async Task RefreshRankAsync()
+        {
+            Rank = (await UserRequestAsync("GET", "/api/rank/me")).ToObject<WebsiteRank>();
+        }
+
+        public void CycleDeck()
+        {
+            int index = Decks.ToList().FindIndex(deck => deck.id == SelectedDeckId);
+            SelectedDeckId = Decks.Count == 0 ? null : Decks[(index + 1) % Decks.Count].id;
+        }
+
+        public async Task UploadDeckAsync(PersonalDeck deck)
+        {
+            var cards = deck.Cards.GroupBy(id => id).Select(group => new WebsiteCard { cardId = group.Key, quantity = group.Count() });
+            var result = await UserRequestAsync("POST", "/api/decks", new JObject
+            {
+                ["name"] = deck.Name,
+                ["cards"] = JArray.FromObject(cards),
+            });
+            SelectedDeckId = result.Value<string>("id");
+            await LoadUserDataAsync();
+        }
+
+        public void BeginResult()
+        {
+            LastRankChange = null;
+            ResultStatus = "경기 결과 저장 대기 중";
+        }
+
+        public async Task ApplyRankChangeAsync(WebsiteRankChange change)
+        {
+            if (change.playerId != User?.playerId)
+            {
+                return;
+            }
+            LastRankChange = change;
+            ResultStatus = change.ToString();
+            await RefreshRankAsync();
+        }
+
+        public async Task RevokeAsync()
+        {
+            await _sessionLock.WaitAsync();
+            try
+            {
+                if (!string.IsNullOrEmpty(_session?.refreshToken) && !_session.refreshInFlight)
+                {
+                    await RequestAsync("POST", "/api/auth/revoke", new JObject { ["refreshToken"] = _session.refreshToken });
+                }
+                _store.Delete();
+                _session = null;
+                User = null;
+                Rank = null;
+                Decks = Array.Empty<WebsiteDeck>();
+                SelectedDeckId = null;
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
+    }
+}

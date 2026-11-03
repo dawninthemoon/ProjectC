@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 AS build
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential cmake ninja-build ca-certificates python3 \
+    && apt-get install -y --no-install-recommends build-essential cmake ninja-build ca-certificates python3 libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /ProjectC/ProjectC.Server
 COPY ProjectC.Server/CMakeLists.txt ProjectC.Server/Network.cmake ./
@@ -16,10 +16,15 @@ RUN cmake -S . -B Build -G Ninja -DCMAKE_BUILD_TYPE=Release \
     && cmake --build Build --parallel 2 \
     && ctest --test-dir Build --output-on-failure
 FROM ubuntu:24.04 AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libcurl4t64 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /ProjectC
 COPY --from=build /ProjectC/ProjectC.Server/Build/ProjectCNetworkServer /ProjectC/ProjectCNetworkServer
 COPY --from=build /ProjectC/ProjectC.Server/Data /ProjectC/Data
-RUN useradd --create-home --uid 10001 ProjectCUser
+RUN useradd --create-home --uid 10001 ProjectCUser \
+    && mkdir /ProjectC/BattleOutbox \
+    && chown ProjectCUser:ProjectCUser /ProjectC/BattleOutbox
 USER ProjectCUser
 EXPOSE 7777
 STOPSIGNAL SIGTERM

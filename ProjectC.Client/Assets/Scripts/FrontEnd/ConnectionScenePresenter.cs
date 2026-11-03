@@ -37,6 +37,22 @@ namespace ProjectC.Client
         {
             // Yield first so even an already connected session cannot leave a stale handle.
             yield return null;
+            if (_app.UseWebsite)
+            {
+                _loading.text = "로그인 세션 확인 중";
+                var login = _app.PrepareWebsiteAsync();
+                while (!login.IsCompleted)
+                {
+                    yield return null;
+                }
+                if (login.IsFaulted || login.IsCanceled)
+                {
+                    _attempt = null;
+                    _loading.gameObject.SetActive(false);
+                    _app.ShowPopup("로그인 또는 사용자 정보 조회에 실패했습니다. 기존 계정 정보는 보존됩니다.", new PopupAction("재시도", Retry));
+                    yield break;
+                }
+            }
             if (!_app.Network.ConnectionReady)
             {
                 _app.Network.ConnectTo(_app.ServerAddress);

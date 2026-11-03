@@ -14,12 +14,13 @@ FetchContent_Declare(Json
     URL_HASH SHA256=d6c65aca6b1ed68e7a182f4757257b107ae403032760ed6ef121c9d55e81757d)
 FetchContent_MakeAvailable(Json)
 find_package(Threads REQUIRED)
-add_library(ProjectCNetwork Network/Protocol.cpp Network/CardCatalog.cpp Network/MatchSession.cpp Network/MatchManager.cpp Network/WebSocketServer.cpp)
+find_package(CURL REQUIRED)
+add_library(ProjectCNetwork Network/WebsiteApi.cpp Network/Protocol.cpp Network/CardCatalog.cpp Network/MatchSession.cpp Network/MatchManager.cpp Network/WebSocketServer.cpp)
 target_include_directories(ProjectCNetwork PUBLIC Network)
 target_compile_definitions(ProjectCNetwork PRIVATE PROJECTC_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Data")
 target_include_directories(ProjectCNetwork SYSTEM PRIVATE ${boostheaders_SOURCE_DIR})
 target_compile_definitions(ProjectCNetwork PRIVATE BOOST_ALL_NO_LIB BOOST_ERROR_CODE_HEADER_ONLY)
-target_link_libraries(ProjectCNetwork PUBLIC ProjectCGameCore nlohmann_json::nlohmann_json PRIVATE Threads::Threads)
+target_link_libraries(ProjectCNetwork PUBLIC ProjectCGameCore nlohmann_json::nlohmann_json PRIVATE Threads::Threads CURL::libcurl)
 if(WIN32)
     target_link_libraries(ProjectCNetwork PRIVATE ws2_32 mswsock bcrypt)
     target_compile_definitions(ProjectCNetwork PRIVATE _WIN32_WINNT=0x0A00)
@@ -30,7 +31,7 @@ add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Data $<TARGET_FILE_DIR:ProjectCNetworkServer>/Data)
 add_custom_command(TARGET ProjectCNetworkServer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LegacyData $<TARGET_FILE_DIR:ProjectCNetworkServer>/TestData)
-add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/HyakkiComboTests.cpp Tests/MulliganTests.cpp Tests/NewFactionTests.cpp)
+add_executable(ProjectCNetworkTests Tests/NetworkTests.cpp Tests/RankedSessionTests.cpp Tests/HyakkiComboTests.cpp Tests/MulliganTests.cpp Tests/NewFactionTests.cpp)
 target_link_libraries(ProjectCNetworkTests PRIVATE ProjectCNetwork)
 add_test(NAME NetworkTests COMMAND ProjectCNetworkTests)
 add_executable(ProjectCCardDataTests Tests/CardDataTests.cpp)
@@ -54,3 +55,7 @@ set_tests_properties(MulliganWebSocketIntegration PROPERTIES TIMEOUT 45)
 
 add_test(NAME CardDataValidationTests COMMAND ${Python3_EXECUTABLE} -m unittest discover
     -s ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/Tests -p TestExportCardData.py -v)
+
+add_test(NAME WebsiteBattleIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WebsiteBattleIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(WebsiteBattleIntegration PROPERTIES TIMEOUT 120)

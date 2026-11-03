@@ -541,7 +541,7 @@ Json MatchSession::Snapshot(int viewer) const
             {"TurnStarted", state.TurnStarted},
             {"Phase", static_cast<int>(state.Phase)},
             {"Finished", status == MatchStatus::Finished},
-            {"WinnerPlayerId", state.WinnerPlayerId}};
+            {"WinnerPlayerId", resultReason.empty() ? state.WinnerPlayerId : resultWinner}};
 }
 void MatchSession::PrepareChoice(PlayerActionCommand const& command,
                                  EffectChoiceRequest const& choice)
@@ -696,10 +696,50 @@ void MatchSession::Broadcast(std::vector<GameEvent> const& events)
             if (status == MatchStatus::Finished)
             {
                 auto ended = Message("MatchEnded");
-                ended["WinnerPlayerId"] = state.WinnerPlayerId;
+                ended["WinnerPlayerId"] =
+                    resultReason.empty() ? state.WinnerPlayerId : resultWinner;
+                ended["OutcomeReason"] = resultReason;
                 ended["EndReason"] = static_cast<int>(state.EndReason);
                 ended["SessionTokenRevoked"] = true;
                 client->Send(ended);
+            }
+        }
+    }
+}
+void MatchSession::SetRankedDecks(std::array<Json, 2> const& decks)
+{
+    for (std::size_t i = 0; i < seats.size(); ++i)
+    {
+        auto cards = decks[i].at("cardIds").get<std::vector<CardDefinitionId>>();
+        if (!catalog->PersonalDeckError(cards).empty())
+        {
+            throw std::runtime_error("Invalid website deck");
+        }
+        seats[i].PersonalDeck = DeckDefinition{"", "Website deck", std::move(cards)};
+        seats[i].WebsitePlayerId = decks[i].at("playerId").get<std::string>();
+    }
+    ranked = true;
+    for (auto& seat : seats)
+    {
+        seat.Ready = true;
+    }
+    StartGame();
+}
+void MatchSession::DeliverRankChanges(Json const& changes)
+{
+    for (auto& seat : seats)
+    {
+        for (auto const& change : changes)
+        {
+            if (change.value("playerId", "") == seat.WebsitePlayerId)
+            {
+                seat.RankChange = change;
+                if (auto client = seat.Client.lock())
+                {
+                    auto response = Message("RankUpdated");
+                    response["Payload"] = change;
+                    client->Send(response);
+                }
             }
         }
     }
@@ -710,6 +750,8 @@ void MatchSession::Archive()
     {
         return;
     }
+    journal.ResultReason = resultReason;
+    journal.ResultWinner = resultWinner;
     journal.FinalState = state;
     journal.StoredAt = Clock::now();
     archive(journal);
@@ -801,8 +843,42 @@ void MatchSession::ResetTurnDeadline()
                 .time_since_epoch())
             .count();
 }
+void MatchSession::FinishRanked(std::string reason, int winner)
+{
+    if (!ranked || status == MatchStatus::Finished || status == MatchStatus::Closed)
+    {
+        return;
+    }
+    resultReason = std::move(reason);
+    resultWinner = winner;
+    status = MatchStatus::Finished;
+    pendingAction.reset();
+    Archive();
+    for (auto& seat : seats)
+    {
+        seat.Token.clear();
+        seat.Ready = false;
+    }
+    Broadcast({});
+    Lobby();
+}
 void MatchSession::Tick(Clock::time_point now)
 {
+    constexpr int ReconnectGraceSeconds = 120;
+    if (ranked && (status == MatchStatus::Playing || status == MatchStatus::Mulligan))
+    {
+        for (std::size_t i = 0; i < seats.size(); ++i)
+        {
+            if (seats[i].Client.expired() &&
+                now - seats[i].DisconnectedAt >= std::chrono::seconds(ReconnectGraceSeconds))
+            {
+                bool otherGone = seats[1 - i].Client.expired();
+                FinishRanked(otherGone ? "Aborted" : "Disconnect",
+                             otherGone ? 0 : seats[1 - i].Player);
+                return;
+            }
+        }
+    }
     if (status != MatchStatus::Mulligan || now < mulliganDeadline)
     {
         return;
@@ -854,6 +930,7 @@ void MatchSession::Disconnect(std::shared_ptr<ClientSession> const& client)
     if (index >= 0 && seats[index].Client.lock() == client)
     {
         seats[index].Client.reset();
+        seats[index].DisconnectedAt = Clock::now();
         if (status == MatchStatus::WaitingForPlayers || status == MatchStatus::Ready)
         {
             seats[index].Ready = false;
@@ -945,6 +1022,12 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
                 reject("InvalidSession");
                 return;
             }
+            if (ranked && !client->WebsitePlayerId.empty() &&
+                client->WebsitePlayerId != seats[index].WebsitePlayerId)
+            {
+                reject("AccountMismatch");
+                return;
+            }
             if (!seats[index].Client.expired())
             {
                 reject("SessionConnected");
@@ -953,7 +1036,7 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
         }
         else
         {
-            if (status != MatchStatus::WaitingForPlayers)
+            if (ranked || status != MatchStatus::WaitingForPlayers)
             {
                 reject("MatchNotWaiting");
                 return;
@@ -972,6 +1055,10 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
                 return;
             }
             seats[index].Token = Token();
+        }
+        if (ranked)
+        {
+            client->WebsitePlayerId = seats[index].WebsitePlayerId;
         }
         client->Player = seats[index].Player;
         client->MatchId = id;
@@ -1002,6 +1089,12 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
         Number(input, "PlayerId", MaximumProtocolInteger) != static_cast<unsigned>(client->Player))
     {
         reject("PlayerMismatch");
+        return;
+    }
+    if (ranked &&
+        (type == "SubmitDeck" || type == "SetReady" || type == "Rematch" || type == "CloseMatch"))
+    {
+        reject("RankedMatchLocked");
         return;
     }
     if (type == "StateResyncRequest")
@@ -1257,8 +1350,20 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
     }
     if (type == "LeaveMatch")
     {
+        if (ranked && (status == MatchStatus::Playing || status == MatchStatus::Mulligan))
+        {
+            FinishRanked("Surrender", seats[1 - index].Player);
+        }
         auto left = Message("MatchLeft", request);
         client->Send(left);
+        if (ranked && status == MatchStatus::Finished)
+        {
+            // Leaving the result screen must not close the opponent's result delivery.
+            client->Player = 0;
+            client->MatchId.clear();
+            seat.Client.reset();
+            return;
+        }
         if (status == MatchStatus::Playing || status == MatchStatus::Mulligan ||
             status == MatchStatus::Finished)
         {

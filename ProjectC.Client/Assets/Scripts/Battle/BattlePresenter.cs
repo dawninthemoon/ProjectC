@@ -563,7 +563,13 @@ namespace ProjectC.Client
             if (started && rendered.Finished)
             {
                 ResultLabel.text =
-                    rendered.WinnerPlayerId == Client.PlayerId ? "VICTORY" : "DEFEAT";
+                    rendered.WinnerPlayerId == 0 ? "DRAW / ABORTED"
+                    : rendered.WinnerPlayerId == Client.PlayerId ? "VICTORY" : "DEFEAT";
+                if (Client.WebsiteMode && ClientApp.Instance.Website != null)
+                {
+                    ResultLabel.text += "\n" + ClientApp.Instance.Website.ResultStatus
+                        + "\n" + ClientApp.Instance.Website.Rank;
+                }
             }
             bool action = CanAct;
             Summon.interactable = action && selected != null && selected.CanSummon;
@@ -580,7 +586,7 @@ namespace ProjectC.Client
             int seconds = _turnTimerRunning ? Mathf.Max(0, (int)Math.Ceiling(_turnDeadline - Time.realtimeSinceStartupAsDouble)) : 0;
             _turnTimer.text = _turnTimerRunning
                 ? $"{seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}" : "";
-            ResultRematch.interactable = Client.Connected && !Client.Busy && !RematchRequested();
+            ResultRematch.interactable = !Client.WebsiteMode && Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
             if (ConnectionLabel != null)
             {

@@ -8,6 +8,7 @@ using namespace ProjectC::Network;
 void RunHyakkiComboTests();
 void RunNewFactionTests();
 void RunMulliganCoreTests();
+void RunRankedSessionTests();
 void Check(bool value, std::source_location where = std::source_location::current())
 {
     if (!value)
@@ -809,6 +810,7 @@ int main()
         BattleUxOnlineTests();
         MatchmakingTests();
         RunMulliganCoreTests();
+        RunRankedSessionTests();
         MulliganNetworkTests();
         PersonalDeckTests();
         std::cout << "[TEST] InteractionTests" << std::endl;

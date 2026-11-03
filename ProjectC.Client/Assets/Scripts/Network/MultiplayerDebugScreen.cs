@@ -52,6 +52,10 @@ namespace ProjectC.Client
         string serverCatalogVersion = "";
         bool personalDeckSupported;
         public bool UsePersonalDeck { get; set; } = true;
+        public bool WebsiteMode => ClientApp.Instance != null && ClientApp.Instance.Network == this && ClientApp.Instance.UseWebsite;
+        private bool _authenticated;
+        private string _authenticateRequestId;
+        private bool _preparingWebsiteQueue;
         public bool PersonalMode =>
             UsePersonalDeck && ClientApp.Instance != null && ClientApp.Instance.Network == this;
         public string ConfirmedDeckName { get; private set; } = "";
@@ -70,6 +74,13 @@ namespace ProjectC.Client
         {
             get
             {
+                if (WebsiteMode)
+                {
+                    var deck = ClientApp.Instance.Website?.SelectedDeck;
+                    return deck == null ? "Website에 저장된 덱을 선택하세요."
+                        : deck.catalogVersion != serverCatalogVersion ? "Website와 서버의 카탈로그 버전이 다릅니다."
+                        : DeckValidator.Validate(deck.ToPersonalDeck(), ClientApp.Instance.Library).CanPlay ? "" : "저장된 덱 구성을 확인하세요.";
+                }
                 if (!string.IsNullOrEmpty(CatalogProblem))
                 {
                     return CatalogProblem;
@@ -96,7 +107,8 @@ namespace ProjectC.Client
             }
         }
         public string DeckSummary =>
-            PersonalMode
+            WebsiteMode ? (ClientApp.Instance.Website?.SelectedDeck?.name ?? "Website ? ??")
+                : PersonalMode
                 ? (ClientApp.Instance.Decks.Selected?.Name ?? "개인 덱 없음")
                     + " · "
                     + (ClientApp.Instance.Decks.Selected?.Cards.Count ?? 0)
@@ -107,6 +119,11 @@ namespace ProjectC.Client
         {
             if (Busy || !string.IsNullOrEmpty(matchId))
             {
+                return;
+            }
+            if (WebsiteMode)
+            {
+                ClientApp.Instance.Website?.CycleDeck();
                 return;
             }
             var personal = ClientApp.Instance?.Decks.Decks;
@@ -159,7 +176,7 @@ namespace ProjectC.Client
         string _cancelQueueRequestId;
         float _queueStartedAt;
 
-        public bool ConnectionReady => Connected && !connecting && _deckCatalogReceived;
+        public bool ConnectionReady => Connected && !connecting && _deckCatalogReceived && (!WebsiteMode || _authenticated);
         public string ConnectionError { get; private set; } = "";
         private bool _deckCatalogReceived;
         private bool _serverDeckSelected;
@@ -168,12 +185,12 @@ namespace ProjectC.Client
         private string _queuedServerDeck;
         private bool _autoReadyPending;
         public bool AutomaticMatchInProgress { get; private set; }
-        public bool HasDeckSelection => PersonalMode ? ClientApp.Instance.Decks.Selected != null
+        public bool HasDeckSelection => WebsiteMode ? ClientApp.Instance.Website?.SelectedDeck != null : PersonalMode ? ClientApp.Instance.Decks.Selected != null
             : _serverDeckSelected && Array.Exists(decks, deck => deck.Id == selectedDeck);
         public bool CanQueueSelectedDeck => HasDeckSelection && string.IsNullOrEmpty(CatalogProblem)
-            && (!PersonalMode || string.IsNullOrEmpty(DeckProblem));
+            && (!(PersonalMode || WebsiteMode) || string.IsNullOrEmpty(DeckProblem));
 
-        public bool Busy => pending || resyncing || connecting || deckRequestId != null
+        public bool Busy => _preparingWebsiteQueue || pending || resyncing || connecting || deckRequestId != null
             || Matchmaking == MatchmakingState.Queuing;
 
         void ResetMatchmaking(MatchmakingState value, string error = "")
@@ -193,7 +210,7 @@ namespace ProjectC.Client
 
         private void TryAutomaticReady()
         {
-            if (!_autoReadyPending || !AutomaticMatchInProgress || Matchmaking != MatchmakingState.Matched
+            if (WebsiteMode || !_autoReadyPending || !AutomaticMatchInProgress || Matchmaking != MatchmakingState.Matched
                 || !ConnectionReady || Busy || string.IsNullOrEmpty(matchId) || lobby?.Players == null)
             {
                 return;
@@ -243,8 +260,49 @@ namespace ProjectC.Client
             _serverDeckSelected = true;
         }
 
+        private async System.Threading.Tasks.Task QueueWebsiteMatchAsync()
+        {
+            if (!ConnectionReady || Busy || !string.IsNullOrEmpty(matchId) || !CanQueueSelectedDeck)
+            {
+                return;
+            }
+            _preparingWebsiteQueue = true;
+            try
+            {
+                var website = ClientApp.Instance.Website;
+                string deckId = website.SelectedDeckId;
+                await website.EnsureSessionAsync();
+                if (!ConnectionReady || !string.IsNullOrEmpty(matchId))
+                {
+                    return;
+                }
+                ResetMatchmaking(MatchmakingState.Queuing);
+                website.BeginResult();
+                AutomaticMatchInProgress = true;
+                _autoReadyPending = false;
+                _queueStartedAt = Time.realtimeSinceStartup;
+                _queueRequestId = Guid.NewGuid().ToString("N");
+                Send(Request("QueueMatch", _queueRequestId) + ",\"DeckId\":" + Quote(deckId)
+                    + ",\"AccessToken\":" + Quote(website.AccessToken));
+            }
+            catch (Exception)
+            {
+                ResetMatchmaking(MatchmakingState.Error, "로그인 세션 갱신에 실패했습니다.");
+                ClientApp.Instance.ShowPopup(MatchmakingError);
+            }
+            finally
+            {
+                _preparingWebsiteQueue = false;
+            }
+        }
+
         internal void QueueMatch()
         {
+            if (WebsiteMode)
+            {
+                _ = QueueWebsiteMatchAsync();
+                return;
+            }
             if (!Connected || Busy || !string.IsNullOrEmpty(matchId))
             {
                 return;
@@ -531,6 +589,13 @@ namespace ProjectC.Client
                 return;
             }
             ConnectionError = "";
+            if (WebsiteMode && (!Uri.TryCreate(address, UriKind.Absolute, out var endpoint)
+                || (endpoint.Scheme != "wss" && !(endpoint.Scheme == "ws" && endpoint.IsLoopback))))
+            {
+                ConnectionError = "로그인 연결에는 WSS 또는 로컬 WebSocket 주소가 필요합니다.";
+                return;
+            }
+            _authenticated = false;
             _deckCatalogReceived = false;
             bool restoreAutomaticMatch = AutomaticMatchInProgress && !string.IsNullOrEmpty(token) && boundAddress == address;
             if (restoreAutomaticMatch)
@@ -741,6 +806,12 @@ namespace ProjectC.Client
                 {
                     connecting = false;
                     Send(Request("ListDecks"));
+                    if (WebsiteMode && string.IsNullOrEmpty(token))
+                    {
+                        _authenticateRequestId = Guid.NewGuid().ToString("N");
+                        Send(Request("Authenticate", _authenticateRequestId) + ",\"AccessToken\":"
+                            + Quote(ClientApp.Instance.Website?.AccessToken));
+                    }
                     if (!string.IsNullOrEmpty(token))
                     {
                         Send(
@@ -754,6 +825,7 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    _authenticated = false;
                     _deckCatalogReceived = false;
                     if (string.IsNullOrEmpty(ConnectionError))
                     {
@@ -821,6 +893,25 @@ namespace ProjectC.Client
                     "Server/client protocol mismatch; rebuild both"
                 );
             }
+            if (message.Type == "Authenticated" && message.RequestId == _authenticateRequestId)
+            {
+                _authenticated = true;
+                return;
+            }
+            if (message.Type == "ServerError" && message.RequestId == _authenticateRequestId)
+            {
+                ConnectionError = "Battle Server 인증에 실패했습니다: " + message.Reason;
+                return;
+            }
+            if (message.Type == "RankUpdated")
+            {
+                if ((message.MatchId == matchId || string.IsNullOrEmpty(matchId)) && WebsiteMode)
+                {
+                    var payload = Newtonsoft.Json.Linq.JObject.Parse(json)["Payload"].ToObject<WebsiteRankChange>();
+                    ClientApp.Instance.ReceiveRankChange(payload);
+                }
+                return;
+            }
             if (ApplyMatchmakingMessage(message))
             {
                 return;
@@ -854,6 +945,7 @@ namespace ProjectC.Client
                     MatchmakingError = "";
                     QueuePosition = 0;
                 }
+                _authenticated = WebsiteMode || _authenticated;
                 matchId = message.MatchId;
                 playerId = message.PlayerId;
                 token = message.SessionToken;

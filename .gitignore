@@ -160,3 +160,6 @@ Thumbs.db
 # Python integration test artifacts
 __pycache__/
 *.pyc
+
+# Durable battle result jobs contain private account/deck identities.
+BattleOutbox/
