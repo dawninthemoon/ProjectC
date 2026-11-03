@@ -43,6 +43,7 @@ namespace ProjectC.Client
         Coroutine rollback;
         private BattleHitArea[] _areas;
         private BattleHitArea _dropArea;
+        private readonly Vector3[] _heroCorners = new Vector3[4];
         private const float MinimumDropOverlap = .30f;
 
         public void Initialize(BattlePresenter value)
@@ -340,7 +341,10 @@ namespace ProjectC.Client
             }
             if (State == BattleInputState.DraggingAttackTarget)
             {
-                arrow.Show(attackOrigin, World(pointer));
+                var destination = CanDirectAttackAt(pointer.position)
+                    ? presenter.EnemyPlayer.transform.TransformPoint(((RectTransform)presenter.EnemyPlayer.transform).rect.center)
+                    : World(pointer);
+                arrow.Show(attackOrigin, destination);
             }
             if (
                 State == BattleInputState.DraggingAttackTarget
@@ -376,7 +380,6 @@ namespace ProjectC.Client
             }
             var hit = Hit(pointer);
             var card = hit?.GetComponentInParent<CardWidget>();
-            var area = hit?.GetComponentInParent<BattleHitArea>();
             string command = null;
             int target = 0;
             if (
@@ -394,11 +397,7 @@ namespace ProjectC.Client
                     command = "Attack";
                     target = card.Card.Id;
                 }
-                else if (
-                    area?.Kind == BattleHitArea.AreaKind.EnemyHero
-                    && presenter.EnemyFieldEmpty
-                    && source.Card.CanDirectAttack
-                )
+                else if (CanDirectAttackAt(pointer.position))
                 {
                     command = "DirectAttack";
                 }
@@ -721,6 +720,30 @@ namespace ProjectC.Client
                 State = BattleInputState.AwaitingServerResponse;
                 picker.gameObject.SetActive(false);
             }
+        }
+
+        private bool CanDirectAttackAt(Vector2 screenPoint)
+        {
+            if (!presenter.CanAct || !presenter.EnemyFieldEmpty || source?.Card?.CanDirectAttack != true)
+            {
+                return false;
+            }
+            var canvas = presenter.GetComponent<Canvas>().rootCanvas;
+            var camera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null
+                : canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+            if (!RectTransformUtility.RectangleContainsScreenPoint((RectTransform)canvas.transform, screenPoint, camera))
+            {
+                return false;
+            }
+            // Use the rendered portrait's bottom edge at any canvas scale/resolution.
+            // This is a drag threshold, not a raycast surface that can cover other UI.
+            ((RectTransform)presenter.EnemyPlayer.transform).GetWorldCorners(_heroCorners);
+            float bottom = float.PositiveInfinity;
+            foreach (var corner in _heroCorners)
+            {
+                bottom = Mathf.Min(bottom, RectTransformUtility.WorldToScreenPoint(camera, corner).y);
+            }
+            return screenPoint.y >= bottom;
         }
 
         private void UpdateDropArea()

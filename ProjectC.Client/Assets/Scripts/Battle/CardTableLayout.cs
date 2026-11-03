@@ -6,8 +6,8 @@ namespace ProjectC.Client
     public sealed class CardTableLayout : MonoBehaviour
     {
         private const float FieldSpacing = 35f;
-        private const float CompactScale = .38f;
-        private const float ExpandedScale = .86f;
+        private const float CompactScale = .57f;
+        private const float ExpandedScale = 1.29f;
         private const float HandTransitionDuration = .18f;
         private const float FocusLift = 30f;
         private const float EdgePadding = 16f;
@@ -37,9 +37,9 @@ namespace ProjectC.Client
                 {
                     return maximum;
                 }
-                float gap = Compact ? 8f : -25f;
                 float available = Mathf.Max(MinimumSpacing, ((RectTransform)transform).rect.width - EdgePadding);
-                return Mathf.Min(maximum, available / (count * CardSize.x + (count - 1) * gap));
+                // Let spacing absorb additional cards before reducing their readable size.
+                return Mathf.Min(maximum, available / CardSize.x);
             }
         }
 

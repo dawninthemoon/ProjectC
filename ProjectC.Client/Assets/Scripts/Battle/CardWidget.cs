@@ -26,7 +26,8 @@ namespace ProjectC.Client
             IDragHandler,
             IEndDragHandler
     {
-        private const float MinimumDisplayScale = .01f;
+        private const float ExpandedHandFocusScale = 1.2f;
+        private const float FieldHoverScale = 1.035f;
         public RectTransform Face;
         [FormerlySerializedAs("Frame")]
         public Image FrameImage;
@@ -215,10 +216,11 @@ namespace ProjectC.Client
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22)
             );
             pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
-            float hoverScale = InHand
-                ? (ExpandedHand ? 1.04f : transform.localScale.x) / Mathf.Max(MinimumDisplayScale, transform.localScale.x)
-                : 1.035f;
-            float scale = (IsHovered && !dragging ? hoverScale : 1) + pulse * .08f;
+            // Scale the face relative to its layout slot. An absolute display scale
+            // would shrink a focused card whenever the expanded hand grows larger.
+            float focusScale = InHand ? (ExpandedHand ? ExpandedHandFocusScale : 1) : FieldHoverScale;
+            bool focused = !dragging && (IsHovered || (InHand && ExpandedHand && IsSelected));
+            float scale = (focused ? focusScale : 1) + pulse * .08f;
             Face.localScale = Vector3.Lerp(
                 Face.localScale,
                 _faceScale * scale,

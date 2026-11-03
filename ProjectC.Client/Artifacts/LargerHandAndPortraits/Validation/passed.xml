@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:34Z" duration="8.0557848">
+  <test-suite type="TestSuite" id="1106" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="81" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:34Z" duration="8.055785" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1100" name="ProjectC.Client.PlayModeTests.dll" fullname="/private/tmp/ProjectC-BattlefieldValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="81" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:34Z" duration="8.051680" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="44888" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1101" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="81" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:34Z" duration="8.050991" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1102" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="81" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:34Z" duration="8.050331" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1019" name="BattlefieldOnlinePlayModeTests" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:29Z" duration="2.507308" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1020" name="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" methodname="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" seed="25817080" result="Passed" start-time="2026-11-03 05:46:26Z" end-time="2026-11-03 05:46:29Z" duration="2.501159" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1021" name="BattlefieldScenePlayModeTests" fullname="ProjectC.Tests.BattlefieldScenePlayModeTests" classname="ProjectC.Tests.BattlefieldScenePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-03 05:46:29Z" end-time="2026-11-03 05:46:32Z" duration="3.281896" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1022" name="SceneBackdropPreservesOverlayRaycastsAndHandSelection" fullname="ProjectC.Tests.BattlefieldScenePlayModeTests.SceneBackdropPreservesOverlayRaycastsAndHandSelection" methodname="SceneBackdropPreservesOverlayRaycastsAndHandSelection" classname="ProjectC.Tests.BattlefieldScenePlayModeTests" runstate="Runnable" seed="1222313859" result="Passed" start-time="2026-11-03 05:46:29Z" end-time="2026-11-03 05:46:32Z" duration="3.280129" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1098" name="WideDirectAttackPlayModeTests" fullname="ProjectC.Tests.WideDirectAttackPlayModeTests" classname="ProjectC.Tests.WideDirectAttackPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-03 05:46:32Z" end-time="2026-11-03 05:46:34Z" duration="2.257831" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1099" name="WideThresholdRespectsRulesAndCanvasCoordinates" fullname="ProjectC.Tests.WideDirectAttackPlayModeTests.WideThresholdRespectsRulesAndCanvasCoordinates" methodname="WideThresholdRespectsRulesAndCanvasCoordinates" classname="ProjectC.Tests.WideDirectAttackPlayModeTests" runstate="Runnable" seed="1725526542" result="Passed" start-time="2026-11-03 05:46:32Z" end-time="2026-11-03 05:46:34Z" duration="2.256234" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[WIDE DIRECT ATTACK correctly rejected: enemy field occupied
+WIDE DIRECT ATTACK correctly rejected: below threshold
+WIDE DIRECT ATTACK accepted outside portrait after crossing bottom Y=840
+Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

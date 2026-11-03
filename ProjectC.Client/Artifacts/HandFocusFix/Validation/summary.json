@@ -1,0 +1,16 @@
+{
+  "hand_slot_scale": 1.29,
+  "focus_multiplier": 1.2,
+  "focused_display_scale": 1.548,
+  "tests": {
+    "total": "2",
+    "passed": "2",
+    "failed": "0"
+  },
+  "checks": [
+    "hovered face is 1.2x neighboring face",
+    "selected face stays 1.2x after pointer exit",
+    "collapse returns face multiplier to 1",
+    "existing real-server summon/attack/reconnect"
+  ]
+}

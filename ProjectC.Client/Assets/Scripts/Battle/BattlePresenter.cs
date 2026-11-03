@@ -510,7 +510,7 @@ namespace ProjectC.Client
             }
             bool browsing = _gallery.gameObject.activeSelf;
             Hand.gameObject.SetActive(!browsing);
-            var destination = Hand.Layout.Compact ? _handPosition : new Vector2(510, -840);
+            var destination = Hand.Layout.Compact ? _handPosition : new Vector2(510, -748);
             _handRect.anchoredPosition = Vector2.Lerp(_handRect.anchoredPosition, destination,
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22));
             _handRect.sizeDelta = new Vector2(Hand.Layout.Compact ? 660 : 1040, 244);

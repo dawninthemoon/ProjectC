@@ -1,0 +1,34 @@
+{
+  "resolution": [
+    1920,
+    1080
+  ],
+  "hand_scale": {
+    "compact_before": 0.38,
+    "compact_after": 0.57,
+    "expanded_before": 0.86,
+    "expanded_after": 1.29
+  },
+  "portrait_scale": 1.5,
+  "direct_attack_threshold_screen_y_at_1080": 840,
+  "tests": {
+    "total": "3",
+    "passed": "3",
+    "failed": "0"
+  },
+  "cases": [
+    {
+      "name": "ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.BattlefieldScenePlayModeTests.SceneBackdropPreservesOverlayRaycastsAndHandSelection",
+      "result": "Passed"
+    },
+    {
+      "name": "ProjectC.Tests.WideDirectAttackPlayModeTests.WideThresholdRespectsRulesAndCanvasCoordinates",
+      "result": "Passed"
+    }
+  ],
+  "note": "Wide direct attack scenario and scale assertions run only in isolated validation copy; repository test sources unchanged."
+}
