@@ -136,6 +136,7 @@ namespace ProjectC.Client
             if (presenter != null)
             {
                 presenter.ClearSelection();
+                presenter.SetHandExpanded(false);
                 Hints();
             }
         }
@@ -175,6 +176,7 @@ namespace ProjectC.Client
             }
             ResetInput();
             presenter.SelectCard(widget);
+            presenter.SetHandExpanded(widget.InHand);
             if ((presenter.IsOwnField(widget.Card.Id) || widget.InHand) && presenter.CanAct)
             {
                 source = widget;
@@ -184,10 +186,36 @@ namespace ProjectC.Client
             }
         }
 
+        public void FocusHand(CardWidget widget)
+        {
+            if (!widget.InHand || presenter.Hand.Layout.Compact
+                || (State != BattleInputState.Idle && State != BattleInputState.SelectingCardAction))
+            {
+                return;
+            }
+            // Browsing the expanded hand also moves selection on the opponent's turn.
+            // Only action submission and its context controls depend on CanAct.
+            presenter.SelectCard(widget);
+            if (!presenter.CanAct)
+            {
+                context.gameObject.SetActive(false);
+                return;
+            }
+            source = widget;
+            sourceId = widget.Card.Id;
+            State = BattleInputState.SelectingCardAction;
+            context.Show(widget, SelectAction);
+        }
+
         public void ClickArea(BattleHitArea area)
         {
             if (area.Kind == BattleHitArea.AreaKind.Background || area.Kind == BattleHitArea.AreaKind.OwnField)
             {
+                if (State == BattleInputState.SelectingEffectTarget || State == BattleInputState.AwaitingServerResponse)
+                {
+                    return;
+                }
+                ResetInput();
                 presenter.HideCardInfo();
                 return;
             }

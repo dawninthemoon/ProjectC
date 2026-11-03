@@ -1,5 +1,5 @@
 {
-  "CatalogVersion": "hyakki-2026-11-02-v1-d50a83de4717",
+  "CatalogVersion": "hyakki-2026-11-02-v1-fc4b30ed6ac5",
   "Cards": [
     {
       "Id": 1001,
@@ -821,7 +821,11 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].AttackDelta"
+        }
+      ]
     },
     {
       "Id": 3002,
@@ -855,7 +859,12 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 3003,
@@ -893,7 +902,18 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
+      ]
     },
     {
       "Id": 3004,
@@ -927,7 +947,11 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].AttackDelta"
+        }
+      ]
     },
     {
       "Id": 3005,
@@ -960,7 +984,15 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxAttack"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 3006,
@@ -997,7 +1029,18 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
+      ]
     },
     {
       "Id": 4001,
@@ -1031,7 +1074,12 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 4002,
@@ -1064,7 +1112,15 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
+      ]
     },
     {
       "Id": 4003,
@@ -1101,7 +1157,15 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 4004,
@@ -1135,7 +1199,12 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 4005,
@@ -1166,7 +1235,12 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Actions[0].Targets.MaxCount",
+          "default": 1
+        }
+      ]
     },
     {
       "Id": 4006,
@@ -1204,7 +1278,14 @@
           "Id": 1
         }
       ],
-      "DescriptionArgs": []
+      "DescriptionArgs": [
+        {
+          "path": "Effects[0].Costs[0].Amount"
+        },
+        {
+          "path": "Effects[0].Actions[0].Amount"
+        }
+      ]
     }
   ]
 }

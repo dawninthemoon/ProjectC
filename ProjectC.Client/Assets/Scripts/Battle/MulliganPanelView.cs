@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +19,17 @@ namespace ProjectC.Client
         TMP_Text feedback;
         StateView lastState;
         float deadline;
+        private const float ReviewDuration = 1f;
+        private const float ReplacementFlipDuration = .35f;
+        private const int OpeningHandSize = 5;
+        private CardView[] _openingHand;
+        private CardView[] _reviewHand;
+        private bool[] _replaced;
+        private int _gameNumber;
+        private string _match;
+        private bool _wasMulligan;
+        private float _reviewUntil;
+        public bool Reviewing => Time.unscaledTime < _reviewUntil;
         MultiplayerDebugScreen Client => presenter.Client;
 
         public static MulliganPanelView Create(BattlePresenter presenter)
@@ -33,13 +45,13 @@ namespace ProjectC.Client
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
             rect.offsetMin = rect.offsetMax = Vector2.zero;
-            root.GetComponent<Image>().color = new Color(.02f, .025f, .04f, .97f);
+            root.GetComponent<Image>().color = new Color(.02f, .025f, .04f, 1);
             var view = root.GetComponent<MulliganPanelView>();
             view.presenter = presenter;
             view.Status = view.Label("Status", new Vector2(0, 240), new Vector2(1450, 170), 30);
             view.feedback = view.Label("Feedback", new Vector2(0, -280), new Vector2(1400, 80), 22);
-            view.cards = new CardWidget[5];
-            for (int i = 0; i < 5; ++i)
+            view.cards = new CardWidget[OpeningHandSize];
+            for (int i = 0; i < OpeningHandSize; ++i)
             {
                 var card = Instantiate(presenter.Hand.CardPrefab, root.transform);
                 view.cards[i] = card;
@@ -51,8 +63,8 @@ namespace ProjectC.Client
                 card.HoverLeft = null;
             }
             view.Confirm = view.Button(
-                "교체 확정",
-                new Vector2(-260, -180),
+                "확인",
+                new Vector2(0, -180),
                 () => view.Submit(false)
             );
             view.Keep = view.Button("그대로 시작", new Vector2(0, -180), () => view.Submit(true));
@@ -61,6 +73,9 @@ namespace ProjectC.Client
                 new Vector2(260, -180),
                 () => view.Client.ReconnectNetwork()
             );
+            // Retain the existing API for callers; only Confirm belongs to this screen.
+            view.Keep.gameObject.SetActive(false);
+            view.Reconnect.gameObject.SetActive(false);
             view.Client.NoticeReceived += view.Notice;
             root.SetActive(false);
             return view;
@@ -153,17 +168,94 @@ namespace ProjectC.Client
             Render();
         }
 
+        private void BeginReview(CardView[] finalHand)
+        {
+            if (_openingHand == null)
+            {
+                return;
+            }
+            finalHand = finalHand.Take(_openingHand.Length).ToArray();
+            var retained = new HashSet<int>(finalHand.Select(card => card.Id));
+            var original = new HashSet<int>(_openingHand.Select(card => card.Id));
+            // The server appends mulligan replacements before the normal first-turn draw.
+            // Keep untouched cards in their original slots and leave that extra draw to battle UI.
+            var replacements = new Queue<CardView>(finalHand.Where(card => !original.Contains(card.Id)));
+            _reviewHand = _openingHand.ToArray();
+            _replaced = new bool[_openingHand.Length];
+            for (int i = 0; i < _openingHand.Length; ++i)
+            {
+                if (!retained.Contains(_openingHand[i].Id) && replacements.Count > 0)
+                {
+                    _reviewHand[i] = replacements.Dequeue();
+                    _replaced[i] = true;
+                }
+                cards[i].ResetPointer();
+            }
+            _reviewUntil = Time.unscaledTime + ReviewDuration;
+        }
+
+        private void RenderReview()
+        {
+            float elapsed = ReviewDuration - (_reviewUntil - Time.unscaledTime);
+            float progress = Mathf.Clamp01(elapsed / ReplacementFlipDuration);
+            for (int i = 0; i < cards.Length; ++i)
+            {
+                bool visible = i < _reviewHand.Length;
+                cards[i].gameObject.SetActive(visible);
+                if (!visible)
+                {
+                    continue;
+                }
+                bool changing = _replaced[i];
+                var shown = changing && progress < .5f ? _openingHand[i] : _reviewHand[i];
+                cards[i].Bind(shown, false, false, false, false);
+                float width = changing ? Mathf.Abs(1 - 2 * progress) : 1;
+                cards[i].transform.localScale = new Vector3(width, 1, 1);
+            }
+            Status.text = "";
+            feedback.text = "";
+            Confirm.interactable = false;
+        }
+
         public void Render()
         {
             var state = Client.State;
             bool active = state?.MulliganActive == true;
-            gameObject.SetActive(active);
+            if (state == null || _gameNumber != Client.GameNumber || _match != Client.CurrentMatch)
+            {
+                _reviewUntil = 0;
+                _wasMulligan = false;
+                _openingHand = _reviewHand = null;
+                _replaced = null;
+                _gameNumber = Client.GameNumber;
+                _match = Client.CurrentMatch;
+                lastState = null;
+            }
+            var own = Own();
+            if (active && _openingHand == null && own?.Hand != null)
+            {
+                _openingHand = own.Hand.Take(OpeningHandSize).ToArray();
+            }
+            if (_wasMulligan && !active && state?.Started == true && !state.Finished && own != null)
+            {
+                BeginReview(own.Hand);
+                presenter.SetHandExpanded(true);
+            }
+            _wasMulligan = active;
+            gameObject.SetActive(active || Reviewing);
+            Keep.gameObject.SetActive(false);
+            Reconnect.gameObject.SetActive(false);
+            if (!active && Reviewing)
+            {
+                RenderReview();
+                return;
+            }
+            Confirm.gameObject.SetActive(true);
             if (!active)
             {
                 lastState = null;
                 return;
             }
-            var own = Own();
             if (own == null)
             {
                 return;
@@ -184,16 +276,19 @@ namespace ProjectC.Client
                 }
             }
             bool editable = Client.Connected && !Client.Busy && !own.MulliganComplete;
-            Confirm.interactable = Keep.interactable = editable;
-            Reconnect.interactable = !Client.Connected && !Client.Busy;
+            Confirm.interactable = editable;
+            var visibleHand = _openingHand ?? own.Hand;
             for (int i = 0; i < cards.Length; ++i)
             {
-                bool visible = i < own.Hand.Length;
+                bool visible = i < visibleHand.Length;
                 cards[i].gameObject.SetActive(visible);
                 if (visible)
                 {
-                    bool selected = Client.MulliganSelection.Contains(own.Hand[i].Id);
-                    cards[i].Bind(own.Hand[i], false, selected, false, false);
+                    bool selected = own.MulliganComplete
+                        ? Array.IndexOf(own.MulliganSelectedIds ?? Array.Empty<int>(), visibleHand[i].Id) >= 0
+                        : Client.MulliganSelection.Contains(visibleHand[i].Id);
+                    cards[i].transform.localScale = Vector3.one;
+                    cards[i].Bind(visibleHand[i], false, selected, false, false);
                 }
             }
             var other = Array.Find(state.Players, p => p.PlayerId != Client.PlayerId);
@@ -212,7 +307,7 @@ namespace ProjectC.Client
             if (!Client.Connected)
             {
                 feedback.text =
-                    "연결이 끊어졌습니다. 재접속 후 서버의 손패와 완료 상태를 복원합니다.";
+                    "연결이 끊어졌습니다. 연결 메뉴에서 재접속할 수 있습니다.";
             }
         }
     }

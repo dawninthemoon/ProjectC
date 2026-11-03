@@ -31,6 +31,15 @@ namespace ProjectC.Client
         private TMP_Text _turnTimer;
         private double _turnDeadline;
         private bool _turnTimerRunning;
+        private RectTransform _handRect;
+        private Vector2 _handPosition;
+        private CardGalleryView _gallery;
+
+        public void SetHandExpanded(bool expanded)
+        {
+            Hand.Layout.SetExpanded(expanded);
+        }
+
         public void InspectCard(CardView card, bool fromChoice = false)
         {
             if (card == null)
@@ -82,10 +91,12 @@ namespace ProjectC.Client
             && Client.State.Started
             && !Client.State.Finished
             && !Client.State.MulliganActive
+            && !(Mulligan?.Reviewing ?? false)
             && Client.State.ResolvingPlayerId == 0
             && Client.State.ActivePlayerId == Client.PlayerId
             && (LobbyOverlay == null || !LobbyOverlay.activeSelf)
-            && !GraveyardPanel.activeSelf;
+            && !GraveyardPanel.activeSelf
+            && (_gallery == null || !_gallery.gameObject.activeSelf);
         public bool PresentationBusy => _playing || _batches.Count > 0 || events.Count > 0;
         public int EnemyId => enemy?.PlayerId ?? 0;
         public bool EnemyFieldEmpty => enemy?.Field?.Length == 0;
@@ -159,6 +170,13 @@ namespace ProjectC.Client
             this.Bind("RecentEvents", out Log);
             Interaction = GetComponent<BattleInteractionController>();
             Interaction.Initialize(this);
+            _handRect = (RectTransform)Hand.transform;
+            _handPosition = _handRect.anchoredPosition;
+            if (!this.Bind("CardGallery", out _gallery))
+            {
+                throw new InvalidOperationException("Battle screen requires CardGallery.");
+            }
+            _gallery.Initialize(this);
             Lobby?.Bind(Client);
             Summon.onClick.AddListener(() => Command("PlayCard"));
             BattlePhase.gameObject.SetActive(false);
@@ -188,7 +206,7 @@ namespace ProjectC.Client
                 }
             });
             GraveyardToggle.onClick.AddListener(() =>
-                GraveyardPanel.SetActive(!GraveyardPanel.activeSelf)
+                _gallery.ShowPublicZones()
             );
             LogToggle.onClick.AddListener(Log.Toggle);
             Resync?.onClick.AddListener(Client.RequestSnapshot);
@@ -229,6 +247,7 @@ namespace ProjectC.Client
             dirty = true;
             events.Clear();
             Effects.ResetFeedback();
+            _gallery?.Close();
             HideCardInfo();
         }
 
@@ -334,6 +353,7 @@ namespace ProjectC.Client
                     {
                         yield return new WaitForSecondsRealtime(Effects.Settings?.DrawInterval ?? .16f);
                     }
+                    Effects.PresentNumber(e, this, _presentation.State);
                     _presentation.Apply(e, batch.Snapshot, Client.PlayerId);
                     if (stateChange)
                     {
@@ -404,7 +424,12 @@ namespace ProjectC.Client
 
         void Hover(CardWidget widget)
         {
-            // Hover animation and sorting belong to CardWidget; inspection is click-only.
+            if (widget.Card != null && ((!Hand.Layout.Compact && widget.InHand)
+                || Interaction.State == BattleInputState.SelectingEffectTarget))
+            {
+                InspectCard(widget.Card);
+                Interaction.FocusHand(widget);
+            }
         }
 
         void Unhover()
@@ -469,6 +494,12 @@ namespace ProjectC.Client
             {
                 Interaction.RefreshServerChoice();
             }
+            bool browsing = _gallery.gameObject.activeSelf;
+            Hand.gameObject.SetActive(!browsing);
+            var destination = Hand.Layout.Compact ? _handPosition : new Vector2(510, -840);
+            _handRect.anchoredPosition = Vector2.Lerp(_handRect.anchoredPosition, destination,
+                1 - Mathf.Exp(-Time.unscaledDeltaTime * 22));
+            _handRect.sizeDelta = new Vector2(Hand.Layout.Compact ? 660 : 1040, 244);
             Lobby?.Render();
             Mulligan.Render();
             bool started = rendered != null && rendered.Started;
@@ -493,7 +524,7 @@ namespace ProjectC.Client
                 : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.to_main2" : "ui.phase.end_turn");
             int seconds = _turnTimerRunning ? Mathf.Max(0, (int)Math.Ceiling(_turnDeadline - Time.realtimeSinceStartupAsDouble)) : 0;
             _turnTimer.text = _turnTimerRunning
-                ? BattleText.Get("ui.turn.remaining", $"{seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}") : "";
+                ? $"{seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}" : "";
             ResultRematch.interactable = Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
             if (ConnectionLabel != null)
@@ -625,15 +656,17 @@ namespace ProjectC.Client
                 rendered.ActivePlayerId == enemy.PlayerId,
                 rendered.MaxYokaiPower
             );
+            GetComponentInChildren<BattleHudView>().Render(visibleMine, visibleEnemy, rendered.MaxYokaiPower);
             TurnLabel.text =
                 rendered.ActivePlayerId == Client.PlayerId ? "YOUR TURN" : "OPPONENT TURN";
             if (rendered.ResolvingPlayerId != 0)
             {
                 TurnLabel.text = "RESOLVING / P" + rendered.ResolvingPlayerId;
             }
-            PhaseLabel.text = BattleText.Get("ui.turn.phase", rendered.TurnNumber, BattleText.Get(
+            PhaseLabel.text = BattleText.Get(
                 rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui.phase.main1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui.phase.battle"
-                : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui.phase.main2" : "ui.phase.end"));
+                : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui.phase.main2" : "ui.phase.end");
+            TurnLabel.text += " · " + rendered.TurnNumber;
             SelectionLabel.text =
                 selected == null
                     ? "Select a card"

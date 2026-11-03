@@ -20,6 +20,7 @@ namespace ProjectC.Client
         private EffectSelectionView _selection;
         private ActionChoiceView _serverChoice;
         private Button _confirm;
+        private CardGalleryView _gallery;
 
         private void Begin(int count, int minimum, int maximum, bool cost, bool canCancel, Action confirm, Action cancel)
         {
@@ -50,29 +51,50 @@ namespace ProjectC.Client
 
         public void ShowServer(ActionChoiceView value, Action<string> pick, Action confirm, Action cancel)
         {
+            _gallery = GetComponentInParent<BattlePresenter>().GetComponentInChildren<CardGalleryView>(true);
             _serverChoice = value;
             _selection = null;
             Begin(value.Candidates.Length, value.MinCount, value.MaxCount, value.IsCost, value.CanCancel, confirm, cancel);
             for (int i = 0; i < value.Candidates.Length; ++i)
             {
                 var option = value.Candidates[i];
+                _buttons[i].gameObject.SetActive(option.CardId == 0);
                 _buttons[i].GetComponentInChildren<TMP_Text>().text = CardPresentation.Name(option.Card,
                     BattleText.Get("ui.choice.player", option.PlayerId));
                 _buttons[i].onClick.AddListener(() => pick(option.Token));
+            }
+            if (Array.Exists(value.Candidates, option => option.Card != null && option.Zone != (int)PresentationZone.Field))
+            {
+                _gallery.ShowChoices(value, pick);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_gallery != null && _gallery.Choosing)
+            {
+                _gallery.Close();
             }
         }
 
         public void Show(EffectSelectionView value, int index, Func<EffectTargetView, string> name,
             Action<EffectTargetView> pick, Action confirm, Action cancel)
         {
+            var presenter = GetComponentInParent<BattlePresenter>();
+            _gallery = presenter.GetComponentInChildren<CardGalleryView>(true);
             _selection = value;
             _serverChoice = null;
             Begin(value.Candidates.Length, value.MinCount, value.MaxCount, false, true, confirm, cancel);
             for (int i = 0; i < value.Candidates.Length; ++i)
             {
                 var target = value.Candidates[i];
+                _buttons[i].gameObject.SetActive(target.CardId == 0);
                 _buttons[i].GetComponentInChildren<TMP_Text>().text = name(target);
                 _buttons[i].onClick.AddListener(() => pick(target));
+            }
+            if (Array.Exists(value.Candidates, target => target.CardId != 0 && target.Zone != (int)PresentationZone.Field))
+            {
+                _gallery.ShowTargets(value, pick);
             }
         }
 
@@ -84,6 +106,7 @@ namespace ProjectC.Client
 
         public void SetServerSelected(List<string> selected)
         {
+            _gallery?.SetSelected(selected);
             _confirm.interactable = selected.Count >= _serverChoice.MinCount && selected.Count <= _serverChoice.MaxCount;
             for (int i = 0; i < _serverChoice.Candidates.Length; ++i)
             {
@@ -93,6 +116,8 @@ namespace ProjectC.Client
 
         public void SetSelected(List<EffectTargetView> selected)
         {
+            var keys = selected.ConvertAll(CardGalleryView.TargetKey);
+            _gallery?.SetSelected(keys);
             _confirm.interactable = selected.Count >= _selection.MinCount && selected.Count <= _selection.MaxCount;
             for (int i = 0; i < _selection.Candidates.Length; ++i)
             {

@@ -23,6 +23,74 @@ namespace ProjectC.Client
             OpponentDeck,
             OpponentHand;
         public BattleVisualSettings Settings;
+        [SerializeField] private GameObject _numberPopupPrefab;
+        private const float NumberLifetime = .75f;
+
+        public void PresentNumber(EventView e, BattlePresenter presenter, StateView before)
+        {
+            var card = BattlePresentationState.Find(before, e.TargetCardId);
+            var player = before?.Players == null ? null : System.Array.Find(before.Players, p => p.PlayerId == e.TargetPlayerId);
+            string label = null;
+            Color color = new Color(.95f, .25f, .28f);
+            if (e.Type == (int)PresentationEvent.Damage || e.Type == (int)PresentationEvent.PlayerDamage)
+            {
+                label = "−" + e.Damage;
+            }
+            else if (e.Type == (int)PresentationEvent.Life && player != null && player.Life != e.LifeAfter)
+            {
+                int delta = e.LifeAfter - player.Life;
+                label = (delta > 0 ? "+" : "") + delta;
+                color = delta > 0 ? new Color(.35f, 1, .65f) : color;
+            }
+            else if (e.Type == (int)PresentationEvent.Heal && card != null)
+            {
+                label = "+" + Mathf.Max(0, e.HpAfter - card.Hp);
+                color = new Color(.35f, 1, .65f);
+            }
+            else if (e.Type == (int)PresentationEvent.Stats && card != null && card.Attack != e.AttackAfter)
+            {
+                int delta = e.AttackAfter - card.Attack;
+                label = (delta > 0 ? "+" : "") + delta + " ATK";
+                color = new Color(1, .81f, .37f);
+            }
+            else if (e.Type == (int)PresentationEvent.Stats && card != null && card.Hp != e.HpAfter)
+            {
+                int delta = e.HpAfter - card.Hp;
+                label = (delta > 0 ? "+" : "") + delta + " HP";
+                color = delta > 0 ? new Color(.35f, 1, .65f) : color;
+            }
+            else if (e.Type == (int)PresentationEvent.Yokai && player != null && e.YokaiPowerAfter > player.YokaiPower)
+            {
+                label = "+" + (e.YokaiPowerAfter - player.YokaiPower);
+                color = new Color(.35f, 1, .85f);
+            }
+            if (label == null || _numberPopupPrefab == null)
+            {
+                return;
+            }
+            Transform target = e.TargetPlayerId == presenter.Client.PlayerId ? presenter.OwnPlayer.transform : presenter.EnemyPlayer.transform;
+            foreach (var zone in presenter.Zones)
+            {
+                var widget = zone.Widgets.Find(w => !w.Hidden && w.Card?.Id == e.TargetCardId);
+                if (widget != null)
+                {
+                    target = widget.Face;
+                    break;
+                }
+            }
+            if (e.Type == (int)PresentationEvent.Yokai && e.TargetPlayerId == presenter.Client.PlayerId)
+            {
+                this.Bind("YokaiValue", out TMP_Text yokai);
+                target = yokai.transform;
+            }
+            var popup = Instantiate(_numberPopupPrefab, _flightRoot);
+            popup.transform.position = target.TransformPoint(((RectTransform)target).rect.center);
+            var text = popup.GetComponentInChildren<TMP_Text>();
+            text.text = label;
+            text.color = color;
+            Destroy(popup, NumberLifetime);
+        }
+
         int turnGeneration;
         private Coroutine _popupRoutine;
         CanvasGroup dim;

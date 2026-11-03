@@ -35,6 +35,8 @@ namespace ProjectC.Client
         public Image Accent;
         private TMP_Text _attack;
         private TMP_Text _health;
+        private TMP_Text _cost;
+        private Outline _highlight;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
         public TMP_Text Title,
@@ -47,6 +49,7 @@ namespace ProjectC.Client
         public bool IsSelected { get; private set; }
         public bool IsHovered { get; private set; }
         public bool IsInFlight { get; private set; }
+        public bool ExpandedHand { get; set; }
         public Action SortRequested;
         public Vector3 WorldCenter => Face.TransformPoint(Face.rect.center);
         public Action<CardWidget> Clicked,
@@ -78,6 +81,7 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Card prefab requires FrameImage");
             }
             FrameImage = Face.GetComponent<Image>();
+            _highlight = Face.GetComponent<Outline>();
             if (FrameImage == null
                 || !Face.Bind("ArtworkImage", out ArtworkImage)
                 || !Face.Bind("Accent", out Accent)
@@ -90,6 +94,7 @@ namespace ProjectC.Client
             }
             Face.Bind("AttackBadge", out _attack);
             Face.Bind("HealthBadge", out _health);
+            Face.Bind("CostBadge", out _cost);
             if (ArtworkImage is not AspectFillImage)
             {
                 throw new InvalidOperationException("Card prefab ArtworkImage requires AspectFillImage.");
@@ -125,6 +130,14 @@ namespace ProjectC.Client
                 _health.transform.parent.gameObject.SetActive(hasStats);
                 _attack.text = hasStats ? card.Attack.ToString() : "";
                 _health.text = hasStats ? card.Hp.ToString() : "";
+            }
+            if (_cost != null)
+            {
+                var costs = visible ? CardPresentation.Library.Find(card.DefinitionId)?.ActivationYokaiCosts : null;
+                bool catalogMatches = ClientApp.Instance == null || string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem);
+                bool showCost = hand && catalogMatches && costs != null && costs.Length > 0;
+                _cost.transform.parent.gameObject.SetActive(showCost);
+                _cost.text = showCost ? string.Join("/", costs) : "";
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
             CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
@@ -166,20 +179,22 @@ namespace ProjectC.Client
             {
                 return;
             }
+            // Availability is supplied by the server and remains visible without selection.
+            bool usable = !Hidden && Card != null && (Card.CanSummon || Card.CanAttack
+                || Card.Activations != null && Array.Exists(Card.Activations, action => action.CanActivate));
             Accent.color =
                 hint == TargetHint.Focused ? new Color(1, .8f, .35f)
                 : hint == TargetHint.Available ? new Color(.38f, .9f, .71f)
                 : hint == TargetHint.Unavailable ? new Color(.22f, .25f, .29f)
                 : IsSelected ? new Color(.93f, .73f, .36f)
-                : Card != null
-                && (
-                    Card.CanSummon
-                    || Card.CanAttack
-                    || Card.Activations != null
-                        && Array.Exists(Card.Activations, a => a.CanActivate)
-                )
-                    ? new Color(.24f, .64f, .58f)
+                : usable ? new Color(.25f, .95f, .7f)
                 : new Color(.28f, .36f, .43f);
+            if (_highlight != null)
+            {
+                _highlight.enabled = !Hidden && hint != TargetHint.Unavailable
+                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable);
+                _highlight.effectColor = Accent.color;
+            }
             Status.text = "";
             Status.gameObject.SetActive(false);
         }
@@ -191,7 +206,7 @@ namespace ProjectC.Client
                 return;
             }
             float lift =
-                IsHovered && !dragging ? (InHand ? 40 : 8)
+                IsHovered && !dragging ? (InHand ? (ExpandedHand ? 12 : 0) : 8)
                 : IsSelected ? 12
                 : 0;
             Face.anchoredPosition = Vector2.Lerp(
@@ -201,7 +216,7 @@ namespace ProjectC.Client
             );
             pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
             float hoverScale = InHand
-                ? 1.1f / Mathf.Max(MinimumDisplayScale, transform.localScale.x)
+                ? (ExpandedHand ? 1.04f : transform.localScale.x) / Mathf.Max(MinimumDisplayScale, transform.localScale.x)
                 : 1.035f;
             float scale = (IsHovered && !dragging ? hoverScale : 1) + pulse * .08f;
             Face.localScale = Vector3.Lerp(

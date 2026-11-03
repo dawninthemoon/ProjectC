@@ -487,6 +487,18 @@ Json MatchSession::Snapshot(int viewer) const
     {
         for (auto const& player : state.Players)
         {
+            // A confirmed player must not learn replacement cards before both decisions
+            // are locked, including through reconnect/resync snapshots. Core resolution
+            // and replay remain unchanged; only the owner-visible hand is withheld.
+            auto const* visiblePlayer = &player;
+            if (state.Preparation == PreparationPhase::Mulligan && player.MulliganComplete)
+            {
+                visiblePlayer = FindPlayer(journal.InitialState, player.Id);
+                if (visiblePlayer == nullptr)
+                {
+                    throw std::logic_error("Missing initial mulligan player");
+                }
+            }
             players.push_back(
                 {{"PlayerId", player.Id},
                  {"MulliganComplete", player.MulliganComplete},
@@ -499,7 +511,7 @@ Json MatchSession::Snapshot(int viewer) const
                  {"HiddenExileCount", player.HiddenExile.size()},
                  {"Exile", Cards(state, player.Exile, viewer, Zone::Exile)},
                  {"Hand",
-                  player.Id == viewer ? Cards(state, player.Hand, viewer, Zone::Hand)
+                  player.Id == viewer ? Cards(state, visiblePlayer->Hand, viewer, Zone::Hand)
                                       : Json::array()},
                  {"Field", Cards(state, player.Field, viewer, Zone::Field)},
                  {"Graveyard", Cards(state, player.Graveyard, viewer, Zone::Graveyard)}});

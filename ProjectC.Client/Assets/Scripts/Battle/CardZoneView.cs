@@ -88,7 +88,7 @@ namespace ProjectC.Client
             }
             foreach (var widget in Widgets)
             {
-                if (widget.IsHovered && !widget.IsInFlight)
+                if ((widget.IsHovered || widget.IsSelected) && !widget.IsInFlight)
                 {
                     widget.transform.SetAsLastSibling();
                 }

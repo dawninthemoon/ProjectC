@@ -230,7 +230,7 @@
     "Rarity": "Bronze",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnNormalSummoned\",\"Actions\":[{\"Operation\":\"ModifyStats\",\"Targets\":{\"Category\":\"Self\",\"Zones\":[\"Field\"]},\"AttackDelta\":1,\"TemporaryStats\":true}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].AttackDelta\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -244,7 +244,7 @@
     "Rarity": "Silver",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnNormalSummoned\",\"Actions\":[{\"Operation\":\"Search\",\"Targets\":{\"Category\":\"FriendlyDeck\",\"Zones\":[\"Deck\"],\"CardType\":\"Spell\",\"RequiredArchetype\":\"CrimsonForge\"}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -258,7 +258,7 @@
     "Rarity": "Silver",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"Actions\":[{\"Operation\":\"DealDamage\",\"Targets\":{\"Category\":\"EnemyMonster\",\"Zones\":[\"Field\"]},\"Amount\":2}],\"Costs\":[{\"Kind\":\"YokaiPower\",\"Amount\":1}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Costs[0].Amount\"},{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1},{\"path\":\"Effects[0].Actions[0].Amount\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -272,7 +272,7 @@
     "Rarity": "Gold",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnRevived\",\"Actions\":[{\"Operation\":\"ModifyStats\",\"Targets\":{\"Category\":\"Self\",\"Zones\":[\"Field\"]},\"AttackDelta\":2,\"TemporaryStats\":true}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].AttackDelta\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -284,7 +284,7 @@
     "Rarity": "Bronze",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"ActivationZone\":\"Hand\",\"Actions\":[{\"Operation\":\"Search\",\"Targets\":{\"Category\":\"FriendlyDeck\",\"Zones\":[\"Deck\"],\"CardType\":\"Monster\",\"RequiredArchetype\":\"CrimsonForge\",\"MaxAttack\":3}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxAttack\"},{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -296,7 +296,7 @@
     "Rarity": "Silver",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"ActivationZone\":\"Hand\",\"Costs\":[{\"Kind\":\"YokaiPower\",\"Amount\":1}],\"Actions\":[{\"Operation\":\"DealDamage\",\"Targets\":{\"Category\":\"EnemyMonster\",\"Zones\":[\"Field\"]},\"Amount\":3}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Costs[0].Amount\"},{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1},{\"path\":\"Effects[0].Actions[0].Amount\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -310,7 +310,7 @@
     "Rarity": "Bronze",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnNormalSummoned\",\"Actions\":[{\"Operation\":\"Search\",\"Targets\":{\"Category\":\"FriendlyDeck\",\"Zones\":[\"Deck\"],\"CardType\":\"Spell\",\"RequiredArchetype\":\"FrostArchive\"}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -324,7 +324,7 @@
     "Rarity": "Bronze",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnSummoned\",\"Actions\":[{\"Operation\":\"DealDamage\",\"Targets\":{\"Category\":\"EnemyMonster\",\"Zones\":[\"Field\"]},\"Amount\":1}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1},{\"path\":\"Effects[0].Actions[0].Amount\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -338,7 +338,7 @@
     "Rarity": "Gold",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"Costs\":[{\"Kind\":\"YokaiPower\",\"Amount\":2}],\"Actions\":[{\"Operation\":\"Destroy\",\"Targets\":{\"Category\":\"EnemyMonster\",\"Zones\":[\"Field\"]}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Costs[0].Amount\"},{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -352,7 +352,7 @@
     "Rarity": "Silver",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Triggered\",\"Trigger\":\"OnRevived\",\"Actions\":[{\"Operation\":\"Salvage\",\"Targets\":{\"Category\":\"FriendlyGraveyard\",\"Zones\":[\"Graveyard\"],\"CardType\":\"Spell\",\"RequiredArchetype\":\"FrostArchive\"}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -364,7 +364,7 @@
     "Rarity": "Bronze",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"ActivationZone\":\"Hand\",\"Actions\":[{\"Operation\":\"Exile\",\"Targets\":{\"Category\":\"EnemyGraveyard\",\"Zones\":[\"Graveyard\"],\"CardType\":\"Any\"}}],\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Actions[0].Targets.MaxCount\",\"default\":1}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   },
   {
@@ -376,7 +376,7 @@
     "Rarity": "Gold",
     "AllowedManifestations": "[]",
     "Effects": "[{\"Type\":\"Activated\",\"ActivationZone\":\"Hand\",\"Costs\":[{\"Kind\":\"YokaiPower\",\"Amount\":1}],\"Actions\":[{\"Operation\":\"Draw\",\"Targets\":{\"Category\":\"FriendlyPlayer\",\"Zones\":[\"Field\"]},\"Amount\":2}],\"PerTurnLimit\":1,\"Id\":1}]",
-    "DescriptionArgs": "[]",
+    "DescriptionArgs": "[{\"path\":\"Effects[0].Costs[0].Amount\"},{\"path\":\"Effects[0].Actions[0].Amount\"}]",
     "CatalogVersion": "hyakki-2026-11-02-v1"
   }
 ]

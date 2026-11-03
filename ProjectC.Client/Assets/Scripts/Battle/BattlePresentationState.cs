@@ -8,7 +8,7 @@ namespace ProjectC.Client
     internal enum PresentationEvent
     {
         Damage = 1, Destroy = 2, Move = 4, Life = 8, PlayerDamage = 10,
-        Summon = 11, Effect = 13, Transform = 15, Heal = 16, Stats = 17, Spell = 19
+        Summon = 11, Effect = 13, Transform = 15, Heal = 16, Stats = 17, Yokai = 18, Spell = 19
     }
 
     internal enum PresentationZone
@@ -75,6 +75,7 @@ namespace ProjectC.Client
                 case PresentationEvent.Transform:
                 case PresentationEvent.Heal:
                 case PresentationEvent.Stats:
+                case PresentationEvent.Yokai:
                 case PresentationEvent.Life:
                 case PresentationEvent.PlayerDamage:
                     return true;
@@ -142,6 +143,12 @@ namespace ProjectC.Client
                         }
                         card.Attack = e.AttackAfter;
                         card.Hp = e.HpAfter;
+                    }
+                    break;
+                case PresentationEvent.Yokai:
+                    if (player != null)
+                    {
+                        player.YokaiPower = e.YokaiPowerAfter;
                     }
                     break;
                 case PresentationEvent.Life:

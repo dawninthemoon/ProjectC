@@ -6,6 +6,10 @@ namespace ProjectC.Client
     public sealed class CardTableLayout : MonoBehaviour
     {
         private const float FieldSpacing = 35f;
+        private const float CompactScale = .38f;
+        private const float ExpandedScale = .86f;
+        private const float HandTransitionDuration = .18f;
+        private const float FocusLift = 30f;
         private const float EdgePadding = 16f;
         private const float MinimumSpacing = 12f;
         private const float MinimumDuration = .01f;
@@ -24,13 +28,18 @@ namespace ProjectC.Client
             get
             {
                 int count = _cards?.Count ?? 0;
-                if (!Hand || count < 2)
+                if (!Hand)
                 {
                     return 1;
                 }
-                float gap = Settings?.HandSpacing ?? 22f;
+                float maximum = Compact ? CompactScale : ExpandedScale;
+                if (count < 2)
+                {
+                    return maximum;
+                }
+                float gap = Compact ? 8f : -25f;
                 float available = Mathf.Max(MinimumSpacing, ((RectTransform)transform).rect.width - EdgePadding);
-                return Mathf.Min(1, available / (count * CardSize.x + (count - 1) * gap));
+                return Mathf.Min(maximum, available / (count * CardSize.x + (count - 1) * gap));
             }
         }
 
@@ -56,12 +65,12 @@ namespace ProjectC.Client
         {
             float width = CardSize.x * CardScale;
             Spacing = count < 2 ? 0 : Mathf.Min(
-                width + (Hand ? (Settings?.HandSpacing ?? 22f) * CardScale : FieldSpacing),
+                width + (Hand ? (Compact ? 8f : -25f) * CardScale : FieldSpacing),
                 Mathf.Max(MinimumSpacing, (((RectTransform)transform).rect.width - width - EdgePadding) / (count - 1)));
             float offset = index - (count - 1) * .5f;
             float ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
-            position = new Vector2(offset * Spacing, Hand ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
-            rotation = Quaternion.Euler(0, 0, Hand ? -ratio * (Settings?.HandRotation ?? 7f) : 0);
+            position = new Vector2(offset * Spacing, Hand && !Compact ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
+            rotation = Quaternion.Euler(0, 0, Hand && !Compact ? -ratio * (Settings?.HandRotation ?? 12f) : 0);
         }
 
         public void Place(CardWidget card, int index, int count)
@@ -70,10 +79,24 @@ namespace ProjectC.Client
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
             rect.sizeDelta = CardSize;
             GetSlot(index, count, out var position, out var rotation);
+            if (Hand && !Compact && (card.IsHovered || card.IsSelected))
+            {
+                position.y = FocusLift;
+                rotation = Quaternion.identity;
+            }
             rect.anchoredPosition = position;
             rect.localRotation = rotation;
             rect.localScale = Vector3.one * CardScale;
             _motions.Remove(card);
+        }
+
+        public void SetExpanded(bool expanded)
+        {
+            if (!Hand)
+            {
+                return;
+            }
+            Compact = !expanded;
         }
 
         private void LateUpdate()
@@ -95,10 +118,16 @@ namespace ProjectC.Client
                 {
                     continue;
                 }
+                card.ExpandedHand = Hand && !Compact;
                 var rect = (RectTransform)card.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
                 rect.sizeDelta = CardSize;
                 GetSlot(i, count, out var target, out var rotation);
+                if (Hand && !Compact && (card.IsHovered || card.IsSelected))
+                {
+                    target.y = FocusLift;
+                    rotation = Quaternion.identity;
+                }
                 if (snap)
                 {
                     Place(card, i, count);
@@ -121,7 +150,7 @@ namespace ProjectC.Client
                     motion.Rotation = rotation;
                     motion.Started = Time.unscaledTime;
                 }
-                float duration = Hand ? Settings?.HandRepositionDuration ?? .28f : Settings?.LayoutMove ?? .22f;
+                float duration = Hand ? HandTransitionDuration : Settings?.LayoutMove ?? .22f;
                 float progress = Mathf.Clamp01((Time.unscaledTime - motion.Started) / Mathf.Max(MinimumDuration, duration));
                 float ease = Settings?.Ease(progress) ?? Mathf.SmoothStep(0, 1, progress);
                 rect.anchoredPosition = Vector2.LerpUnclamped(motion.From, target, ease);
