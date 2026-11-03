@@ -109,9 +109,11 @@ class ExportTests(unittest.TestCase):
 
     def test_new_authoring_descriptions_are_not_rewritten(self):
         catalog = self.catalog()
+        source_by_id = {int(row["Id"]): row for row in self.rows}
         for card in catalog["Cards"]:
             if 3001 <= card["Id"] <= 4006:
-                self.assertEqual([], card["DescriptionArgs"])
+                expected = json.loads(source_by_id[card["Id"]]["DescriptionArgs"])
+                self.assertEqual(expected, card["DescriptionArgs"])
 
 
 if __name__ == "__main__":

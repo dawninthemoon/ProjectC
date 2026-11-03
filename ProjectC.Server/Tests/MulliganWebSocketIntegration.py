@@ -51,7 +51,8 @@ def run(server_path):
         assert a.state['Players'][0]['Hand'] == hand
         request = mulligan(a, [own]); a.until('CommandAccepted'); a.until('StateSnapshot')
         assert a.state['MulliganActive'] and not a.state['TurnStarted']
-        assert own not in [c['Id'] for c in a.state['Players'][0]['Hand']]
+        # Replacement cards stay hidden until both players confirm their mulligan.
+        assert a.state['Players'][0]['Hand'] == hand
         saved = a.state['Players']; token = a.token; a.close(); time.sleep(.1)
         a = Peer(port); peers.append(a)
         a.send('JoinMatch', MatchId=match, SessionToken=token); a.until('MatchJoined'); a.until('StateSnapshot')
