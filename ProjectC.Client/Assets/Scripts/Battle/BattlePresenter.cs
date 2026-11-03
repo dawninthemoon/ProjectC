@@ -34,6 +34,7 @@ namespace ProjectC.Client
         private RectTransform _handRect;
         private Vector2 _handPosition;
         private CardGalleryView _gallery;
+        private bool _resultWasVisible;
 
         public void SetHandExpanded(bool expanded)
         {
@@ -111,6 +112,10 @@ namespace ProjectC.Client
 
         public void SelectCard(CardWidget widget)
         {
+            if (SelectedCardId != widget.Card.Id)
+            {
+                ClientAudio.Play(SoundCue.CardSelect);
+            }
             SelectedCardId = widget.Card.Id;
             selected = widget.Card;
             foreach (var zone in Zones)
@@ -193,7 +198,14 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("Battle screen requires TurnTimer.");
             }
-            Cancel.onClick.AddListener(ClearSelection);
+            Cancel.onClick.AddListener(() =>
+            {
+                if (SelectedCardId != 0)
+                {
+                    ClientAudio.Play(SoundCue.CardDeselect);
+                }
+                ClearSelection();
+            });
             LobbyToggle.onClick.AddListener(() =>
             {
                 if (ClientApp.Instance != null)
@@ -238,6 +250,7 @@ namespace ProjectC.Client
 
         void Invalidate()
         {
+            ClientAudio.StopBattleIfRunning();
             _turnTimerRunning = false;
             StopAllCoroutines();
             _playing = false;
@@ -353,6 +366,7 @@ namespace ProjectC.Client
                     {
                         yield return new WaitForSecondsRealtime(Effects.Settings?.DrawInterval ?? .16f);
                     }
+                    BattleSoundEvents.Present(e, _presentation.State);
                     Effects.PresentNumber(e, this, _presentation.State);
                     _presentation.Apply(e, batch.Snapshot, Client.PlayerId);
                     if (stateChange)
@@ -504,7 +518,13 @@ namespace ProjectC.Client
             Mulligan.Render();
             bool started = rendered != null && rendered.Started;
             LobbyOverlay?.SetActive(showLobby || !started);
-            ResultPanel.SetActive(started && rendered.Finished && !showLobby);
+            bool resultVisible = started && rendered.Finished && !showLobby;
+            ResultPanel.SetActive(resultVisible);
+            if (resultVisible && !_resultWasVisible)
+            {
+                ClientAudio.Shared.PlayResult(Client.CurrentMatch, Client.GameNumber, rendered.WinnerPlayerId, Client.PlayerId);
+            }
+            _resultWasVisible = resultVisible;
             if (started && rendered.Finished)
             {
                 ResultLabel.text =
@@ -698,6 +718,7 @@ namespace ProjectC.Client
             if (rendered.TurnNumber != RenderedTurn && rendered.TurnStarted)
             {
                 RenderedTurn = rendered.TurnNumber;
+                ClientAudio.Shared.PlayTurn(Client.CurrentMatch, Client.GameNumber, RenderedTurn);
                 Effects.Turn(rendered.ActivePlayerId == Client.PlayerId, RenderedTurn);
             }
         }

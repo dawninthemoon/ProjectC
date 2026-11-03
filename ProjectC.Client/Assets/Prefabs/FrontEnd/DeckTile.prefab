@@ -415,6 +415,7 @@ GameObject:
   - component: {fileID: 7816313675212157855}
   - component: {fileID: 2624278515395965282}
   - component: {fileID: 8790801236389275405}
+  - component: {fileID: 7376010229792576489}
   m_Layer: 0
   m_Name: DeckTile
   m_TagString: Untagged
@@ -561,6 +562,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80ae2c6f651943543b7849ce4fa1b8cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7376010229792576489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4825778063149326052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4be0fe512cd08414f8e553c5df287019, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &5591961428518632593

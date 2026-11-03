@@ -1,0 +1,58 @@
+{
+  "baseline": {
+    "total": "71",
+    "passed": "61",
+    "failed": "10"
+  },
+  "final": {
+    "total": "71",
+    "passed": "61",
+    "failed": "10"
+  },
+  "changed_results": [],
+  "failures": [
+    {
+      "name": "ProjectC.Tests.BattlePrefabPlayModeTests.AuthoredPrefabHoverSelectionHiddenCardsAndFeedback",
+      "message": "  Expected: greater than 1.0f\n  But was:  1.0f\n"
+    },
+    {
+      "name": "ProjectC.Tests.BattleUxPlayModeTests.ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary",
+      "message": "System.IndexOutOfRangeException : Index was outside the bounds of the array."
+    },
+    {
+      "name": "ProjectC.Tests.BattleUxPlayModeTests.OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode",
+      "message": "  Pointer is outside but more than 30% of the card overlaps\n  Expected: greater than 0.300000012f\n  But was:  0.176445022f\n"
+    },
+    {
+      "name": "ProjectC.Tests.CardLocalizationTests.NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback",
+      "message": "  Expected string length 44 but was 42. Strings differ at index 36.\n  Expected: \"이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 {0} 올린다.\"\n  But was:  \"이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 1 올린다.\"\n  -----------------------------------------------^\n"
+    },
+    {
+      "name": "ProjectC.Tests.CardPresentationPlayModeTests.BattleArtworkBadgesTransformSelectionAndHover",
+      "message": "  Expected: not null\n  But was:  null\n"
+    },
+    {
+      "name": "ProjectC.Tests.FrontEndPlayModeTests.AutomaticQueueMulliganReconnectAndTimeoutStartsBattle",
+      "message": "  Expected: False\n  But was:  True\n"
+    },
+    {
+      "name": "ProjectC.Tests.FrontEndPlayModeTests.MulliganKeepClearsSelectionAndStarts",
+      "message": "  Expected string length 5 but was 2. Strings differ at index 0.\n  Expected: \"교체 확정\"\n  But was:  \"확인\"\n  -----------^\n"
+    },
+    {
+      "name": "ProjectC.Tests.FrontEndPlayModeTests.MulliganSelectConfirmReconnectAndStart",
+      "message": "  Expected string length 5 but was 2. Strings differ at index 0.\n  Expected: \"교체 확정\"\n  But was:  \"확인\"\n  -----------^\n"
+    },
+    {
+      "name": "ProjectC.Tests.MultiplayerPlayModeTests.FourClientsTwoMatchesPlayRematchAndReconnect",
+      "message": "  Expected string length 9 but was 13. Strings differ at index 9.\n  Expected: \"YOUR TURN\"\n  But was:  \"YOUR TURN · 1\"\n  --------------------^\n"
+    },
+    {
+      "name": "ProjectC.Tests.MultiplayerPlayModeTests.SpellDragPrivateChoiceReconnectAndCommit",
+      "message": "UnityEngine.UnityException : Transform child out of bounds"
+    }
+  ],
+  "existing_runtime_scripts_and_ui_prefabs_unchanged": true,
+  "old_stage_files_unchanged": true,
+  "new_source_fbx_and_image_bytes_unchanged": true
+}

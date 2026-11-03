@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a4159c2db06942aba4b41efd1c36c5b, type: 3}
+  m_Name: ClientSoundLibrary
+  m_EditorClassIdentifier: 
+  Sounds:
+  - Cue: 0
+    Clip: {fileID: 8300000, guid: de04edde2821f4056990e212ae190652, type: 3}
+    Gain: 0.28
+    Pitch: 0.9
+    Cooldown: 0.07
+  - Cue: 1
+    Clip: {fileID: 8300000, guid: a79bf31e7ffc44aa78bf0689cc062388, type: 3}
+    Gain: 0.28
+    Pitch: 0.9
+    Cooldown: 0.07
+  - Cue: 2
+    Clip: {fileID: 8300000, guid: b99f10a10746b4331ab2420ff90cf195, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.08
+  - Cue: 3
+    Clip: {fileID: 8300000, guid: 98f7fa5f029fd4e06b98139d648130fa, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 4
+    Clip: {fileID: 8300000, guid: 538fd1a45d1b74cf29a39ca53ba83d35, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 5
+    Clip: {fileID: 8300000, guid: 5200f76c904464df7ad047bb97a09d9e, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 6
+    Clip: {fileID: 8300000, guid: 06831cbce04444f9e8f385c412b8ea4e, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.08
+  - Cue: 7
+    Clip: {fileID: 8300000, guid: ac410641c07bb49ec9877448b522b4a4, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 8
+    Clip: {fileID: 8300000, guid: 32b3ae0e5226942b497431003466738d, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 9
+    Clip: {fileID: 8300000, guid: 91bd644280ce14e92af536607a2ab2f9, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 10
+    Clip: {fileID: 8300000, guid: 197085aae3cba480990d17cfdb42c663, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 11
+    Clip: {fileID: 8300000, guid: 21fe75e3aac4647e7a18611e02133541, type: 3}
+    Gain: 0.32
+    Pitch: 0.95
+    Cooldown: 0.07
+  - Cue: 12
+    Clip: {fileID: 8300000, guid: 2fbdb89e61e4145078ea409fde3b1a62, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12
+  - Cue: 13
+    Clip: {fileID: 8300000, guid: 6a95bcff6f09d41c6a69d9f98a74a76d, type: 3}
+    Gain: 0.65
+    Pitch: 1
+    Cooldown: 0.12

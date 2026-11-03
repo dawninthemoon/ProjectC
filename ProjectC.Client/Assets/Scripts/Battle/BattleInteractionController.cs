@@ -215,6 +215,10 @@ namespace ProjectC.Client
                 {
                     return;
                 }
+                if (presenter.SelectedCardId != 0)
+                {
+                    ClientAudio.Play(SoundCue.CardDeselect);
+                }
                 ResetInput();
                 presenter.HideCardInfo();
                 return;
@@ -572,6 +576,12 @@ namespace ProjectC.Client
                     BattleText.Get("ui.choice.maximum")
                 );
             }
+            bool selectedNow = chosen.Exists(t => t.CardId == target.CardId
+                && t.PlayerId == target.PlayerId && t.Zone == target.Zone);
+            if ((index >= 0) != selectedNow)
+            {
+                ClientAudio.Play(selectedNow ? SoundCue.CardSelect : SoundCue.CardDeselect);
+            }
             picker.SetSelected(chosen);
             Hints();
         }
@@ -643,6 +653,10 @@ namespace ProjectC.Client
         {
             if (serverChoice == null)
             {
+                if (presenter.SelectedCardId != 0 || State != BattleInputState.Idle)
+                {
+                    ClientAudio.Play(SoundCue.CardDeselect);
+                }
                 ResetInput();
                 return;
             }
@@ -655,6 +669,7 @@ namespace ProjectC.Client
             }
             if (presenter.Client.SendCancelChoice())
             {
+                ClientAudio.Play(SoundCue.CardDeselect);
                 State = BattleInputState.AwaitingServerResponse;
                 picker.gameObject.SetActive(false);
             }
@@ -669,7 +684,8 @@ namespace ProjectC.Client
             }
             // Preview only the card DTO authorized in this choice; never resolve private IDs locally.
             presenter.InspectCard(option.Card, true);
-            if (serverTargets.Contains(token))
+            bool selectedBefore = serverTargets.Contains(token);
+            if (selectedBefore)
             {
                 serverTargets.Remove(token);
             }
@@ -681,6 +697,11 @@ namespace ProjectC.Client
             else if (serverTargets.Count < serverChoice.MaxCount)
             {
                 serverTargets.Add(token);
+            }
+            bool selectedNow = serverTargets.Contains(token);
+            if (selectedBefore != selectedNow)
+            {
+                ClientAudio.Play(selectedNow ? SoundCue.CardSelect : SoundCue.CardDeselect);
             }
             picker.SetServerSelected(serverTargets);
             Hints();

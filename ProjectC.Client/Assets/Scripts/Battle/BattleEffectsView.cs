@@ -190,6 +190,7 @@ namespace ProjectC.Client
             {
                 throw new System.InvalidOperationException("Draw presentation requires a hand zone, widget and CardTableLayout.");
             }
+            ClientAudio.Play(SoundCue.Draw);
             _flightZones.Add(zone);
             StartCoroutine(DrawAnimation(zone, widget, own));
         }

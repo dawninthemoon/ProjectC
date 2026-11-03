@@ -39,8 +39,13 @@ namespace ProjectC.Tests
             {
                 Assert.IsNotNull(renderer.sharedMaterial.GetTexture(map), map);
             }
-            Assert.IsFalse(Camera.main.orthographic);
-            Assert.That(Camera.main.fieldOfView, Is.InRange(25f, 45f));
+            Assert.IsTrue(Camera.main.orthographic);
+            Assert.That(Vector3.Dot(Camera.main.transform.forward, Vector3.down), Is.GreaterThan(.9999f));
+            Assert.That(Vector3.Dot(Camera.main.transform.up, Vector3.forward), Is.GreaterThan(.9999f));
+            string modelPath = AssetDatabase.GetAssetPath(stage.GetComponentInChildren<MeshFilter>().sharedMesh);
+            StringAssert.Contains("/YokaiShrine/", modelPath);
+            Assert.IsFalse(stage.GetComponentsInChildren<MeshFilter>().Any(mesh =>
+                AssetDatabase.GetAssetPath(mesh.sharedMesh).Contains("Battlefield_YokaiShrine_Floor")));
             Assert.Greater(renderer.bounds.size.x, renderer.bounds.size.y);
             var client = ui.Client;
             client.ApplyMessage("{\"Type\":\"MatchCreated\",\"ProtocolVersion\":2,\"MatchId\":\"stage-preview\",\"PlayerId\":1,\"GameNumber\":1}");
@@ -56,17 +61,17 @@ namespace ProjectC.Tests
                     Players = new[]
                     {
                         new PlayerView { PlayerId = 1, Life = 18, DeckCount = 25, HandCount = 5, Hand = hand,
-                            Field = new[] { Card(6, 3001), Card(7, 3004), Card(8, 4002) }, Graveyard = Array.Empty<CardView>(), YokaiPower = 2 },
+                            Field = new[] { Card(6, 3001), Card(7, 3004), Card(8, 4002), Card(10, 3002), Card(11, 1001) }, Graveyard = Array.Empty<CardView>(), YokaiPower = 2 },
                         new PlayerView { PlayerId = 2, Life = 20, DeckCount = 25, HandCount = 5, Hand = Array.Empty<CardView>(),
-                            Field = new[] { Card(9, 4001) }, Graveyard = Array.Empty<CardView>(), YokaiPower = 2 }
+                            Field = new[] { Card(9, 4001), Card(12, 3001), Card(13, 4002), Card(14, 3002), Card(15, 1002) }, Graveyard = Array.Empty<CardView>(), YokaiPower = 2 }
                     }
                 }
             }));
             yield return new WaitForSecondsRealtime(1.5f);
             Assert.AreEqual(1920, Screen.width);
             Assert.AreEqual(1080, Screen.height);
-            Assert.AreEqual(3, ui.OwnField.Widgets.Count);
-            Assert.AreEqual(1, ui.EnemyField.Widgets.Count);
+            Assert.AreEqual(5, ui.OwnField.Widgets.Count);
+            Assert.AreEqual(5, ui.EnemyField.Widgets.Count);
             foreach (var zone in new[] { ui.Hand, ui.OwnField, ui.EnemyField })
             {
                 foreach (var widget in zone.Widgets)
@@ -79,7 +84,7 @@ namespace ProjectC.Tests
                     Assert.IsTrue(hits[0].gameObject.transform.IsChildOf(widget.transform), widget.Card.Id.ToString());
                 }
             }
-            yield return Save("Shrine-Compact-1920.png");
+            yield return Save("YokaiShrine-Compact-1920.png");
             ui.Hand.Widgets[0].OnPointerClick(null);
             yield return new WaitForSecondsRealtime(.4f);
             Assert.IsFalse(ui.Hand.Layout.Compact);
@@ -88,14 +93,14 @@ namespace ProjectC.Tests
             Assert.IsFalse(ui.Hand.Widgets[0].IsSelected);
             Assert.IsTrue(ui.Hand.Widgets[2].IsSelected);
             Assert.That(Mathf.Abs(Mathf.DeltaAngle(ui.Hand.Widgets[2].transform.eulerAngles.z, 0)), Is.LessThan(1));
-            yield return Save("Shrine-Expanded-1920.png");
+            yield return Save("YokaiShrine-Expanded-1920.png");
             var area = ui.GetComponentsInChildren<BattleHitArea>().First(a => a.Kind == BattleHitArea.AreaKind.Background);
             ui.Interaction.ClickArea(area);
             yield return new WaitForSecondsRealtime(.4f);
             Assert.IsTrue(ui.Hand.Layout.Compact);
             Assert.IsFalse(ui.Detail.gameObject.activeSelf);
             ui.gameObject.SetActive(false);
-            yield return Save("Shrine-Model-1920.png");
+            yield return Save("YokaiShrine-Model-1920.png");
             var empty = SceneManager.CreateScene("StageValidationCleanup");
             SceneManager.SetActiveScene(empty);
             yield return SceneManager.UnloadSceneAsync("BattleScene");
@@ -112,8 +117,8 @@ namespace ProjectC.Tests
         {
             yield return new WaitForEndOfFrame();
             var texture = ScreenCapture.CaptureScreenshotAsTexture();
-            Directory.CreateDirectory("Artifacts/Battlefield3D");
-            File.WriteAllBytes("Artifacts/Battlefield3D/" + name, texture.EncodeToPNG());
+            Directory.CreateDirectory("Artifacts/YokaiShrineTopDown");
+            File.WriteAllBytes("Artifacts/YokaiShrineTopDown/" + name, texture.EncodeToPNG());
             UnityEngine.Object.Destroy(texture);
         }
 

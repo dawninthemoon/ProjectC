@@ -52,6 +52,15 @@ namespace ProjectC.Client
             this.Bind("Volume", out Slider volume);
             volume.value = AudioListener.volume;
             volume.onValueChanged.AddListener(v => AudioListener.volume = v);
+            if (!this.Bind("UiSfxVolume", out Slider uiVolume)
+                || !this.Bind("BattleSfxVolume", out Slider battleVolume))
+            {
+                throw new System.InvalidOperationException("SettingsPanel requires UI and battle sound volume sliders.");
+            }
+            uiVolume.SetValueWithoutNotify(ClientAudio.Shared.UiVolume);
+            battleVolume.SetValueWithoutNotify(ClientAudio.Shared.BattleVolume);
+            uiVolume.onValueChanged.AddListener(value => ClientAudio.Shared.UiVolume = value);
+            battleVolume.onValueChanged.AddListener(value => ClientAudio.Shared.BattleVolume = value);
             this.Bind("Fullscreen", out Toggle fullscreen);
             fullscreen.SetIsOnWithoutNotify(Screen.fullScreen);
             fullscreen.onValueChanged.AddListener(value => Screen.fullScreen = value);

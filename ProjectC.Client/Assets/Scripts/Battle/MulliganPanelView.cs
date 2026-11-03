@@ -25,6 +25,7 @@ namespace ProjectC.Client
         private CardView[] _openingHand;
         private CardView[] _reviewHand;
         private bool[] _replaced;
+        private bool _replacementSoundPlayed;
         private int _gameNumber;
         private string _match;
         private bool _wasMulligan;
@@ -113,6 +114,7 @@ namespace ProjectC.Client
             var button = obj.GetComponent<Button>();
             button.targetGraphic = obj.GetComponent<Image>();
             button.onClick.AddListener(action);
+            obj.AddComponent<UiButtonSound>();
             return button;
         }
 
@@ -139,10 +141,12 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (!Client.MulliganSelection.Remove(widget.Card.Id))
+            bool deselected = Client.MulliganSelection.Remove(widget.Card.Id);
+            if (!deselected)
             {
                 Client.MulliganSelection.Add(widget.Card.Id);
             }
+            ClientAudio.Play(deselected ? SoundCue.CardDeselect : SoundCue.CardSelect);
             Render();
         }
 
@@ -180,6 +184,7 @@ namespace ProjectC.Client
             // The server appends mulligan replacements before the normal first-turn draw.
             // Keep untouched cards in their original slots and leave that extra draw to battle UI.
             var replacements = new Queue<CardView>(finalHand.Where(card => !original.Contains(card.Id)));
+            _replacementSoundPlayed = false;
             _reviewHand = _openingHand.ToArray();
             _replaced = new bool[_openingHand.Length];
             for (int i = 0; i < _openingHand.Length; ++i)
@@ -198,6 +203,11 @@ namespace ProjectC.Client
         {
             float elapsed = ReviewDuration - (_reviewUntil - Time.unscaledTime);
             float progress = Mathf.Clamp01(elapsed / ReplacementFlipDuration);
+            if (!_replacementSoundPlayed && progress >= .5f && Array.Exists(_replaced, replaced => replaced))
+            {
+                _replacementSoundPlayed = true;
+                ClientAudio.Play(SoundCue.Draw);
+            }
             for (int i = 0; i < cards.Length; ++i)
             {
                 bool visible = i < _reviewHand.Length;

@@ -1,0 +1,101 @@
+[
+  {
+    "cue": "Draw",
+    "file": "Draw.wav",
+    "duration": 0.22,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1700
+  },
+  {
+    "cue": "CardUse",
+    "file": "CardUse.wav",
+    "duration": 0.28,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1701
+  },
+  {
+    "cue": "Summon",
+    "file": "Summon.wav",
+    "duration": 0.45,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1702
+  },
+  {
+    "cue": "Attack",
+    "file": "Attack.wav",
+    "duration": 0.22,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1703
+  },
+  {
+    "cue": "Hit",
+    "file": "Hit.wav",
+    "duration": 0.25,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1704
+  },
+  {
+    "cue": "Destroy",
+    "file": "Destroy.wav",
+    "duration": 0.4,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1705
+  },
+  {
+    "cue": "Transform",
+    "file": "Transform.wav",
+    "duration": 0.65,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1706
+  },
+  {
+    "cue": "Effect",
+    "file": "Effect.wav",
+    "duration": 0.4,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1707
+  },
+  {
+    "cue": "TurnStart",
+    "file": "TurnStart.wav",
+    "duration": 0.55,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1708
+  },
+  {
+    "cue": "Victory",
+    "file": "Victory.wav",
+    "duration": 1.0,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1709
+  },
+  {
+    "cue": "Defeat",
+    "file": "Defeat.wav",
+    "duration": 0.9,
+    "rate": 44100,
+    "channels": 1,
+    "peak": 0.55,
+    "seed": 1710
+  }
+]

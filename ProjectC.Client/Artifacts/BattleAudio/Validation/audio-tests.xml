@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.9766456">
+  <test-suite type="TestSuite" id="1103" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.976646" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1097" name="ProjectC.Client.PlayModeTests.dll" fullname="/private/tmp/ProjectC-BattlefieldValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.973093" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12547" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1098" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.972587" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1099" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.972165" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="BattleAudioPlayModeTests" fullname="ProjectC.Tests.BattleAudioPlayModeTests" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:13Z" duration="9.970877" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1003" name="AcceptedEventMappingAndTurnResultDeduplication" fullname="ProjectC.Tests.BattleAudioPlayModeTests.AcceptedEventMappingAndTurnResultDeduplication" methodname="AcceptedEventMappingAndTurnResultDeduplication" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="1687356244" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:03Z" duration="0.430643" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1002" name="LibraryPoolVolumesCooldownAndMissingClipAreSafe" fullname="ProjectC.Tests.BattleAudioPlayModeTests.LibraryPoolVolumesCooldownAndMissingClipAreSafe" methodname="LibraryPoolVolumesCooldownAndMissingClipAreSafe" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="32677688" result="Passed" start-time="2026-11-03 04:55:03Z" end-time="2026-11-03 04:55:05Z" duration="2.107318" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Missing sound clip for Transform; gameplay continues without it.
+]]></output>
+            </test-case>
+            <test-case id="1007" name="RealServerDrawCombatVictoryAndRematchProduceTheirCues" fullname="ProjectC.Tests.BattleAudioPlayModeTests.RealServerDrawCombatVictoryAndRematchProduceTheirCues" methodname="RealServerDrawCombatVictoryAndRematchProduceTheirCues" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="792036748" result="Passed" start-time="2026-11-03 04:55:05Z" end-time="2026-11-03 04:55:09Z" duration="3.439632" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="RealServerEffectsAndTransformationProduceTheirCues" fullname="ProjectC.Tests.BattleAudioPlayModeTests.RealServerEffectsAndTransformationProduceTheirCues" methodname="RealServerEffectsAndTransformationProduceTheirCues" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="534439584" result="Passed" start-time="2026-11-03 04:55:09Z" end-time="2026-11-03 04:55:09Z" duration="0.148738" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1005" name="RealServerSceneProducesSelectSummonAttackHitAndTurn" fullname="ProjectC.Tests.BattleAudioPlayModeTests.RealServerSceneProducesSelectSummonAttackHitAndTurn" methodname="RealServerSceneProducesSelectSummonAttackHitAndTurn" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="1506506054" result="Passed" start-time="2026-11-03 04:55:09Z" end-time="2026-11-03 04:55:10Z" duration="1.612752" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+]]></output>
+            </test-case>
+            <test-case id="1004" name="ScenePresentationDrawSelectionAndSnapshotRestore" fullname="ProjectC.Tests.BattleAudioPlayModeTests.ScenePresentationDrawSelectionAndSnapshotRestore" methodname="ScenePresentationDrawSelectionAndSnapshotRestore" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="1648371842" result="Passed" start-time="2026-11-03 04:55:10Z" end-time="2026-11-03 04:55:11Z" duration="1.191672" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1008" name="SettingsSlidersBindPersistAndKeepOneListener" fullname="ProjectC.Tests.BattleAudioPlayModeTests.SettingsSlidersBindPersistAndKeepOneListener" methodname="SettingsSlidersBindPersistAndKeepOneListener" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="1988564757" result="Passed" start-time="2026-11-03 04:55:11Z" end-time="2026-11-03 04:55:12Z" duration="0.380551" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1009" name="UnityMixProducesNonSilentOutputWhenAudioDeviceIsAvailable" fullname="ProjectC.Tests.BattleAudioPlayModeTests.UnityMixProducesNonSilentOutputWhenAudioDeviceIsAvailable" methodname="UnityMixProducesNonSilentOutputWhenAudioDeviceIsAvailable" classname="ProjectC.Tests.BattleAudioPlayModeTests" runstate="Runnable" seed="2144305217" result="Passed" start-time="2026-11-03 04:55:12Z" end-time="2026-11-03 04:55:13Z" duration="0.653153" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

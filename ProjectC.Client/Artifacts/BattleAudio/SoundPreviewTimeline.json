@@ -1,0 +1,72 @@
+[
+  {
+    "cue": "CardSelect",
+    "start_seconds": 0.0,
+    "end_seconds": 0.045
+  },
+  {
+    "cue": "CardDeselect",
+    "start_seconds": 0.225,
+    "end_seconds": 0.293
+  },
+  {
+    "cue": "ButtonClick",
+    "start_seconds": 0.473,
+    "end_seconds": 0.575
+  },
+  {
+    "cue": "Draw",
+    "start_seconds": 0.755,
+    "end_seconds": 0.975
+  },
+  {
+    "cue": "CardUse",
+    "start_seconds": 1.155,
+    "end_seconds": 1.435
+  },
+  {
+    "cue": "Summon",
+    "start_seconds": 1.615,
+    "end_seconds": 2.065
+  },
+  {
+    "cue": "Attack",
+    "start_seconds": 2.245,
+    "end_seconds": 2.465
+  },
+  {
+    "cue": "Hit",
+    "start_seconds": 2.645,
+    "end_seconds": 2.895
+  },
+  {
+    "cue": "Destroy",
+    "start_seconds": 3.075,
+    "end_seconds": 3.475
+  },
+  {
+    "cue": "Transform",
+    "start_seconds": 3.655,
+    "end_seconds": 4.305
+  },
+  {
+    "cue": "Effect",
+    "start_seconds": 4.485,
+    "end_seconds": 4.885
+  },
+  {
+    "cue": "TurnStart",
+    "start_seconds": 5.065,
+    "end_seconds": 5.615
+  },
+  {
+    "cue": "Victory",
+    "start_seconds": 5.795,
+    "end_seconds": 6.795
+  },
+  {
+    "cue": "Defeat",
+    "start_seconds": 6.975,
+    "end_seconds": 7.875
+  }
+]

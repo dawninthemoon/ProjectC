@@ -113,7 +113,7 @@ namespace ProjectC.Tests
             int hp = _client.State.Players[1].Field.Sum(card => card.Hp);
             yield return Drag(ui, attacker, true);
             Assert.Less(_client.State.Players[1].Field.Sum(card => card.Hp), hp);
-            yield return BattlefieldScenePlayModeTests.Save("Shrine-Online-1920.png");
+            yield return BattlefieldScenePlayModeTests.Save("YokaiShrine-Online-1920.png");
             var previous = _client.State;
             _client.DisconnectNetwork();
             yield return Until(() => !_client.Connected);

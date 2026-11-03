@@ -41,6 +41,7 @@ namespace ProjectC.Client
         {
             Choosing = choosing;
             _title.text = title;
+            _title.gameObject.SetActive(!choosing);
             _close.gameObject.SetActive(!choosing);
             foreach (var card in _cards)
             {
@@ -91,7 +92,11 @@ namespace ProjectC.Client
                     var widget = Add(value, index++);
                     widget.Title.text = BattleText.Get(player.PlayerId == _presenter.Client.PlayerId
                         ? "ui.gallery.own_card" : "ui.gallery.enemy_card", CardPresentation.Name(value));
-                    widget.Clicked = card => _presenter.InspectCard(card.Card);
+                    widget.Clicked = card =>
+                    {
+                        ClientAudio.Play(SoundCue.CardSelect);
+                        _presenter.InspectCard(card.Card);
+                    };
                 }
             }
         }

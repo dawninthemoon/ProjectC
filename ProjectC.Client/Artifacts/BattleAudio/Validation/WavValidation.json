@@ -1,0 +1,115 @@
+{
+  "reproduced_byte_for_byte": true,
+  "clips": [
+    {
+      "file": "Attack.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.22,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "94efbb414fe5707c15645a86a4343e2ee81e6321c5ffb7a2a302ef1730fd7a85"
+    },
+    {
+      "file": "CardUse.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.28,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "d8aea88943b3808fe528ed7dda9ce614933732dc3dc657e97e636c9429e451f4"
+    },
+    {
+      "file": "Defeat.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.9,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "1f2dcab606255bfc8f379e70277cdb0bf08175b613429ea3a2d263a8accab8b2"
+    },
+    {
+      "file": "Destroy.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.4,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "699ae9f0bab6b3135f93c292d16d90502bab33b08c6be5838008f47a59f11358"
+    },
+    {
+      "file": "Draw.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.22,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "10e7eecbb9f5c64f0e6ae8d0b69a7a627b76367a9a6aad533358764c0a468e6d"
+    },
+    {
+      "file": "Effect.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.4,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "4593d3427fba8ceb84b50b67bf74ec3749f5855bdd3f6d61981779a502861a5b"
+    },
+    {
+      "file": "Hit.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.25,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "b1f91cdb30434bc562316722c755375c0462ca4f7c0bbe635dce549dbedf3478"
+    },
+    {
+      "file": "Summon.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.45,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "7dc04e814bb8cb641cc8b5bb7331e12454d83e07b24261f138fcb3eedb371cff"
+    },
+    {
+      "file": "Transform.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.65,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "983cfbce87133fae7fe6ee14b2d51b488e27d84bd71f8e3fdac7ae7b4dce2f5b"
+    },
+    {
+      "file": "TurnStart.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 0.55,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "92c4cbe81567cd9566cc07fdd4d46ae2f652367f1a0a5098fba5394b35f02f41"
+    },
+    {
+      "file": "Victory.wav",
+      "rate": 44100,
+      "channels": 1,
+      "seconds": 1.0,
+      "peak": 0.54998779296875,
+      "start": 0,
+      "end": 0,
+      "sha256": "b7d7c8ad0a57c3376b93c20888d017efe19b4ab77e1230f699fb2d5f3ba20ece"
+    }
+  ]
+}
