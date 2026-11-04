@@ -310,7 +310,7 @@ MonoBehaviour:
   m_text: 3
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8385670b3514984585b724c3a4c912c, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: a860acbd90fd540eca165296df9d6be7, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 156a22167fb30244484d914e942d741d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -447,7 +447,7 @@ MonoBehaviour:
   m_text: 5
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8385670b3514984585b724c3a4c912c, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: a860acbd90fd540eca165296df9d6be7, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 156a22167fb30244484d914e942d741d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -584,7 +584,7 @@ MonoBehaviour:
   m_text: 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8385670b3514984585b724c3a4c912c, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: a860acbd90fd540eca165296df9d6be7, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 156a22167fb30244484d914e942d741d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1274,6 +1274,8 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+  _cropZoom: 1
+  _cropOffset: {x: 0, y: 0}
 --- !u!1 &4706273028464347224
 GameObject:
   m_ObjectHideFlags: 0
@@ -1801,6 +1803,7 @@ MonoBehaviour:
   FrameImage: {fileID: 2791500087024775920}
   ArtworkImage: {fileID: 2154583105930365091}
   Accent: {fileID: 3205388449709029905}
+  _fieldCropProfile: {fileID: 0}
   Title: {fileID: 6692638514809181301}
   Stats: {fileID: 7405324336034492153}
   Status: {fileID: 157388887053626591}
@@ -1851,8 +1854,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 13, y: -7}
-  m_SizeDelta: {x: 132, y: 27}
+  m_AnchoredPosition: {x: 13, y: -10}
+  m_SizeDelta: {x: 120, y: 21}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &6339602658060966324
 CanvasRenderer:
@@ -1885,7 +1888,7 @@ MonoBehaviour:
   m_text: CARD NAME
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8385670b3514984585b724c3a4c912c, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: a860acbd90fd540eca165296df9d6be7, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 21349909321ca194fa70b14bf5f75a96, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1913,8 +1916,8 @@ MonoBehaviour:
   m_fontSizeBase: 19
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 13
-  m_fontSizeMax: 20
+  m_fontSizeMin: 10
+  m_fontSizeMax: 16
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512

@@ -253,7 +253,7 @@
   },
   {
     "lmk": "card_3001_desc",
-    "korean": "이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 {0} 올린다."
+    "korean": "이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 1 올린다."
   },
   {
     "lmk": "card_3002_name",
@@ -261,7 +261,7 @@
   },
   {
     "lmk": "card_3002_desc",
-    "korean": "이 카드를 일반 소환했을 때, 덱에서 '홍련공방' 주문 {0}장을 패에 넣는다."
+    "korean": "이 카드를 일반 소환했을 때, 덱에서 '홍련공방' 주문 1장을 패에 넣는다."
   },
   {
     "lmk": "card_3003_name",
@@ -269,7 +269,7 @@
   },
   {
     "lmk": "card_3003_desc",
-    "korean": "요력 {0}을 지불하여 상대 몬스터 {1}장에게 피해 {2}를 준다."
+    "korean": "요력 1을 지불하여 상대 몬스터 1장에게 피해 2를 준다."
   },
   {
     "lmk": "card_3004_name",
@@ -277,7 +277,7 @@
   },
   {
     "lmk": "card_3004_desc",
-    "korean": "이 카드가 부활했을 때, 자신의 공격력을 이번 턴 동안 {0} 올린다."
+    "korean": "이 카드가 부활했을 때, 자신의 공격력을 이번 턴 동안 2 올린다."
   },
   {
     "lmk": "card_3005_name",
@@ -285,7 +285,7 @@
   },
   {
     "lmk": "card_3005_desc",
-    "korean": "덱에서 공격력 {0} 이하의 '홍련공방' 몬스터 {1}장을 패에 넣는다."
+    "korean": "덱에서 공격력 3 이하의 '홍련공방' 몬스터 1장을 패에 넣는다."
   },
   {
     "lmk": "card_3006_name",
@@ -293,7 +293,7 @@
   },
   {
     "lmk": "card_3006_desc",
-    "korean": "요력 {0}을 지불한다. 상대 몬스터 {1}장에게 피해 {2}을 준다."
+    "korean": "요력 1을 지불한다. 상대 몬스터 1장에게 피해 3을 준다."
   },
   {
     "lmk": "card_4001_name",
@@ -301,7 +301,7 @@
   },
   {
     "lmk": "card_4001_desc",
-    "korean": "이 카드를 일반 소환했을 때, 덱에서 '빙월서고' 주문 {0}장을 패에 넣는다."
+    "korean": "이 카드를 일반 소환했을 때, 덱에서 '빙월서고' 주문 1장을 패에 넣는다."
   },
   {
     "lmk": "card_4002_name",
@@ -309,7 +309,7 @@
   },
   {
     "lmk": "card_4002_desc",
-    "korean": "이 카드를 소환했을 때, 상대 몬스터 {0}장에게 피해 {1}을 준다."
+    "korean": "이 카드를 소환했을 때, 상대 몬스터 1장에게 피해 1을 준다."
   },
   {
     "lmk": "card_4003_name",
@@ -317,7 +317,7 @@
   },
   {
     "lmk": "card_4003_desc",
-    "korean": "요력 {0}를 지불한다. 상대 몬스터 {1}장을 파괴한다."
+    "korean": "요력 2를 지불한다. 상대 몬스터 1장을 파괴한다."
   },
   {
     "lmk": "card_4004_name",
@@ -325,7 +325,7 @@
   },
   {
     "lmk": "card_4004_desc",
-    "korean": "이 카드가 부활했을 때, 묘지에서 '빙월서고' 주문 {0}장을 패에 넣는다."
+    "korean": "이 카드가 부활했을 때, 묘지에서 '빙월서고' 주문 1장을 패에 넣는다."
   },
   {
     "lmk": "card_4005_name",
@@ -333,11 +333,419 @@
   },
   {
     "lmk": "card_4005_desc",
-    "korean": "상대 묘지의 카드 {0}장을 제외한다."
+    "korean": "상대 묘지의 카드 1장을 제외한다."
   },
   {
     "lmk": "card_4006_name",
     "korean": "월광의 열람"
+  },
+  {
+    "lmk": "ui_battle_turn",
+    "korean": "턴",
+    "english": "Turn",
+    "japanese": "ターン"
+  },
+  {
+    "lmk": "ui_battle_your_turn",
+    "korean": "내 턴",
+    "english": "Your Turn",
+    "japanese": "自分のターン"
+  },
+  {
+    "lmk": "ui_battle_opponent_turn",
+    "korean": "상대 턴",
+    "english": "Opponent's Turn",
+    "japanese": "相手のターン"
+  },
+  {
+    "lmk": "ui_battle_turn_number",
+    "korean": "{0}턴",
+    "english": "Turn {0}",
+    "japanese": "第{0}ターン"
+  },
+  {
+    "lmk": "ui_battle_main_phase_1",
+    "korean": "메인 페이즈 1",
+    "english": "Main Phase 1",
+    "japanese": "メインフェイズ1"
+  },
+  {
+    "lmk": "ui_battle_battle_phase",
+    "korean": "배틀 페이즈",
+    "english": "Battle Phase",
+    "japanese": "バトルフェイズ"
+  },
+  {
+    "lmk": "ui_battle_main_phase_2",
+    "korean": "메인 페이즈 2",
+    "english": "Main Phase 2",
+    "japanese": "メインフェイズ2"
+  },
+  {
+    "lmk": "ui_battle_end_phase",
+    "korean": "엔드 페이즈",
+    "english": "End Phase",
+    "japanese": "エンドフェイズ"
+  },
+  {
+    "lmk": "ui_battle_draw_phase",
+    "korean": "드로우 페이즈",
+    "english": "Draw Phase",
+    "japanese": "ドローフェイズ"
+  },
+  {
+    "lmk": "ui_battle_next_phase",
+    "korean": "다음 페이즈",
+    "english": "Next Phase",
+    "japanese": "次のフェイズ"
+  },
+  {
+    "lmk": "ui_battle_to_battle_phase",
+    "korean": "배틀 페이즈로",
+    "english": "To Battle Phase",
+    "japanese": "バトルフェイズへ"
+  },
+  {
+    "lmk": "ui_battle_to_main_phase_2",
+    "korean": "메인 페이즈 2로",
+    "english": "To Main Phase 2",
+    "japanese": "メインフェイズ2へ"
+  },
+  {
+    "lmk": "ui_battle_end_turn",
+    "korean": "턴 종료",
+    "english": "End Turn",
+    "japanese": "ターン終了"
+  },
+  {
+    "lmk": "ui_battle_wait_opponent",
+    "korean": "상대 행동 대기 중",
+    "english": "Waiting for Opponent",
+    "japanese": "相手の行動を待っています"
+  },
+  {
+    "lmk": "ui_battle_action_unavailable",
+    "korean": "지금은 사용할 수 없습니다",
+    "english": "Action Unavailable",
+    "japanese": "現在は操作できません"
+  },
+  {
+    "lmk": "ui_battle_action_ready",
+    "korean": "행동 가능",
+    "english": "Action Available",
+    "japanese": "行動可能"
+  },
+  {
+    "lmk": "ui_battle_select_target",
+    "korean": "대상을 선택하세요",
+    "english": "Select a Target",
+    "japanese": "対象を選択してください"
+  },
+  {
+    "lmk": "ui_battle_confirm_selection",
+    "korean": "선택 확정",
+    "english": "Confirm Selection",
+    "japanese": "選択を確定"
+  },
+  {
+    "lmk": "ui_battle_cancel_selection",
+    "korean": "선택 취소",
+    "english": "Cancel Selection",
+    "japanese": "選択をキャンセル"
+  },
+  {
+    "lmk": "ui_battle_confirm",
+    "korean": "확인",
+    "english": "Confirm",
+    "japanese": "確定"
+  },
+  {
+    "lmk": "ui_battle_cancel",
+    "korean": "취소",
+    "english": "Cancel",
+    "japanese": "キャンセル"
+  },
+  {
+    "lmk": "ui_battle_close",
+    "korean": "닫기",
+    "english": "Close",
+    "japanese": "閉じる"
+  },
+  {
+    "lmk": "ui_battle_back",
+    "korean": "뒤로",
+    "english": "Back",
+    "japanese": "戻る"
+  },
+  {
+    "lmk": "ui_battle_menu",
+    "korean": "메뉴",
+    "english": "Menu",
+    "japanese": "メニュー"
+  },
+  {
+    "lmk": "ui_battle_settings",
+    "korean": "설정",
+    "english": "Settings",
+    "japanese": "設定"
+  },
+  {
+    "lmk": "ui_battle_battle_log",
+    "korean": "전투 기록",
+    "english": "Battle Log",
+    "japanese": "バトルログ"
+  },
+  {
+    "lmk": "ui_battle_card_details",
+    "korean": "카드 상세",
+    "english": "Card Details",
+    "japanese": "カード詳細"
+  },
+  {
+    "lmk": "ui_battle_hand",
+    "korean": "패",
+    "english": "Hand",
+    "japanese": "手札"
+  },
+  {
+    "lmk": "ui_battle_field",
+    "korean": "필드",
+    "english": "Field",
+    "japanese": "フィールド"
+  },
+  {
+    "lmk": "ui_battle_deck",
+    "korean": "덱",
+    "english": "Deck",
+    "japanese": "デッキ"
+  },
+  {
+    "lmk": "ui_battle_graveyard",
+    "korean": "묘지",
+    "english": "Graveyard",
+    "japanese": "墓地"
+  },
+  {
+    "lmk": "ui_battle_exile",
+    "korean": "제외",
+    "english": "Exile",
+    "japanese": "除外"
+  },
+  {
+    "lmk": "ui_battle_my_deck",
+    "korean": "내 덱",
+    "english": "Your Deck",
+    "japanese": "自分のデッキ"
+  },
+  {
+    "lmk": "ui_battle_opponent_deck",
+    "korean": "상대 덱",
+    "english": "Opponent's Deck",
+    "japanese": "相手のデッキ"
+  },
+  {
+    "lmk": "ui_battle_my_graveyard",
+    "korean": "내 묘지",
+    "english": "Your Graveyard",
+    "japanese": "自分の墓地"
+  },
+  {
+    "lmk": "ui_battle_opponent_graveyard",
+    "korean": "상대 묘지",
+    "english": "Opponent's Graveyard",
+    "japanese": "相手の墓地"
+  },
+  {
+    "lmk": "ui_battle_my_exile",
+    "korean": "내 제외",
+    "english": "Your Exile",
+    "japanese": "自分の除外"
+  },
+  {
+    "lmk": "ui_battle_opponent_exile",
+    "korean": "상대 제외",
+    "english": "Opponent's Exile",
+    "japanese": "相手の除外"
+  },
+  {
+    "lmk": "ui_battle_life",
+    "korean": "체력",
+    "english": "Life",
+    "japanese": "ライフ"
+  },
+  {
+    "lmk": "ui_battle_attack",
+    "korean": "공격력",
+    "english": "Attack",
+    "japanese": "攻撃力"
+  },
+  {
+    "lmk": "ui_battle_health",
+    "korean": "체력",
+    "english": "Health",
+    "japanese": "体力"
+  },
+  {
+    "lmk": "ui_battle_rp",
+    "korean": "RP",
+    "english": "RP",
+    "japanese": "RP"
+  },
+  {
+    "lmk": "ui_battle_yokai_power",
+    "korean": "요력",
+    "english": "Yokai Power",
+    "japanese": "妖力"
+  },
+  {
+    "lmk": "ui_battle_resource",
+    "korean": "자원",
+    "english": "Resource",
+    "japanese": "リソース"
+  },
+  {
+    "lmk": "ui_battle_special_resource",
+    "korean": "특수 자원",
+    "english": "Special Resource",
+    "japanese": "特殊リソース"
+  },
+  {
+    "lmk": "ui_battle_expand_resources",
+    "korean": "자원 펼치기",
+    "english": "Expand Resources",
+    "japanese": "リソースを展開"
+  },
+  {
+    "lmk": "ui_battle_collapse_resources",
+    "korean": "자원 접기",
+    "english": "Collapse Resources",
+    "japanese": "リソースを折りたたむ"
+  },
+  {
+    "lmk": "ui_battle_resource_amount",
+    "korean": "{0}/{1}",
+    "english": "{0}/{1}",
+    "japanese": "{0}/{1}"
+  },
+  {
+    "lmk": "ui_battle_available",
+    "korean": "사용 가능",
+    "english": "Available",
+    "japanese": "使用可能"
+  },
+  {
+    "lmk": "ui_battle_selected",
+    "korean": "선택됨",
+    "english": "Selected",
+    "japanese": "選択中"
+  },
+  {
+    "lmk": "ui_battle_targetable",
+    "korean": "대상 선택 가능",
+    "english": "Targetable",
+    "japanese": "対象選択可能"
+  },
+  {
+    "lmk": "ui_battle_disabled",
+    "korean": "비활성",
+    "english": "Disabled",
+    "japanese": "無効"
+  },
+  {
+    "lmk": "ui_battle_keyword",
+    "korean": "키워드",
+    "english": "Keyword",
+    "japanese": "キーワード"
+  },
+  {
+    "lmk": "ui_battle_status",
+    "korean": "상태",
+    "english": "Status",
+    "japanese": "状態"
+  },
+  {
+    "lmk": "ui_battle_normal_summon",
+    "korean": "일반 소환",
+    "english": "Normal Summon",
+    "japanese": "通常召喚"
+  },
+  {
+    "lmk": "ui_battle_special_summon",
+    "korean": "특수 소환",
+    "english": "Special Summon",
+    "japanese": "特殊召喚"
+  },
+  {
+    "lmk": "ui_battle_attack_action",
+    "korean": "공격",
+    "english": "Attack",
+    "japanese": "攻撃"
+  },
+  {
+    "lmk": "ui_battle_activate_effect",
+    "korean": "효과 발동",
+    "english": "Activate Effect",
+    "japanese": "効果発動"
+  },
+  {
+    "lmk": "ui_battle_draw",
+    "korean": "드로우",
+    "english": "Draw",
+    "japanese": "ドロー"
+  },
+  {
+    "lmk": "ui_battle_damage",
+    "korean": "피해 {0}",
+    "english": "{0} Damage",
+    "japanese": "{0}ダメージ"
+  },
+  {
+    "lmk": "ui_battle_heal",
+    "korean": "회복 {0}",
+    "english": "Heal {0}",
+    "japanese": "{0}回復"
+  },
+  {
+    "lmk": "ui_battle_victory",
+    "korean": "승리",
+    "english": "Victory",
+    "japanese": "勝利"
+  },
+  {
+    "lmk": "ui_battle_defeat",
+    "korean": "패배",
+    "english": "Defeat",
+    "japanese": "敗北"
+  },
+  {
+    "lmk": "ui_battle_draw_result",
+    "korean": "무승부",
+    "english": "Draw",
+    "japanese": "引き分け"
+  },
+  {
+    "lmk": "ui_battle_reconnecting",
+    "korean": "재접속 중...",
+    "english": "Reconnecting...",
+    "japanese": "再接続中..."
+  },
+  {
+    "lmk": "ui_battle_connection_lost",
+    "korean": "연결이 끊어졌습니다",
+    "english": "Connection Lost",
+    "japanese": "接続が切断されました"
+  },
+  {
+    "lmk": "ui_battle_surrender",
+    "korean": "항복",
+    "english": "Surrender",
+    "japanese": "降参"
+  },
+  {
+    "lmk": "ui_battle_surrender_confirm",
+    "korean": "항복하시겠습니까?",
+    "english": "Are you sure you want to surrender?",
+    "japanese": "降参しますか？"
   },
   {
     "lmk": "card_4006_desc",
@@ -516,7 +924,8 @@
   {
     "lmk": "ui.hud.yokai",
     "korean": "요력 {0} / {1}",
-    "english": "Yokai {0} / {1}"
+    "english": "Yokai {0} / {1}",
+    "japanese": "妖力 {0} / {1}"
   },
   {
     "lmk": "ui.gallery.own_card",
@@ -527,5 +936,89 @@
     "lmk": "ui.gallery.enemy_card",
     "korean": "상대 · {0}",
     "english": "Opponent · {0}"
+  },
+  {
+    "lmk": "ui.turn.own",
+    "korean": "내 턴",
+    "english": "Your Turn",
+    "japanese": "自分のターン"
+  },
+  {
+    "lmk": "ui.turn.opponent",
+    "korean": "상대 턴",
+    "english": "Opponent Turn",
+    "japanese": "相手のターン"
+  },
+  {
+    "lmk": "ui.turn.number",
+    "korean": "턴 {0}",
+    "english": "Turn {0}",
+    "japanese": "第{0}ターン"
+  },
+  {
+    "lmk": "ui.turn.resolving",
+    "korean": "처리 중 / P{0}",
+    "english": "Resolving / P{0}",
+    "japanese": "処理中 / P{0}"
+  },
+  {
+    "lmk": "ui.turn.waiting",
+    "korean": "조작 대기",
+    "english": "Please wait",
+    "japanese": "操作待ち"
+  },
+  {
+    "lmk": "ui.turn.opponent_waiting",
+    "korean": "상대 턴",
+    "english": "Opponent turn",
+    "japanese": "相手ターン"
+  },
+  {
+    "lmk": "ui.hud.action.battle",
+    "korean": "배틀로",
+    "english": "To Battle",
+    "japanese": "バトルへ"
+  },
+  {
+    "lmk": "ui.hud.action.main2",
+    "korean": "메인 2로",
+    "english": "To Main 2",
+    "japanese": "メイン2へ"
+  },
+  {
+    "lmk": "ui.hud.action.end",
+    "korean": "턴 종료",
+    "english": "End Turn",
+    "japanese": "ターン終了"
+  },
+  {
+    "lmk": "ui.hud.phase.main1",
+    "korean": "메인 1",
+    "english": "Main 1",
+    "japanese": "メイン1"
+  },
+  {
+    "lmk": "ui.hud.phase.battle",
+    "korean": "배틀 페이즈",
+    "english": "Battle Phase",
+    "japanese": "バトルフェイズ"
+  },
+  {
+    "lmk": "ui.hud.phase.main2",
+    "korean": "메인 2",
+    "english": "Main 2",
+    "japanese": "メイン2"
+  },
+  {
+    "lmk": "ui.hud.phase.end",
+    "korean": "종료 페이즈",
+    "english": "End Phase",
+    "japanese": "エンドフェイズ"
+  },
+  {
+    "lmk": "ui.hud.ready",
+    "korean": "준비 완료",
+    "english": "Ready",
+    "japanese": "操作可能"
   }
 ]

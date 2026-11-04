@@ -278,8 +278,8 @@ namespace ProjectC.Client
             {
                 yield break;
             }
-            TurnTitle.text = own ? "YOUR TURN" : "OPPONENT TURN";
-            TurnSubtitle.text = "TURN " + number;
+            TurnTitle.text = BattleText.Get(own ? "ui.turn.own" : "ui.turn.opponent");
+            TurnSubtitle.text = BattleText.Get("ui.turn.number", number);
             yield return Flash(
                 TurnGroup,
                 (Settings?.TurnFadeIn ?? .2f)

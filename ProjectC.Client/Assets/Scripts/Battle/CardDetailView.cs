@@ -15,6 +15,14 @@ namespace ProjectC.Client
         private AspectFillImage _artwork;
         private TMP_Text _placeholder;
         private TMP_Text _type;
+        private RectTransform _viewport;
+        private RectTransform _content;
+        private ScrollRect _scroll;
+        private const float BodyTop = 260f;
+        private const float BottomPadding = 20f;
+        private const float MinimumPanelHeight = 340f;
+        private const float MaximumPanelHeight = 780f;
+        private const float MinimumBodyHeight = 60f;
         bool bound;
         int _shownCardId, _shownDefinitionId;
         KeywordInfo _keyword;
@@ -32,6 +40,16 @@ namespace ProjectC.Client
                 {
                     throw new System.InvalidOperationException("Card inspector requires artwork, placeholder and type.");
                 }
+                if (!this.Bind("DetailViewport", out _viewport) || !this.Bind("DetailContent", out _content)
+                    || !_viewport.TryGetComponent(out _scroll))
+                {
+                    throw new System.InvalidOperationException("Card inspector requires its description scroll area.");
+                }
+                BattleText.StyleHeading(Title);
+                BattleText.StyleBody(Stats);
+                BattleText.StyleBody(Rules);
+                BattleText.StyleBody(Forms);
+                BattleText.StyleBody(_type);
                 bound = true;
             }
             gameObject.SetActive(card != null);
@@ -65,9 +83,24 @@ namespace ProjectC.Client
                 {
                     _keyword = keyword;
                     Forms.text = keyword.Name + "\n" + keyword.Description;
+                    Forms.gameObject.SetActive(true);
+                    ResizePanel();
                 });
             Forms.text = _keyword == null ? CardPresentation.Manifestations(card)
                 : _keyword.Name + "\n" + _keyword.Description;
+            Forms.gameObject.SetActive(!string.IsNullOrWhiteSpace(Forms.text));
+            ResizePanel();
+        }
+
+        private void ResizePanel()
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+            float bodyHeight = Mathf.Max(MinimumBodyHeight, LayoutUtility.GetPreferredHeight(_content));
+            float panelHeight = Mathf.Clamp(BodyTop + bodyHeight + BottomPadding, MinimumPanelHeight, MaximumPanelHeight);
+            ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, panelHeight);
+            _viewport.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, panelHeight - BodyTop - BottomPadding);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+            _scroll.verticalNormalizedPosition = 1f;
         }
 
         public void OnPointerClick(PointerEventData eventData)
