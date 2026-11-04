@@ -21,7 +21,7 @@ jobs:
       - name: Install Windows HTTPS dependency
         if: runner.os == 'Windows'
         shell: pwsh
-        run: vcpkg install 'curl[schannel]:x64-windows'
+        run: vcpkg install 'curl[ssl]:x64-windows'
       - name: Configure Linux
         if: runner.os == 'Linux'
         run: cmake -S ProjectC.Server -B build -DCMAKE_BUILD_TYPE=Debug
