@@ -82,7 +82,9 @@ namespace ProjectC.Client
                 {
                     _attempt = null;
                     _loading.gameObject.SetActive(false);
-                    _app.ShowPopup("로그인 또는 사용자 정보 조회에 실패했습니다. 기존 계정 정보는 보존됩니다.", new PopupAction("재시도", Retry));
+                    string message = login.Exception?.GetBaseException() is SecureSessionStoreException storageError
+                        ? storageError.Message : "로그인 또는 사용자 정보 조회에 실패했습니다. 기존 계정 정보는 보존됩니다.";
+                    _app.ShowPopup(message, new PopupAction("재시도", Retry));
                     yield break;
                 }
             }

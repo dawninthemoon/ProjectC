@@ -1,6 +1,7 @@
 # 개발용 다중 계정 프로필
 
-Windows Credential Manager의 게스트 세션을 Website API URL과 AccountProfileId로 구분한다.
+Windows Credential Manager 또는 macOS Keychain의 게스트 세션을 Website API URL과 AccountProfileId로 구분한다.
+macOS 구현과 최신 검증 결과는 [MacAccountProfiles.md](MacAccountProfiles.md)를 참고한다.
 서버가 발급한 Website PlayerId(UUID)를 그대로 사용하며, 프로필 이름으로 플레이어 UUID를 만들지 않는다.
 GameCore, C++ 게임 규칙, WebSocket 프로토콜 버전 2는 변경하지 않았다.
 
@@ -28,6 +29,15 @@ Windows 빌드:
 
 개발 빌드도 인자가 없으면 `default`다. 인자는 정확히 한 번만 지정할 수 있다.
 알 수 없는 ID와 중복 인자는 개발 빌드에서 설정 오류다.
+
+macOS Development Build도 동일한 인자를 지원한다.
+
+```sh
+./ProjectC.app/Contents/MacOS/ProjectC.Client --account-profile=dev-client-1
+./ProjectC.app/Contents/MacOS/ProjectC.Client --account-profile=dev-client-2
+```
+
+실행 파일 이름은 빌드의 Product Name에 맞춘다. macOS Editor에서도 위의 동일한 메뉴와 개발 패널을 사용한다.
 
 일반 **Release 빌드는 항상 default**를 사용한다. 프로필 실행 인자와 Editor 설정을 무시하며,
 개발 프로필 패널 타입과 표시 코드도 플레이어 컴파일에서 제외한다.
@@ -77,7 +87,7 @@ API 오류로 revoke를 완료하지 못한 경우 로그인 정보를 보존하
 Website 덱과 랭크는 사용자 UUID별로 API가 관리한다. 기존 로컬 DeckEditor 파일의 저장 위치는 변경하지
 않았다. 프로필 전환/로그아웃은 로컬 덱 파일도 삭제하지 않는다.
 
-## 검증
+## 기존 Windows 구현 검증 기록
 
 Unity PlayMode에서 다음 세 클래스를 실행한다.
 
@@ -85,7 +95,7 @@ Unity PlayMode에서 다음 세 클래스를 실행한다.
 - `WebsiteSessionPlayModeTests`: 기존 세션/보안 저장/토큰 회전 테스트
 - `MatchmakingPlayModeTests`: 기존 매칭/취소/재접속 메시지 상태 테스트
 
-이번 작업에서 총 **17/17 통과**했다. 테스트는 고유한 loopback API URL의 Windows Credential Manager
+기존 Windows 구현 시 총 **17/17 통과**했다. 이번 macOS 확장 검증과 구분하는 과거 기록이다. 테스트는 고유한 loopback API URL의 Windows Credential Manager
 항목만 생성·제거한다. 로컬 모의 Website API와 실제 C++ Battle Server를 실행하여 서로 다른 두 프로필이
 다른 PlayerId와 소유 덱을 복원하고 같은 매치에 들어가 자동 시작하는 것을 검증한다.
 또한 실제 ClientApp의 프로필 전환, 이전 프로필 복원, 로그아웃 후 자동 게스트 생성 방지,

@@ -86,6 +86,7 @@ namespace ProjectC.Client
         private readonly ISessionStore _store;
         private readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
         private StoredWebsiteSession _session;
+        private StoredWebsiteSession _pendingPersistence;
         private bool _loaded;
         private bool _retired;
         public string AccountProfileId { get; private set; } = AccountProfiles.Default;
@@ -184,6 +185,7 @@ namespace ProjectC.Client
                     }
                     _loaded = true;
                 }
+                PersistPendingSession();
                 if (forceRefresh && expectedAccessToken != null && AccessToken != expectedAccessToken)
                 {
                     forceRefresh = false;
@@ -209,7 +211,17 @@ namespace ProjectC.Client
                 else
                 {
                     _session.refreshInFlight = true;
-                    _store.Write(JsonConvert.SerializeObject(_session));
+                    try
+                    {
+                        _store.Write(JsonConvert.SerializeObject(_session));
+                    }
+                    catch
+                    {
+                        // No refresh request was sent. Keep the previous token eligible
+                        // for retry after secure storage is available again.
+                        _session.refreshInFlight = false;
+                        throw;
+                    }
                     response = await RequestAsync("POST", "/api/auth/refresh", new JObject { ["refreshToken"] = _session.refreshToken });
                 }
                 var replacement = response.ToObject<StoredWebsiteSession>();
@@ -218,14 +230,27 @@ namespace ProjectC.Client
                 {
                     throw new InvalidOperationException("Website API returned an invalid session.");
                 }
-                _store.Write(JsonConvert.SerializeObject(replacement));
-                _session = replacement;
-                User = replacement.user;
+                _pendingPersistence = replacement;
+                PersistPendingSession();
             }
             finally
             {
                 _sessionLock.Release();
             }
+        }
+
+        private void PersistPendingSession()
+        {
+            if (_pendingPersistence == null)
+            {
+                return;
+            }
+            // A failed write retains the returned pair in memory. Retrying must not
+            // create another guest or rotate an already rotated refresh token.
+            _store.Write(JsonConvert.SerializeObject(_pendingPersistence));
+            _session = _pendingPersistence;
+            _pendingPersistence = null;
+            User = _session.user;
         }
 
         private async Task<JToken> UserRequestAsync(string method, string path, JToken body = null)
@@ -333,6 +358,7 @@ namespace ProjectC.Client
             await _sessionLock.WaitAsync();
             try
             {
+                PersistPendingSession();
                 if (!_loaded)
                 {
                     string stored = _store.Read();
@@ -351,6 +377,12 @@ namespace ProjectC.Client
                 Decks = Array.Empty<WebsiteDeck>();
                 SelectedDeckId = null;
             }
+            catch
+            {
+                // A failed logout must remain recoverable without creating another guest.
+                _retired = false;
+                throw;
+            }
             finally
             {
                 _sessionLock.Release();
@@ -362,7 +394,19 @@ namespace ProjectC.Client
             _retired = true;
             // Do not cancel an in-flight rotation: its replacement pair must reach the OS store.
             await _sessionLock.WaitAsync();
-            _sessionLock.Release();
+            try
+            {
+                PersistPendingSession();
+            }
+            catch
+            {
+                _retired = false;
+                throw;
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
         }
     }
 }

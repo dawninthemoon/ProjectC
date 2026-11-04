@@ -232,7 +232,7 @@ namespace ProjectC.Tests
         [Test]
         public void SecureStoreRoundTripUsesIsolatedCredential()
         {
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_OSX
             var store = new SecureSessionStore("test/" + Guid.NewGuid());
             try
             {
@@ -248,7 +248,7 @@ namespace ProjectC.Tests
             }
             Assert.IsNull(store.Read());
 #else
-            Assert.Ignore("Windows Credential Manager integration.");
+            Assert.Ignore("Windows Credential Manager / macOS Keychain integration.");
 #endif
         }
 

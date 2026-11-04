@@ -10,17 +10,19 @@ using UnityEngine;
 // Script-only player compilation verifies actual preprocessor output without building assets.
 public static class VerifyAccountProfilePlayers
 {
-    public static void Release() => Verify(false);
-    public static void Development() => Verify(true);
+    public static void Release() => Verify(false, BuildTarget.StandaloneWindows64);
+    public static void Development() => Verify(true, BuildTarget.StandaloneWindows64);
+    public static void MacRelease() => Verify(false, BuildTarget.StandaloneOSX);
+    public static void MacDevelopment() => Verify(true, BuildTarget.StandaloneOSX);
 
-    private static void Verify(bool development)
+    private static void Verify(bool development, BuildTarget target)
     {
         string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "../Temp/AccountProfilePlayerScripts",
-            development ? "Development" : "Release"));
+            target + "/" + (development ? "Development" : "Release")));
         Directory.CreateDirectory(directory);
         PlayerBuildInterface.CompilePlayerScripts(new ScriptCompilationSettings
         {
-            target = BuildTarget.StandaloneWindows64,
+            target = target,
             group = BuildTargetGroup.Standalone,
             options = development ? ScriptCompilationOptions.DevelopmentBuild : ScriptCompilationOptions.None,
         }, directory);
@@ -48,7 +50,11 @@ public static class VerifyAccountProfilePlayers
             bool features = (bool)profiles.GetField("DevelopmentFeaturesEnabled").GetRawConstantValue();
             bool panel = assembly.GetType("ProjectC.Client.DeveloperAccountPanel", false) != null;
             bool editorSetting = profiles.GetProperty("EditorProfile") != null;
-            if (features != development || panel != development || editorSetting)
+            bool windowsStore = assembly.GetType("ProjectC.Client.WindowsCredentialSessionStore", false) != null;
+            bool macStore = assembly.GetType("ProjectC.Client.MacKeychainSessionStore", false) != null;
+            if (features != development || panel != development || editorSetting
+                || windowsStore != (target == BuildTarget.StandaloneWindows64)
+                || macStore != (target == BuildTarget.StandaloneOSX))
             {
                 throw new InvalidOperationException("Player compilation exposed incorrect account profile features.");
             }
@@ -58,7 +64,7 @@ public static class VerifyAccountProfilePlayers
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve -= resolver;
         }
         Debug.Log((development ? "Development" : "Release")
-            + " Windows player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.");
+            + " " + target + " player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.");
     }
 }
 #endif
