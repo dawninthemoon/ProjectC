@@ -20,6 +20,9 @@ namespace ProjectC.Client
         public bool Choosing { get; private set; }
         private IDisposable _browseScope;
         private ModalBlocker.Lease _browseModal;
+        private const float DeckReadTimeout = 5f;
+        private bool _browsingDeck, _refreshDeck;
+        private float _deckReadDeadline;
 
         public void Initialize(BattlePresenter presenter)
         {
@@ -31,6 +34,10 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("CardGallery requires content, title and close bindings.");
             }
             _close.onClick.AddListener(Close);
+            presenter.Client.OwnDeckContentsReceived += ShowRemainingDeck;
+            presenter.Client.OwnDeckReadFailed += DeckReadFailed;
+            presenter.Client.SnapshotReceived += RefreshRemainingDeck;
+            presenter.Client.ViewInvalidated += InvalidateBrowse;
         }
 
         public void Close()
@@ -89,11 +96,7 @@ namespace ProjectC.Client
             {
                 return;
             }
-            _presenter.Interaction.ResetInput();
-            _presenter.SetHandExpanded(false);
-            Begin(exile ? BattleText.Get("ui.gallery.exile") : BattleText.Get("ui.gallery.grave"), false);
-            _browseScope = _presenter.Client.Input.PushScope("PublicCardGallery", new[] { GameplayInputAction.OpenCardDetails });
-            _browseModal = _presenter.Modal.Acquire(this, null, (RectTransform)transform, (RectTransform)_presenter.Detail.transform);
+            BeginBrowse(exile ? BattleText.Get("ui.gallery.exile") : BattleText.Get("ui.gallery.grave"));
             int index = 0;
             foreach (var player in _presenter.Client.State?.Players ?? Array.Empty<PlayerView>())
             {
@@ -108,6 +111,111 @@ namespace ProjectC.Client
                         _presenter.InspectCard(card.Card);
                     };
                 }
+            }
+        }
+
+        private void BeginBrowse(string title)
+        {
+            _presenter.Interaction.ResetInput();
+            _presenter.SetHandExpanded(false);
+            Begin(title, false);
+            _browseScope = _presenter.Client.Input.PushScope("CardBrowse", new[] { GameplayInputAction.OpenCardDetails });
+            _browseModal = _presenter.Modal.Acquire(this, null, (RectTransform)transform, (RectTransform)_presenter.Detail.transform);
+            _browseModal.OutsideClicked = Close;
+        }
+
+        public void ShowOwnDeck()
+        {
+            if (!_presenter.Client.Input.CanExecute(GameplayInputAction.OpenPublicZone)
+                || _presenter.Client.Busy || _presenter.Client.PendingChoice != null)
+            {
+                return;
+            }
+            BeginBrowse(BattleText.Get("ui.gallery.deck_loading"));
+            _browsingDeck = true;
+            RefreshRemainingDeck(null);
+        }
+
+        private void RefreshRemainingDeck(StateView state)
+        {
+            if (_browsingDeck)
+            {
+                _refreshDeck = true;
+                _deckReadDeadline = Time.unscaledTime + DeckReadTimeout;
+            }
+        }
+
+        private void Update()
+        {
+            if (!_browsingDeck)
+            {
+                return;
+            }
+            if (_refreshDeck && _presenter.Client.ReadOwnDeck())
+            {
+                _refreshDeck = false;
+            }
+            if (_deckReadDeadline > 0 && Time.unscaledTime >= _deckReadDeadline)
+            {
+                _presenter.Client.CancelOwnDeckRead();
+                DeckReadFailed("Timeout");
+            }
+        }
+
+        private void ShowRemainingDeck(RemainingDeckEntry[] entries)
+        {
+            if (!_browsingDeck || !gameObject.activeInHierarchy)
+            {
+                return;
+            }
+            _deckReadDeadline = 0;
+            foreach (var widget in _cards)
+            {
+                widget.transform.parent.gameObject.SetActive(false);
+            }
+            int index = 0;
+            foreach (var entry in entries)
+            {
+                var definition = CardPresentation.Library.Find(entry.DefinitionId);
+                var card = new CardView
+                {
+                    DefinitionId = entry.DefinitionId, Name = definition?.Name ?? "#" + entry.DefinitionId,
+                    Attack = definition?.Attack ?? 0, Hp = definition?.MaxHp ?? 0, MaxHp = definition?.MaxHp ?? 0,
+                    CardType = definition?.Type == "Spell" ? 1 : 0,
+                };
+                var widget = Add(card, index++);
+                widget.Title.text = BattleText.Get("ui.gallery.deck_quantity", CardPresentation.Name(card), entry.Quantity);
+                widget.Clicked = selected => _presenter.InspectCard(selected.Card);
+            }
+            _title.text = BattleText.Get("ui.gallery.deck");
+        }
+
+        private void DeckReadFailed(string reason)
+        {
+            if (!_browsingDeck)
+            {
+                return;
+            }
+            if (reason == "StaleSequence")
+            {
+                RefreshRemainingDeck(null);
+                return;
+            }
+            _deckReadDeadline = 0;
+            _refreshDeck = false;
+            // Never leave an old deck composition looking current after a failed refresh.
+            foreach (var widget in _cards)
+            {
+                widget.transform.parent.gameObject.SetActive(false);
+            }
+            _title.text = BattleText.Get("ui.gallery.deck_unavailable");
+        }
+
+        private void InvalidateBrowse()
+        {
+            if (gameObject.activeSelf && !Choosing)
+            {
+                Close();
             }
         }
 
@@ -158,6 +266,12 @@ namespace ProjectC.Client
 
         private void ReleaseBrowse()
         {
+            if (_browsingDeck)
+            {
+                _presenter.Client.CancelOwnDeckRead();
+            }
+            _browsingDeck = _refreshDeck = false;
+            _deckReadDeadline = 0;
             _browseScope?.Dispose();
             _browseScope = null;
             _browseModal?.Dispose();
@@ -165,6 +279,16 @@ namespace ProjectC.Client
         }
 
         private void OnDisable() => ReleaseBrowse();
-        private void OnDestroy() => ReleaseBrowse();
+        private void OnDestroy()
+        {
+            ReleaseBrowse();
+            if (_presenter != null && _presenter.Client != null)
+            {
+                _presenter.Client.OwnDeckContentsReceived -= ShowRemainingDeck;
+                _presenter.Client.OwnDeckReadFailed -= DeckReadFailed;
+                _presenter.Client.SnapshotReceived -= RefreshRemainingDeck;
+                _presenter.Client.ViewInvalidated -= InvalidateBrowse;
+            }
+        }
     }
 }

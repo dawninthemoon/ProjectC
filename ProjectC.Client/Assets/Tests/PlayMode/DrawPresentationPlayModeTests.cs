@@ -116,6 +116,29 @@ namespace ProjectC.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator DrawOriginIsIndependentOfDeckHudAndRetargetsExpandedHand()
+        {
+            yield return Setup(State(1, 2, 3, 4, 5));
+            var canvas = (RectTransform)_ui.GetComponent<Canvas>().transform;
+            Vector3 deckBefore = _ui.Effects.OwnDeck.position;
+            Events(Draw(6));
+            Snapshot(State(1, 2, 3, 4, 5, 6));
+            yield return null;
+            yield return null;
+            var drawn = _ui.Hand.Widgets.Single(widget => widget.Card?.Id == 6);
+            Assert.IsTrue(drawn.IsInFlight);
+            Vector3 departure = canvas.InverseTransformPoint(drawn.transform.position);
+            Vector3 handCenter = canvas.InverseTransformPoint(_ui.Hand.Content.TransformPoint(_ui.Hand.Content.rect.center));
+            Assert.Greater(departure.x, canvas.rect.xMax - 80, "Draw must enter from the right viewport edge.");
+            Assert.Less(Mathf.Abs(departure.y - handCenter.y), 80, "Draw must originate at hand height, not the top HUD.");
+            Assert.AreEqual(deckBefore, _ui.Effects.OwnDeck.position, "Visual origin must not move the deck HUD.");
+            _ui.SetHandExpanded(true);
+            yield return Settled();
+            AssertSlots(_ui.Hand);
+            Assert.AreSame(drawn, _ui.Hand.Widgets.Single(widget => widget.Card?.Id == 6));
+        }
+
         private static readonly int[] HandCounts = { 0, 1, 5, 9 };
 
         [UnityTest]

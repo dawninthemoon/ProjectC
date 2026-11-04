@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <stdexcept>
 namespace ProjectC::Network
 {
@@ -1102,6 +1103,46 @@ void MatchSession::Handle(std::shared_ptr<ClientSession> const& client, Json con
         Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "PlayerId"});
         Lobby();
         SendSnapshot(client, request);
+        return;
+    }
+    if (type == "ReadOwnDeck")
+    {
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "PlayerId", "GameNumber", "SequenceNumber"});
+        if (Number(input, "GameNumber", MaximumGameNumber) != static_cast<unsigned>(gameNumber))
+        {
+            reject("StaleGame");
+            return;
+        }
+        if (Number(input, "SequenceNumber", MaximumProtocolInteger) != sequence)
+        {
+            reject("StaleSequence");
+            return;
+        }
+        if (status != MatchStatus::Playing || state.Preparation == PreparationPhase::Mulligan || pendingAction)
+        {
+            reject("DeckUnavailable");
+            return;
+        }
+        auto const* owner = FindPlayer(state, client->Player);
+        if (owner == nullptr)
+        {
+            reject("NotJoined");
+            return;
+        }
+        // This is an owner-only read, not a command. Never expose instance IDs,
+        // draw order, opponent cards or RNG; sorted definition counts suffice.
+        std::map<CardDefinitionId, std::size_t> counts;
+        for (auto const& card : owner->Deck)
+        {
+            ++counts[card.CurrentDefinitionId];
+        }
+        auto response = Message("OwnDeckContents", request);
+        response["Payload"] = Json::array();
+        for (auto const& [definition, quantity] : counts)
+        {
+            response["Payload"].push_back({{"DefinitionId", definition}, {"Quantity", quantity}});
+        }
+        client->Send(response);
         return;
     }
     if (type == "SubmitCommand")

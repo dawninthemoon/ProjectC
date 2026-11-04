@@ -484,6 +484,26 @@
     "english": "This card cannot act now."
   },
   {
+    "lmk": "ui.gallery.deck",
+    "korean": "내 덱 · 남은 카드",
+    "english": "My deck · remaining cards"
+  },
+  {
+    "lmk": "ui.gallery.deck_loading",
+    "korean": "내 덱 · 불러오는 중",
+    "english": "My deck · loading"
+  },
+  {
+    "lmk": "ui.gallery.deck_unavailable",
+    "korean": "덱을 불러올 수 없습니다. 닫은 뒤 다시 시도하세요.",
+    "english": "Could not load deck. Close and try again."
+  },
+  {
+    "lmk": "ui.gallery.deck_quantity",
+    "korean": "{0} ×{1}",
+    "english": "{0} ×{1}"
+  },
+  {
     "lmk": "ui.gallery.grave",
     "korean": "묘지 · 공개 카드",
     "english": "Graveyard · public cards"

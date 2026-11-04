@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <source_location>
 #include <stdexcept>
 using namespace ProjectC::Network;
@@ -53,6 +54,84 @@ struct Peer
         throw std::runtime_error("Missing message " + type);
     }
 };
+void OwnDeckReadTests()
+{
+    auto config = LegacyConfig();
+    config.EnableMulligan = false;
+    config.TurnDurationSeconds = 0;
+    auto catalog = CardCatalog::Load(config.DataDirectory);
+    MatchManager manager(config);
+    Peer a(manager), b(manager), outsider(manager);
+    a.Send("CreateMatch", {{"DeckId", "Strikers"}});
+    auto id = a.Client->MatchId;
+    b.Send("JoinMatch", {{"MatchId", id}, {"DeckId", "Wardens"}});
+    auto read = [&](Peer& peer)
+    {
+        peer.Send("ReadOwnDeck", {{"MatchId", id}, {"PlayerId", peer.Client->Player},
+            {"GameNumber", peer.Last("StateSnapshot")["GameNumber"]},
+            {"SequenceNumber", peer.Last("StateSnapshot")["SequenceNumber"]}});
+    };
+    read(a);
+    Check(a.Last("ServerError")["Reason"] == "DeckUnavailable");
+    for (auto* peer : {&a, &b})
+    {
+        peer->Send("SetReady", {{"MatchId", id}, {"GameNumber", 0}, {"Ready", true}});
+    }
+    auto before = manager.Find(id)->Snapshot(a.Client->Player);
+    auto sequence = a.Last("StateSnapshot")["SequenceNumber"];
+    auto otherMessages = b.Messages.size();
+    read(a);
+    auto response = a.Last("OwnDeckContents");
+    Check(response["SequenceNumber"] == sequence && response["GameNumber"] == 1);
+    Check(b.Messages.size() == otherMessages);
+    std::map<int, int> expected;
+    for (auto definition : catalog.FindDeck("Strikers")->Cards)
+    {
+        ++expected[definition];
+    }
+    for (auto const& card : before["Players"][0]["Hand"])
+    {
+        --expected[card["DefinitionId"].get<int>()];
+    }
+    std::map<int, int> received;
+    int total = 0;
+    int previous = 0;
+    for (auto const& entry : response["Payload"])
+    {
+        Check(entry.size() == 2 && entry.contains("DefinitionId") && entry.contains("Quantity"));
+        int definition = entry["DefinitionId"];
+        int quantity = entry["Quantity"];
+        Check(definition > previous && quantity > 0);
+        previous = definition;
+        received[definition] = quantity;
+        total += quantity;
+    }
+    for (auto const& [definition, quantity] : expected)
+    {
+        Check(received[definition] == quantity);
+    }
+    Check(total == before["Players"][0]["DeckCount"]);
+    Check(manager.Find(id)->Snapshot(a.Client->Player) == before);
+    read(a);
+    Check(a.Last("OwnDeckContents")["Payload"] == response["Payload"]);
+    a.Send("ReadOwnDeck", {{"MatchId", id}, {"PlayerId", b.Client->Player}, {"GameNumber", 1}, {"SequenceNumber", sequence}});
+    Check(a.Last("ServerError")["Reason"] == "PlayerMismatch");
+    a.Send("ReadOwnDeck", {{"MatchId", id}, {"GameNumber", 0}, {"SequenceNumber", sequence}});
+    Check(a.Last("ServerError")["Reason"] == "StaleGame");
+    a.Send("ReadOwnDeck", {{"MatchId", id}, {"GameNumber", 1}, {"SequenceNumber", 9999}});
+    Check(a.Last("ServerError")["Reason"] == "StaleSequence");
+    a.Send("ReadOwnDeck", {{"MatchId", id}, {"GameNumber", 1}, {"SequenceNumber", sequence}, {"TargetPlayerId", b.Client->Player}});
+    Check(a.Last("ServerError")["Reason"] == "InvalidRequest");
+    outsider.Send("ReadOwnDeck", {{"MatchId", id}, {"GameNumber", 1}, {"SequenceNumber", sequence}});
+    Check(outsider.Last("ServerError")["Reason"] == "NotJoined");
+    Check(manager.Find(id)->Snapshot(a.Client->Player) == before);
+    read(b);
+    Check(b.Last("OwnDeckContents")["Payload"] != response["Payload"]);
+    a.Send("CloseMatch", {{"MatchId", id}, {"GameNumber", 1}});
+    Check(manager.Replays().front().Verify());
+    std::cout << "Own deck read: membership, privacy, sorted counts, stale requests and unchanged replay passed\n";
+}
+
 void InteractionTests()
 {
     ServerConfig config;
@@ -807,6 +886,7 @@ int main()
 {
     try
     {
+        OwnDeckReadTests();
         BattleUxOnlineTests();
         MatchmakingTests();
         RunMulliganCoreTests();

@@ -6,14 +6,14 @@ namespace ProjectC.Client
     public sealed class CardTableLayout : MonoBehaviour
     {
         private const float FieldSpacing = 35f;
-        private const float CompactScale = .57f;
-        private const float ExpandedScale = 1.29f;
         private const float HandTransitionDuration = .18f;
-        private const float FocusLift = 30f;
+        internal const float FocusLift = 42f;
         private const float EdgePadding = 16f;
-        private const float MinimumSpacing = 12f;
         private const float MinimumDuration = .01f;
+        private const float DefaultHandRotation = 7f;
+        private const float FullFanCardCount = 5f;
         public bool Hand, Compact;
+        public bool OpponentHand;
         public BattleVisualSettings Settings;
         private List<CardWidget> _cards;
         private readonly Dictionary<CardWidget, Motion> _motions = new Dictionary<CardWidget, Motion>();
@@ -28,16 +28,28 @@ namespace ProjectC.Client
             get
             {
                 int count = _cards?.Count ?? 0;
-                if (!Hand)
+                if (OpponentHand)
                 {
                     return 1;
                 }
-                float maximum = Compact ? CompactScale : ExpandedScale;
+                if (!Hand)
+                {
+                    if (count < 2)
+                    {
+                        return 1;
+                    }
+                    float availableFieldWidth = Mathf.Max(0, ((RectTransform)transform).rect.width - EdgePadding);
+                    float desiredWidth = count * CardSize.x + (count - 1) * FieldSpacing;
+                    return Mathf.Min(1, availableFieldWidth / desiredWidth);
+                }
+                float maximum = Compact
+                    ? Settings?.CompactHandScale ?? BattleVisualSettings.DefaultCompactHandScale
+                    : Settings?.ExpandedHandScale ?? BattleVisualSettings.DefaultExpandedHandScale;
                 if (count < 2)
                 {
                     return maximum;
                 }
-                float available = Mathf.Max(MinimumSpacing, ((RectTransform)transform).rect.width - EdgePadding);
+                float available = Mathf.Max(0, ((RectTransform)transform).rect.width - EdgePadding);
                 // Let spacing absorb additional cards before reducing their readable size.
                 return Mathf.Min(maximum, available / CardSize.x);
             }
@@ -63,14 +75,28 @@ namespace ProjectC.Client
 
         public void GetSlot(int index, int count, out Vector2 position, out Quaternion rotation)
         {
-            float width = CardSize.x * CardScale;
-            Spacing = count < 2 ? 0 : Mathf.Min(
-                width + (Hand ? (Compact ? 8f : -25f) * CardScale : FieldSpacing),
-                Mathf.Max(MinimumSpacing, (((RectTransform)transform).rect.width - width - EdgePadding) / (count - 1)));
+            float angle = Hand
+                ? (Settings?.HandRotation ?? DefaultHandRotation) * Mathf.Clamp01((count - 1) / (FullFanCardCount - 1))
+                : 0;
+            float radians = angle * Mathf.Deg2Rad;
+            float width = (CardSize.x * Mathf.Cos(radians) + CardSize.y * Mathf.Sin(radians)) * CardScale;
+            float preferred = OpponentHand ? CardSize.x * .9f : !Hand ? width + FieldSpacing * CardScale : Compact
+                ? Settings?.CompactHandSpacing ?? BattleVisualSettings.DefaultCompactHandSpacing
+                : Settings?.ExpandedHandSpacing ?? BattleVisualSettings.DefaultExpandedHandSpacing;
+            // Dense/narrow hands overlap progressively instead of crossing the available edges.
+            float available = Mathf.Max(0, ((RectTransform)transform).rect.width - width - EdgePadding);
+            Spacing = count < 2 ? 0 : Mathf.Min(preferred, available / (count - 1));
             float offset = index - (count - 1) * .5f;
             float ratio = count > 1 ? offset / ((count - 1) * .5f) : 0;
-            position = new Vector2(offset * Spacing, Hand && !Compact ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
-            rotation = Quaternion.identity;
+            position = new Vector2(offset * Spacing, Hand ? -ratio * ratio * (Settings?.HandCurve ?? 24f) : 0);
+            rotation = Quaternion.Euler(0, 0, -ratio * angle);
+        }
+
+        private float FocusPositionX(float x)
+        {
+            float limit = Mathf.Max(0, (((RectTransform)transform).rect.width
+                - CardSize.x * CardScale * CardWidget.ExpandedHandFocusScale - EdgePadding) * .5f);
+            return Mathf.Clamp(x, -limit, limit);
         }
 
         public void Place(CardWidget card, int index, int count)
@@ -79,9 +105,10 @@ namespace ProjectC.Client
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
             rect.sizeDelta = CardSize;
             GetSlot(index, count, out var position, out var rotation);
-            if (Hand && !Compact && (card.IsHovered || card.IsSelected))
+            if (Hand && (card.IsHovered || (!Compact && card.IsSelected)))
             {
                 position.y = FocusLift;
+                position.x = FocusPositionX(position.x);
                 rotation = Quaternion.identity;
             }
             rect.anchoredPosition = position;
@@ -118,14 +145,15 @@ namespace ProjectC.Client
                 {
                     continue;
                 }
-                card.ExpandedHand = Hand && !Compact;
+                card.ExpandedHand = Hand;
                 var rect = (RectTransform)card.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
                 rect.sizeDelta = CardSize;
                 GetSlot(i, count, out var target, out var rotation);
-                if (Hand && !Compact && (card.IsHovered || card.IsSelected))
+                if (Hand && (card.IsHovered || (!Compact && card.IsSelected)))
                 {
                     target.y = FocusLift;
+                    target.x = FocusPositionX(target.x);
                     rotation = Quaternion.identity;
                 }
                 if (snap)

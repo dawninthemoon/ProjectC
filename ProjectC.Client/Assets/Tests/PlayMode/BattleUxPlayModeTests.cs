@@ -239,7 +239,8 @@ namespace ProjectC.Tests
                     card.localScale = Vector3.one;
                     card.rotation = slot.rotation;
                     Assert.Greater(ScreenRectOverlap.Fraction(card, slot), .9f, mode.ToString());
-                    card.position = slot.TransformPoint(new Vector3(slot.rect.center.x, slot.rect.yMin - 30, 0));
+                    float outside = slot.InverseTransformVector(card.TransformVector(Vector3.up * card.rect.height)).magnitude * .1f;
+                    card.position = slot.TransformPoint(new Vector3(slot.rect.center.x, slot.rect.yMin - outside, 0));
                     Assert.Greater(ScreenRectOverlap.Fraction(card, slot), .30f, "Pointer is outside but more than 30% of the card overlaps");
                     card.Rotate(0, 0, 20);
                     card.localScale = Vector3.one * 1.1f;

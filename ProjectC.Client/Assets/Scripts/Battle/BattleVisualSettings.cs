@@ -22,10 +22,25 @@ namespace ProjectC.Client
         [SerializeField, Min(.01f)] private float _drawScale = 1.08f;
         [SerializeField] private float _drawRotation = -16f;
         [SerializeField, Min(.01f)] private float _handRepositionDuration = .28f;
-        [SerializeField, Min(0)] private float _handSpacing = 22f;
+        // Retain the old serialized field for asset compatibility; layout now uses mode-specific center spacing.
+        [SerializeField, HideInInspector] private float _handSpacing = 22f;
         [SerializeField, Min(0)] private float _handCurve = 24f;
         [SerializeField, Min(0)] private float _handRotation = 7f;
         [SerializeField] private AnimationCurve _animationEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+        public const float DefaultCompactHandScale = .513f;
+        public const float DefaultExpandedHandScale = 1.161f;
+        public const float DefaultCompactHandSpacing = 133.95f;
+        public const float DefaultExpandedHandSpacing = 249.9375f;
+        [Header("Hand layout (center spacing in canvas units)")]
+        [SerializeField, Min(.01f)] private float _compactHandScale = DefaultCompactHandScale;
+        [SerializeField, Min(.01f)] private float _expandedHandScale = DefaultExpandedHandScale;
+        [SerializeField, Min(0)] private float _compactHandSpacing = DefaultCompactHandSpacing;
+        [SerializeField, Min(0)] private float _expandedHandSpacing = DefaultExpandedHandSpacing;
+        public float CompactHandScale => _compactHandScale;
+        public float ExpandedHandScale => _expandedHandScale;
+        public float CompactHandSpacing => _compactHandSpacing;
+        public float ExpandedHandSpacing => _expandedHandSpacing;
 
         [Header("Summon presentation")]
         [SerializeField, Range(.5f, .8f)] private float _summonDuration = .66f;

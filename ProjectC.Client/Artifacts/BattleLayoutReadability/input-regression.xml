@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="20" result="Passed" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:34Z" duration="15.6865022">
+  <test-suite type="TestSuite" id="1155" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:34Z" duration="15.686502" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1149" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:34Z" duration="15.682104" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="24730" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1150" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:34Z" duration="15.681014" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1151" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:34Z" duration="15.679956" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1079" name="DrawPresentationPlayModeTests" fullname="ProjectC.Tests.DrawPresentationPlayModeTests" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:30Z" duration="11.659747" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1091" name="DestroyDuringDrawDoesNotLeaveRunningPresentation" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DestroyDuringDrawDoesNotLeaveRunningPresentation" methodname="DestroyDuringDrawDoesNotLeaveRunningPresentation" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="925974460" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:18Z" duration="0.413452" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1087" name="DrawDestroyDrawPreservesStateOrder" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawDestroyDrawPreservesStateOrder" methodname="DrawDestroyDrawPreservesStateOrder" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="40421712" result="Passed" start-time="2026-11-04 09:27:18Z" end-time="2026-11-04 09:27:20Z" duration="1.664204" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1085" name="DrawKeepsIdentityAndLandsInActualSlot" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-04 09:27:20Z" end-time="2026-11-04 09:27:24Z" duration="4.066865" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+              <test-case id="1081" name="DrawKeepsIdentityAndLandsInActualSlot(0)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(0)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="597118224" result="Passed" start-time="2026-11-04 09:27:20Z" end-time="2026-11-04 09:27:21Z" duration="1.013314" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1082" name="DrawKeepsIdentityAndLandsInActualSlot(1)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(1)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1674962116" result="Passed" start-time="2026-11-04 09:27:21Z" end-time="2026-11-04 09:27:22Z" duration="1.012676" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1083" name="DrawKeepsIdentityAndLandsInActualSlot(5)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(5)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1359642000" result="Passed" start-time="2026-11-04 09:27:22Z" end-time="2026-11-04 09:27:23Z" duration="1.017070" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1084" name="DrawKeepsIdentityAndLandsInActualSlot(9)" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawKeepsIdentityAndLandsInActualSlot(9)" methodname="DrawKeepsIdentityAndLandsInActualSlot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="466170767" result="Passed" start-time="2026-11-04 09:27:23Z" end-time="2026-11-04 09:27:24Z" duration="1.022385" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1080" name="DrawOriginIsIndependentOfDeckHudAndRetargetsExpandedHand" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawOriginIsIndependentOfDeckHudAndRetargetsExpandedHand" methodname="DrawOriginIsIndependentOfDeckHudAndRetargetsExpandedHand" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="682226977" result="Passed" start-time="2026-11-04 09:27:24Z" end-time="2026-11-04 09:27:25Z" duration="1.016856" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1090" name="DrawVisualCaptureAtTwoCanvasSizes" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.DrawVisualCaptureAtTwoCanvasSizes" methodname="DrawVisualCaptureAtTwoCanvasSizes" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="852407703" result="Passed" start-time="2026-11-04 09:27:25Z" end-time="2026-11-04 09:27:26Z" duration="1.354078" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1088" name="HiddenDrawAndInvalidationRestoreLatestSnapshot" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.HiddenDrawAndInvalidationRestoreLatestSnapshot" methodname="HiddenDrawAndInvalidationRestoreLatestSnapshot" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1216150064" result="Passed" start-time="2026-11-04 09:27:26Z" end-time="2026-11-04 09:27:27Z" duration="0.272713" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1086" name="OverlappingDrawsKeepSortingHoverAndSnapshotBatches" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.OverlappingDrawsKeepSortingHoverAndSnapshotBatches" methodname="OverlappingDrawsKeepSortingHoverAndSnapshotBatches" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="1810629404" result="Passed" start-time="2026-11-04 09:27:27Z" end-time="2026-11-04 09:27:29Z" duration="1.849764" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1092" name="ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" methodname="ProjectionDoesNotMutateAuthorityOrRetainOpponentIdentity" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="365982610" result="Passed" start-time="2026-11-04 09:27:29Z" end-time="2026-11-04 09:27:29Z" duration="0.001085" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1089" name="SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" fullname="ProjectC.Tests.DrawPresentationPlayModeTests.SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" methodname="SplitEventAndSnapshotDeliveryDoesNotDuplicateCard" classname="ProjectC.Tests.DrawPresentationPlayModeTests" runstate="Runnable" seed="2091090659" result="Passed" start-time="2026-11-04 09:27:29Z" end-time="2026-11-04 09:27:30Z" duration="1.014320" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1102" name="GameplayInputPlayModeTests" fullname="ProjectC.Tests.GameplayInputPlayModeTests" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.523667" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1105" name="AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" fullname="ProjectC.Tests.GameplayInputPlayModeTests.AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" methodname="AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1801342743" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.003693" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1104" name="DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" fullname="ProjectC.Tests.GameplayInputPlayModeTests.DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" methodname="DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="967780441" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.145759" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1108" name="EndingMatchAndUnloadingSceneClearScopesAndModalUi" fullname="ProjectC.Tests.GameplayInputPlayModeTests.EndingMatchAndUnloadingSceneClearScopesAndModalUi" methodname="EndingMatchAndUnloadingSceneClearScopesAndModalUi" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="850397045" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.051128" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1107" name="HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" fullname="ProjectC.Tests.GameplayInputPlayModeTests.HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" methodname="HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="819610191" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.015008" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1106" name="ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" fullname="ProjectC.Tests.GameplayInputPlayModeTests.ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" methodname="ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1014561886" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.013619" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1109" name="RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" fullname="ProjectC.Tests.GameplayInputPlayModeTests.RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" methodname="RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1486314964" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.292153" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1103" name="ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" fullname="ProjectC.Tests.GameplayInputPlayModeTests.ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" methodname="ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1318825282" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:30Z" duration="0.000652" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1067" name="MultiplayerPlayModeTests" fullname="ProjectC.Tests.MultiplayerPlayModeTests" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:34Z" duration="3.492431" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1069" name="DrawPresentationPreservesServerDragAttackAndRematch" fullname="ProjectC.Tests.MultiplayerPlayModeTests.DrawPresentationPreservesServerDragAttackAndRematch" methodname="DrawPresentationPreservesServerDragAttackAndRematch" classname="ProjectC.Tests.MultiplayerPlayModeTests" runstate="Runnable" seed="1883594776" result="Passed" start-time="2026-11-04 09:27:30Z" end-time="2026-11-04 09:27:34Z" duration="3.491099" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -39,6 +39,9 @@ namespace ProjectC.Client
         public event Action<string> NoticeReceived;
         public event Action<bool, string> CommandFinished;
         public event Action ViewInvalidated;
+        public event Action<RemainingDeckEntry[]> OwnDeckContentsReceived;
+        public event Action<string> OwnDeckReadFailed;
+        private string _ownDeckReadRequest;
         string commandRequestId;
         long acceptedSequence = -1;
         public int PlayerId => playerId;
@@ -205,6 +208,8 @@ namespace ProjectC.Client
             if (value == MatchmakingState.Idle)
             {
                 _queuedPersonalDeck = null;
+                _queuedCatalogVersion = null;
+                _queuedServerDeck = null;
                 _autoReadyPending = false;
                 AutomaticMatchInProgress = false;
             }
@@ -450,6 +455,7 @@ namespace ProjectC.Client
             PendingChoice = null;
             commandRequestId = null;
             acceptedSequence = -1;
+            CancelOwnDeckRead();
             ViewInvalidated?.Invoke();
             MulliganSelection.Clear();
             gameNumber = game;
@@ -482,7 +488,10 @@ namespace ProjectC.Client
 
         internal void DisconnectNetwork()
         {
-            transport?.Dispose();
+            var previous = transport;
+            transport = null;
+            _deckCatalogReceived = false;
+            previous?.Dispose();
             Input.Reset();
             if (Matchmaking == MatchmakingState.Queuing)
             {
@@ -492,6 +501,7 @@ namespace ProjectC.Client
             PendingChoice = null;
             commandRequestId = null;
             acceptedSequence = -1;
+            CancelOwnDeckRead();
             ViewInvalidated?.Invoke();
             connecting = pending = resyncing = false;
         }
@@ -514,6 +524,25 @@ namespace ProjectC.Client
             _serverDeckSelected = false;
             ConnectionError = "";
             ClearMatch();
+        }
+
+        internal bool ReadOwnDeck()
+        {
+            if (!ConnectionReady || Busy || string.IsNullOrEmpty(matchId) || _ownDeckReadRequest != null
+                || state?.Started != true || state.Finished || state.MulliganActive || PendingChoice != null)
+            {
+                return false;
+            }
+            _ownDeckReadRequest = Guid.NewGuid().ToString("N");
+            Send(Request("ReadOwnDeck", _ownDeckReadRequest) + ",\"MatchId\":" + Quote(matchId)
+                + ",\"PlayerId\":" + playerId + ",\"GameNumber\":" + gameNumber
+                + ",\"SequenceNumber\":" + sequence);
+            return true;
+        }
+
+        internal void CancelOwnDeckRead()
+        {
+            _ownDeckReadRequest = null;
         }
 
         internal void CreateMatch()
@@ -697,6 +726,7 @@ namespace ProjectC.Client
             PendingChoice = null;
             commandRequestId = null;
             acceptedSequence = -1;
+            CancelOwnDeckRead();
             ViewInvalidated?.Invoke();
             Input.CommandSent(false);
             Send(Request("StateResyncRequest") + ",\"MatchId\":" + Quote(matchId));
@@ -913,7 +943,8 @@ namespace ProjectC.Client
                     connecting = pending = resyncing = false;
                     commandRequestId = null;
                     acceptedSequence = -1;
-                    ViewInvalidated?.Invoke();
+                    CancelOwnDeckRead();
+            ViewInvalidated?.Invoke();
                     if (string.IsNullOrEmpty(token))
                     {
                         ClearMatch();
@@ -964,6 +995,26 @@ namespace ProjectC.Client
                 throw new InvalidOperationException(
                     "Server/client protocol mismatch; rebuild both"
                 );
+            }
+            if (message.Type == "OwnDeckContents"
+                || (message.Type == "ServerError" && _ownDeckReadRequest != null && message.RequestId == _ownDeckReadRequest))
+            {
+                if (_ownDeckReadRequest == null || message.RequestId != _ownDeckReadRequest)
+                {
+                    return;
+                }
+                _ownDeckReadRequest = null;
+                if (message.MatchId != matchId || message.GameNumber != gameNumber)
+                {
+                    return;
+                }
+                if (message.Type == "ServerError" || message.SequenceNumber != sequence)
+                {
+                    OwnDeckReadFailed?.Invoke(message.Type == "ServerError" ? message.Reason : "StaleSequence");
+                    return;
+                }
+                OwnDeckContentsReceived?.Invoke(JsonUtility.FromJson<OwnDeckContentsMessage>(json).Payload ?? Array.Empty<RemainingDeckEntry>());
+                return;
             }
             if (message.Type == "Authenticated" && message.RequestId == _authenticateRequestId)
             {
@@ -1086,7 +1137,7 @@ namespace ProjectC.Client
                 {
                     deckRequestId = null;
                 }
-                if (AutomaticMatchInProgress && state?.Started != true)
+                if (AutomaticMatchInProgress && state?.Started != true && message.Type == "ServerError")
                 {
                     Matchmaking = MatchmakingState.Error;
                     MatchmakingError = "대전을 준비할 수 없습니다. " + message.Message;

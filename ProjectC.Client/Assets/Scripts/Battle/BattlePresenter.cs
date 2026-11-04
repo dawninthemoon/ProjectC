@@ -13,6 +13,7 @@ namespace ProjectC.Client
         private const int SecondsPerMinute = 60;
         private const float DefaultSummonDuration = .66f;
         private const float MaximumSummonSpeed = 2f;
+        private const float DefaultHandAngle = 7f;
         private const float SummonSpeedPerPendingBatch = .2f;
         private const double MillisecondsPerSecond = 1000;
         public MultiplayerDebugScreen Client;
@@ -31,6 +32,7 @@ namespace ProjectC.Client
         public CardDetailView Detail;
         private CardView _inspected;
         private bool _inspectionFromChoice;
+        private bool _compactHandHoverInspection;
         private TMP_Text _turnTimer;
         private double _turnDeadline;
         private bool _turnTimerRunning;
@@ -58,6 +60,7 @@ namespace ProjectC.Client
         public void HideCardInfo()
         {
             _inspected = null;
+            _compactHandHoverInspection = false;
             Detail.Show(null);
         }
 
@@ -149,6 +152,13 @@ namespace ProjectC.Client
         private bool _snapPresentation = true;
         private bool _restorePresentation = true;
 
+        private const float CompactHandWidth = 1050f;
+        private const float ExpandedHandWidth = 1100f;
+        private const float ExpandedHandCenterX = 950f;
+        private const float ExpandedHandTop = 780f;
+        private const float HandViewportPadding = 16f;
+        private Vector2 _authoredHandSize;
+
         private sealed class PresentationBatch
         {
             public EventView[] Events;
@@ -183,11 +193,23 @@ namespace ProjectC.Client
             Interaction.Initialize(this);
             _handRect = (RectTransform)Hand.transform;
             _handPosition = _handRect.anchoredPosition;
+            _authoredHandSize = _handRect.sizeDelta;
             if (!this.Bind("CardGallery", out _gallery))
             {
                 throw new InvalidOperationException("Battle screen requires CardGallery.");
             }
             _gallery.Initialize(this);
+            var deckButton = Effects.OwnDeck.GetComponent<Button>();
+            if (deckButton == null)
+            {
+                deckButton = Effects.OwnDeck.gameObject.AddComponent<Button>();
+            }
+            deckButton.onClick.AddListener(_gallery.ShowOwnDeck);
+            if (Effects.OwnDeck.TryGetComponent<Image>(out var deckImage))
+            {
+                deckImage.raycastTarget = true;
+                deckButton.targetGraphic = deckImage;
+            }
             Lobby?.Bind(Client);
             Summon.onClick.AddListener(() => Command("PlayCard"));
             BattlePhase.gameObject.SetActive(false);
@@ -488,11 +510,52 @@ namespace ProjectC.Client
             Interaction.Click(widget);
         }
 
+        private void UpdateHandBounds()
+        {
+            var parent = (RectTransform)_handRect.parent;
+            var canvas = (RectTransform)GetComponentInParent<Canvas>().rootCanvas.transform;
+            Vector3 topLeft = parent.InverseTransformPoint(canvas.TransformPoint(new Vector3(canvas.rect.xMin, canvas.rect.yMax)));
+            Vector3 bottomRight = parent.InverseTransformPoint(canvas.TransformPoint(new Vector3(canvas.rect.xMax, canvas.rect.yMin)));
+            float left = topLeft.x - parent.rect.xMin;
+            float top = parent.rect.yMax - topLeft.y;
+            float viewportWidth = bottomRight.x - topLeft.x;
+            float viewportHeight = topLeft.y - bottomRight.y;
+            bool compact = Hand.Layout.Compact;
+            float width = Mathf.Min(compact ? CompactHandWidth : ExpandedHandWidth,
+                Mathf.Max(0, viewportWidth - HandViewportPadding * 2));
+            _handRect.sizeDelta = new Vector2(width, _authoredHandSize.y);
+            // Keep the compact hand's authored right edge and expanded center.
+            var destination = compact
+                ? _handPosition + Vector2.left * (width - _authoredHandSize.x)
+                : new Vector2(ExpandedHandCenterX - width * .5f, -ExpandedHandTop);
+            destination.x = Mathf.Clamp(destination.x, left + HandViewportPadding,
+                Mathf.Max(left + HandViewportPadding, left + viewportWidth - width - HandViewportPadding));
+            float halfHeight = _handRect.rect.height * .5f;
+            float rotation = (Hand.Layout.Settings?.HandRotation ?? DefaultHandAngle) * Mathf.Deg2Rad;
+            float rotatedHeight = Hand.Layout.CardSize.y * Mathf.Cos(rotation)
+                + Hand.Layout.CardSize.x * Mathf.Sin(rotation);
+            float faceHalfHeight = rotatedHeight * Hand.Layout.CardScale * .5f
+                * CardWidget.ExpandedHandFocusScale;
+            float minimumTop = Mathf.Max(HandViewportPadding,
+                faceHalfHeight + CardTableLayout.FocusLift - halfHeight + HandViewportPadding);
+            float maximumTop = Mathf.Max(minimumTop, viewportHeight - halfHeight - faceHalfHeight
+                - (Hand.Layout.Settings?.HandCurve ?? 24f) - HandViewportPadding);
+            destination.y = -Mathf.Clamp(-destination.y, top + minimumTop, top + maximumTop);
+            _handRect.anchoredPosition = Vector2.Lerp(_handRect.anchoredPosition, destination,
+                1 - Mathf.Exp(-Time.unscaledDeltaTime * 22));
+            // A viewport shrink must not wait for the transition before fitting horizontally.
+            var position = _handRect.anchoredPosition;
+            position.x = Mathf.Clamp(position.x, left + HandViewportPadding,
+                Mathf.Max(left + HandViewportPadding, left + viewportWidth - width - HandViewportPadding));
+            _handRect.anchoredPosition = position;
+        }
+
         void Hover(CardWidget widget)
         {
-            if (widget.Card != null && ((!Hand.Layout.Compact && widget.InHand)
+            if (widget.Card != null && (widget.InHand
                 || Interaction.State == BattleInputState.SelectingEffectTarget))
             {
+                _compactHandHoverInspection = widget.InHand && Hand.Layout.Compact && SelectedCardId == 0;
                 InspectCard(widget.Card);
                 Interaction.FocusHand(widget);
             }
@@ -500,6 +563,10 @@ namespace ProjectC.Client
 
         void Unhover()
         {
+            if (_compactHandHoverInspection && SelectedCardId == 0)
+            {
+                HideCardInfo();
+            }
         }
 
         void LateUpdate()
@@ -562,10 +629,7 @@ namespace ProjectC.Client
             }
             bool browsing = _gallery.gameObject.activeSelf;
             Hand.gameObject.SetActive(!browsing);
-            var destination = Hand.Layout.Compact ? _handPosition : new Vector2(510, -748);
-            _handRect.anchoredPosition = Vector2.Lerp(_handRect.anchoredPosition, destination,
-                1 - Mathf.Exp(-Time.unscaledDeltaTime * 22));
-            _handRect.sizeDelta = new Vector2(Hand.Layout.Compact ? 660 : 1040, 244);
+            UpdateHandBounds();
             Lobby?.Render();
             Mulligan.Render();
             bool started = rendered != null && rendered.Started;

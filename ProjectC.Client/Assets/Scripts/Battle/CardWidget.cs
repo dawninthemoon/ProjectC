@@ -26,7 +26,7 @@ namespace ProjectC.Client
             IDragHandler,
             IEndDragHandler
     {
-        private const float ExpandedHandFocusScale = 1.2f;
+        internal const float ExpandedHandFocusScale = 1.1f;
         private const float FieldHoverScale = 1.035f;
         public RectTransform Face;
         [FormerlySerializedAs("Frame")]
@@ -38,6 +38,8 @@ namespace ProjectC.Client
         private TMP_Text _health;
         private TMP_Text _cost;
         private Outline _highlight;
+        private Image _frameGlow;
+        private Color _glowColor;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
         public TMP_Text Title,
@@ -83,6 +85,7 @@ namespace ProjectC.Client
             }
             FrameImage = Face.GetComponent<Image>();
             _highlight = Face.GetComponent<Outline>();
+            Face.Bind("FrameGlow", out _frameGlow);
             if (FrameImage == null
                 || !Face.Bind("ArtworkImage", out ArtworkImage)
                 || !Face.Bind("Accent", out Accent)
@@ -142,6 +145,8 @@ namespace ProjectC.Client
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
             CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
+            ArtworkImage.gameObject.SetActive(!hidden);
+            Title.gameObject.SetActive(!hidden);
             Symbol.text =
                 hidden ? "C"
                 : card != null && card.EffectCount > 0 ? "W"
@@ -196,8 +201,29 @@ namespace ProjectC.Client
                     && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable);
                 _highlight.effectColor = Accent.color;
             }
+            if (_frameGlow != null)
+            {
+                _glowColor = Accent.color;
+                _glowColor.a = !Hidden && hint != TargetHint.Unavailable
+                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable) ? .65f : 0f;
+                ApplyFrameGlow();
+            }
             Status.text = "";
             Status.gameObject.SetActive(false);
+        }
+
+        private void ApplyFrameGlow()
+        {
+            if (_frameGlow == null)
+            {
+                return;
+            }
+            var color = _glowColor;
+            if (pulse > color.a)
+            {
+                color = new Color(1f, .82f, .38f, pulse);
+            }
+            _frameGlow.color = color;
         }
 
         void Update()
@@ -215,7 +241,11 @@ namespace ProjectC.Client
                 _facePosition + new Vector2(0, lift),
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22)
             );
-            pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
+            if (pulse > 0)
+            {
+                pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
+                ApplyFrameGlow();
+            }
             // Scale the face relative to its layout slot. An absolute display scale
             // would shrink a focused card whenever the expanded hand grows larger.
             float focusScale = InHand ? (ExpandedHand ? ExpandedHandFocusScale : 1) : FieldHoverScale;

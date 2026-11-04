@@ -95,6 +95,18 @@ namespace ProjectC.Client
     }
 
     [Serializable]
+    public sealed class RemainingDeckEntry
+    {
+        public int DefinitionId, Quantity;
+    }
+
+    [Serializable]
+    public sealed class OwnDeckContentsMessage : MessageView
+    {
+        public RemainingDeckEntry[] Payload;
+    }
+
+    [Serializable]
     public class PlayerView
     {
         public int PlayerId,

@@ -368,7 +368,7 @@ namespace ProjectC.Client.Editor
                 28,
                 Gold
             );
-            Input(panel.transform, "ServerAddress", "ws://127.0.0.1:7777", 30, 90, 680);
+            Input(panel.transform, "ServerAddress", ServerConnectionSettings.ProductionAddress, 30, 90, 680);
             Button(panel.transform, "Connect", "접속 / 재접속", 740, 90, 220, 48, true);
             Button(panel.transform, "Disconnect", "연결 해제", 980, 90, 220, 48);
             Label(panel.transform, "Status", "OFFLINE", 30, 150, 1150, 80, 19);
@@ -384,6 +384,14 @@ namespace ProjectC.Client.Editor
             Button(panel.transform, "Close", "방 닫기", 600, 535, 260, 48);
             Label(panel.transform, "ServerDeckSummary", "", 30, 600, 1150, 66, 16, Gold);
             AddMatchmakingControls(panel.transform);
+            foreach (string name in new[] { "ServerAddress", "MatchId", "MatchHint", "Connect", "Disconnect", "Create", "Join", "Ready", "Seats", "Rematch", "Leave", "Close" })
+            {
+                panel.transform.Find(name).gameObject.SetActive(false);
+            }
+            Rect((RectTransform)panel.transform.Find("Deck"), 35, 160, 1140, 80);
+            Rect((RectTransform)panel.transform.Find("Status"), 35, 285, 1140, 100);
+            Rect((RectTransform)panel.transform.Find("QueueMatch"), 35, 440, 550, 70);
+            Rect((RectTransform)panel.transform.Find("CancelQueue"), 35, 440, 550, 70);
             panel.SetActive(false);
         }
 
@@ -462,6 +470,7 @@ namespace ProjectC.Client.Editor
             t.targetGraphic = toggle.GetComponent<Image>();
             t.graphic = Box(toggle.transform, "Check", 8, 8, 28, 28, Gold).GetComponent<Image>();
             Label(panel.transform, "FullLabel", "전체 화면", 30, 235, 240, 55, 22);
+            Button(panel.transform, "ConnectionEnvironment", "서버: Production · 변경 시 재연결", 35, 505, 800, 48);
             Button(panel.transform, "CloseSettings", "닫기", 900, 570, 270, 60);
             panel.SetActive(false);
         }
@@ -606,6 +615,7 @@ namespace ProjectC.Client.Editor
             MakeLobby();
             EditorBuildSettings.scenes = new[]
             {
+                new EditorBuildSettingsScene("Assets/Scenes/ConnectionScene.unity", true),
                 new EditorBuildSettingsScene("Assets/Scenes/LobbyScene.unity", true),
                 new EditorBuildSettingsScene("Assets/Scenes/DeckEditorScene.unity", true),
                 new EditorBuildSettingsScene("Assets/Scenes/BattleScene.unity", true),
