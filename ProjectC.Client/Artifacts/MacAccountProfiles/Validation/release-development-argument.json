@@ -1,0 +1,10 @@
+{
+    "profile": "default",
+    "developmentFeatures": false,
+    "developerPanelIncluded": false,
+    "editorSettingIncluded": false,
+    "macStoreIncluded": true,
+    "windowsStoreIncluded": false,
+    "keychainRoundTrip": true,
+    "storeError": ""
+}

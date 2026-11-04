@@ -1,4 +1,4 @@
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_OSX
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -467,12 +467,22 @@ namespace ProjectC.Tests
             _releaseRefresh.Set();
             if (_appObject != null)
             {
-                UnityEngine.Object.Destroy(_appObject);
-                yield return null;
+                // Stop scene-owned connection coroutines before destroying their
+                // persistent services, so a late success cannot load another scene.
+                foreach (var presenter in UnityEngine.Object.FindObjectsByType<ConnectionScenePresenter>(FindObjectsSortMode.None))
+                {
+                    presenter.StopAllCoroutines();
+                    presenter.enabled = false;
+                }
+                var app = _appObject.GetComponent<ClientApp>();
+                yield return Until(() => !app.Navigating);
                 var current = SceneManager.GetActiveScene();
                 var empty = SceneManager.CreateScene("ProfileTestEmpty-" + Guid.NewGuid().ToString("N"));
                 SceneManager.SetActiveScene(empty);
                 yield return SceneManager.UnloadSceneAsync(current);
+                UnityEngine.Object.Destroy(_appObject);
+                yield return null;
+                Assert.IsNull(ClientApp.Instance, "Profile fixture must not leave account services in later tests.");
             }
             if (_settings != null)
             {

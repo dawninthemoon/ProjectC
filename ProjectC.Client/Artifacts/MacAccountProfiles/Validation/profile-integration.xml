@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="12" result="Passed" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.0560485">
+  <test-suite type="TestSuite" id="1141" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="110" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.056049" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1135" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC-macos-profiles/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="110" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.052468" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="55256" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1136" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="110" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.051964" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1137" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="110" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.051526" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="AccountProfilePlayModeTests" fullname="ProjectC.Tests.AccountProfilePlayModeTests" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:59Z" duration="8.044197" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1005" name="AccountResetClearsMatchAndReconnectCapability" fullname="ProjectC.Tests.AccountProfilePlayModeTests.AccountResetClearsMatchAndReconnectCapability" methodname="AccountResetClearsMatchAndReconnectCapability" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" seed="1766736220" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:51Z" duration="0.037457" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="AppSwitchRestoresProfilesAndLogoutDoesNotCreateGuestOrDeleteOtherData" fullname="ProjectC.Tests.AccountProfilePlayModeTests.AppSwitchRestoresProfilesAndLogoutDoesNotCreateGuestOrDeleteOtherData" methodname="AppSwitchRestoresProfilesAndLogoutDoesNotCreateGuestOrDeleteOtherData" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" seed="108353014" result="Passed" start-time="2026-11-04 01:58:51Z" end-time="2026-11-04 01:58:56Z" duration="4.546825" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1002" name="ReleasePolicyAndLegacyCredentialTargetRemainCompatible" fullname="ProjectC.Tests.AccountProfilePlayModeTests.ReleasePolicyAndLegacyCredentialTargetRemainCompatible" methodname="ReleasePolicyAndLegacyCredentialTargetRemainCompatible" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" seed="435526929" result="Passed" start-time="2026-11-04 01:58:56Z" end-time="2026-11-04 01:58:56Z" duration="0.023260" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="RetiringProfileWaitsForRotatedTokenBeforeNextRestore" fullname="ProjectC.Tests.AccountProfilePlayModeTests.RetiringProfileWaitsForRotatedTokenBeforeNextRestore" methodname="RetiringProfileWaitsForRotatedTokenBeforeNextRestore" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" seed="40198137" result="Passed" start-time="2026-11-04 01:58:56Z" end-time="2026-11-04 01:58:56Z" duration="0.187903" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1003" name="TwoWindowsProfilesRestoreDistinctPlayersAndMatchOnRealServer" fullname="ProjectC.Tests.AccountProfilePlayModeTests.TwoWindowsProfilesRestoreDistinctPlayersAndMatchOnRealServer" methodname="TwoWindowsProfilesRestoreDistinctPlayersAndMatchOnRealServer" classname="ProjectC.Tests.AccountProfilePlayModeTests" runstate="Runnable" seed="1266289722" result="Passed" start-time="2026-11-04 01:58:56Z" end-time="2026-11-04 01:58:59Z" duration="3.242645" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1109" name="MatchmakingPlayModeTests" fullname="ProjectC.Tests.MatchmakingPlayModeTests" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.004543" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1117" name="ForeignFoundAndDisconnectedQueueCannotBecomeMatched" fullname="ProjectC.Tests.MatchmakingPlayModeTests.ForeignFoundAndDisconnectedQueueCannotBecomeMatched" methodname="ForeignFoundAndDisconnectedQueueCannotBecomeMatched" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="92527082" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000929" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1116" name="MatchWinsCancelRaceAndDuplicateFoundPreservesSnapshotAndMulligan" fullname="ProjectC.Tests.MatchmakingPlayModeTests.MatchWinsCancelRaceAndDuplicateFoundPreservesSnapshotAndMulligan" methodname="MatchWinsCancelRaceAndDuplicateFoundPreservesSnapshotAndMulligan" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="411036996" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.001115" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1110" name="QueueAcknowledgementAndCancellationRequireMatchingRequest" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueAcknowledgementAndCancellationRequireMatchingRequest" methodname="QueueAcknowledgementAndCancellationRequireMatchingRequest" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="1250611035" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000154" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1115" name="QueueErrorsRecover" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueErrorsRecover" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.001392" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1111" name="QueueErrorsRecover(&quot;AlreadyQueued&quot;,Queuing)" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueErrorsRecover(&quot;AlreadyQueued&quot;,Queuing)" methodname="QueueErrorsRecover" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="1550276529" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000422" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1112" name="QueueErrorsRecover(&quot;AlreadyJoined&quot;,Error)" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueErrorsRecover(&quot;AlreadyJoined&quot;,Error)" methodname="QueueErrorsRecover" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="2056184370" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000084" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1113" name="QueueErrorsRecover(&quot;InvalidDeck&quot;,Error)" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueErrorsRecover(&quot;InvalidDeck&quot;,Error)" methodname="QueueErrorsRecover" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="1331321" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000070" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1114" name="QueueErrorsRecover(&quot;NotQueued&quot;,Idle)" fullname="ProjectC.Tests.MatchmakingPlayModeTests.QueueErrorsRecover(&quot;NotQueued&quot;,Idle)" methodname="QueueErrorsRecover" classname="ProjectC.Tests.MatchmakingPlayModeTests" runstate="Runnable" seed="2047249478" result="Passed" start-time="2026-11-04 01:58:59Z" end-time="2026-11-04 01:58:59Z" duration="0.000066" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

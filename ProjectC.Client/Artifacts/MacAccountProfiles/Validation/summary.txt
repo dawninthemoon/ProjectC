@@ -1,0 +1,19 @@
+2026-11-04 / Unity 6000.0.81f1 / macOS arm64
+Production Website API / Neon DB: not contacted.
+Account profile editor menus: all four registered and selectable before Play Mode on OSXEditor
+Release StandaloneOSX player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.
+Development StandaloneOSX player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.
+Release StandaloneWindows64 player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.
+Development StandaloneWindows64 player scripts: account profile feature gate, developer UI inclusion and editor-only settings verified.
+keychain-auth.xml: {'total': '13', 'passed': '13', 'failed': '0', 'skipped': '0'}
+profile-integration.xml: {'total': '12', 'passed': '12', 'failed': '0', 'skipped': '0'}
+Windows native methods and declarations unchanged after ignoring platform guards and blank lines. TargetFor unchanged.
+Native Windows runtime: not executed.
+macOS GUI manual clicks, locked-Keychain OS dialog, Intel runtime, IL2CPP: not verified.
+
+Integration on main e7c104b:
+PR scope PlayMode: 32/32 passed, 0 skipped.
+Combined with preserved local changes: 32/32 passed, 0 skipped.
+Baseline GameplayInput alone: 7/7 passed.
+Account fixture cleanup now stops connection coroutines and unloads scenes before destroying services.
+New C#/.meta pairs and GUID uniqueness verified.

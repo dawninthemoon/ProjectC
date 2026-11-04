@@ -226,7 +226,7 @@ namespace ProjectC.Client
             }
             finally
             {
-                Website = null;
+                Website = AccountLoggedOut ? null : previous;
                 IsChangingAccount = false;
                 OpenAccountConnection();
             }
@@ -238,9 +238,10 @@ namespace ProjectC.Client
             {
                 await ChangeAccountProfileAsync(profileId);
             }
-            catch (Exception)
+            catch (Exception error)
             {
-                ShowPopup("계정 프로필을 전환할 수 없습니다. 로그인 정보를 보존했습니다.");
+                ShowPopup(error is SecureSessionStoreException ? error.Message
+                    : "계정 프로필을 전환할 수 없습니다. 로그인 정보를 보존했습니다.");
             }
         }
 
@@ -250,9 +251,10 @@ namespace ProjectC.Client
             {
                 await LogoutCurrentProfileAsync();
             }
-            catch (Exception)
+            catch (Exception error)
             {
-                ShowPopup("로그아웃을 완료하지 못했습니다. 현재 프로필의 로그인 정보를 보존했습니다.");
+                ShowPopup(error is SecureSessionStoreException ? error.Message
+                    : "로그아웃을 완료하지 못했습니다. 현재 프로필의 로그인 정보를 보존했습니다.");
             }
         }
         public CardLibrary Library { get; private set; }
