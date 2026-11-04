@@ -33,6 +33,7 @@ namespace ProjectC.Client
         private CardView _inspected;
         private bool _inspectionFromChoice;
         private bool _compactHandHoverInspection;
+        private bool _fieldHoverInspection;
         private TMP_Text _turnTimer;
         private double _turnDeadline;
         private bool _turnTimerRunning;
@@ -61,6 +62,7 @@ namespace ProjectC.Client
         {
             _inspected = null;
             _compactHandHoverInspection = false;
+            _fieldHoverInspection = false;
             Detail.Show(null);
         }
 
@@ -552,10 +554,12 @@ namespace ProjectC.Client
 
         void Hover(CardWidget widget)
         {
-            if (widget.Card != null && (widget.InHand
+            if (widget.Card != null && (widget.InHand || widget.OwnedByLocalPlayer
+                || IsEnemyField(widget.Card.Id)
                 || Interaction.State == BattleInputState.SelectingEffectTarget))
             {
                 _compactHandHoverInspection = widget.InHand && Hand.Layout.Compact && SelectedCardId == 0;
+                _fieldHoverInspection = !widget.InHand && SelectedCardId == 0;
                 InspectCard(widget.Card);
                 Interaction.FocusHand(widget);
             }
@@ -563,7 +567,7 @@ namespace ProjectC.Client
 
         void Unhover()
         {
-            if (_compactHandHoverInspection && SelectedCardId == 0)
+            if ((_compactHandHoverInspection || _fieldHoverInspection) && SelectedCardId == 0)
             {
                 HideCardInfo();
             }

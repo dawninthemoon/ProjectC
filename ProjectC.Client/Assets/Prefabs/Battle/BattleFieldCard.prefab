@@ -1049,6 +1049,8 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+  _cropZoom: 1
+  _cropOffset: {x: 0, y: 0}
 --- !u!1 &4489341735864866506
 GameObject:
   m_ObjectHideFlags: 0
@@ -1434,7 +1436,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2123899860440353372
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1802,6 +1804,7 @@ MonoBehaviour:
   FrameImage: {fileID: 2791500087024775920}
   ArtworkImage: {fileID: 2154583105930365091}
   Accent: {fileID: 3205388449709029905}
+  _fieldCropProfile: {fileID: 11400000, guid: 0f240d35f5a9b4ef2bfa50901646ae30, type: 2}
   Title: {fileID: 6692638514809181301}
   Stats: {fileID: 7405324336034492153}
   Status: {fileID: 157388887053626591}
@@ -1835,7 +1838,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7632173924263353456
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1972,7 +1975,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1658840453065018569
 RectTransform:
   m_ObjectHideFlags: 0

@@ -34,6 +34,7 @@ namespace ProjectC.Client
         [FormerlySerializedAs("Art")]
         public Image ArtworkImage;
         public Image Accent;
+        [SerializeField] private FieldCardCropProfile _fieldCropProfile;
         private TMP_Text _attack;
         private TMP_Text _health;
         private TMP_Text _cost;
@@ -49,6 +50,7 @@ namespace ProjectC.Client
         public CardView Card { get; private set; }
         public bool Hidden { get; private set; }
         public bool InHand { get; private set; }
+        public bool OwnedByLocalPlayer { get; private set; }
         public bool IsSelected { get; private set; }
         public bool IsHovered { get; private set; }
         public bool IsInFlight { get; private set; }
@@ -109,12 +111,13 @@ namespace ProjectC.Client
             bound = true;
         }
 
-        public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand)
+        public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand, bool ownedByLocalPlayer = false)
         {
             BindReferences();
             Card = hidden ? null : card;
             Hidden = hidden;
             InHand = hand;
+            OwnedByLocalPlayer = ownedByLocalPlayer || hand;
             IsSelected = chosen;
             hint = target ? TargetHint.Available : TargetHint.None;
             Title.text = hidden ? "HIDDEN CARD" : CardPresentation.Name(card);
@@ -145,8 +148,20 @@ namespace ProjectC.Client
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
             CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
+            if (ArtworkImage is AspectFillImage aspectFill)
+            {
+                if (visible && !hand && _fieldCropProfile != null)
+                {
+                    _fieldCropProfile.Resolve(card.DefinitionId, out float zoom, out Vector2 offset);
+                    aspectFill.SetCrop(zoom, offset);
+                }
+                else
+                {
+                    aspectFill.SetCrop(1f, Vector2.zero);
+                }
+            }
             ArtworkImage.gameObject.SetActive(!hidden);
-            Title.gameObject.SetActive(!hidden);
+            Title.gameObject.SetActive(!hidden && (hand || _fieldCropProfile == null));
             Symbol.text =
                 hidden ? "C"
                 : card != null && card.EffectCount > 0 ? "W"
@@ -186,19 +201,19 @@ namespace ProjectC.Client
                 return;
             }
             // Availability is supplied by the server and remains visible without selection.
-            bool usable = !Hidden && Card != null && (Card.CanSummon || Card.CanAttack
+            bool usable = !Hidden && OwnedByLocalPlayer && Card != null && (Card.CanSummon || Card.CanAttack
                 || Card.Activations != null && Array.Exists(Card.Activations, action => action.CanActivate));
             Accent.color =
                 hint == TargetHint.Focused ? new Color(1, .8f, .35f)
-                : hint == TargetHint.Available ? new Color(.38f, .9f, .71f)
+                : IsSelected ? new Color(.98f, .76f, .33f)
+                : hint == TargetHint.Available ? new Color(.34f, .75f, 1f)
                 : hint == TargetHint.Unavailable ? new Color(.22f, .25f, .29f)
-                : IsSelected ? new Color(.93f, .73f, .36f)
-                : usable ? new Color(.25f, .95f, .7f)
+                : usable ? new Color(.15f, .91f, .86f)
                 : new Color(.28f, .36f, .43f);
             if (_highlight != null)
             {
-                _highlight.enabled = !Hidden && hint != TargetHint.Unavailable
-                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable);
+                // The rectangular uGUI outline obscures the authored metal silhouette.
+                _highlight.enabled = false;
                 _highlight.effectColor = Accent.color;
             }
             if (_frameGlow != null)
