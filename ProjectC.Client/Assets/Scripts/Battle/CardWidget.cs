@@ -26,7 +26,7 @@ namespace ProjectC.Client
             IDragHandler,
             IEndDragHandler
     {
-        private const float ExpandedHandFocusScale = 1.2f;
+        internal const float ExpandedHandFocusScale = 1.1f;
         private const float FieldHoverScale = 1.035f;
         public RectTransform Face;
         [FormerlySerializedAs("Frame")]
@@ -34,10 +34,13 @@ namespace ProjectC.Client
         [FormerlySerializedAs("Art")]
         public Image ArtworkImage;
         public Image Accent;
+        [SerializeField] private FieldCardCropProfile _fieldCropProfile;
         private TMP_Text _attack;
         private TMP_Text _health;
         private TMP_Text _cost;
         private Outline _highlight;
+        private Image _frameGlow;
+        private Color _glowColor;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
         public TMP_Text Title,
@@ -47,6 +50,7 @@ namespace ProjectC.Client
         public CardView Card { get; private set; }
         public bool Hidden { get; private set; }
         public bool InHand { get; private set; }
+        public bool OwnedByLocalPlayer { get; private set; }
         public bool IsSelected { get; private set; }
         public bool IsHovered { get; private set; }
         public bool IsInFlight { get; private set; }
@@ -83,6 +87,7 @@ namespace ProjectC.Client
             }
             FrameImage = Face.GetComponent<Image>();
             _highlight = Face.GetComponent<Outline>();
+            Face.Bind("FrameGlow", out _frameGlow);
             if (FrameImage == null
                 || !Face.Bind("ArtworkImage", out ArtworkImage)
                 || !Face.Bind("Accent", out Accent)
@@ -106,12 +111,13 @@ namespace ProjectC.Client
             bound = true;
         }
 
-        public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand)
+        public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand, bool ownedByLocalPlayer = false)
         {
             BindReferences();
             Card = hidden ? null : card;
             Hidden = hidden;
             InHand = hand;
+            OwnedByLocalPlayer = ownedByLocalPlayer || hand;
             IsSelected = chosen;
             hint = target ? TargetHint.Available : TargetHint.None;
             Title.text = hidden ? "HIDDEN CARD" : CardPresentation.Name(card);
@@ -142,6 +148,20 @@ namespace ProjectC.Client
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
             CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
+            if (ArtworkImage is AspectFillImage aspectFill)
+            {
+                if (visible && !hand && _fieldCropProfile != null)
+                {
+                    _fieldCropProfile.Resolve(card.DefinitionId, out float zoom, out Vector2 offset);
+                    aspectFill.SetCrop(zoom, offset);
+                }
+                else
+                {
+                    aspectFill.SetCrop(1f, Vector2.zero);
+                }
+            }
+            ArtworkImage.gameObject.SetActive(!hidden);
+            Title.gameObject.SetActive(!hidden && (hand || _fieldCropProfile == null));
             Symbol.text =
                 hidden ? "C"
                 : card != null && card.EffectCount > 0 ? "W"
@@ -181,23 +201,44 @@ namespace ProjectC.Client
                 return;
             }
             // Availability is supplied by the server and remains visible without selection.
-            bool usable = !Hidden && Card != null && (Card.CanSummon || Card.CanAttack
+            bool usable = !Hidden && OwnedByLocalPlayer && Card != null && (Card.CanSummon || Card.CanAttack
                 || Card.Activations != null && Array.Exists(Card.Activations, action => action.CanActivate));
             Accent.color =
                 hint == TargetHint.Focused ? new Color(1, .8f, .35f)
-                : hint == TargetHint.Available ? new Color(.38f, .9f, .71f)
+                : IsSelected ? new Color(.98f, .76f, .33f)
+                : hint == TargetHint.Available ? new Color(.34f, .75f, 1f)
                 : hint == TargetHint.Unavailable ? new Color(.22f, .25f, .29f)
-                : IsSelected ? new Color(.93f, .73f, .36f)
-                : usable ? new Color(.25f, .95f, .7f)
+                : usable ? new Color(.15f, .91f, .86f)
                 : new Color(.28f, .36f, .43f);
             if (_highlight != null)
             {
-                _highlight.enabled = !Hidden && hint != TargetHint.Unavailable
-                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable);
+                // The rectangular uGUI outline obscures the authored metal silhouette.
+                _highlight.enabled = false;
                 _highlight.effectColor = Accent.color;
+            }
+            if (_frameGlow != null)
+            {
+                _glowColor = Accent.color;
+                _glowColor.a = !Hidden && hint != TargetHint.Unavailable
+                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable) ? .65f : 0f;
+                ApplyFrameGlow();
             }
             Status.text = "";
             Status.gameObject.SetActive(false);
+        }
+
+        private void ApplyFrameGlow()
+        {
+            if (_frameGlow == null)
+            {
+                return;
+            }
+            var color = _glowColor;
+            if (pulse > color.a)
+            {
+                color = new Color(1f, .82f, .38f, pulse);
+            }
+            _frameGlow.color = color;
         }
 
         void Update()
@@ -215,7 +256,11 @@ namespace ProjectC.Client
                 _facePosition + new Vector2(0, lift),
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22)
             );
-            pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
+            if (pulse > 0)
+            {
+                pulse = Mathf.MoveTowards(pulse, 0, Time.unscaledDeltaTime * 3);
+                ApplyFrameGlow();
+            }
             // Scale the face relative to its layout slot. An absolute display scale
             // would shrink a focused card whenever the expanded hand grows larger.
             float focusScale = InHand ? (ExpandedHand ? ExpandedHandFocusScale : 1) : FieldHoverScale;

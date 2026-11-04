@@ -28,6 +28,8 @@ namespace ProjectC.Client
             internal Func<Vector2, Camera, bool> PassThrough;
             internal RectTransform[] Foregrounds;
             internal long Order;
+            // Only browsing leases opt into dismissal; mandatory selections never do.
+            public Action OutsideClicked { get; set; }
             internal Lease(ModalBlocker blocker)
             {
                 _blocker = blocker;
@@ -153,6 +155,15 @@ namespace ProjectC.Client
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+            var top = TopLease();
+            // Consume this event before releasing the modal. Never raycast/redispatch
+            // against newly exposed controls underneath the blocker.
+            eventData.Use();
+            top?.OutsideClicked?.Invoke();
         }
 
         private Lease TopLease()

@@ -758,7 +758,7 @@ namespace ProjectC.Client.Editor
             lobby.Address = Input(
                 lobby.transform,
                 "ServerAddress",
-                "wss//projectc-server.onrender.com",
+                ServerConnectionSettings.ProductionAddress,
                 35,
                 100,
                 610

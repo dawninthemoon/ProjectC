@@ -298,6 +298,16 @@ namespace ProjectC.Client
             yield return Flash(PopupGroup, Settings?.PopupDuration ?? 1.35f);
         }
 
+        private Vector3 DrawOrigin(CardZoneView zone)
+        {
+            // Deck counters stay in the HUD. Flights enter from the right edge at
+            // hand height, in the same canvas space as their live destination slots.
+            var canvas = (RectTransform)_flightRoot.GetComponentInParent<Canvas>().rootCanvas.transform;
+            Vector3 handCenter = canvas.InverseTransformPoint(zone.Content.TransformPoint(zone.Content.rect.center));
+            handCenter.x = canvas.rect.xMax + zone.Layout.CardSize.x * DeckScale;
+            return _flightRoot.InverseTransformPoint(canvas.TransformPoint(handCenter));
+        }
+
         private IEnumerator DrawAnimation(CardZoneView zone, CardWidget widget, bool own)
         {
             ++DrawsPresented;
@@ -307,10 +317,9 @@ namespace ProjectC.Client
                 DrawLabel.text = own ? "DRAW" : "HIDDEN";
                 widget.SetInFlight(true);
                 var rect = (RectTransform)widget.transform;
-                var from = own ? OwnDeck : OpponentDeck;
                 rect.SetParent(_flightRoot, true);
                 rect.SetAsLastSibling();
-                Vector3 start = _flightRoot.InverseTransformPoint(from.TransformPoint(from.rect.center));
+                Vector3 start = DrawOrigin(zone);
                 Vector3 end = start;
                 Vector3 velocity = Vector3.zero;
                 Quaternion startRotation = Quaternion.Euler(0, 0, Settings?.DrawRotation ?? -16f);
@@ -337,6 +346,7 @@ namespace ProjectC.Client
                         Mathf.Infinity, Time.unscaledDeltaTime);
                     float progress = elapsed / duration;
                     float u = Settings?.Ease(progress) ?? Mathf.SmoothStep(0, 1, progress);
+                    start = DrawOrigin(zone);
                     Vector3 control = (start + end) * .5f + Vector3.up * arc;
                     rect.localPosition = (1 - u) * (1 - u) * start + 2 * (1 - u) * u * control + u * u * end;
                     Quaternion destinationRotation = Quaternion.Inverse(_flightRoot.rotation) * zone.Content.rotation * rotation;

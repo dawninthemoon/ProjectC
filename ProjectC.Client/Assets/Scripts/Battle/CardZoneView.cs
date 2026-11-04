@@ -9,6 +9,7 @@ namespace ProjectC.Client
         public CardWidget CardPrefab;
         public RectTransform Content;
         public bool Hand;
+        public bool OwnedByLocalPlayer;
         public readonly List<CardWidget> Widgets = new List<CardWidget>();
         private readonly List<CardWidget> _pool = new List<CardWidget>();
         public CardTableLayout Layout => GetComponent<CardTableLayout>();
@@ -44,7 +45,7 @@ namespace ProjectC.Client
                 widget.Hovered = hover;
                 widget.HoverLeft = leave;
                 widget.SortRequested = RestoreSorting;
-                widget.Bind(card, hidden, card != null && card.Id == selected, targets && card != null, Hand);
+                widget.Bind(card, hidden, card != null && card.Id == selected, targets && card != null, Hand, OwnedByLocalPlayer);
             }
             foreach (var widget in previous)
             {

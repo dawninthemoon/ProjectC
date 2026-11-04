@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.4780089">
+  <test-suite type="TestSuite" id="1151" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="117" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.478009" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1145" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="117" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.469156" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="79932" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1146" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="117" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.460939" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1147" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="117" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.444802" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1021" name="BattleRenewalStage3PlayModeTests" fullname="ProjectC.Tests.BattleRenewalStage3PlayModeTests" classname="ProjectC.Tests.BattleRenewalStage3PlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.440771" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1022" name="DistinctCardsRenderCountsHoverSelectionAndTarget" fullname="ProjectC.Tests.BattleRenewalStage3PlayModeTests.DistinctCardsRenderCountsHoverSelectionAndTarget" methodname="DistinctCardsRenderCountsHoverSelectionAndTarget" classname="ProjectC.Tests.BattleRenewalStage3PlayModeTests" runstate="Runnable" seed="1694961701" result="Passed" start-time="2026-11-04 07:51:33Z" end-time="2026-11-04 07:51:39Z" duration="5.432820" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Ignoring depth surface load action as it is memoryless
+Ignoring depth surface store action as it is memoryless
+Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

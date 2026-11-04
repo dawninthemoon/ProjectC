@@ -54,4 +54,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  _compactHandScale: 1.055
+  _expandedHandScale: 1.055
+  _compactHandSpacing: 200
+  _expandedHandSpacing: 200
   _summonDuration: 0.66
