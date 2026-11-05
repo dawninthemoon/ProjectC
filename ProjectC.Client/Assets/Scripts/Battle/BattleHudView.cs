@@ -28,6 +28,12 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("Battle HUD requires both resource rows and Yokai gauge bindings.");
             }
+            foreach (var value in new[] { _ownDeck, _ownGrave, _ownExile, _enemyDeck, _enemyGrave, _enemyExile })
+            {
+                BattleText.StyleValue(value);
+            }
+            BattleText.StyleValue(_yokai);
+            BattleText.StyleValue(_enemyYokai);
         }
 
         public void Render(PlayerView own, PlayerView enemy, int maximum)

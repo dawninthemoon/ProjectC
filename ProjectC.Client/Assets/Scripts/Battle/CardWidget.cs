@@ -41,6 +41,8 @@ namespace ProjectC.Client
         private Outline _highlight;
         private Image _frameGlow;
         private Color _glowColor;
+        private bool _attackAllowed;
+        private bool _activationAllowed;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
         public TMP_Text Title,
@@ -101,6 +103,10 @@ namespace ProjectC.Client
             Face.Bind("AttackBadge", out _attack);
             Face.Bind("HealthBadge", out _health);
             Face.Bind("CostBadge", out _cost);
+            BattleText.StyleBody(Title);
+            BattleText.StyleValue(_attack);
+            BattleText.StyleValue(_health);
+            BattleText.StyleValue(_cost);
             if (ArtworkImage is not AspectFillImage)
             {
                 throw new InvalidOperationException("Card prefab ArtworkImage requires AspectFillImage.");
@@ -169,6 +175,17 @@ namespace ProjectC.Client
             RenderStatus();
         }
 
+        public void SetActionPermissions(bool attackAllowed, bool activationAllowed)
+        {
+            if (_attackAllowed == attackAllowed && _activationAllowed == activationAllowed)
+            {
+                return;
+            }
+            _attackAllowed = attackAllowed;
+            _activationAllowed = activationAllowed;
+            RenderStatus();
+        }
+
         public void SetHint(TargetHint value)
         {
             hint = value;
@@ -200,9 +217,12 @@ namespace ProjectC.Client
             {
                 return;
             }
-            // Availability is supplied by the server and remains visible without selection.
-            bool usable = !Hidden && OwnedByLocalPlayer && Card != null && (Card.CanSummon || Card.CanAttack
-                || Card.Activations != null && Array.Exists(Card.Activations, action => action.CanActivate));
+            // Server availability and current client input permissions must both allow an action.
+            bool hasActivation = Card?.Activations != null
+                && Array.Exists(Card.Activations, action => action.CanActivate);
+            bool usable = !Hidden && OwnedByLocalPlayer && Card != null
+                && (InHand ? Card.CanSummon || hasActivation
+                    : _attackAllowed && Card.CanAttack || _activationAllowed && hasActivation);
             Accent.color =
                 hint == TargetHint.Focused ? new Color(1, .8f, .35f)
                 : IsSelected ? new Color(.98f, .76f, .33f)

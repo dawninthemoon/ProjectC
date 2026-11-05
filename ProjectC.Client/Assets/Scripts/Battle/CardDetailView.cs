@@ -41,6 +41,11 @@ namespace ProjectC.Client
                     throw new System.InvalidOperationException("Card inspector requires both detail viewport and content.");
                 }
                 _scroll = _viewport != null ? _viewport.GetComponent<ScrollRect>() : null;
+                BattleText.StyleHeading(Title);
+                BattleText.StyleBody(Stats);
+                BattleText.StyleBody(Rules);
+                BattleText.StyleBody(Forms);
+                BattleText.StyleBody(_type);
                 bound = true;
             }
             gameObject.SetActive(card != null);
@@ -74,10 +79,12 @@ namespace ProjectC.Client
                 {
                     _keyword = keyword;
                     Forms.text = keyword.Name + "\n" + keyword.Description;
+                    Forms.gameObject.SetActive(true);
                     RefreshHeight();
                 });
             Forms.text = _keyword == null ? CardPresentation.Manifestations(card)
                 : _keyword.Name + "\n" + _keyword.Description;
+            Forms.gameObject.SetActive(!string.IsNullOrWhiteSpace(Forms.text));
             RefreshHeight();
         }
 

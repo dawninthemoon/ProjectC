@@ -58,7 +58,6 @@ void OwnDeckReadTests()
 {
     auto config = LegacyConfig();
     config.EnableMulligan = false;
-    config.TurnDurationSeconds = 0;
     auto catalog = CardCatalog::Load(config.DataDirectory);
     MatchManager manager(config);
     Peer a(manager), b(manager), outsider(manager);
