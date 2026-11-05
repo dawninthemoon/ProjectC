@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ea05c49dce464c38b0afb9671e4c3f6, type: 3}
+  m_Name: YokaiCost
+  m_EditorClassIdentifier: 
+  _id: yokai
+  _nameKey: ui_battle_yokai_power
+  _descriptionKey: ui_battle_yokai_description
+  _icon: {fileID: 21300000, guid: 556f2baa2582346ee8f0f530033b646c, type: 3}

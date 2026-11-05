@@ -10,7 +10,6 @@ namespace ProjectC.Client
 {
     public sealed class BattlePresenter : MonoBehaviour
     {
-        private const int SecondsPerMinute = 60;
         private const float DefaultSummonDuration = .66f;
         private const float MaximumSummonSpeed = 2f;
         private const float DefaultHandAngle = 7f;
@@ -42,6 +41,7 @@ namespace ProjectC.Client
         private CardGalleryView _gallery;
         private bool _resultWasVisible;
         private string _hudLanguage;
+        private BattleTurnHudView _turnHud;
 
         public void SetHandExpanded(bool expanded)
         {
@@ -173,7 +173,7 @@ namespace ProjectC.Client
 
         void Awake()
         {
-            BattleText.StyleHud(TurnLabel);
+            BattleText.StyleValue(TurnLabel);
             BattleText.StyleHud(PhaseLabel);
             BattleText.StyleHeading(EndTurn.GetComponentInChildren<TMP_Text>(), true);
             // Resolve hierarchy references using the project's scoped Bind contract.
@@ -232,6 +232,11 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("Battle screen requires TurnTimer.");
             }
+            if (!this.Bind("TurnHud", out _turnHud))
+            {
+                throw new InvalidOperationException("Battle screen requires TurnHud.");
+            }
+            BattleText.StyleValue(_turnTimer);
             Cancel.onClick.AddListener(() =>
             {
                 if (Client.Input.HasSelection || !Client.Input.CanExecute(GameplayInputAction.CancelSelection))
@@ -300,6 +305,7 @@ namespace ProjectC.Client
         {
             ClientAudio.StopBattleIfRunning();
             _turnTimerRunning = false;
+            _turnHud?.ResetTimer();
             StopAllCoroutines();
             _playing = false;
             _batches.Clear();
@@ -698,10 +704,7 @@ namespace ProjectC.Client
                 PhaseLabel.text = BattleText.Get(rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1"
                     : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
                     : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
-                TurnLabel.text = rendered.ResolvingPlayerId != 0
-                    ? BattleText.Get("ui.turn.resolving", rendered.ResolvingPlayerId)
-                    : BattleText.Get(rendered.ActivePlayerId == Client.PlayerId ? "ui.turn.own" : "ui.turn.opponent");
-                TurnLabel.text += " \u00b7 " + rendered.TurnNumber;
+                TurnLabel.text = rendered.TurnNumber.ToString();
             }
             string language = CardPresentation.Library.Localization.Language;
             if (_hudLanguage != language && mine != null && enemy != null && rendered != null)
@@ -709,11 +712,10 @@ namespace ProjectC.Client
                 GetComponentInChildren<BattleHudView>().Render(mine, enemy, rendered.MaxYokaiPower);
                 _hudLanguage = language;
             }
-            LogToggle.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui_battle_battle_log");
-            LobbyToggle.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui_battle_menu");
-            int seconds = _turnTimerRunning ? Mathf.Max(0, (int)Math.Ceiling(_turnDeadline - Time.realtimeSinceStartupAsDouble)) : 0;
-            _turnTimer.text = _turnTimerRunning
-                ? $"{seconds / SecondsPerMinute:00}:{seconds % SecondsPerMinute:00}" : "";
+            double remaining = Math.Max(0, _turnDeadline - Time.realtimeSinceStartupAsDouble);
+            int seconds = _turnTimerRunning ? (int)Math.Ceiling(remaining) : 0;
+            _turnTimer.text = _turnTimerRunning ? seconds.ToString() : "--";
+            _turnHud.Render(rendered?.TurnNumber ?? 0, rendered?.ActivePlayerId ?? 0, _turnTimerRunning, remaining);
             ResultRematch.interactable = !Client.WebsiteMode && Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
             if (ConnectionLabel != null)
@@ -846,16 +848,10 @@ namespace ProjectC.Client
                 rendered.MaxYokaiPower
             );
             GetComponentInChildren<BattleHudView>().Render(visibleMine, visibleEnemy, rendered.MaxYokaiPower);
-            TurnLabel.text =
-                BattleText.Get(rendered.ActivePlayerId == Client.PlayerId ? "ui.turn.own" : "ui.turn.opponent");
-            if (rendered.ResolvingPlayerId != 0)
-            {
-                TurnLabel.text = BattleText.Get("ui.turn.resolving", rendered.ResolvingPlayerId);
-            }
+            TurnLabel.text = rendered.TurnNumber.ToString();
             PhaseLabel.text = BattleText.Get(
                 rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
                 : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
-            TurnLabel.text += " · " + rendered.TurnNumber;
             SelectionLabel.text =
                 selected == null
                     ? "Select a card"

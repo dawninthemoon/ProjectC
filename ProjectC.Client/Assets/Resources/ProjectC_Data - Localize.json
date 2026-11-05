@@ -912,5 +912,17 @@
     "korean": "처리 중 / P{0}",
     "english": "Resolving / P{0}",
     "japanese": "処理中 / P{0}"
+  },
+  {
+    "lmk": "ui_battle_seconds",
+    "korean": "초",
+    "english": "s",
+    "japanese": "秒"
+  },
+  {
+    "lmk": "ui_battle_yokai_description",
+    "korean": "요력을 요구하는 카드 행동에 사용하는 자원입니다.",
+    "english": "Used by card actions that require Yokai Power.",
+    "japanese": "妖力を必要とするカードの行動に使用するリソースです。"
   }
 ]
