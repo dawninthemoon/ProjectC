@@ -10,6 +10,8 @@ namespace ProjectC.Client
     {
         private Image _ring, _ownerAccent;
         private TMP_Text _turnUnit, _timeUnit, _status;
+        [SerializeField] private bool _showCenterStatus;
+        private TMP_Text _centerStatus, _centerTurn;
         private Shadow _statusGlow;
         private bool _bound;
         private int _turn = -1, _activePlayer = -1;
@@ -41,6 +43,15 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Turn HUD requires its radial ring and unit labels.");
             }
             _statusGlow = _status.GetComponent<Shadow>();
+            if (_showCenterStatus)
+            {
+                var presenter = GetComponentInParent<BattlePresenter>();
+                if (presenter == null || !presenter.Bind("CenterTurnOwner", out _centerStatus)
+                    || !presenter.Bind("CenterTurnNumber", out _centerTurn))
+                {
+                    throw new InvalidOperationException("Centered turn presentation requires both live labels.");
+                }
+            }
             _bound = true;
         }
 
@@ -59,12 +70,20 @@ namespace ProjectC.Client
             // remaining time after a turn change/reconnect and accept later server clock corrections.
             _observedDuration = Math.Max(_observedDuration, remaining);
             _ring.fillAmount = running && _observedDuration > 0 ? (float)(remaining / _observedDuration) : 0;
-            _ring.color = remaining <= 10 ? new Color(1f, .62f, .25f) : new Color(.12f, .9f, .88f);
+            // Timer art already contains the intended red ticks; only their exposure changes.
+            _ring.color = Color.white;
             _turnUnit.text = BattleText.Get("ui_battle_turn");
             _timeUnit.text = running ? BattleText.Get("ui_battle_seconds") : "";
             bool ownTurn = activePlayer != 0 && activePlayer == ownPlayer;
             _status.text = BattleText.Get(finished ? "ui.turn.finished" : !started ? "ui.turn.waiting"
                 : choosing ? "ui.turn.choose" : ownTurn ? "ui.turn.yours" : "ui.turn.theirs");
+            if (_showCenterStatus)
+            {
+                _centerStatus.gameObject.SetActive(started && !finished);
+                _centerTurn.gameObject.SetActive(started && !finished);
+                _centerStatus.text = _status.text;
+                _centerTurn.text = BattleText.Get("ui_battle_turn") + " " + turn;
+            }
             _status.color = choosing ? new Color(1, .78f, .4f)
                 : ownTurn ? new Color(1, .94f, .72f) : new Color(.65f, .79f, 1);
             _ownerAccent.color = choosing ? new Color(1, .6f, .1f, .65f)

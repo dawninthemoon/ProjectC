@@ -161,6 +161,7 @@ namespace ProjectC.Client
         private const float ExpandedHandTop = 803f;
         private const float HandViewportPadding = 16f;
         private Vector2 _authoredHandSize;
+        [SerializeField] private bool _useAuthoredHandLayout;
 
         private sealed class PresentationBatch
         {
@@ -537,11 +538,16 @@ namespace ProjectC.Client
             float viewportWidth = bottomRight.x - topLeft.x;
             float viewportHeight = topLeft.y - bottomRight.y;
             bool compact = Hand.Layout.Compact;
-            float width = Mathf.Min(compact ? CompactHandWidth : ExpandedHandWidth,
+            float desiredWidth = _useAuthoredHandLayout ? _authoredHandSize.x
+                : compact ? CompactHandWidth : ExpandedHandWidth;
+            float width = Mathf.Min(desiredWidth,
                 Mathf.Max(0, viewportWidth - HandViewportPadding * 2));
             _handRect.sizeDelta = new Vector2(width, _authoredHandSize.y);
             // Keep the compact hand's authored right edge and expanded center.
-            var destination = compact
+            // Authored skins retain their measured position; bounds/focus/drag behavior still applies.
+            var destination = _useAuthoredHandLayout
+                ? _handPosition + Vector2.right * (_authoredHandSize.x - width) * .5f
+                : compact
                 ? _handPosition + Vector2.left * (width - _authoredHandSize.x)
                 : new Vector2(ExpandedHandCenterX - width * .5f, -ExpandedHandTop);
             destination.x = Mathf.Clamp(destination.x, left + HandViewportPadding,

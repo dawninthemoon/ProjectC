@@ -1,0 +1,133 @@
+[
+  {
+    "file": "CardAttackFlower_Exact.png",
+    "sha256": "0a1122a06f74ca16cc66091d54695c503cd5a296316d07c4fa995ada0236e84c",
+    "unchanged": true
+  },
+  {
+    "file": "CardBack_Exact.png",
+    "sha256": "528f5ced8f5918d13b0670ab8f70f14a7f047da3bf4987e24cc3d9bf8756a726",
+    "unchanged": true
+  },
+  {
+    "file": "CardBottomJewel_Exact.png",
+    "sha256": "bbf004eb98238b2ccd9467ef30f3b5eb9ba290f5f366b35565bb1cd51700af8a",
+    "unchanged": true
+  },
+  {
+    "file": "CardDefenseShield_Exact.png",
+    "sha256": "301650b3b595ccaa1c78aea5e685168c8c8a45c3342bd4371316d84d349f651b",
+    "unchanged": true
+  },
+  {
+    "file": "FieldMonsterFrame_Exact.png",
+    "sha256": "267ec4559172dcfb09bd61e0a6b6875d09c246e53ad60cc5b08c5d4748995ed6",
+    "unchanged": true
+  },
+  {
+    "file": "HandCardFrame_Exact.png",
+    "sha256": "5976ebcd6aa8601f16761682ee94722675b4ddbc3018c0529acce3cb30362a30",
+    "unchanged": true
+  },
+  {
+    "file": "HeroHealthBadge_Exact.png",
+    "sha256": "42ca48e9a948b95428f374237473bf9342f0ba62a62aa0f67315ecfed811927f",
+    "unchanged": true
+  },
+  {
+    "file": "HeroRing_Opponent_Exact.png",
+    "sha256": "319d24144d3ad88da7183d0370d4e11fca6cda725e20018b198b901d8baef6cf",
+    "unchanged": true
+  },
+  {
+    "file": "HeroRing_Player_Exact.png",
+    "sha256": "5c436e435e067027503a95ab3f42dfea6c9c66878c4a641d7decc0d619b8ff2d",
+    "unchanged": true
+  },
+  {
+    "file": "Mask_FieldArtwork.png",
+    "sha256": "b90fa00c335a09aec8cca43b5acc93fa08007eff7d0eef518eff33e2b14e1f52",
+    "unchanged": true
+  },
+  {
+    "file": "Mask_HandArtwork.png",
+    "sha256": "5f7955f8c95d9febda5ffbf6fe2dd4547dd8504347be4845afa6210800e6d381",
+    "unchanged": true
+  },
+  {
+    "file": "Mask_OpponentPortrait.png",
+    "sha256": "93f8bbe7dd0c729d7430c32c733cea3c06d5c0235eebc41dabb01572d05e2305",
+    "unchanged": true
+  },
+  {
+    "file": "Mask_PlayerPortrait.png",
+    "sha256": "0f2671b67a9a62c67c0b956804c1e9a9b584135e9284cfb71651db95bcf4e814",
+    "unchanged": true
+  },
+  {
+    "file": "PhaseArrow_Exact.png",
+    "sha256": "687f346f9de93d396030a6da4e5f4ee7fb03bdbaf152faf086d92dba1675b21c",
+    "unchanged": true
+  },
+  {
+    "file": "PhaseButton_Exact.png",
+    "sha256": "cfc5f3519b256a3be1c61e052eaee6cffda7f34416a73ce1f67c5fc009b5485f",
+    "unchanged": true
+  },
+  {
+    "file": "SideButton_Log_Exact.png",
+    "sha256": "eeb8c51f41e7cbb60c507aa7908c14ef29cf25db3cc11952b1c389c43f72575e",
+    "unchanged": true
+  },
+  {
+    "file": "SideButton_Menu_Exact.png",
+    "sha256": "7d65ae24141c611ca692b56dcf14e9bde94848ff4371a6ffa10d29e15be7c0ac",
+    "unchanged": true
+  },
+  {
+    "file": "SpecialCost_Collapsed_Exact.png",
+    "sha256": "b282377073f736175bbf04b9be014844624c3f0635027e6133c95a10267e4600",
+    "unchanged": true
+  },
+  {
+    "file": "SpecialCost_Expanded_Exact.png",
+    "sha256": "c8590c36bdaf27e6ea2424286b934df7988edf52dc658423e965c55a5cc7089a",
+    "unchanged": true
+  },
+  {
+    "file": "TimerTicks_Off_Exact.png",
+    "sha256": "c3e735d6055ab1990ee92a1744db86083d674a37a104ef8b6a867d8db64d4e4d",
+    "unchanged": true
+  },
+  {
+    "file": "TimerTicks_On_Exact.png",
+    "sha256": "48ad352dcf777e49afc5fe9acb240ed608b1420e705c4802a0249b9e2f4fad57",
+    "unchanged": true
+  },
+  {
+    "file": "TurnHUD_Exact.png",
+    "sha256": "b76b3b1fc1bbdf3cfc941841ec0666c5742afc52cf38e2168024f1a0311d333d",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Deck_Exact.png",
+    "sha256": "81ce2bee51a59a61550106adfd3dbc65462273b3759f61c67692eed1d9da4a78",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Exile_Exact.png",
+    "sha256": "10e511b8f2cc16c19816d3dafa6ebd9db84ae32deffa5c81a35cedabe4cd1589",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Grave_Exact.png",
+    "sha256": "37015619c0f4546311493b425721769d9caec3aca418e2c3f1c700662bc30e9a",
+    "unchanged": true
+  },
+  {
+    "file": "BattleBackground_Original.png",
+    "source": "벚꽃 노을 아래의 일본식 결투장.png",
+    "sha256": "0ce7022034ef9a62ff9ae98409a5865bb1821216a55d8f142fd7fcbec8c6f696",
+    "unchanged": true
+  }
+]

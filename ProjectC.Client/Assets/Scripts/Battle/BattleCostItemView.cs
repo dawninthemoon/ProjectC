@@ -14,6 +14,8 @@ namespace ProjectC.Client
         private BattleSpecialCostsView _owner;
         private BattleCostDisplay _data;
         private bool _bound;
+        [SerializeField] private bool _tintOnHover = true;
+        [SerializeField] private bool _showMaximum = true;
         public BattleCostDisplay Data => _data;
         public string Amount => _value.text;
 
@@ -42,18 +44,24 @@ namespace ProjectC.Client
             _owner = owner;
             _data = data;
             _icon.sprite = data.Definition.Icon;
-            _value.text = data.Amount;
+            _value.text = _showMaximum ? data.Amount : data.Current.ToString();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            _frame.color = new Color(1f, .94f, .72f);
+            if (_tintOnHover)
+            {
+                _frame.color = new Color(1f, .94f, .72f);
+            }
             _owner.ShowTooltip(this);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            _frame.color = Color.white;
+            if (_tintOnHover)
+            {
+                _frame.color = Color.white;
+            }
             _owner.HideTooltip();
         }
     }

@@ -15,6 +15,7 @@ namespace ProjectC.Client
         public bool Hand, Compact;
         public bool OpponentHand;
         public BattleVisualSettings Settings;
+        [SerializeField, Min(0)] private float _fieldSpacing = FieldSpacing;
         private List<CardWidget> _cards;
         private readonly Dictionary<CardWidget, Motion> _motions = new Dictionary<CardWidget, Motion>();
         private readonly List<CardWidget> _retired = new List<CardWidget>();
@@ -39,7 +40,7 @@ namespace ProjectC.Client
                         return 1;
                     }
                     float availableFieldWidth = Mathf.Max(0, ((RectTransform)transform).rect.width - EdgePadding);
-                    float desiredWidth = count * CardSize.x + (count - 1) * FieldSpacing;
+                    float desiredWidth = count * CardSize.x + (count - 1) * _fieldSpacing;
                     return Mathf.Min(1, availableFieldWidth / desiredWidth);
                 }
                 float maximum = Compact
@@ -80,7 +81,7 @@ namespace ProjectC.Client
                 : 0;
             float radians = angle * Mathf.Deg2Rad;
             float width = (CardSize.x * Mathf.Cos(radians) + CardSize.y * Mathf.Sin(radians)) * CardScale;
-            float preferred = OpponentHand ? CardSize.x * 1.02f : !Hand ? width + FieldSpacing * CardScale : Compact
+            float preferred = OpponentHand ? CardSize.x * 1.02f : !Hand ? width + _fieldSpacing * CardScale : Compact
                 ? Settings?.CompactHandSpacing ?? BattleVisualSettings.DefaultCompactHandSpacing
                 : Settings?.ExpandedHandSpacing ?? BattleVisualSettings.DefaultExpandedHandSpacing;
             // Dense/narrow hands overlap progressively instead of crossing the available edges.

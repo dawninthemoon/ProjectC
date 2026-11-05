@@ -15,4 +15,4 @@ MonoBehaviour:
   _id: yokai
   _nameKey: ui_battle_yokai_power
   _descriptionKey: ui_battle_yokai_description
-  _icon: {fileID: 21300000, guid: 556f2baa2582346ee8f0f530033b646c, type: 3}
+  _icon: {fileID: 21300000, guid: 4f1b45ee82d0b134db2682580010f6ea, type: 2}

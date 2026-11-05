@@ -14,6 +14,11 @@ namespace ProjectC.Client
         private const int VisibleRows = 4;
         private const float HeaderHeight = 32f;
         [SerializeField] private BattleCostItemView _itemPrefab;
+        [SerializeField, Min(0)] private float _headerHeight = HeaderHeight;
+        [SerializeField, Min(0)] private float _bottomPadding = 8f;
+        [SerializeField] private float _expandedChevronAngle;
+        [SerializeField] private float _collapsedChevronAngle = 180f;
+        private RectTransform _body;
         private readonly List<BattleCostItemView> _items = new List<BattleCostItemView>();
         private RectTransform _viewport, _content, _tooltip, _chevron;
         private TMP_Text _title, _amount, _description;
@@ -52,6 +57,7 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Special cost viewport requires ScrollRect.");
             }
             toggle.onClick.AddListener(Toggle);
+            this.Bind("CostBody", out _body);
             _bound = true;
             HideTooltip();
         }
@@ -114,8 +120,12 @@ namespace ProjectC.Client
             _viewport.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
             _viewport.gameObject.SetActive(!_collapsed && Count > 0);
             ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
-                HeaderHeight + (_collapsed || Count == 0 ? 0 : height + 8));
-            _chevron.localRotation = Quaternion.Euler(0, 0, _collapsed ? 180 : 0);
+                _headerHeight + (_collapsed || Count == 0 ? 0 : height + _bottomPadding));
+            if (_body != null)
+            {
+                _body.gameObject.SetActive(!_collapsed && Count > 0);
+            }
+            _chevron.localRotation = Quaternion.Euler(0, 0, _collapsed ? _collapsedChevronAngle : _expandedChevronAngle);
             LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
         }
 

@@ -28,8 +28,8 @@ MonoBehaviour:
   _drawRotation: -16
   _handRepositionDuration: 0.28
   _handSpacing: 22
-  _handCurve: 24
-  _handRotation: 7
+  _handCurve: 11.4832535
+  _handRotation: 3
   _animationEase:
     serializedVersion: 2
     m_Curve:
@@ -54,8 +54,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _compactHandScale: 1.0567011
-  _expandedHandScale: 1.0567011
-  _compactHandSpacing: 185
-  _expandedHandSpacing: 185
+  _compactHandScale: 1
+  _expandedHandScale: 1
+  _compactHandSpacing: 197.51196
+  _expandedHandSpacing: 197.51196
   _summonDuration: 0.66

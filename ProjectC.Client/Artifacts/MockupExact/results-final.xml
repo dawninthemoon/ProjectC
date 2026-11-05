@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Failed(Child)" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:49Z" duration="10.3051673">
+  <test-suite type="TestSuite" id="1182" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="132" result="Failed" site="Child" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:49Z" duration="10.305167" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1176" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/build/UnityMatchValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="132" result="Failed" site="Child" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:49Z" duration="10.282801" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="36848" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1177" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="132" result="Failed" site="Child" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:49Z" duration="10.271968" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1178" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="132" result="Failed" site="Child" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:49Z" duration="10.261193" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1143" name="MockupExactBattleUiPlayModeTests" fullname="ProjectC.Tests.MockupExactBattleUiPlayModeTests" classname="ProjectC.Tests.MockupExactBattleUiPlayModeTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:46Z" duration="6.971226" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1144" name="OriginalMockupLiveUiAndRequiredCaptures" fullname="ProjectC.Tests.MockupExactBattleUiPlayModeTests.OriginalMockupLiveUiAndRequiredCaptures" methodname="OriginalMockupLiveUiAndRequiredCaptures" classname="ProjectC.Tests.MockupExactBattleUiPlayModeTests" runstate="Runnable" seed="214733450" result="Failed" start-time="2026-11-05 14:47:39Z" end-time="2026-11-05 14:47:46Z" duration="6.945630" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: not equal to (0.00, 104.00)
+  But was:  (0.00, 104.00)
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.MockupExactBattleUiPlayModeTests+<ValidateCosts>d__4.MoveNext () [0x00553] in C:\Dev\ProjectC\build\UnityMatchValidation\Assets\Tests\PlayMode\MockupExactBattleUiPlayModeTests.cs:348
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1145" name="MockupExactOnlinePlayModeTests" fullname="ProjectC.Tests.MockupExactOnlinePlayModeTests" classname="ProjectC.Tests.MockupExactOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 14:47:46Z" end-time="2026-11-05 14:47:49Z" duration="3.273813" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1146" name="MockupUiPreservesServerCommandsAndReconnect" fullname="ProjectC.Tests.MockupExactOnlinePlayModeTests.MockupUiPreservesServerCommandsAndReconnect" methodname="MockupUiPreservesServerCommandsAndReconnect" classname="ProjectC.Tests.MockupExactOnlinePlayModeTests" runstate="Runnable" seed="764237782" result="Passed" start-time="2026-11-05 14:47:46Z" end-time="2026-11-05 14:47:49Z" duration="3.266105" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
