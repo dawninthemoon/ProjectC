@@ -91,7 +91,7 @@ namespace ProjectC.Client
             rect.sizeDelta = size;
             rect.anchoredPosition = position;
             var text = obj.GetComponent<TMP_Text>();
-            text.font = presenter.TurnLabel.font;
+            BattleText.StyleHud(text);
             text.fontSize = fontSize;
             text.color = Color.white;
             text.alignment = TextAlignmentOptions.Center;

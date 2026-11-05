@@ -103,7 +103,7 @@ namespace ProjectC.Client
             Face.Bind("AttackBadge", out _attack);
             Face.Bind("HealthBadge", out _health);
             Face.Bind("CostBadge", out _cost);
-            BattleText.StyleBody(Title);
+            BattleText.StyleHeading(Title);
             BattleText.StyleValue(_attack);
             BattleText.StyleValue(_health);
             BattleText.StyleValue(_cost);

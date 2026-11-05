@@ -12,7 +12,6 @@ namespace ProjectC.Client
             return arguments.Length == 0 ? text : string.Format(CultureInfo.InvariantCulture, text, arguments);
         }
 
-        // Shared treatment for prominent battle labels; keep their existing layout and font asset.
         public static void StyleHeading(TMP_Text label, bool prominent = false)
         {
             if (label == null)
@@ -20,21 +19,32 @@ namespace ProjectC.Client
                 return;
             }
             label.color = new Color(1f, .94f, .78f);
-            // Each role uses its authored shared TMP preset rather than mutating the font asset.
+            LocalizedBattleFont.SetRole(label, BattleFontRole.Heading);
         }
 
         public static void StyleValue(TMP_Text label)
         {
-            StyleHeading(label);
             if (label != null)
             {
                 label.color = new Color(1f, .96f, .84f);
+                LocalizedBattleFont.SetRole(label, BattleFontRole.Number);
             }
         }
 
         public static void StyleBody(TMP_Text label)
         {
-            StyleHeading(label);
+            if (label != null)
+            {
+                LocalizedBattleFont.SetRole(label, BattleFontRole.Body);
+            }
+        }
+
+        public static void StyleHud(TMP_Text label)
+        {
+            if (label != null)
+            {
+                LocalizedBattleFont.SetRole(label, BattleFontRole.Hud);
+            }
         }
 
         public static string Effect(CardView card, ActivationView activation)

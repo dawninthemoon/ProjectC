@@ -18,6 +18,7 @@ namespace ProjectC.Client
             this.Bind("Life", out Life);
             this.Bind("Counts", out Counts);
             this.Bind("TurnMark", out TurnMark);
+            BattleText.StyleValue(Life);
             Name.text = (own ? "YOU" : "OPPONENT") + " / P" + player.PlayerId;
             Life.text = player.Life.ToString();
             Counts.text =

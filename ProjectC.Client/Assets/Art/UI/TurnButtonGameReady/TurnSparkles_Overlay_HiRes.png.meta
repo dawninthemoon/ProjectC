@@ -1,0 +1,1313 @@
+fileFormatVersion: 2
+guid: 888779a96b1614ee396d90ab11691942
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1226577824896927301
+    second: TurnSparkles_Overlay_HiRes_0
+  - first:
+      213: 8785988291340898303
+    second: TurnSparkles_Overlay_HiRes_1
+  - first:
+      213: 9048322132631288116
+    second: TurnSparkles_Overlay_HiRes_2
+  - first:
+      213: 1483438268901841353
+    second: TurnSparkles_Overlay_HiRes_3
+  - first:
+      213: -8846800729120974748
+    second: TurnSparkles_Overlay_HiRes_4
+  - first:
+      213: -5678312193193688451
+    second: TurnSparkles_Overlay_HiRes_5
+  - first:
+      213: 7234249225480086840
+    second: TurnSparkles_Overlay_HiRes_6
+  - first:
+      213: -7863148671182367735
+    second: TurnSparkles_Overlay_HiRes_7
+  - first:
+      213: -7783907519732631334
+    second: TurnSparkles_Overlay_HiRes_8
+  - first:
+      213: -1839118169583142179
+    second: TurnSparkles_Overlay_HiRes_9
+  - first:
+      213: -3948345367716669022
+    second: TurnSparkles_Overlay_HiRes_10
+  - first:
+      213: -1500684682809885979
+    second: TurnSparkles_Overlay_HiRes_11
+  - first:
+      213: -8849706379428026989
+    second: TurnSparkles_Overlay_HiRes_12
+  - first:
+      213: 1148478545217395468
+    second: TurnSparkles_Overlay_HiRes_13
+  - first:
+      213: 4608177135195558748
+    second: TurnSparkles_Overlay_HiRes_14
+  - first:
+      213: 3088502600147832349
+    second: TurnSparkles_Overlay_HiRes_15
+  - first:
+      213: -3694188449940937014
+    second: TurnSparkles_Overlay_HiRes_16
+  - first:
+      213: 6023310488257306619
+    second: TurnSparkles_Overlay_HiRes_17
+  - first:
+      213: 8229883039986015065
+    second: TurnSparkles_Overlay_HiRes_18
+  - first:
+      213: -2943678145300521217
+    second: TurnSparkles_Overlay_HiRes_19
+  - first:
+      213: -3683980238653577823
+    second: TurnSparkles_Overlay_HiRes_20
+  - first:
+      213: -4931502226242997701
+    second: TurnSparkles_Overlay_HiRes_21
+  - first:
+      213: 1114694619583345398
+    second: TurnSparkles_Overlay_HiRes_22
+  - first:
+      213: -8945448313296360586
+    second: TurnSparkles_Overlay_HiRes_23
+  - first:
+      213: -3547701288403087806
+    second: TurnSparkles_Overlay_HiRes_24
+  - first:
+      213: 5421330822547585627
+    second: TurnSparkles_Overlay_HiRes_25
+  - first:
+      213: 7789207749235767444
+    second: TurnSparkles_Overlay_HiRes_26
+  - first:
+      213: -4655849360159556988
+    second: TurnSparkles_Overlay_HiRes_27
+  - first:
+      213: 6996093167185597301
+    second: TurnSparkles_Overlay_HiRes_28
+  - first:
+      213: -2014896700172685541
+    second: TurnSparkles_Overlay_HiRes_29
+  - first:
+      213: 2174746038096073043
+    second: TurnSparkles_Overlay_HiRes_30
+  - first:
+      213: 6505332390127637995
+    second: TurnSparkles_Overlay_HiRes_31
+  - first:
+      213: -9061957262435028384
+    second: TurnSparkles_Overlay_HiRes_32
+  - first:
+      213: -3962218183641246590
+    second: TurnSparkles_Overlay_HiRes_33
+  - first:
+      213: 8634618555931201302
+    second: TurnSparkles_Overlay_HiRes_34
+  - first:
+      213: -6713114725804466645
+    second: TurnSparkles_Overlay_HiRes_35
+  - first:
+      213: 160405580231934
+    second: TurnSparkles_Overlay_HiRes_36
+  - first:
+      213: 3882402127734219719
+    second: TurnSparkles_Overlay_HiRes_37
+  - first:
+      213: 719880156445430548
+    second: TurnSparkles_Overlay_HiRes_38
+  - first:
+      213: -3503553029528253654
+    second: TurnSparkles_Overlay_HiRes_39
+  - first:
+      213: 26012782924251437
+    second: TurnSparkles_Overlay_HiRes_40
+  - first:
+      213: 1893411244673566198
+    second: TurnSparkles_Overlay_HiRes_41
+  - first:
+      213: 9062865471831632501
+    second: TurnSparkles_Overlay_HiRes_42
+  - first:
+      213: -1351695437014507420
+    second: TurnSparkles_Overlay_HiRes_43
+  - first:
+      213: -7915380202265102047
+    second: TurnSparkles_Overlay_HiRes_44
+  - first:
+      213: 133676317775778409
+    second: TurnSparkles_Overlay_HiRes_45
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_0
+      rect:
+        serializedVersion: 2
+        x: 46
+        y: 1214
+        width: 434
+        height: 361
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5464a56780ea50110800000000000000
+      internalID: 1226577824896927301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_1
+      rect:
+        serializedVersion: 2
+        x: 477
+        y: 1351
+        width: 94
+        height: 187
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fff8d120dc91ee970800000000000000
+      internalID: 8785988291340898303
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_2
+      rect:
+        serializedVersion: 2
+        x: 556
+        y: 1471
+        width: 11
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 439fac02a09129d70800000000000000
+      internalID: 9048322132631288116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_3
+      rect:
+        serializedVersion: 2
+        x: 615
+        y: 1294
+        width: 312
+        height: 267
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c95d18fe3b369410800000000000000
+      internalID: 1483438268901841353
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_4
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 1369
+        width: 40
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 468d316fb99d93580800000000000000
+      internalID: -8846800729120974748
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_5
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 1399
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d72cbe035259231b0800000000000000
+      internalID: -5678312193193688451
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_6
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 1369
+        width: 14
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 835a2658757356460800000000000000
+      internalID: 7234249225480086840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_7
+      rect:
+        serializedVersion: 2
+        x: 944
+        y: 1334
+        width: 10
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 904171eb1fb70e290800000000000000
+      internalID: -7863148671182367735
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_8
+      rect:
+        serializedVersion: 2
+        x: 396
+        y: 1351
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad838d90a510af390800000000000000
+      internalID: -7783907519732631334
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_9
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 1317
+        width: 13
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ddab702d4c32a76e0800000000000000
+      internalID: -1839118169583142179
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_10
+      rect:
+        serializedVersion: 2
+        x: 394
+        y: 1308
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a950baaec8a439c0800000000000000
+      internalID: -3948345367716669022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_11
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 1302
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ea3f316b3f7c2be0800000000000000
+      internalID: -1500684682809885979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_12
+      rect:
+        serializedVersion: 2
+        x: 951
+        y: 1298
+        width: 15
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3952fa78fe68f2580800000000000000
+      internalID: -8849706379428026989
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_13
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1069
+        width: 313
+        height: 236
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0b17d7e62730ff00800000000000000
+      internalID: 1148478545217395468
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_14
+      rect:
+        serializedVersion: 2
+        x: 696
+        y: 1133
+        width: 62
+        height: 132
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c53986570b883ff30800000000000000
+      internalID: 4608177135195558748
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_15
+      rect:
+        serializedVersion: 2
+        x: 754
+        y: 1210
+        width: 60
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1e8ea150c09cda20800000000000000
+      internalID: 3088502600147832349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_16
+      rect:
+        serializedVersion: 2
+        x: 896
+        y: 1238
+        width: 50
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac66beb6d2b9bbcc0800000000000000
+      internalID: -3694188449940937014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_17
+      rect:
+        serializedVersion: 2
+        x: 944
+        y: 1286
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bff1678e9f8179350800000000000000
+      internalID: 6023310488257306619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_18
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 478
+        width: 171
+        height: 166
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 95bd065650b663270800000000000000
+      internalID: 8229883039986015065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_19
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 305
+        width: 36
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ffe1848b254f527d0800000000000000
+      internalID: -2943678145300521217
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_20
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 65
+        width: 679
+        height: 1170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a5ae73dd7fdfdcc0800000000000000
+      internalID: -3683980238653577823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_21
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 709
+        width: 135
+        height: 174
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b32fcbb7ad8cf8bb0800000000000000
+      internalID: -4931502226242997701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_22
+      rect:
+        serializedVersion: 2
+        x: 65
+        y: 940
+        width: 100
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f2fd41c9d0387f00800000000000000
+      internalID: 1114694619583345398
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_23
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 661
+        width: 39
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67b6a5177226bd380800000000000000
+      internalID: -8945448313296360586
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_24
+      rect:
+        serializedVersion: 2
+        x: 178
+        y: 657
+        width: 27
+        height: 49
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24ec987897804cec0800000000000000
+      internalID: -3547701288403087806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_25
+      rect:
+        serializedVersion: 2
+        x: 182
+        y: 642
+        width: 13
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5a33dfd8af6c3b40800000000000000
+      internalID: 5421330822547585627
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_26
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 586
+        width: 36
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 498faeecd23d81c60800000000000000
+      internalID: 7789207749235767444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_27
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 643
+        width: 22
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48ab5f7bca9136fb0800000000000000
+      internalID: -4655849360159556988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_28
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 624
+        width: 22
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57392ad2bad171160800000000000000
+      internalID: 6996093167185597301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_29
+      rect:
+        serializedVersion: 2
+        x: 214
+        y: 986
+        width: 137
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1fa9176026a904e0800000000000000
+      internalID: -2014896700172685541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_30
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 621
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3519765dfff3e2e10800000000000000
+      internalID: 2174746038096073043
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_31
+      rect:
+        serializedVersion: 2
+        x: 474
+        y: 128
+        width: 161
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be596639755974a50800000000000000
+      internalID: 6505332390127637995
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_32
+      rect:
+        serializedVersion: 2
+        x: 582
+        y: 634
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 062f9c2d1e57d3280800000000000000
+      internalID: -9061957262435028384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_33
+      rect:
+        serializedVersion: 2
+        x: 619
+        y: 353
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28458710e8f5309c0800000000000000
+      internalID: -3962218183641246590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_34
+      rect:
+        serializedVersion: 2
+        x: 629
+        y: 924
+        width: 135
+        height: 156
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 61f864514d354d770800000000000000
+      internalID: 8634618555931201302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_35
+      rect:
+        serializedVersion: 2
+        x: 653
+        y: 401
+        width: 13
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2e1bf779b936d2a0800000000000000
+      internalID: -6713114725804466645
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_36
+      rect:
+        serializedVersion: 2
+        x: 677
+        y: 608
+        width: 52
+        height: 50
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef431a553e1900000800000000000000
+      internalID: 160405580231934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_37
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 23
+        width: 254
+        height: 583
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7c3a1d25a2011e530800000000000000
+      internalID: 3882402127734219719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_38
+      rect:
+        serializedVersion: 2
+        x: 712
+        y: 706
+        width: 275
+        height: 432
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41358cd20378df900800000000000000
+      internalID: 719880156445430548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_39
+      rect:
+        serializedVersion: 2
+        x: 712
+        y: 210
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2b893f0511e06fc0800000000000000
+      internalID: -3503553029528253654
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_40
+      rect:
+        serializedVersion: 2
+        x: 758
+        y: 319
+        width: 24
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d21c1ddfc7a6c5000800000000000000
+      internalID: 26012782924251437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_41
+      rect:
+        serializedVersion: 2
+        x: 781
+        y: 293
+        width: 15
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f58f7cce7fb64a10800000000000000
+      internalID: 1893411244673566198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_42
+      rect:
+        serializedVersion: 2
+        x: 829
+        y: 779
+        width: 13
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57a6da72124c5cd70800000000000000
+      internalID: 9062865471831632501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_43
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 755
+        width: 42
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 460eb306920dd3de0800000000000000
+      internalID: -1351695437014507420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_44
+      rect:
+        serializedVersion: 2
+        x: 961
+        y: 300
+        width: 15
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12934ddb4abe62290800000000000000
+      internalID: -7915380202265102047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TurnSparkles_Overlay_HiRes_45
+      rect:
+        serializedVersion: 2
+        x: 457
+        y: 14
+        width: 13
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96258eb17e9ead100800000000000000
+      internalID: 133676317775778409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      TurnSparkles_Overlay_HiRes_0: 1226577824896927301
+      TurnSparkles_Overlay_HiRes_1: 8785988291340898303
+      TurnSparkles_Overlay_HiRes_10: -3948345367716669022
+      TurnSparkles_Overlay_HiRes_11: -1500684682809885979
+      TurnSparkles_Overlay_HiRes_12: -8849706379428026989
+      TurnSparkles_Overlay_HiRes_13: 1148478545217395468
+      TurnSparkles_Overlay_HiRes_14: 4608177135195558748
+      TurnSparkles_Overlay_HiRes_15: 3088502600147832349
+      TurnSparkles_Overlay_HiRes_16: -3694188449940937014
+      TurnSparkles_Overlay_HiRes_17: 6023310488257306619
+      TurnSparkles_Overlay_HiRes_18: 8229883039986015065
+      TurnSparkles_Overlay_HiRes_19: -2943678145300521217
+      TurnSparkles_Overlay_HiRes_2: 9048322132631288116
+      TurnSparkles_Overlay_HiRes_20: -3683980238653577823
+      TurnSparkles_Overlay_HiRes_21: -4931502226242997701
+      TurnSparkles_Overlay_HiRes_22: 1114694619583345398
+      TurnSparkles_Overlay_HiRes_23: -8945448313296360586
+      TurnSparkles_Overlay_HiRes_24: -3547701288403087806
+      TurnSparkles_Overlay_HiRes_25: 5421330822547585627
+      TurnSparkles_Overlay_HiRes_26: 7789207749235767444
+      TurnSparkles_Overlay_HiRes_27: -4655849360159556988
+      TurnSparkles_Overlay_HiRes_28: 6996093167185597301
+      TurnSparkles_Overlay_HiRes_29: -2014896700172685541
+      TurnSparkles_Overlay_HiRes_3: 1483438268901841353
+      TurnSparkles_Overlay_HiRes_30: 2174746038096073043
+      TurnSparkles_Overlay_HiRes_31: 6505332390127637995
+      TurnSparkles_Overlay_HiRes_32: -9061957262435028384
+      TurnSparkles_Overlay_HiRes_33: -3962218183641246590
+      TurnSparkles_Overlay_HiRes_34: 8634618555931201302
+      TurnSparkles_Overlay_HiRes_35: -6713114725804466645
+      TurnSparkles_Overlay_HiRes_36: 160405580231934
+      TurnSparkles_Overlay_HiRes_37: 3882402127734219719
+      TurnSparkles_Overlay_HiRes_38: 719880156445430548
+      TurnSparkles_Overlay_HiRes_39: -3503553029528253654
+      TurnSparkles_Overlay_HiRes_4: -8846800729120974748
+      TurnSparkles_Overlay_HiRes_40: 26012782924251437
+      TurnSparkles_Overlay_HiRes_41: 1893411244673566198
+      TurnSparkles_Overlay_HiRes_42: 9062865471831632501
+      TurnSparkles_Overlay_HiRes_43: -1351695437014507420
+      TurnSparkles_Overlay_HiRes_44: -7915380202265102047
+      TurnSparkles_Overlay_HiRes_45: 133676317775778409
+      TurnSparkles_Overlay_HiRes_5: -5678312193193688451
+      TurnSparkles_Overlay_HiRes_6: 7234249225480086840
+      TurnSparkles_Overlay_HiRes_7: -7863148671182367735
+      TurnSparkles_Overlay_HiRes_8: -7783907519732631334
+      TurnSparkles_Overlay_HiRes_9: -1839118169583142179
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

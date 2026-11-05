@@ -173,8 +173,8 @@ namespace ProjectC.Client
 
         void Awake()
         {
-            BattleText.StyleHeading(TurnLabel);
-            BattleText.StyleHeading(PhaseLabel);
+            BattleText.StyleHud(TurnLabel);
+            BattleText.StyleHud(PhaseLabel);
             BattleText.StyleHeading(EndTurn.GetComponentInChildren<TMP_Text>(), true);
             // Resolve hierarchy references using the project's scoped Bind contract.
             Client =
@@ -691,13 +691,13 @@ namespace ProjectC.Client
                 turnFrame.SetOpponentTurn(rendered != null && rendered.ActivePlayerId != Client.PlayerId);
             }
             EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get(
-                rendered?.Phase == (int)BattlePhaseKind.Main1 ? "ui.hud.action.battle"
-                : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui.hud.action.main2" : "ui.hud.action.end");
+                rendered?.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_battle_phase"
+                : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_main_phase_2" : "ui_battle_end_turn");
             if (rendered != null)
             {
-                PhaseLabel.text = BattleText.Get(rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui.hud.phase.main1"
-                    : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui.hud.phase.battle"
-                    : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui.hud.phase.main2" : "ui.hud.phase.end");
+                PhaseLabel.text = BattleText.Get(rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1"
+                    : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
+                    : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
                 TurnLabel.text = rendered.ResolvingPlayerId != 0
                     ? BattleText.Get("ui.turn.resolving", rendered.ResolvingPlayerId)
                     : BattleText.Get(rendered.ActivePlayerId == Client.PlayerId ? "ui.turn.own" : "ui.turn.opponent");
@@ -853,8 +853,8 @@ namespace ProjectC.Client
                 TurnLabel.text = BattleText.Get("ui.turn.resolving", rendered.ResolvingPlayerId);
             }
             PhaseLabel.text = BattleText.Get(
-                rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui.hud.phase.main1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui.hud.phase.battle"
-                : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui.hud.phase.main2" : "ui.hud.phase.end");
+                rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
+                : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
             TurnLabel.text += " · " + rendered.TurnNumber;
             SelectionLabel.text =
                 selected == null

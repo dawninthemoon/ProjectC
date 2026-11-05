@@ -42,10 +42,10 @@ namespace ProjectC.Client
                 }
                 _scroll = _viewport != null ? _viewport.GetComponent<ScrollRect>() : null;
                 BattleText.StyleHeading(Title);
-                BattleText.StyleBody(Stats);
+                BattleText.StyleValue(Stats);
                 BattleText.StyleBody(Rules);
                 BattleText.StyleBody(Forms);
-                BattleText.StyleBody(_type);
+                BattleText.StyleHud(_type);
                 bound = true;
             }
             gameObject.SetActive(card != null);
