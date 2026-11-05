@@ -10,7 +10,10 @@ namespace ProjectC.Client
     public sealed class DeckTileView : MonoBehaviour, IPointerEnterHandler
     {
         Action hover;
-        public int CardId { get; private set; }
+        public int CardId
+        {
+            get; private set;
+        }
 
         public void Render(
             int id,
@@ -35,7 +38,7 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("Deck tile requires ArtworkImage, AttackBadge and HealthBadge.");
             }
-            CardArtProvider.Apply(artwork, crest, id);
+            CardArtProvider.Apply(artwork, id);
             bool hasStats = card != null && card.Type == "Monster";
             attack.transform.parent.gameObject.SetActive(hasStats);
             health.transform.parent.gameObject.SetActive(hasStats);

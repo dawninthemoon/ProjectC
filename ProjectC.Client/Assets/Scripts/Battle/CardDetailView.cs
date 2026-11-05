@@ -13,7 +13,6 @@ namespace ProjectC.Client
             Rules,
             Forms;
         private AspectFillImage _artwork;
-        private TMP_Text _placeholder;
         private TMP_Text _type;
         private RectTransform _viewport, _content;
         private ScrollRect _scroll;
@@ -29,8 +28,7 @@ namespace ProjectC.Client
                 this.Bind("Stats", out Stats);
                 this.Bind("Rules", out Rules);
                 this.Bind("Forms", out Forms);
-                if (!this.Bind("ArtworkImage", out _artwork) || !this.Bind("ArtPlaceholder", out _placeholder)
-                    || !this.Bind("CardType", out _type))
+                if (!this.Bind("ArtworkImage", out _artwork) || !this.Bind("CardType", out _type))
                 {
                     throw new System.InvalidOperationException("Card inspector requires artwork, placeholder and type.");
                 }
@@ -60,8 +58,6 @@ namespace ProjectC.Client
                 _shownDefinitionId = card.DefinitionId;
             }
             Title.text = CardPresentation.Name(card);
-            CardArtProvider.Apply(_artwork, _placeholder, card.DefinitionId);
-            _placeholder.text = "?";
             _type.text = BattleText.Get(card.CardType == 1 ? "ui.card.spell" : "ui.card.monster");
             string costs = ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem)
                 ? "" : CardPresentation.Costs(CardPresentation.Library.Find(card.DefinitionId));

@@ -691,6 +691,11 @@ namespace ProjectC.Client
                 || Interaction.State == BattleInputState.SelectingCardAction);
             bool attackAllowed = cardActionsAllowed && Client.Input.CanExecute(GameplayInputAction.Attack);
             bool activationAllowed = cardActionsAllowed && Client.Input.CanExecute(GameplayInputAction.ActivateEffect);
+            bool playAllowed = cardActionsAllowed && Client.Input.CanExecute(GameplayInputAction.PlayCard);
+            foreach (var widget in Hand.Widgets)
+            {
+                widget.SetActionPermissions(attackAllowed, activationAllowed, playAllowed);
+            }
             foreach (var widget in OwnField.Widgets)
             {
                 widget.SetActionPermissions(attackAllowed, activationAllowed);

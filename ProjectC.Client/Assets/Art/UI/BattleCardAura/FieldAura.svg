@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="404" height="438" viewBox="-18 -18 202 219">
+<!-- Outer path copied exactly from BattleReferenceMatch/FieldFrame.svg. Padding is in card-authoring units. -->
+<defs>
+<mask id="exterior" maskUnits="userSpaceOnUse" x="-18" y="-18" width="202" height="219" mask-type="luminance"><rect x="-18" y="-18" width="202" height="219" fill="white"/><path d="M20 3 H146 L163 20 V163 L146 180 H20 L3 163 V20Z" fill="black" stroke="black" stroke-width="7"/></mask>
+<filter id="wide" filterUnits="userSpaceOnUse" x="-18" y="-18" width="202" height="219"><feGaussianBlur stdDeviation="4"/></filter>
+<filter id="near" filterUnits="userSpaceOnUse" x="-18" y="-18" width="202" height="219"><feGaussianBlur stdDeviation="1.8"/></filter>
+</defs>
+<g mask="url(#exterior)" fill="none" stroke="white">
+<path d="M20 3 H146 L163 20 V163 L146 180 H20 L3 163 V20Z" stroke-width="12" opacity=".55" filter="url(#wide)"/>
+<path d="M20 3 H146 L163 20 V163 L146 180 H20 L3 163 V20Z" stroke-width="12" opacity=".8" filter="url(#near)"/>
+<path d="M20 3 H146 L163 20 V163 L146 180 H20 L3 163 V20Z" stroke-width="10.5"/>
+</g></svg>

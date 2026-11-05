@@ -64,13 +64,22 @@ namespace ProjectC.Tests
             client.ApplyMessage("{\"Type\":\"MatchCreated\",\"ProtocolVersion\":2,\"MatchId\":\"art-test\",\"PlayerId\":1,\"GameNumber\":1}");
             var hand = Enumerable.Range(1, 6).Select(i => new CardView
             {
-                Id = i, DefinitionId = 1000 + i, Attack = 3, Hp = 3, MaxHp = 5,
-                CanSummon = true, RulesText = "Card presentation validation."
+                Id = i,
+                DefinitionId = 1000 + i,
+                Attack = 3,
+                Hp = 3,
+                MaxHp = 5,
+                CanSummon = true,
+                RulesText = "Card presentation validation."
             }).ToArray();
             var state = new StateView
             {
-                Started = true, TurnStarted = true, ActivePlayerId = 1, TurnNumber = 1,
-                FieldLimit = 5, Players = new[]
+                Started = true,
+                TurnStarted = true,
+                ActivePlayerId = 1,
+                TurnNumber = 1,
+                FieldLimit = 5,
+                Players = new[]
                 {
                     new PlayerView { PlayerId = 1, Life = 3, DeckCount = 20, HandCount = hand.Length,
                         Hand = hand, Field = new[] { new CardView { Id = 20, DefinitionId = 1002,
@@ -82,8 +91,12 @@ namespace ProjectC.Tests
             };
             client.ApplyMessage(JsonUtility.ToJson(new SnapshotMessage
             {
-                Type = "StateSnapshot", ProtocolVersion = 2, MatchId = "art-test", GameNumber = 1,
-                SequenceNumber = 1, Payload = state
+                Type = "StateSnapshot",
+                ProtocolVersion = 2,
+                MatchId = "art-test",
+                GameNumber = 1,
+                SequenceNumber = 1,
+                Payload = state
             }));
             yield return null;
             yield return new WaitForSecondsRealtime(.4f);
@@ -112,7 +125,6 @@ namespace ProjectC.Tests
             card.Bind(hand[0], false, false, false, true);
             card.Bind(hand[0], true, false, false, true);
             Assert.IsNull(artwork.sprite);
-            Assert.IsTrue(card.Symbol.gameObject.activeSelf);
             card.Bind(hand[0], false, false, false, true);
             ui.Detail.gameObject.SetActive(false);
             yield return new WaitForSecondsRealtime(.3f);
@@ -120,7 +132,12 @@ namespace ProjectC.Tests
             // A full hand must retain the same prefab shape and permit hover sorting.
             hand = Enumerable.Range(1, 10).Select(i => new CardView
             {
-                Id = i, DefinitionId = 1001 + i % 6, Attack = 3, Hp = 3, MaxHp = 5, CanSummon = true
+                Id = i,
+                DefinitionId = 1001 + i % 6,
+                Attack = 3,
+                Hp = 3,
+                MaxHp = 5,
+                CanSummon = true
             }).ToArray();
             ui.Hand.Render(hand, 0, false, 0, false, null, null, null);
             ui.Hand.Layout.Snap();

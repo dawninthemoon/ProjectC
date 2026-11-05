@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="568" viewBox="-18 -18 230 284">
+<!-- Outer path copied exactly from BattleReferenceMatch/HandFrame.svg. Padding is in card-authoring units. -->
+<defs>
+<mask id="exterior" maskUnits="userSpaceOnUse" x="-18" y="-18" width="230" height="284" mask-type="luminance"><rect x="-18" y="-18" width="230" height="284" fill="white"/><path d="M8 21 Q10 12 23 10 L90 4 Q97 2 104 4 L171 10 Q184 12 186 21 L190 222 Q190 233 179 237 L105 245 Q97 247 89 245 L15 237 Q4 233 4 222Z" fill="black" stroke="black" stroke-width="7"/></mask>
+<filter id="wide" filterUnits="userSpaceOnUse" x="-18" y="-18" width="230" height="284"><feGaussianBlur stdDeviation="4"/></filter>
+<filter id="near" filterUnits="userSpaceOnUse" x="-18" y="-18" width="230" height="284"><feGaussianBlur stdDeviation="1.8"/></filter>
+</defs>
+<g mask="url(#exterior)" fill="none" stroke="white">
+<path d="M8 21 Q10 12 23 10 L90 4 Q97 2 104 4 L171 10 Q184 12 186 21 L190 222 Q190 233 179 237 L105 245 Q97 247 89 245 L15 237 Q4 233 4 222Z" stroke-width="12" opacity=".55" filter="url(#wide)"/>
+<path d="M8 21 Q10 12 23 10 L90 4 Q97 2 104 4 L171 10 Q184 12 186 21 L190 222 Q190 233 179 237 L105 245 Q97 247 89 245 L15 237 Q4 233 4 222Z" stroke-width="12" opacity=".8" filter="url(#near)"/>
+<path d="M8 21 Q10 12 23 10 L90 4 Q97 2 104 4 L171 10 Q184 12 186 21 L190 222 Q190 233 179 237 L105 245 Q97 247 89 245 L15 237 Q4 233 4 222Z" stroke-width="10.5"/>
+</g></svg>

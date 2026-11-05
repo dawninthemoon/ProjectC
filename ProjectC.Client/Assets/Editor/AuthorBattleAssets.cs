@@ -176,19 +176,6 @@ namespace ProjectC.Client.Editor
             c.ArtworkImage = artworkObject.AddComponent<AspectFillImage>();
             c.ArtworkImage.raycastTarget = false;
             Stretch((RectTransform)c.ArtworkImage.transform, 5, 38, 5, 52);
-            c.Symbol = Label(
-                c.ArtworkImage.transform,
-                "Monogram",
-                back ? "?" : "S",
-                0,
-                0,
-                160,
-                110,
-                56,
-                Gold
-            );
-            Stretch((RectTransform)c.Symbol.transform);
-            c.Symbol.alignment = TextAlignmentOptions.Center;
             c.Title = Label(
                 inner.transform,
                 "Name",
@@ -254,7 +241,6 @@ namespace ProjectC.Client.Editor
                 c.Stats.gameObject.SetActive(false);
                 c.Status.gameObject.SetActive(false);
                 Stretch((RectTransform)c.ArtworkImage.transform, 6, 6, 6, 6);
-                c.Symbol.fontSize = 26;
             }
             UpgradeCardPresentationAssets.ConfigureBattle(root, back);
             var asset = PrefabUtility

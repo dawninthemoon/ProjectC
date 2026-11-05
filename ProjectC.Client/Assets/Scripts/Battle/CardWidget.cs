@@ -43,20 +43,45 @@ namespace ProjectC.Client
         private Color _glowColor;
         private bool _attackAllowed;
         private bool _activationAllowed;
+        private bool _playAllowed;
+        private bool _hasActionPermissions;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
         public TMP_Text Title,
             Stats,
-            Status,
-            Symbol;
-        public CardView Card { get; private set; }
-        public bool Hidden { get; private set; }
-        public bool InHand { get; private set; }
-        public bool OwnedByLocalPlayer { get; private set; }
-        public bool IsSelected { get; private set; }
-        public bool IsHovered { get; private set; }
-        public bool IsInFlight { get; private set; }
-        public bool ExpandedHand { get; set; }
+            Status;
+        public CardView Card
+        {
+            get; private set;
+        }
+        public bool Hidden
+        {
+            get; private set;
+        }
+        public bool InHand
+        {
+            get; private set;
+        }
+        public bool OwnedByLocalPlayer
+        {
+            get; private set;
+        }
+        public bool IsSelected
+        {
+            get; private set;
+        }
+        public bool IsHovered
+        {
+            get; private set;
+        }
+        public bool IsInFlight
+        {
+            get; private set;
+        }
+        public bool ExpandedHand
+        {
+            get; set;
+        }
         public Action SortRequested;
         public Vector3 WorldCenter => Face.TransformPoint(Face.rect.center);
         public Action<CardWidget> Clicked,
@@ -95,8 +120,7 @@ namespace ProjectC.Client
                 || !Face.Bind("Accent", out Accent)
                 || !Face.Bind("Name", out Title)
                 || !Face.Bind("Stats", out Stats)
-                || !Face.Bind("Status", out Status)
-                || !Face.Bind("Monogram", out Symbol))
+                || !Face.Bind("Status", out Status))
             {
                 throw new InvalidOperationException("Card prefab requires frame, artwork, accent, name, stats, status and monogram components.");
             }
@@ -115,6 +139,9 @@ namespace ProjectC.Client
             _faceScale = Face.localScale;
             opacity = GetComponent<CanvasGroup>();
             bound = true;
+            // This was a full-height rectangular status strip, unrelated to the curved frame.
+            // Keep the serialized reference/color for compatibility; FrameGlow now presents its state.
+            Accent.enabled = false;
         }
 
         public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand, bool ownedByLocalPlayer = false)
@@ -153,7 +180,7 @@ namespace ProjectC.Client
                 _cost.text = showCost ? string.Join("/", costs) : "";
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
-            CardArtProvider.Apply(ArtworkImage, Symbol, visible ? card.DefinitionId : 0);
+            CardArtProvider.Apply(ArtworkImage, visible ? card.DefinitionId : 0);
             if (ArtworkImage is AspectFillImage aspectFill)
             {
                 if (visible && !hand && _fieldCropProfile != null)
@@ -168,21 +195,20 @@ namespace ProjectC.Client
             }
             ArtworkImage.gameObject.SetActive(!hidden);
             Title.gameObject.SetActive(!hidden && (hand || _fieldCropProfile == null));
-            Symbol.text =
-                hidden ? "C"
-                : card != null && card.EffectCount > 0 ? "W"
-                : "S";
             RenderStatus();
         }
 
-        public void SetActionPermissions(bool attackAllowed, bool activationAllowed)
+        public void SetActionPermissions(bool attackAllowed, bool activationAllowed, bool playAllowed = false)
         {
-            if (_attackAllowed == attackAllowed && _activationAllowed == activationAllowed)
+            if (_hasActionPermissions && _attackAllowed == attackAllowed
+                && _activationAllowed == activationAllowed && _playAllowed == playAllowed)
             {
                 return;
             }
             _attackAllowed = attackAllowed;
             _activationAllowed = activationAllowed;
+            _playAllowed = playAllowed;
+            _hasActionPermissions = true;
             RenderStatus();
         }
 
@@ -194,8 +220,13 @@ namespace ProjectC.Client
 
         public void SetSelected(bool value)
         {
+            bool changed = IsSelected != value;
             IsSelected = value;
             RenderStatus();
+            if (changed)
+            {
+                SortRequested?.Invoke();
+            }
         }
 
         public void Dim(bool value)
@@ -221,13 +252,16 @@ namespace ProjectC.Client
             bool hasActivation = Card?.Activations != null
                 && Array.Exists(Card.Activations, action => action.CanActivate);
             bool usable = !Hidden && OwnedByLocalPlayer && Card != null
-                && (InHand ? Card.CanSummon || hasActivation
+                // Standalone prefab previews retain server DTO availability. Live hands receive explicit coordinator permissions.
+                && (InHand ? (!_hasActionPermissions || _playAllowed) && Card.CanSummon
+                    || (!_hasActionPermissions || _activationAllowed) && hasActivation
                     : _attackAllowed && Card.CanAttack || _activationAllowed && hasActivation);
             Accent.color =
-                hint == TargetHint.Focused ? new Color(1, .8f, .35f)
-                : IsSelected ? new Color(.98f, .76f, .33f)
+                hint == TargetHint.Focused ? new Color(1, .97f, .73f)
                 : hint == TargetHint.Available ? new Color(.34f, .75f, 1f)
+                : IsSelected ? new Color(1f, .75f, .22f)
                 : hint == TargetHint.Unavailable ? new Color(.22f, .25f, .29f)
+                : IsHovered ? (usable ? new Color(.25f, 1f, .92f) : new Color(.88f, .9f, .94f))
                 : usable ? new Color(.15f, .91f, .86f)
                 : new Color(.28f, .36f, .43f);
             if (_highlight != null)
@@ -239,8 +273,10 @@ namespace ProjectC.Client
             if (_frameGlow != null)
             {
                 _glowColor = Accent.color;
-                _glowColor.a = !Hidden && hint != TargetHint.Unavailable
-                    && (IsSelected || hint == TargetHint.Available || hint == TargetHint.Focused || usable) ? .65f : 0f;
+                bool emphasized = !Hidden && !IsInFlight && (hint != TargetHint.Unavailable || IsSelected);
+                _glowColor.a = !emphasized ? 0 : hint == TargetHint.Focused ? 1
+                    : IsSelected ? 1 : hint == TargetHint.Available ? .98f
+                    : IsHovered ? (usable ? 1 : .55f) : usable ? .9f : 0;
                 ApplyFrameGlow();
             }
             Status.text = "";
@@ -254,7 +290,7 @@ namespace ProjectC.Client
                 return;
             }
             var color = _glowColor;
-            if (pulse > color.a)
+            if (!Hidden && !IsInFlight && pulse > color.a)
             {
                 color = new Color(1f, .82f, .38f, pulse);
             }
@@ -312,12 +348,14 @@ namespace ProjectC.Client
                 }
             }
             IsHovered = true;
+            RenderStatus();
             Hovered?.Invoke(this);
         }
 
         public void OnPointerExit(PointerEventData e)
         {
             IsHovered = false;
+            RenderStatus();
             if (InHand && !dragging)
             {
                 SortRequested?.Invoke();
@@ -348,6 +386,7 @@ namespace ProjectC.Client
             }
             pointerDragged = dragging = true;
             IsHovered = false;
+            RenderStatus();
             HoverLeft?.Invoke();
             DragStarted?.Invoke(this, e);
             dragging = pointerDragged = true;
@@ -373,6 +412,7 @@ namespace ProjectC.Client
         public void ResetPointer()
         {
             IsHovered = dragging = pointerDragged = false;
+            RenderStatus();
             Dim(false);
             SortRequested?.Invoke();
         }
@@ -387,12 +427,18 @@ namespace ProjectC.Client
             {
                 opacity.blocksRaycasts = opacity.interactable = !value;
             }
+            RenderStatus();
         }
 
         void OnDisable()
         {
             // Unity forbids sibling changes while a parent hierarchy is being disabled.
             IsHovered = dragging = pointerDragged = false;
+            _hasActionPermissions = false;
+            _attackAllowed = _activationAllowed = _playAllowed = false;
+            _glowColor = Color.clear;
+            pulse = 0;
+            ApplyFrameGlow();
             Dim(false);
         }
     }

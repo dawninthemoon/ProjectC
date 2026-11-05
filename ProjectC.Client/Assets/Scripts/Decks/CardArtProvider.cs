@@ -29,11 +29,10 @@ namespace ProjectC.Client
             return sprite;
         }
 
-        public static void Apply(Image artwork, TMP_Text placeholder, int definitionId)
+        public static void Apply(Image artwork, int definitionId)
         {
             artwork.sprite = Load(definitionId);
             artwork.color = artwork.sprite != null ? Color.white : new Color(.09f, .12f, .14f);
-            placeholder.gameObject.SetActive(artwork.sprite == null);
         }
     }
 }
