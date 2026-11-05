@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Failed(Child)" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:06:01Z" duration="8.8690079">
+  <test-suite type="TestSuite" id="1178" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:06:01Z" duration="8.869008" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1172" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:06:01Z" duration="8.853899" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="34160" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1173" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:06:01Z" duration="8.846339" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1174" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:06:01Z" duration="8.839755" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1158" name="SunsetCelBattleUiPlayModeTests" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:05:58Z" duration="5.262924" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1159" name="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests.SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" methodname="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" seed="776706842" result="Failed" start-time="2026-11-05 10:05:52Z" end-time="2026-11-05 10:05:58Z" duration="5.246129" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected string length 4 but was 2. Strings differ at index 0.
+  Expected: "메인 2"
+  But was:  "엔드"
+  -----------^
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.SunsetCelBattleUiPlayModeTests+<ValidateCardsAndCounters>d__3.MoveNext () [0x009e2] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\SunsetCelBattleUiPlayModeTests.cs:273
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1160" name="SunsetCelOnlinePlayModeTests" fullname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" classname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-05 10:05:58Z" end-time="2026-11-05 10:06:01Z" duration="3.566316" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1161" name="SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" fullname="ProjectC.Tests.SunsetCelOnlinePlayModeTests.SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" methodname="SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" classname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" runstate="Runnable" seed="1193672477" result="Failed" label="Error" start-time="2026-11-05 10:05:58Z" end-time="2026-11-05 10:06:01Z" duration="3.557040" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[TearDown : UnityEngine.MissingReferenceException : The object of type 'ProjectC.Client.CardGalleryView' has been destroyed but you are still trying to access it.
+Your script should either check if it is null or you should not destroy the object.]]></message>
+                <stack-trace><![CDATA[--TearDown
+  at UnityEngine.Object+MarshalledUnityObject.TryThrowEditorNullExceptionObject (UnityEngine.Object unityObj, System.String parameterName) [0x0006a] in <41ac6e8c05744e2a820a469a0121192b>:0 
+  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00010] in <41ac6e8c05744e2a820a469a0121192b>:0 
+  at UnityEngine.Component.get_gameObject () [0x00006] in <41ac6e8c05744e2a820a469a0121192b>:0 
+  at ProjectC.Client.CardGalleryView.InvalidateBrowse () [0x00000] in C:\Dev\ProjectC\ProjectC.Client\Assets\Scripts\Battle\CardGalleryView.cs:216 
+  at ProjectC.Client.MultiplayerDebugScreen.DisconnectNetwork () [0x00062] in C:\Dev\ProjectC\ProjectC.Client\Assets\Scripts\Network\MultiplayerDebugScreen.cs:505 
+  at ProjectC.Tests.SunsetCelOnlinePlayModeTests.Cleanup () [0x00000] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\SunsetCelOnlinePlayModeTests.cs:29 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <4449e9424e7e4d4d81a660907c68cb97>:0 ]]></stack-trace>
+              </failure>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

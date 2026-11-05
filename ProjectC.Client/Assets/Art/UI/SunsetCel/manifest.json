@@ -1,0 +1,76 @@
+{
+  "design": "Baekgwi Sunset Cel UI v1",
+  "source_repo": "dawninthemoon/ProjectC @ 9a0b3b8",
+  "sizes": {
+    "HandCardFrame": {
+      "width": 180,
+      "height": 244
+    },
+    "FieldMonsterFrame": {
+      "width": 180,
+      "height": 228
+    },
+    "HandTitlePlate": {
+      "width": 150,
+      "height": 32
+    },
+    "HealthBadge": {
+      "width": 48,
+      "height": 52
+    },
+    "AttackBadge": {
+      "width": 48,
+      "height": 52
+    },
+    "FloralCardBack": {
+      "width": 360,
+      "height": 540
+    },
+    "TurnStatusBase": {
+      "width": 640,
+      "height": 236
+    },
+    "TimerRingFrame": {
+      "width": 224,
+      "height": 224
+    },
+    "ZoneOmamoriBase": {
+      "width": 166,
+      "height": 230
+    },
+    "PhaseButtonBase": {
+      "width": 468,
+      "height": 720
+    },
+    "PhaseArrow": {
+      "width": 88,
+      "height": 48
+    },
+    "ZoneIconDeck": {
+      "width": 64,
+      "height": 64
+    },
+    "ZoneIconGrave": {
+      "width": 64,
+      "height": 64
+    },
+    "ZoneIconExile": {
+      "width": 64,
+      "height": 64
+    }
+  },
+  "dynamic": [
+    "all UI numbers",
+    "all card names",
+    "phase and turn text",
+    "timer radial fill",
+    "zone counts"
+  ],
+  "stat_positions": {
+    "bottom_left": "HealthBadge",
+    "bottom_right": "AttackBadge"
+  },
+  "card_back": "FloralCardBack",
+  "artwork_windows": "alpha transparent; card illustration goes behind frame",
+  "unity": "Sprite (2D and UI), default PPU/RectTransform as existing; TMP overlays not baked into sprites"
+}

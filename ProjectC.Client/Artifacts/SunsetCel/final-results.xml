@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Failed(Child)" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:24Z" duration="17.1493584">
+  <test-suite type="TestSuite" id="1176" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:24Z" duration="17.149358" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1170" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:24Z" duration="17.134072" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19004" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1171" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:24Z" duration="17.126479" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1172" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:24Z" duration="17.119532" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1045" name="BattlefieldOnlinePlayModeTests" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:12Z" duration="5.056258" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1046" name="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" fullname="ProjectC.Tests.BattlefieldOnlinePlayModeTests.SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" methodname="SceneAllowsInvalidDropSummonAttackPhaseAndReconnect" classname="ProjectC.Tests.BattlefieldOnlinePlayModeTests" runstate="Runnable" seed="2077652898" result="Failed" start-time="2026-11-05 10:02:07Z" end-time="2026-11-05 10:02:12Z" duration="5.036952" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: not null
+  But was:  null
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.BattlefieldOnlinePlayModeTests+<SceneAllowsInvalidDropSummonAttackPhaseAndReconnect>d__4.MoveNext () [0x00891] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\BattlefieldOnlinePlayModeTests.cs:122
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1158" name="SunsetCelBattleUiPlayModeTests" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 10:02:12Z" end-time="2026-11-05 10:02:24Z" duration="12.053170" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1159" name="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests.SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" methodname="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" seed="1415201456" result="Passed" start-time="2026-11-05 10:02:12Z" end-time="2026-11-05 10:02:24Z" duration="12.045675" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[The character with Unicode value \u6483 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -9,6 +9,8 @@ namespace ProjectC.Client
     {
         [SerializeField] private BattleFontPalette _palette;
         [SerializeField] private BattleFontRole _role = BattleFontRole.Hud;
+        [SerializeField] private bool _useAuthoredColor;
+        [SerializeField] private Color _authoredColor = Color.white;
         private TMP_Text _label;
         private string _language;
         private static BattleFontPalette _defaultPalette;
@@ -77,6 +79,11 @@ namespace ProjectC.Client
             }
             _label.font = font;
             _label.fontSharedMaterial = font.material;
+            if (_useAuthoredColor)
+            {
+                // Light parchment needs dark ink even when a caller reapplies its font role.
+                _label.color = _authoredColor;
+            }
             // The supplied files already contain their intended medium/semibold/bold weight.
             _label.fontStyle &= ~FontStyles.Bold;
             _label.UpdateMeshPadding();

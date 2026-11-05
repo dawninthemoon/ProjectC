@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:47Z" duration="16.8171483">
+  <test-suite type="TestSuite" id="1178" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:47Z" duration="16.817148" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1172" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:47Z" duration="16.799527" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22612" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1173" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:47Z" duration="16.792634" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1174" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:47Z" duration="16.784838" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1039" name="BattleUxPlayModeTests" fullname="ProjectC.Tests.BattleUxPlayModeTests" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:32Z" duration="1.721359" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1041" name="PinnedInspectorRefreshesFromUpdatedServerSnapshot" fullname="ProjectC.Tests.BattleUxPlayModeTests.PinnedInspectorRefreshesFromUpdatedServerSnapshot" methodname="PinnedInspectorRefreshesFromUpdatedServerSnapshot" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="1325040123" result="Passed" start-time="2026-11-05 10:07:30Z" end-time="2026-11-05 10:07:32Z" duration="1.701066" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1158" name="SunsetCelBattleUiPlayModeTests" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 10:07:32Z" end-time="2026-11-05 10:07:44Z" duration="12.241101" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1159" name="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" fullname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests.SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" methodname="SunsetArtworkPreservesLiveTurnLogPrivacyAndCardDetails" classname="ProjectC.Tests.SunsetCelBattleUiPlayModeTests" runstate="Runnable" seed="1250188528" result="Passed" start-time="2026-11-05 10:07:32Z" end-time="2026-11-05 10:07:44Z" duration="12.234090" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[The character with Unicode value \u6483 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1160" name="SunsetCelOnlinePlayModeTests" fullname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" classname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 10:07:44Z" end-time="2026-11-05 10:07:47Z" duration="2.807906" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1161" name="SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" fullname="ProjectC.Tests.SunsetCelOnlinePlayModeTests.SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" methodname="SunsetUiPreservesServerCommandsDuplicateGuardAndReconnect" classname="ProjectC.Tests.SunsetCelOnlinePlayModeTests" runstate="Runnable" seed="854872032" result="Passed" start-time="2026-11-05 10:07:44Z" end-time="2026-11-05 10:07:47Z" duration="2.742236" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

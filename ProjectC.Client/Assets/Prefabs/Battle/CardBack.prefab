@@ -79,7 +79,6 @@ MonoBehaviour:
   Title: {fileID: 2254174878131155198}
   Stats: {fileID: 3244319419330577522}
   Status: {fileID: 2677406839462058921}
-  Symbol: {fileID: 1949358973516166408}
 --- !u!225 &9059477898895768852
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -244,6 +243,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 2
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1464000775414230188
 GameObject:
   m_ObjectHideFlags: 0
@@ -525,6 +526,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 0
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2657409439027379719
 GameObject:
   m_ObjectHideFlags: 0
@@ -665,13 +668,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b77223c8472c14ca9a6bb5b689690e54, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1eb7e1199bdf7f445984d4b1369646e2, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -833,6 +836,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 3
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &5916398041353424450
 GameObject:
   m_ObjectHideFlags: 0
@@ -1060,3 +1065,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 2
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}

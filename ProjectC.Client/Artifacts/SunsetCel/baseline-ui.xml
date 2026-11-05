@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Failed(Child)" total="6" passed="2" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:12Z" duration="4.3584611">
+  <test-suite type="TestSuite" id="1176" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:12Z" duration="4.358461" total="6" passed="2" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1170" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:12Z" duration="4.345338" total="6" passed="2" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33776" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1171" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:12Z" duration="4.338898" total="6" passed="2" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1172" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="129" result="Failed" site="Child" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:12Z" duration="4.333365" total="6" passed="2" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1037" name="BattleUiRenewalCaptureTests" fullname="ProjectC.Tests.BattleUiRenewalCaptureTests" classname="ProjectC.Tests.BattleUiRenewalCaptureTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:11Z" duration="2.802904" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1038" name="CaptureSyntheticPresentationStates" fullname="ProjectC.Tests.BattleUiRenewalCaptureTests.CaptureSyntheticPresentationStates" methodname="CaptureSyntheticPresentationStates" classname="ProjectC.Tests.BattleUiRenewalCaptureTests" runstate="Runnable" seed="1711926586" result="Failed" start-time="2026-11-05 10:04:08Z" end-time="2026-11-05 10:04:11Z" duration="2.786503" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[Unhandled log message: '[Error] Missing localization text: korean:ui.phase.main1'. Use UnityEngine.TestTools.LogAssert.Expect]]></message>
+                <stack-trace><![CDATA[ProjectC.Client.LocalizationService/<>c:<.ctor>b__8_0 (string) (at Assets/Scripts/Decks/LocalizationService.cs:35)
+ProjectC.Client.LocalizationService:GetText (string) (at Assets/Scripts/Decks/LocalizationService.cs:90)
+ProjectC.Client.BattleText:Get (string,object[]) (at Assets/Scripts/Decks/BattleText.cs:11)
+ProjectC.Tests.BattleUiRenewalCaptureTests/<CaptureSyntheticPresentationStates>d__0:MoveNext () (at Assets/Tests/PlayMode/BattleUiRenewalCaptureTests.cs:47)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr)
+
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[Missing localization text: korean:ui.phase.main1
+Missing localization text: korean:ui.phase.to_battle
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1039" name="BattleUxPlayModeTests" fullname="ProjectC.Tests.BattleUxPlayModeTests" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-11-05 10:04:11Z" end-time="2026-11-05 10:04:12Z" duration="1.519361" total="5" passed="2" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1043" name="ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" fullname="ProjectC.Tests.BattleUxPlayModeTests.ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" methodname="ChoicePreviewSingleReplacementAndMultipleSelectionRemainTemporary" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="765016052" result="Passed" start-time="2026-11-05 10:04:11Z" end-time="2026-11-05 10:04:12Z" duration="0.744367" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1040" name="InspectorIsClickPinnedAndTimerUsesServerCorrection" fullname="ProjectC.Tests.BattleUxPlayModeTests.InspectorIsClickPinnedAndTimerUsesServerCorrection" methodname="InspectorIsClickPinnedAndTimerUsesServerCorrection" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="1292602983" result="Failed" start-time="2026-11-05 10:04:12Z" end-time="2026-11-05 10:04:12Z" duration="0.434953" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Hover must not inspect
+  Expected: False
+  But was:  True
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.BattleUxPlayModeTests+<InspectorIsClickPinnedAndTimerUsesServerCorrection>d__8.MoveNext () [0x000f3] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\BattleUxPlayModeTests.cs:87
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1044" name="OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" fullname="ProjectC.Tests.BattleUxPlayModeTests.OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" methodname="OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="817294428" result="Failed" start-time="2026-11-05 10:04:12Z" end-time="2026-11-05 10:04:12Z" duration="0.063991" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  ScreenSpaceOverlay
+  Expected: greater than 0.899999976f
+  But was:  0.820416987f
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.BattleUxPlayModeTests+<OverlapUsesRotatedAndScaledCardAreaInEveryCanvasMode>d__13.MoveNext () [0x0014d] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\BattleUxPlayModeTests.cs:241
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1041" name="PinnedInspectorRefreshesFromUpdatedServerSnapshot" fullname="ProjectC.Tests.BattleUxPlayModeTests.PinnedInspectorRefreshesFromUpdatedServerSnapshot" methodname="PinnedInspectorRefreshesFromUpdatedServerSnapshot" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="702430304" result="Failed" start-time="2026-11-05 10:04:12Z" end-time="2026-11-05 10:04:12Z" duration="0.148243" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: same as <CardSprite_1007_0 (UnityEngine.Sprite)>
+  But was:  <null>
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.BattleUxPlayModeTests+<PinnedInspectorRefreshesFromUpdatedServerSnapshot>d__10.MoveNext () [0x00166] in C:\Dev\ProjectC\ProjectC.Client\Assets\Tests\PlayMode\BattleUxPlayModeTests.cs:159
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@082c24152fd4\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1042" name="ProjectionRefreshesIndependentDirectAttackPermission" fullname="ProjectC.Tests.BattleUxPlayModeTests.ProjectionRefreshesIndependentDirectAttackPermission" methodname="ProjectionRefreshesIndependentDirectAttackPermission" classname="ProjectC.Tests.BattleUxPlayModeTests" runstate="Runnable" seed="1484795477" result="Passed" start-time="2026-11-05 10:04:12Z" end-time="2026-11-05 10:04:12Z" duration="0.003922" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
