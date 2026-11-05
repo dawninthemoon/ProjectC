@@ -15,6 +15,8 @@ namespace ProjectC.Client
         private AspectFillImage _artwork;
         private TMP_Text _placeholder;
         private TMP_Text _type;
+        private RectTransform _viewport, _content;
+        private ScrollRect _scroll;
         bool bound;
         int _shownCardId, _shownDefinitionId;
         KeywordInfo _keyword;
@@ -32,6 +34,13 @@ namespace ProjectC.Client
                 {
                     throw new System.InvalidOperationException("Card inspector requires artwork, placeholder and type.");
                 }
+                this.Bind("DetailViewport", out _viewport);
+                this.Bind("DetailContent", out _content);
+                if ((_viewport == null) != (_content == null))
+                {
+                    throw new System.InvalidOperationException("Card inspector requires both detail viewport and content.");
+                }
+                _scroll = _viewport != null ? _viewport.GetComponent<ScrollRect>() : null;
                 bound = true;
             }
             gameObject.SetActive(card != null);
@@ -65,9 +74,33 @@ namespace ProjectC.Client
                 {
                     _keyword = keyword;
                     Forms.text = keyword.Name + "\n" + keyword.Description;
+                    RefreshHeight();
                 });
             Forms.text = _keyword == null ? CardPresentation.Manifestations(card)
                 : _keyword.Name + "\n" + _keyword.Description;
+            RefreshHeight();
+        }
+
+        private void RefreshHeight()
+        {
+            if (_viewport == null)
+            {
+                return;
+            }
+            const float contentTop = 323f;
+            const float bottomPadding = 16f;
+            const float minimumViewport = 80f;
+            const float maximumViewport = 141f;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+            float preferred = LayoutUtility.GetPreferredHeight(_content);
+            float height = Mathf.Clamp(preferred, minimumViewport, maximumViewport);
+            _viewport.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                contentTop + height + bottomPadding);
+            if (_scroll != null)
+            {
+                _scroll.verticalNormalizedPosition = 1;
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)

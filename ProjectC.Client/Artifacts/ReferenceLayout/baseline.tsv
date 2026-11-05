@@ -1,0 +1,560 @@
+Project C - Card Battle	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Background	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Background/MoonlitArenaBackdrop	True	0.0	0.0	1920.0	1080.0	MoonlitArena
+Project C - Card Battle/Table	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Table/Brand	False	28.0	20.0	275.0	40.0	
+Project C - Card Battle/Table/Edition	False	30.0	62.0	280.0	24.0	
+Project C - Card Battle/Table/Battlefield	True	350.0	230.0	1180.0	550.0	
+Project C - Card Battle/Table/Battlefield/ArenaGuides	False	240.0	202.0	1400.0	606.0	ArenaGuides
+Project C - Card Battle/Table/CardInfoSpace	True	24.0	220.0	300.0	650.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector	False	24.0	220.0	300.0	650.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/Name	False	36.0	230.0	276.0	54.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/Stats	False	36.0	572.0	276.0	34.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/DetailViewport	False	36.0	612.0	276.0	242.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/DetailViewport/DetailContent	False	36.0	612.0	276.0	18.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/DetailViewport/DetailContent/Rules	False	36.0	612.0	276.0	0.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/DetailViewport/DetailContent/Forms	False	36.0	630.0	276.0	0.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/ArtworkMask	False	36.0	288.0	276.0	250.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/ArtworkMask/ArtworkImage	False	36.0	288.0	276.0	250.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/ArtworkMask/ArtPlaceholder	False	36.0	288.0	276.0	250.0	
+Project C - Card Battle/Table/CardInfoSpace/CardInspector/CardType	False	36.0	544.0	276.0	26.0	
+Project C - Card Battle/Table/Midline	True	330.0	495.0	1560.0	2.0	
+Project C - Card Battle/Table/EnemyFieldCaption	False	380.0	218.0	550.0	28.0	
+Project C - Card Battle/Table/OpponentDeck	True	1565.0	20.0	86.0	102.0	
+Project C - Card Battle/Table/OpponentDeck/Label	False	1573.0	20.0	69.0	100.0	
+Project C - Card Battle/Table/YourDeck	True	1565.0	865.0	86.0	102.0	
+Project C - Card Battle/Table/YourDeck/Label	False	1573.0	865.0	69.0	85.0	
+Project C - Card Battle/Table/OwnFieldCaption	False	380.0	480.0	550.0	28.0	
+Project C - Card Battle/Table/OpponentHand	True	355.0	0.0	435.0	140.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)	True	383.9	5.0	82.0	130.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage	True	383.9	5.0	82.0	130.0	FoxCardBack
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset	True	387.9	9.0	74.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask	True	389.9	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	389.9	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	389.9	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Name	False	395.9	9.0	58.0	36.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Stats	False	395.9	78.0	58.0	26.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Status	False	395.9	105.0	58.0	22.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Accent	True	387.9	9.0	3.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)	True	457.7	5.0	82.0	130.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage	True	457.7	5.0	82.0	130.0	FoxCardBack
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset	True	461.7	9.0	74.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask	True	463.7	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	463.7	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	463.7	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Name	False	469.7	9.0	58.0	36.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Stats	False	469.7	78.0	58.0	26.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Status	False	469.7	105.0	58.0	22.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Accent	True	461.7	9.0	3.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)	True	531.5	5.0	82.0	130.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage	True	531.5	5.0	82.0	130.0	FoxCardBack
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset	True	535.5	9.0	74.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask	True	537.5	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	537.5	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	537.5	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Name	False	543.5	9.0	58.0	36.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Stats	False	543.5	78.0	58.0	26.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Status	False	543.5	105.0	58.0	22.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Accent	True	535.5	9.0	3.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)	True	605.3	5.0	82.0	130.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage	True	605.3	5.0	82.0	130.0	FoxCardBack
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset	True	609.3	9.0	74.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask	True	611.3	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	611.3	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	611.3	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Name	False	617.3	9.0	58.0	36.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Stats	False	617.3	78.0	58.0	26.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Status	False	617.3	105.0	58.0	22.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Accent	True	609.3	9.0	3.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)	True	679.1	5.0	82.0	130.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage	True	679.1	5.0	82.0	130.0	FoxCardBack
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset	True	683.1	9.0	74.0	122.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask	True	685.1	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	685.1	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	685.1	11.0	70.0	118.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Name	False	691.1	9.0	58.0	36.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Stats	False	691.1	78.0	58.0	26.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Status	False	691.1	105.0	58.0	22.0	
+Project C - Card Battle/Table/OpponentHand/CardBack(Clone)/FrameImage/Inset/Accent	True	683.1	9.0	3.0	122.0	
+Project C - Card Battle/Table/EnemyPlayer	True	884.0	0.0	192.0	192.0	UI_Circle
+Project C - Card Battle/Table/EnemyPlayer/PortraitMask	True	892.4	8.4	175.2	175.2	UI_Circle
+Project C - Card Battle/Table/EnemyPlayer/PortraitMask/PortraitImage	True	892.4	8.4	175.2	175.2	Barbaros
+Project C - Card Battle/Table/EnemyPlayer/PortraitMask/RenewalPortraitFrame	True	875.6	8.4	192.0	192.0	HeroFrame
+Project C - Card Battle/Table/EnemyPlayer/TurnMark	True	924.8	199.2	110.4	3.6	
+Project C - Card Battle/Table/EnemyPlayer/LifeCaption	False	914.0	87.6	78.0	24.0	
+Project C - Card Battle/Table/EnemyPlayer/Name	False	1010.0	15.6	390.0	42.0	
+Project C - Card Battle/Table/EnemyPlayer/Counts	False	905.6	69.6	402.0	57.6	
+Project C - Card Battle/Table/EnemyPlayer/LifeBadge	True	1018.4	134.4	115.2	62.4	HpBadge
+Project C - Card Battle/Table/EnemyPlayer/LifeBadge/LifeIcon	True	1022.0	153.6	31.2	31.2	Icon_Life
+Project C - Card Battle/Table/EnemyPlayer/LifeBadge/Life	True	1052.0	134.4	81.6	62.4	
+Project C - Card Battle/Table/OwnPlayer	True	30.0	790.0	240.0	240.0	UI_Circle
+Project C - Card Battle/Table/OwnPlayer/PortraitMask	True	40.5	800.5	219.0	219.0	UI_Circle
+Project C - Card Battle/Table/OwnPlayer/PortraitMask/PortraitImage	True	40.5	800.5	219.0	219.0	Megachiyo
+Project C - Card Battle/Table/OwnPlayer/PortraitMask/RenewalPortraitFrame	True	19.5	800.5	240.0	240.0	HeroFrame
+Project C - Card Battle/Table/OwnPlayer/TurnMark	True	81.0	1039.0	138.0	4.5	
+Project C - Card Battle/Table/OwnPlayer/LifeCaption	False	67.5	899.5	97.5	30.0	
+Project C - Card Battle/Table/OwnPlayer/Name	False	187.5	809.5	487.5	52.5	
+Project C - Card Battle/Table/OwnPlayer/Counts	False	57.0	877.0	502.5	72.0	
+Project C - Card Battle/Table/OwnPlayer/LifeBadge	True	198.0	958.0	144.0	78.0	HpBadge
+Project C - Card Battle/Table/OwnPlayer/LifeBadge/LifeIcon	True	202.5	982.0	39.0	39.0	Icon_Life
+Project C - Card Battle/Table/OwnPlayer/LifeBadge/Life	True	240.0	958.0	102.0	78.0	
+Project C - Card Battle/Table/BattleVfxLayer	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Table/OpponentField	True	390.0	255.0	1120.0	215.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)	True	645.0	248.5	180.0	228.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage	True	645.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset	True	649.0	252.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	655.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	655.0	260.5	160.0	204.0	CardSprite_1001_0
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	655.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	657.0	419.5	156.0	26.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	657.0	446.5	156.0	22.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	649.0	252.5	3.0	220.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	658.0	262.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	662.0	262.5	146.0	23.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	645.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	645.0	248.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	647.0	422.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	647.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	774.0	422.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	774.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	645.0	248.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	645.0	248.5	36.0	36.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	710.0	450.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)	True	860.0	248.5	180.0	228.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage	True	860.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset	True	864.0	252.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	870.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	870.0	260.5	160.0	204.0	CardSprite_3001_0
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	870.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	872.0	419.5	156.0	26.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	872.0	446.5	156.0	22.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	864.0	252.5	3.0	220.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	873.0	262.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	877.0	262.5	146.0	23.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	860.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	860.0	248.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	862.0	422.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	862.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	989.0	422.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	989.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	860.0	248.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	860.0	248.5	36.0	36.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	925.0	450.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)	True	1075.0	248.5	180.0	228.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage	True	1075.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset	True	1079.0	252.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	1085.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	1085.0	260.5	160.0	204.0	CardSprite_4002_0
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1085.0	260.5	160.0	204.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	1087.0	419.5	156.0	26.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	1087.0	446.5	156.0	22.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	1079.0	252.5	3.0	220.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	1088.0	262.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	1092.0	262.5	146.0	23.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	1075.0	248.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	1075.0	248.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	1077.0	422.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	1077.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	1204.0	422.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	1204.0	422.5	49.0	53.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	1075.0	248.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	1075.0	248.5	36.0	36.0	
+Project C - Card Battle/Table/OpponentField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	1140.0	450.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/OwnFieldDropZone	True	360.0	493.0	1170.0	245.0	
+Project C - Card Battle/Table/OwnField	True	390.0	508.0	1120.0	215.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)	True	645.0	501.5	180.0	228.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage	True	645.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset	True	649.0	505.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	655.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	655.0	513.5	160.0	204.0	CardSprite_1001_0
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	655.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	657.0	672.5	156.0	26.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	657.0	699.5	156.0	22.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	649.0	505.5	3.0	220.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	658.0	515.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	662.0	515.5	146.0	23.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	645.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	645.0	501.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	647.0	675.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	647.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	774.0	675.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	774.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	645.0	501.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	645.0	501.5	36.0	36.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	710.0	703.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)	True	860.0	501.5	180.0	228.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage	True	860.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset	True	864.0	505.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	870.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	870.0	513.5	160.0	204.0	CardSprite_3001_0
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	870.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	872.0	672.5	156.0	26.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	872.0	699.5	156.0	22.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	864.0	505.5	3.0	220.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	873.0	515.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	877.0	515.5	146.0	23.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	860.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	860.0	501.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	862.0	675.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	862.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	989.0	675.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	989.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	860.0	501.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	860.0	501.5	36.0	36.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	925.0	703.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)	True	1075.0	501.5	180.0	228.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage	True	1075.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset	True	1079.0	505.5	172.0	220.0	CardInset
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask	True	1085.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	1085.0	513.5	160.0	204.0	CardSprite_4002_0
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1085.0	513.5	160.0	204.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Stats	False	1087.0	672.5	156.0	26.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Status	False	1087.0	699.5	156.0	22.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Accent	True	1079.0	505.5	3.0	220.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/RenewalTitle	False	1088.0	515.5	154.0	26.0	HandTitle
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/Inset/Name	False	1092.0	515.5	146.0	23.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/RenewalFrame	True	1075.0	501.5	180.0	228.0	FieldCardFrame
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FrameGlow	True	1075.0	501.5	180.0	228.0	FieldCardGlowMask
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame	True	1077.0	675.5	49.0	53.0	FieldCardAttackBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	1077.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame	True	1204.0	675.5	49.0	53.0	FieldCardHealthBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	1204.0	675.5	49.0	53.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame	False	1075.0	501.5	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	1075.0	501.5	36.0	36.0	
+Project C - Card Battle/Table/OwnField/BattleFieldCard(Clone)/FrameImage/FieldStatusFrame	False	1140.0	703.5	50.0	23.0	FieldStatusFrame
+Project C - Card Battle/Table/HandCaption	False	660.0	748.0	700.0	28.0	
+Project C - Card Battle/Table/RecentEvents	True	0.0	0.0	1.0	1.0	
+Project C - Card Battle/Table/RecentEvents/Header	False	18.0	15.0	249.0	35.0	
+Project C - Card Battle/Table/RecentEvents/Recent	False	18.0	60.0	249.0	270.0	
+Project C - Card Battle/Table/RejectionReason	True	560.0	716.0	800.0	70.0	
+Project C - Card Battle/Table/Turn	True	24.0	44.0	260.0	42.0	
+Project C - Card Battle/Table/EndTurn	True	1600.0	420.0	210.0	310.0	TurnFrame
+Project C - Card Battle/Table/EndTurn/PhaseInside	True	1609.0	429.0	252.0	252.0	UI_Circle
+Project C - Card Battle/Table/EndTurn/Label	True	1615.0	514.0	180.0	76.0	
+Project C - Card Battle/Table/EndTurn/TurnPhasePlate	True	1620.0	464.0	170.0	42.0	HandTitle
+Project C - Card Battle/Table/EndTurn/Phase	True	1615.0	464.0	180.0	42.0	
+Project C - Card Battle/Table/EndTurn/TurnTimer	True	1615.0	598.0	180.0	42.0	
+Project C - Card Battle/Table/EndTurn/TurnGlow	True	1600.0	420.0	210.0	310.0	TurnGlowMask
+Project C - Card Battle/Table/EndTurn/TurnArrow	True	1680.0	644.0	50.0	41.0	TurnArrow
+Project C - Card Battle/Table/AutoStartHint	False	1720.0	610.0	175.0	65.0	
+Project C - Card Battle/Table/EnterBattle	False	1720.0	552.0	180.0	50.0	
+Project C - Card Battle/Table/EnterBattle/Label	False	1728.0	554.0	164.0	46.0	
+Project C - Card Battle/Table/Graveyards	False	175.0	810.0	145.0	40.0	
+Project C - Card Battle/Table/Graveyards/Label	False	183.0	812.0	129.0	36.0	
+Project C - Card Battle/Table/History	True	24.0	150.0	230.0	54.0	
+Project C - Card Battle/Table/History/Label	True	32.0	152.0	214.0	50.0	
+Project C - Card Battle/Table/LobbyToggle	True	24.0	210.0	230.0	36.0	
+Project C - Card Battle/Table/LobbyToggle/Label	True	32.0	212.0	214.0	32.0	
+Project C - Card Battle/Table/TurnDim	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Table/TurnBanner	True	510.0	390.0	900.0	145.0	
+Project C - Card Battle/Table/TurnBanner/Title	True	535.0	405.0	850.0	65.0	
+Project C - Card Battle/Table/TurnBanner/Subtitle	True	535.0	473.0	850.0	40.0	
+Project C - Card Battle/Table/CardEventPopup	True	570.0	115.0	780.0	120.0	
+Project C - Card Battle/Table/CardEventPopup/Title	True	592.0	125.0	736.0	35.0	
+Project C - Card Battle/Table/CardEventPopup/Description	True	592.0	160.0	736.0	68.0	
+Project C - Card Battle/Table/DrawCard	True	0.0	0.0	90.0	125.0	
+Project C - Card Battle/Table/DrawCard/Back	True	8.0	0.0	74.0	125.0	
+Project C - Card Battle/Table/DrawCard/DrawFace	False	0.0	0.0	180.0	218.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage	False	0.0	0.0	180.0	218.0	HandCardFrame
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset	False	4.0	4.0	172.0	210.0	CardInset
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/ArtworkMask	False	8.0	36.0	164.0	171.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/ArtworkMask/ArtworkImage	False	8.0	36.0	164.0	171.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	8.0	36.0	164.0	171.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/Stats	False	12.0	161.0	156.0	26.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/Status	False	12.0	188.0	156.0	22.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/Accent	False	4.0	4.0	3.0	210.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/RenewalTitle	False	33.0	11.0	140.0	30.0	HandTitle
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/Inset/Name	False	37.0	11.0	132.0	27.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/RenewalFrame	False	0.0	0.0	180.0	218.0	HandCardFrame
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/FrameGlow	False	0.0	0.0	180.0	218.0	HandCardGlowMask
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/AttackBadgeFrame	False	2.0	170.4	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/AttackBadgeFrame/AttackBadge	False	2.0	170.4	40.0	44.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/HealthBadgeFrame	False	136.4	170.4	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/HealthBadgeFrame/HealthBadge	False	136.4	170.4	40.0	44.0	
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/CostBadgeFrame	False	0.0	0.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/Table/DrawCard/DrawFace/FrameImage/CostBadgeFrame/CostBadge	False	0.0	0.0	36.0	36.0	
+Project C - Card Battle/Table/Unread	True	140.0	810.0	25.0	40.0	
+Project C - Card Battle/Table/LegacyDebugControls	False	0.0	0.0	1.0	1.0	
+Project C - Card Battle/Table/LegacyDebugControls/Summon	False	1620.0	530.0	270.0	52.0	
+Project C - Card Battle/Table/LegacyDebugControls/Summon/Label	False	1628.0	532.0	254.0	48.0	
+Project C - Card Battle/Table/LegacyDebugControls/AttackTarget	False	1620.0	595.0	270.0	52.0	
+Project C - Card Battle/Table/LegacyDebugControls/AttackTarget/Label	False	1628.0	597.0	254.0	48.0	
+Project C - Card Battle/Table/LegacyDebugControls/DirectAttack	False	1620.0	660.0	270.0	52.0	
+Project C - Card Battle/Table/LegacyDebugControls/DirectAttack/Label	False	1628.0	662.0	254.0	48.0	
+Project C - Card Battle/Table/LegacyDebugControls/Deselect	False	1620.0	725.0	270.0	44.0	
+Project C - Card Battle/Table/LegacyDebugControls/Deselect/Label	False	1628.0	727.0	254.0	40.0	
+Project C - Card Battle/Table/LegacyDebugControls/Selection	False	1620.0	780.0	270.0	70.0	
+Project C - Card Battle/Table/DragVisualRoot	True	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/Table/AttackArrow	False	0.0	0.0	1.0	1.0	
+Project C - Card Battle/Table/AttackArrow/Shaft	False	0.0	-3.0	100.0	7.0	
+Project C - Card Battle/Table/AttackArrow/Tip	False	75.0	-24.5	50.0	50.0	
+Project C - Card Battle/Table/AttackArrow/Tip/LowerWing	False	77.8	-2.0	23.9	-9.4	
+Project C - Card Battle/Table/AttackArrow/Tip/UpperWing	False	81.2	-2.0	17.0	19.3	
+Project C - Card Battle/Table/EffectTargetPicker	False	520.0	660.0	880.0	165.0	
+Project C - Card Battle/Table/EffectTargetPicker/Title	False	535.0	665.0	850.0	42.0	
+Project C - Card Battle/Table/EffectTargetPicker/Viewport	False	535.0	707.0	440.0	100.0	
+Project C - Card Battle/Table/EffectTargetPicker/Viewport/Candidates	False	535.0	707.0	374.0	0.0	
+Project C - Card Battle/Table/EffectTargetPicker/Confirm	False	1000.0	765.0	180.0	44.0	
+Project C - Card Battle/Table/EffectTargetPicker/Confirm/Label	False	1008.0	765.0	164.0	44.0	
+Project C - Card Battle/Table/EffectTargetPicker/Cancel	False	1200.0	765.0	180.0	44.0	
+Project C - Card Battle/Table/EffectTargetPicker/Cancel/Label	False	1208.0	765.0	164.0	44.0	
+Project C - Card Battle/Table/GraveyardPanel	False	335.0	160.0	1250.0	570.0	
+Project C - Card Battle/Table/GraveyardPanel/OwnCaption	False	355.0	170.0	1000.0	30.0	
+Project C - Card Battle/Table/GraveyardPanel/YourGraveyardViewport	False	355.0	205.0	1210.0	225.0	
+Project C - Card Battle/Table/GraveyardPanel/YourGraveyardViewport/YourGraveyard	False	355.0	205.0	8.0	225.0	
+Project C - Card Battle/Table/GraveyardPanel/EnemyCaption	False	355.0	445.0	1000.0	30.0	
+Project C - Card Battle/Table/GraveyardPanel/OpponentGraveyardViewport	False	355.0	480.0	1210.0	225.0	
+Project C - Card Battle/Table/GraveyardPanel/OpponentGraveyardViewport/OpponentGraveyard	False	355.0	480.0	8.0	225.0	
+Project C - Card Battle/Table/FullHistory	True	-500.0	150.0	450.0	700.0	
+Project C - Card Battle/Table/FullHistory/Header	True	-480.0	162.0	310.0	48.0	
+Project C - Card Battle/Table/FullHistory/Viewport	True	-482.0	230.0	414.0	600.0	
+Project C - Card Battle/Table/FullHistory/Viewport/Lines	True	-474.0	230.0	395.0	27.5	
+Project C - Card Battle/Table/FullHistory/CloseLog	True	-130.0	168.0	50.0	38.0	
+Project C - Card Battle/Table/FullHistory/CloseLog/Label	True	-122.0	168.0	34.0	38.0	
+Project C - Card Battle/Table/MatchResult	False	510.0	330.0	900.0	380.0	
+Project C - Card Battle/Table/MatchResult/Result	False	550.0	365.0	820.0	90.0	
+Project C - Card Battle/Table/MatchResult/Hint	False	570.0	475.0	780.0	45.0	
+Project C - Card Battle/Table/MatchResult/Rematch	False	575.0	570.0	365.0	70.0	
+Project C - Card Battle/Table/MatchResult/Rematch/Label	False	583.0	572.0	349.0	66.0	
+Project C - Card Battle/Table/MatchResult/Leave	False	980.0	570.0	365.0	70.0	
+Project C - Card Battle/Table/MatchResult/Leave/Label	False	988.0	572.0	349.0	66.0	
+Project C - Card Battle/Table/ContextAction	False	0.0	0.0	250.0	70.0	
+Project C - Card Battle/Table/ContextAction/ActionContent	False	10.0	10.0	230.0	50.0	
+Project C - Card Battle/Table/EnemyResources	True	1550.0	20.0	340.0	102.0	
+Project C - Card Battle/Table/EnemyResources/RenewalZone2	True	1765.0	20.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/EnemyResources/RenewalZone1	True	1665.0	20.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/EnemyResources/RenewalZone0	True	1565.0	20.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/EnemyResources/EnemyResourceLabel	False	1554.0	25.0	42.0	40.0	
+Project C - Card Battle/Table/EnemyResources/EnemyDeckIcon	True	1589.0	32.0	38.0	38.0	Icon_Deck
+Project C - Card Battle/Table/EnemyResources/EnemyDeckCount	True	1577.0	83.0	62.0	32.0	
+Project C - Card Battle/Table/EnemyResources/EnemyGraveIcon	True	1689.0	32.0	38.0	38.0	Icon_Grave
+Project C - Card Battle/Table/EnemyResources/EnemyGraveCount	True	1677.0	83.0	62.0	32.0	
+Project C - Card Battle/Table/EnemyResources/EnemyGraveBrowse	True	1665.0	20.0	86.0	102.0	
+Project C - Card Battle/Table/EnemyResources/EnemyExileIcon	True	1789.0	32.0	38.0	38.0	Icon_Exile
+Project C - Card Battle/Table/EnemyResources/EnemyExileCount	True	1777.0	83.0	62.0	32.0	
+Project C - Card Battle/Table/EnemyResources/EnemyExileBrowse	True	1765.0	20.0	86.0	102.0	
+Project C - Card Battle/Table/OwnResources	True	1550.0	865.0	340.0	102.0	
+Project C - Card Battle/Table/OwnResources/RenewalZone2	True	1765.0	865.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/OwnResources/RenewalZone1	True	1665.0	865.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/OwnResources/RenewalZone0	True	1565.0	865.0	86.0	102.0	ZoneVertical
+Project C - Card Battle/Table/OwnResources/OwnResourceLabel	False	1554.0	870.0	42.0	40.0	
+Project C - Card Battle/Table/OwnResources/OwnDeckIcon	True	1589.0	877.0	38.0	38.0	Icon_Deck
+Project C - Card Battle/Table/OwnResources/OwnDeckCount	True	1577.0	928.0	62.0	32.0	
+Project C - Card Battle/Table/OwnResources/OwnGraveIcon	True	1689.0	877.0	38.0	38.0	Icon_Grave
+Project C - Card Battle/Table/OwnResources/OwnGraveCount	True	1677.0	928.0	62.0	32.0	
+Project C - Card Battle/Table/OwnResources/OwnGraveBrowse	True	1665.0	865.0	86.0	102.0	
+Project C - Card Battle/Table/OwnResources/OwnExileIcon	True	1789.0	877.0	38.0	38.0	Icon_Exile
+Project C - Card Battle/Table/OwnResources/OwnExileCount	True	1777.0	928.0	62.0	32.0	
+Project C - Card Battle/Table/OwnResources/OwnExileBrowse	True	1765.0	865.0	86.0	102.0	
+Project C - Card Battle/Table/YokaiPanel	True	1590.0	720.0	290.0	78.0	
+Project C - Card Battle/Table/YokaiPanel/YokaiIcon	True	1602.0	732.0	38.0	38.0	Icon_Yokai
+Project C - Card Battle/Table/YokaiPanel/YokaiValue	True	1640.0	725.0	226.0	46.0	
+Project C - Card Battle/Table/YokaiPanel/YokaiTrack	True	1610.0	779.0	250.0	7.0	
+Project C - Card Battle/Table/YokaiPanel/YokaiFill	True	1610.0	779.0	250.0	7.0	UI_Circle
+Project C - Card Battle/Table/CardGallery	False	350.0	830.0	1540.0	240.0	
+Project C - Card Battle/Table/CardGallery/GalleryTitle	False	365.0	830.0	1270.0	32.0	
+Project C - Card Battle/Table/CardGallery/GalleryClose	False	1710.0	830.0	160.0	32.0	
+Project C - Card Battle/Table/CardGallery/GalleryClose/GalleryCloseLabel	False	1710.0	830.0	160.0	32.0	
+Project C - Card Battle/Table/CardGallery/GalleryViewport	False	365.0	866.0	1510.0	200.0	
+Project C - Card Battle/Table/CardGallery/GalleryViewport/GalleryContent	False	365.0	866.0	1510.0	195.0	
+Project C - Card Battle/Table/YourHand	True	425.0	786.7	1050.0	200.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)	True	471.4	771.4	157.1	278.6	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage	True	471.4	771.4	157.1	278.6	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset	True	475.1	776.1	149.8	269.2	CardInset
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	True	478.4	810.1	146.4	227.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	478.4	810.1	146.4	227.4	CardSprite_1001_0
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	478.4	810.1	146.4	227.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Stats	False	480.0	968.8	160.0	47.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Status	False	483.0	997.1	160.5	43.1	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Accent	True	475.1	797.9	-27.2	247.5	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	True	479.9	783.8	142.7	49.4	HandTitle
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Name	True	483.7	784.4	134.8	45.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/RenewalFrame	True	471.4	771.4	157.1	278.6	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/FrameGlow	True	471.4	771.4	157.1	278.6	HandCardGlowMask
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame	True	473.4	997.5	36.2	51.2	FieldCardAttackBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	473.4	997.5	36.2	51.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame	True	615.8	980.1	36.2	51.2	FieldCardHealthBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	615.8	980.1	36.2	51.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	445.9	788.8	41.3	52.9	HandCardCostBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	444.7	789.9	33.1	42.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)	True	663.1	758.5	173.8	268.5	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage	True	663.1	758.5	173.8	268.5	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset	True	667.0	762.9	165.9	259.6	CardInset
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	True	670.8	796.9	160.0	218.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	670.8	796.9	160.0	218.0	CardSprite_3001_0
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	670.8	796.9	160.0	218.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Stats	False	673.7	956.2	162.6	37.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Status	False	675.2	984.6	162.9	33.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Accent	True	667.0	773.8	-12.0	248.7	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	True	684.8	770.5	145.5	40.6	HandTitle
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Name	True	688.8	770.8	137.3	36.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/RenewalFrame	True	663.1	758.5	173.8	268.5	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/FrameGlow	True	663.1	758.5	173.8	268.5	HandCardGlowMask
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame	True	665.1	976.9	39.3	48.9	FieldCardAttackBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	665.1	976.9	39.3	48.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame	True	808.3	968.2	39.3	48.9	FieldCardHealthBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	808.3	968.2	39.3	48.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	650.3	767.2	44.5	50.3	HandCardCostBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	649.7	767.8	35.6	40.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)	True	855.1	758.0	189.9	257.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage	True	855.1	758.0	189.9	257.4	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset	True	859.3	762.3	181.5	249.0	CardInset
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	True	863.5	796.0	173.0	207.8	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	863.5	796.0	173.0	207.8	CardSprite_4002_0
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	863.5	796.0	173.0	207.8	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Stats	False	867.7	955.3	164.6	27.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Status	False	867.7	983.8	164.6	23.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Accent	True	859.3	762.3	3.2	249.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	True	889.9	769.6	147.7	31.6	HandTitle
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Name	True	894.1	769.6	139.3	28.5	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/RenewalFrame	True	855.1	758.0	189.9	257.4	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/FrameGlow	True	855.1	758.0	189.9	257.4	HandCardGlowMask
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame	True	857.2	968.0	42.2	46.4	FieldCardAttackBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	857.2	968.0	42.2	46.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame	True	1000.6	968.0	42.2	46.4	FieldCardHealthBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	1000.6	968.0	42.2	46.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	855.1	758.0	47.5	47.5	HandCardCostBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	855.1	758.0	38.0	38.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)	True	1047.4	770.1	205.3	245.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage	True	1047.4	770.1	205.3	245.3	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset	True	1051.8	774.0	196.3	237.4	CardInset
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	True	1056.5	807.5	185.4	196.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	1056.5	807.5	185.4	196.9	CardSprite_3004_0
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1056.5	807.5	185.4	196.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Stats	False	1062.0	966.2	165.9	17.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Status	False	1060.5	994.6	165.7	13.1	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Accent	True	1051.8	763.1	18.4	248.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	True	1095.2	781.2	149.4	22.6	HandTitle
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Name	True	1099.6	780.9	140.7	19.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/RenewalFrame	True	1047.4	770.1	205.3	245.3	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/FrameGlow	True	1047.4	770.1	205.3	245.3	HandCardGlowMask
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame	True	1049.5	970.7	45.0	43.8	FieldCardAttackBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	1049.5	970.7	45.0	43.8	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame	True	1192.8	979.5	45.0	43.8	FieldCardHealthBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	1192.8	979.5	45.0	43.8	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	1060.2	761.4	50.3	44.5	HandCardCostBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	1060.8	760.8	40.2	35.6	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)	True	1240.1	794.6	219.9	232.4	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage	True	1240.1	794.6	219.9	232.4	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset	True	1244.8	798.2	210.5	225.0	CardInset
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	True	1249.9	831.2	197.1	185.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	True	1249.9	831.2	197.1	185.2	CardSprite_4005_0
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1249.9	831.2	197.1	185.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Stats	False	1256.6	988.8	166.7	7.2	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Status	False	1253.7	1017.1	166.2	3.0	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Accent	True	1244.8	776.5	33.5	246.7	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	True	1300.7	805.2	150.5	13.4	HandTitle
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/Inset/Name	True	1305.3	804.7	141.7	11.3	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/RenewalFrame	True	1240.1	794.6	219.9	232.4	HandCardFrame
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/FrameGlow	True	1240.1	794.6	219.9	232.4	HandCardGlowMask
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame	True	1242.3	985.2	47.5	40.9	FieldCardAttackBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	True	1242.3	985.2	47.5	40.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame	True	1384.7	1002.7	47.5	40.9	FieldCardHealthBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	True	1384.7	1002.7	47.5	40.9	
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame	True	1265.7	777.2	52.9	41.3	HandCardCostBadge
+Project C - Card Battle/Table/YourHand/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	True	1266.8	776.1	42.3	33.1	
+Project C - Card Battle/GameplayModalBlocker	False	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/MulliganOverlay	False	0.0	0.0	1920.0	1080.0	
+Project C - Card Battle/MulliganOverlay/Status	False	235.0	215.0	1450.0	170.0	
+Project C - Card Battle/MulliganOverlay/Feedback	False	260.0	780.0	1400.0	80.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)	False	450.0	398.0	180.0	244.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage	False	450.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset	False	454.0	402.0	172.0	236.0	CardInset
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	False	458.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	458.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	458.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Stats	False	462.0	585.0	156.0	26.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Status	False	462.0	612.0	156.0	22.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Accent	False	454.0	402.0	3.0	236.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	False	483.0	409.0	140.0	30.0	HandTitle
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Name	False	487.0	409.0	132.0	27.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/RenewalFrame	False	450.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/FrameGlow	False	450.0	398.0	180.0	244.0	HandCardGlowMask
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame	False	452.0	597.0	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	False	452.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame	False	588.0	597.0	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	False	588.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	450.0	398.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	450.0	398.0	36.0	36.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)	False	660.0	398.0	180.0	244.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage	False	660.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset	False	664.0	402.0	172.0	236.0	CardInset
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	False	668.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	668.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	668.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Stats	False	672.0	585.0	156.0	26.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Status	False	672.0	612.0	156.0	22.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Accent	False	664.0	402.0	3.0	236.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	False	693.0	409.0	140.0	30.0	HandTitle
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Name	False	697.0	409.0	132.0	27.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/RenewalFrame	False	660.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/FrameGlow	False	660.0	398.0	180.0	244.0	HandCardGlowMask
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame	False	662.0	597.0	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	False	662.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame	False	798.0	597.0	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	False	798.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	660.0	398.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	660.0	398.0	36.0	36.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)	False	870.0	398.0	180.0	244.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage	False	870.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset	False	874.0	402.0	172.0	236.0	CardInset
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	False	878.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	878.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	878.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Stats	False	882.0	585.0	156.0	26.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Status	False	882.0	612.0	156.0	22.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Accent	False	874.0	402.0	3.0	236.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	False	903.0	409.0	140.0	30.0	HandTitle
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Name	False	907.0	409.0	132.0	27.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/RenewalFrame	False	870.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/FrameGlow	False	870.0	398.0	180.0	244.0	HandCardGlowMask
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame	False	872.0	597.0	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	False	872.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame	False	1008.0	597.0	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	False	1008.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	870.0	398.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	870.0	398.0	36.0	36.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)	False	1080.0	398.0	180.0	244.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage	False	1080.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset	False	1084.0	402.0	172.0	236.0	CardInset
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	False	1088.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	1088.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1088.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Stats	False	1092.0	585.0	156.0	26.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Status	False	1092.0	612.0	156.0	22.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Accent	False	1084.0	402.0	3.0	236.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	False	1113.0	409.0	140.0	30.0	HandTitle
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Name	False	1117.0	409.0	132.0	27.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/RenewalFrame	False	1080.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/FrameGlow	False	1080.0	398.0	180.0	244.0	HandCardGlowMask
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame	False	1082.0	597.0	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	False	1082.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame	False	1218.0	597.0	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	False	1218.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	1080.0	398.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	1080.0	398.0	36.0	36.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)	False	1290.0	398.0	180.0	244.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage	False	1290.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset	False	1294.0	402.0	172.0	236.0	CardInset
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask	False	1298.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage	False	1298.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/ArtworkMask/ArtworkImage/Monogram	False	1298.0	434.0	164.0	197.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Stats	False	1302.0	585.0	156.0	26.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Status	False	1302.0	612.0	156.0	22.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Accent	False	1294.0	402.0	3.0	236.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/RenewalTitle	False	1323.0	409.0	140.0	30.0	HandTitle
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/Inset/Name	False	1327.0	409.0	132.0	27.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/RenewalFrame	False	1290.0	398.0	180.0	244.0	HandCardFrame
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/FrameGlow	False	1290.0	398.0	180.0	244.0	HandCardGlowMask
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame	False	1292.0	597.0	40.0	44.0	FieldCardAttackBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/AttackBadgeFrame/AttackBadge	False	1292.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame	False	1428.0	597.0	40.0	44.0	FieldCardHealthBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/HealthBadgeFrame/HealthBadge	False	1428.0	597.0	40.0	44.0	
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame	False	1290.0	398.0	45.0	45.0	HandCardCostBadge
+Project C - Card Battle/MulliganOverlay/BattleCard(Clone)/FrameImage/CostBadgeFrame/CostBadge	False	1290.0	398.0	36.0	36.0	
+Project C - Card Battle/MulliganOverlay/확인	False	842.5	690.0	235.0	60.0	
+Project C - Card Battle/MulliganOverlay/확인/확인Label	False	845.0	690.0	230.0	60.0	
+Project C - Card Battle/MulliganOverlay/그대로 시작	False	842.5	690.0	235.0	60.0	
+Project C - Card Battle/MulliganOverlay/그대로 시작/그대로 시작Label	False	845.0	690.0	230.0	60.0	
+Project C - Card Battle/MulliganOverlay/재접속	False	1102.5	690.0	235.0	60.0	
+Project C - Card Battle/MulliganOverlay/재접속/재접속Label	False	1105.0	690.0	230.0	60.0	

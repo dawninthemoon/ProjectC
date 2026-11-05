@@ -1,0 +1,64 @@
+{
+  "referenceResolution": { "w": 1920, "h": 1080 },
+  "source": "레퍼런스 이미지(1671x941)를 x1.149로 1920x1080에 환산한 뒤 눈금 오버레이로 수동 측정",
+  "originNote": "모든 rect는 좌상단 원점, 단위 px, {x,y,w,h}",
+  "measurementErrorPx": 5,
+  "testTolerancePx": 6,
+  "notes": [
+    "레퍼런스는 한 장짜리 평면 컨셉 이미지라 완전한 픽셀 정답이 아님. 이 JSON의 숫자가 기준이며, 이미지는 참고용.",
+    "레퍼런스에는 필드 3장, 손패 5장 상태만 있음. 그 외 장수는 pitch를 유지하고 중앙 정렬로 확장.",
+    "anchor는 해당 요소가 붙어야 하는 화면 기준점. 다른 종횡비에서는 anchor 기준 오프셋을 유지."
+  ],
+  "elements": [
+    { "id": "enemy_deck_backs", "anchor": "top_center", "rect": { "x": 357, "y": 0, "w": 448, "h": 135 }, "note": "뒷면 카드 5장 묶음" },
+    { "id": "enemy_portrait", "anchor": "top_center", "rect": { "x": 805, "y": 0, "w": 285, "h": 215 }, "note": "아치형 초상화, 장식 날개는 제외한 본체" },
+    { "id": "enemy_hp_badge", "anchor": "top_center", "rect": { "x": 1078, "y": 100, "w": 82, "h": 115 }, "note": "세로 육각 배지" },
+    { "id": "enemy_rp_badge", "anchor": "top_center", "rect": { "x": 425, "y": 152, "w": 120, "h": 63 }, "note": "데이터 확정 전까지 보류 (결정 필요 항목 참고)" },
+    { "id": "enemy_yokai_pill", "anchor": "top_center", "rect": { "x": 553, "y": 160, "w": 182, "h": 47 }, "note": "아이콘 + 현재/최대" },
+    { "id": "topleft_extra_panel", "anchor": "top_left", "rect": { "x": 25, "y": 82, "w": 300, "h": 173 }, "note": "데이터 확정 전까지 보류" },
+    { "id": "side_button_log", "anchor": "left_middle", "rect": { "x": 37, "y": 380, "w": 70, "h": 115 }, "note": "세로 육각 아이콘 버튼" },
+    { "id": "side_button_chat", "anchor": "left_middle", "rect": { "x": 37, "y": 500, "w": 70, "h": 108 }, "note": "세로 육각 아이콘 버튼" },
+
+    { "id": "resource_top_1", "anchor": "top_right", "rect": { "x": 1528, "y": 80, "w": 80, "h": 108 }, "note": "덱/묘지/크리스탈 중 첫 번째" },
+    { "id": "resource_top_2", "anchor": "top_right", "rect": { "x": 1618, "y": 80, "w": 80, "h": 108 }, "note": "pitch 91 (현재는 100)" },
+    { "id": "resource_top_3", "anchor": "top_right", "rect": { "x": 1710, "y": 80, "w": 80, "h": 108 }, "note": "" },
+    { "id": "settings_button", "anchor": "top_right", "rect": { "x": 1840, "y": 15, "w": 63, "h": 63 }, "note": "톱니 육각 버튼, 현재 없음" },
+
+    { "id": "field_enemy_c1", "anchor": "center", "rect": { "x": 638, "y": 262, "w": 166, "h": 183 }, "note": "프레임 본체. 스탯 배지는 프레임 아래로 약 35px 돌출" },
+    { "id": "field_enemy_c2", "anchor": "center", "rect": { "x": 875, "y": 262, "w": 166, "h": 183 }, "note": "열 pitch 237" },
+    { "id": "field_enemy_c3", "anchor": "center", "rect": { "x": 1112, "y": 262, "w": 166, "h": 183 }, "note": "" },
+    { "id": "field_ally_c1", "anchor": "center", "rect": { "x": 638, "y": 515, "w": 166, "h": 183 }, "note": "행 pitch 253" },
+    { "id": "field_ally_c2", "anchor": "center", "rect": { "x": 875, "y": 515, "w": 166, "h": 183 }, "note": "" },
+    { "id": "field_ally_c3", "anchor": "center", "rect": { "x": 1112, "y": 515, "w": 166, "h": 183 }, "note": "" },
+    {
+      "id": "field_card_badges_relative",
+      "anchor": "relative_to_field_frame",
+      "note": "필드 카드 프레임 좌상단 기준 중심 좌표(px)와 크기",
+      "attack_badge": { "cx": 30, "cy": 179, "w": 58, "h": 58, "shape": "파란 마름모" },
+      "keyword_slot": { "cx": 83, "cy": 180, "w": 60, "h": 34, "shape": "가로 육각, 키워드 아이콘 칸" },
+      "health_badge": { "cx": 137, "cy": 179, "w": 62, "h": 64, "shape": "붉은 방패" }
+    },
+
+    { "id": "turn_button", "anchor": "right_middle", "rect": { "x": 1632, "y": 352, "w": 234, "h": 360 }, "note": "불규칙 육각 외곽 전체" },
+    { "id": "turn_phase_pill", "anchor": "right_middle", "rect": { "x": 1703, "y": 425, "w": 142, "h": 33 }, "note": "단계 라벨(메인 등). 버튼 상단 별도 알약, 선과 겹치지 않음" },
+    { "id": "turn_main_text_center", "anchor": "right_middle", "point": { "x": 1749, "y": 535 }, "note": "주 문구 중심. 장식선이 지나가지 않는 영역" },
+    { "id": "turn_arrow_center", "anchor": "right_middle", "point": { "x": 1750, "y": 578 }, "note": "화살표 중심" },
+
+    { "id": "resource_bottom_1", "anchor": "bottom_right", "rect": { "x": 1560, "y": 870, "w": 83, "h": 115 }, "note": "아이콘 글리프 약 45px, 숫자 판은 하단 별도" },
+    { "id": "resource_bottom_2", "anchor": "bottom_right", "rect": { "x": 1654, "y": 870, "w": 83, "h": 115 }, "note": "pitch 94 (현재는 100)" },
+    { "id": "resource_bottom_3", "anchor": "bottom_right", "rect": { "x": 1748, "y": 870, "w": 83, "h": 115 }, "note": "" },
+
+    { "id": "hero_portrait", "anchor": "bottom_left", "rect": { "x": 10, "y": 745, "w": 325, "h": 335 }, "note": "원형 + 장식 테두리, 화면 하단에서 잘림" },
+    { "id": "hero_hp_badge", "anchor": "bottom_left", "rect": { "x": 288, "y": 865, "w": 77, "h": 85 }, "note": "세로 육각, 초상화 우하단에 겹침" },
+    { "id": "hero_rp_badge", "anchor": "bottom_left", "rect": { "x": 225, "y": 978, "w": 110, "h": 67 }, "note": "데이터 확정 전까지 보류" },
+    { "id": "yokai_tray", "anchor": "bottom_left", "rect": { "x": 352, "y": 782, "w": 148, "h": 266 }, "note": "세로 트레이. 초상화와 손패 사이" },
+    { "id": "yokai_tray_row_1", "anchor": "bottom_left", "rect": { "x": 372, "y": 812, "w": 115, "h": 38 }, "note": "요력 현재/최대 (아이콘: 불꽃)" },
+    { "id": "yokai_tray_row_2", "anchor": "bottom_left", "rect": { "x": 372, "y": 856, "w": 115, "h": 38 }, "note": "데이터 확정 전까지 보류" },
+    { "id": "yokai_tray_row_3", "anchor": "bottom_left", "rect": { "x": 372, "y": 900, "w": 115, "h": 38 }, "note": "데이터 확정 전까지 보류" },
+    { "id": "yokai_tray_row_4", "anchor": "bottom_left", "rect": { "x": 372, "y": 944, "w": 115, "h": 38 }, "note": "데이터 확정 전까지 보류" },
+    { "id": "yokai_tray_row_5", "anchor": "bottom_left", "rect": { "x": 372, "y": 988, "w": 115, "h": 38 }, "note": "데이터 확정 전까지 보류" },
+
+    { "id": "hand_bbox_5cards", "anchor": "bottom_center", "rect": { "x": 552, "y": 772, "w": 970, "h": 302 }, "note": "손패 5장 전체 외곽(글로우 포함). 중심 x=1037" },
+    { "id": "hand_card_size", "anchor": "bottom_center", "size": { "w": 205, "h": 262 }, "pitch": 185, "note": "카드 1장 크기와 겹침 간격. 플레이 가능 카드는 청록 외곽 글로우" }
+  ]
+}

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="25" result="Failed(Child)" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.1262231">
+  <test-suite type="TestSuite" id="1159" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="121" result="Failed" site="Child" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.126223" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1153" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="121" result="Failed" site="Child" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.122308" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="11573" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1154" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="121" result="Failed" site="Child" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.121504" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1155" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="121" result="Failed" site="Child" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.120771" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1037" name="CardLocalizationTests" fullname="ProjectC.Tests.CardLocalizationTests" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="25" result="Failed" site="Child" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.119303" total="25" passed="24" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1041" name="ActualNamesAndDescriptionsUseKeys" fullname="ProjectC.Tests.CardLocalizationTests.ActualNamesAndDescriptionsUseKeys" methodname="ActualNamesAndDescriptionsUseKeys" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="366458320" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.025782" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1040" name="ActualSheetLoadsNumericStringsAndEmbeddedEffects" fullname="ProjectC.Tests.CardLocalizationTests.ActualSheetLoadsNumericStringsAndEmbeddedEffects" methodname="ActualSheetLoadsNumericStringsAndEmbeddedEffects" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="645575749" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.003297" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1065" name="CatalogMismatchIsVisibleInAllDeckModes" fullname="ProjectC.Tests.CardLocalizationTests.CatalogMismatchIsVisibleInAllDeckModes" methodname="CatalogMismatchIsVisibleInAllDeckModes" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="336570668" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.005534" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1058" name="DuplicateLocalizationKeysFail" fullname="ProjectC.Tests.CardLocalizationTests.DuplicateLocalizationKeysFail" methodname="DuplicateLocalizationKeysFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1428622853" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000309" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1039" name="EverySamplePreservesExportedNameCompositionAndCopyLimits" fullname="ProjectC.Tests.CardLocalizationTests.EverySamplePreservesExportedNameCompositionAndCopyLimits" methodname="EverySamplePreservesExportedNameCompositionAndCopyLimits" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="2031030491" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.006048" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1051" name="InvalidArgumentIndicesAndTokensFail" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.001169" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1047" name="InvalidArgumentIndicesAndTokensFail(&quot;{2}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{2}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="115082844" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000151" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1048" name="InvalidArgumentIndicesAndTokensFail(&quot;{-1}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{-1}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="252855993" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000027" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1049" name="InvalidArgumentIndicesAndTokensFail(&quot;{0:eval()}&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{0:eval()}&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="600809757" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000051" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1050" name="InvalidArgumentIndicesAndTokensFail(&quot;{0&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.InvalidArgumentIndicesAndTokensFail(&quot;{0&quot;)" methodname="InvalidArgumentIndicesAndTokensFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1996233080" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000021" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1062" name="InvalidSheetFieldsAndDuplicateIdsFail" fullname="ProjectC.Tests.CardLocalizationTests.InvalidSheetFieldsAndDuplicateIdsFail" methodname="InvalidSheetFieldsAndDuplicateIdsFail" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="275021432" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.002917" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1060" name="KeywordAndNumericTokensKeepMetadata" fullname="ProjectC.Tests.CardLocalizationTests.KeywordAndNumericTokensKeepMetadata" methodname="KeywordAndNumericTokensKeepMetadata" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="124434860" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000156" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1064" name="KeywordRendererEscapesArgumentsAndPreservesLinks" fullname="ProjectC.Tests.CardLocalizationTests.KeywordRendererEscapesArgumentsAndPreservesLinks" methodname="KeywordRendererEscapesArgumentsAndPreservesLinks" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1449839557" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.047165" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1059" name="LanguageFallbackIsRequestedThenKoreanThenEnglish" fullname="ProjectC.Tests.CardLocalizationTests.LanguageFallbackIsRequestedThenKoreanThenEnglish" methodname="LanguageFallbackIsRequestedThenKoreanThenEnglish" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1442292747" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000119" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1057" name="MissingLocalizationKeyIsVisibleAndReportedOnce" fullname="ProjectC.Tests.CardLocalizationTests.MissingLocalizationKeyIsVisibleAndReportedOnce" methodname="MissingLocalizationKeyIsVisibleAndReportedOnce" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="704339577" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000082" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="MissingPathWithoutDefaultFails" fullname="ProjectC.Tests.CardLocalizationTests.MissingPathWithoutDefaultFails" methodname="MissingPathWithoutDefaultFails" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="88031755" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000108" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1045" name="MultipleArgumentsAndAbsentPathDefault" fullname="ProjectC.Tests.CardLocalizationTests.MultipleArgumentsAndAbsentPathDefault" methodname="MultipleArgumentsAndAbsentPathDefault" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1711630960" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000103" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback" fullname="ProjectC.Tests.CardLocalizationTests.NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback" methodname="NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="945767104" result="Failed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.006758" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected string length 44 but was 42. Strings differ at index 36.
+  Expected: "이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 {0} 올린다."
+  But was:  "이 카드를 일반 소환했을 때, 이 카드의 공격력을 이번 턴 동안 1 올린다."
+  -----------------------------------------------^
+]]></message>
+                <stack-trace><![CDATA[at ProjectC.Tests.CardLocalizationTests.NewFactionsUsePublishedStatsTextCostsAndExistingArtworkFallback () [0x000c4] in /Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Assets/Tests/PlayMode/CardLocalizationTests.cs:29
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1056" name="OnlyReadOnlyDataPathsAreAccepted" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.001444" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1052" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[*].Amount&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[*].Amount&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="2115968780" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000106" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[0];Run()&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[0];Run()&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="548694017" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000026" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1054" name="OnlyReadOnlyDataPathsAreAccepted(&quot;$.Attack&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;$.Attack&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="647118747" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000021" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1055" name="OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[-1]&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.OnlyReadOnlyDataPathsAreAccepted(&quot;Effects[-1]&quot;)" methodname="OnlyReadOnlyDataPathsAreAccepted" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="411509292" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000021" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1061" name="PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" fullname="ProjectC.Tests.CardLocalizationTests.PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" methodname="PublishedCatalogPreservesManifestMetadataAndChangesDescriptionByDefinition" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1925399463" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.004380" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1044" name="RealValueWinsOverDefaultIncludingZero" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000608" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1042" name="RealValueWinsOverDefaultIncludingZero(3,&quot;3&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero(3,&quot;3&quot;)" methodname="RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="370563854" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000175" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1043" name="RealValueWinsOverDefaultIncludingZero(0,&quot;0&quot;)" fullname="ProjectC.Tests.CardLocalizationTests.RealValueWinsOverDefaultIncludingZero(0,&quot;0&quot;)" methodname="RealValueWinsOverDefaultIncludingZero" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1468360847" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.000041" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1063" name="UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" fullname="ProjectC.Tests.CardLocalizationTests.UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" methodname="UnityInspectorLocalizesCurrentDefinitionAndResolvesKeywordClicks" classname="ProjectC.Tests.CardLocalizationTests" runstate="Runnable" seed="1986404226" result="Passed" start-time="2026-11-05 01:57:01Z" end-time="2026-11-05 01:57:01Z" duration="0.007553" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

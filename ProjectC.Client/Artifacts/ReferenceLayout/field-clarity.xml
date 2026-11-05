@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.7129567">
+  <test-suite type="TestSuite" id="1159" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.712957" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1153" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.708867" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20663" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1154" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.708182" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1155" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.707506" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1017" name="BattleFieldClarityPlayModeTests" fullname="ProjectC.Tests.BattleFieldClarityPlayModeTests" classname="ProjectC.Tests.BattleFieldClarityPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.705686" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1018" name="CropAndServerDrivenStatesRemainInteractive" fullname="ProjectC.Tests.BattleFieldClarityPlayModeTests.CropAndServerDrivenStatesRemainInteractive" methodname="CropAndServerDrivenStatesRemainInteractive" classname="ProjectC.Tests.BattleFieldClarityPlayModeTests" runstate="Runnable" seed="370849963" result="Passed" start-time="2026-11-05 02:11:39Z" end-time="2026-11-05 02:11:46Z" duration="6.699829" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

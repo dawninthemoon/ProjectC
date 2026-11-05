@@ -5,7 +5,7 @@ namespace ProjectC.Client
 {
     public sealed class CardTableLayout : MonoBehaviour
     {
-        private const float FieldSpacing = 35f;
+        private const float FieldSpacing = 71f;
         private const float HandTransitionDuration = .18f;
         internal const float FocusLift = 42f;
         private const float EdgePadding = 16f;
@@ -80,7 +80,7 @@ namespace ProjectC.Client
                 : 0;
             float radians = angle * Mathf.Deg2Rad;
             float width = (CardSize.x * Mathf.Cos(radians) + CardSize.y * Mathf.Sin(radians)) * CardScale;
-            float preferred = OpponentHand ? CardSize.x * .9f : !Hand ? width + FieldSpacing * CardScale : Compact
+            float preferred = OpponentHand ? CardSize.x * 1.02f : !Hand ? width + FieldSpacing * CardScale : Compact
                 ? Settings?.CompactHandSpacing ?? BattleVisualSettings.DefaultCompactHandSpacing
                 : Settings?.ExpandedHandSpacing ?? BattleVisualSettings.DefaultExpandedHandSpacing;
             // Dense/narrow hands overlap progressively instead of crossing the available edges.

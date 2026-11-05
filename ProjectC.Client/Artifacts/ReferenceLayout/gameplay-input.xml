@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.1199305">
+  <test-suite type="TestSuite" id="1159" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.119931" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1153" name="ProjectC.Client.PlayModeTests.dll" fullname="/Users/hanjunseo/Dev/ProjectC/ProjectC.Client/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.115722" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12073" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1154" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.114581" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1155" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.113528" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1104" name="GameplayInputPlayModeTests" fullname="ProjectC.Tests.GameplayInputPlayModeTests" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="1.111539" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1107" name="AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" fullname="ProjectC.Tests.GameplayInputPlayModeTests.AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" methodname="AuthoritativeChoicesSurviveAcknowledgementAndSupportRejectionAndSameSequenceCancellation" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1639890122" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:43Z" duration="0.009876" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1106" name="DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" fullname="ProjectC.Tests.GameplayInputPlayModeTests.DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" methodname="DeckPickerBlocksActualRaycastsAndFieldPickerAdmitsOnlyItsCandidate" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="445012314" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:43Z" duration="0.502072" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1110" name="EndingMatchAndUnloadingSceneClearScopesAndModalUi" fullname="ProjectC.Tests.GameplayInputPlayModeTests.EndingMatchAndUnloadingSceneClearScopesAndModalUi" methodname="EndingMatchAndUnloadingSceneClearScopesAndModalUi" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1241046379" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:43Z" duration="0.074257" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1109" name="HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" fullname="ProjectC.Tests.GameplayInputPlayModeTests.HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" methodname="HidingSelectionUiCannotUnlockServerChoiceAndDisconnectCleansBothLayers" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="253156918" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:43Z" duration="0.020510" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1108" name="ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" fullname="ProjectC.Tests.GameplayInputPlayModeTests.ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" methodname="ModalLeasesNestAndDestroyedOwnerCannotLeaveAnOverlay" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1389432313" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:43Z" duration="0.013621" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1111" name="RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" fullname="ProjectC.Tests.GameplayInputPlayModeTests.RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" methodname="RealSpellRejectReselectAndDelayedSnapshotKeepCommandAndUiLocks" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="1230659015" result="Passed" start-time="2026-11-05 01:57:43Z" end-time="2026-11-05 01:57:44Z" duration="0.484130" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1105" name="ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" fullname="ProjectC.Tests.GameplayInputPlayModeTests.ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" methodname="ScopesIntersectAndDisposeOutOfOrderWithoutOpeningABypass" classname="ProjectC.Tests.GameplayInputPlayModeTests" runstate="Runnable" seed="353440011" result="Passed" start-time="2026-11-05 01:57:44Z" end-time="2026-11-05 01:57:44Z" duration="0.000803" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/hanjunseo/Library/Application Support/DefaultCompany/ProjectC_Client/TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

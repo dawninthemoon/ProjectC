@@ -156,8 +156,8 @@ namespace ProjectC.Client
 
         private const float CompactHandWidth = 1050f;
         private const float ExpandedHandWidth = 1100f;
-        private const float ExpandedHandCenterX = 950f;
-        private const float ExpandedHandTop = 780f;
+        private const float ExpandedHandCenterX = 1037f;
+        private const float ExpandedHandTop = 803f;
         private const float HandViewportPadding = 16f;
         private Vector2 _authoredHandSize;
 
@@ -540,8 +540,14 @@ namespace ProjectC.Client
                 * CardWidget.ExpandedHandFocusScale;
             float minimumTop = Mathf.Max(HandViewportPadding,
                 faceHalfHeight + CardTableLayout.FocusLift - halfHeight + HandViewportPadding);
-            float maximumTop = Mathf.Max(minimumTop, viewportHeight - halfHeight - faceHalfHeight
-                - (Hand.Layout.Settings?.HandCurve ?? 24f) - HandViewportPadding);
+            // A focused card is lifted and unrotated; the lowest idle card is rotated and curved.
+            // These are separate states, so reserve the larger extent rather than adding both.
+            float idleBottom = rotatedHeight * Hand.Layout.CardScale * .5f
+                + (Hand.Layout.Settings?.HandCurve ?? 24f);
+            float focusedBottom = Hand.Layout.CardSize.y * Hand.Layout.CardScale * .5f
+                * CardWidget.ExpandedHandFocusScale - CardTableLayout.FocusLift;
+            float maximumTop = Mathf.Max(minimumTop, viewportHeight - halfHeight
+                - Mathf.Max(idleBottom, focusedBottom) - HandViewportPadding);
             destination.y = -Mathf.Clamp(-destination.y, top + minimumTop, top + maximumTop);
             _handRect.anchoredPosition = Vector2.Lerp(_handRect.anchoredPosition, destination,
                 1 - Mathf.Exp(-Time.unscaledDeltaTime * 22));

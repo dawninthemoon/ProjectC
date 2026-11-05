@@ -42,7 +42,7 @@ namespace ProjectC.Client
                 if (segment.IsKeyword)
                 {
                     text.Append("<link=\"").Append(LinkPrefix).Append(segment.KeywordId)
-                        .Append("\"><u>").Append(escaped).Append("</u></link>");
+                        .Append("\"><color=#FFD77A><u>").Append(escaped).Append("</u></color></link>");
                 }
                 else
                 {

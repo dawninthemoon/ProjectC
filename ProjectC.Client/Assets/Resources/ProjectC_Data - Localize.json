@@ -356,37 +356,44 @@
   {
     "lmk": "ui.phase.to_battle",
     "korean": "배틀 페이즈로",
-    "english": "To Battle Phase"
+    "english": "To Battle Phase",
+    "japanese": "バトルフェイズへ"
   },
   {
     "lmk": "ui.phase.to_main2",
     "korean": "메인 페이즈 2로",
-    "english": "To Main Phase 2"
+    "english": "To Main Phase 2",
+    "japanese": "メインフェイズ２へ"
   },
   {
     "lmk": "ui.phase.end_turn",
     "korean": "턴 종료",
-    "english": "End Turn"
+    "english": "End Turn",
+    "japanese": "ターン終了"
   },
   {
     "lmk": "ui.phase.main1",
     "korean": "메인 페이즈 1",
-    "english": "Main Phase 1"
+    "english": "Main Phase 1",
+    "japanese": "メインフェイズ１"
   },
   {
     "lmk": "ui.phase.battle",
     "korean": "배틀 페이즈",
-    "english": "Battle Phase"
+    "english": "Battle Phase",
+    "japanese": "バトルフェイズ"
   },
   {
     "lmk": "ui.phase.main2",
     "korean": "메인 페이즈 2",
-    "english": "Main Phase 2"
+    "english": "Main Phase 2",
+    "japanese": "メインフェイズ２"
   },
   {
     "lmk": "ui.phase.end",
     "korean": "종료 페이즈",
-    "english": "End Phase"
+    "english": "End Phase",
+    "japanese": "終了フェイズ"
   },
   {
     "lmk": "ui.effect.activate",
