@@ -1,0 +1,598 @@
+fileFormatVersion: 2
+guid: c05c50bfe69fe70408dcd913ddf2a522
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4816836036910159343
+    second: HeroHealthBadge_0
+  - first:
+      213: 5479210427927256503
+    second: HeroHealthBadge_1
+  - first:
+      213: 1671059876317289598
+    second: HeroHealthBadge_2
+  - first:
+      213: 3621248298582618501
+    second: HeroHealthBadge_3
+  - first:
+      213: 3327865019886709875
+    second: HeroHealthBadge_4
+  - first:
+      213: 669781082056813539
+    second: HeroHealthBadge_5
+  - first:
+      213: -8494395212448366293
+    second: HeroHealthBadge_6
+  - first:
+      213: 3478459607439680973
+    second: HeroHealthBadge_7
+  - first:
+      213: 5290522949788573359
+    second: HeroHealthBadge_8
+  - first:
+      213: -5235119398520229994
+    second: HeroHealthBadge_9
+  - first:
+      213: 6188185080185733765
+    second: HeroHealthBadge_10
+  - first:
+      213: -7772642666864809759
+    second: HeroHealthBadge_11
+  - first:
+      213: 1449458424859163160
+    second: HeroHealthBadge_12
+  - first:
+      213: 8009221115817287729
+    second: HeroHealthBadge_13
+  - first:
+      213: -5612276512990708527
+    second: HeroHealthBadge_14
+  - first:
+      213: 6919524636789242248
+    second: HeroHealthBadge_15
+  - first:
+      213: 2688536970734836137
+    second: HeroHealthBadge_16
+  - first:
+      213: -5777738208346684986
+    second: HeroHealthBadge_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: HeroHealthBadge_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 29
+        width: 208
+        height: 227
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11a6ba62529272db0800000000000000
+      internalID: -4816836036910159343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_1
+      rect:
+        serializedVersion: 2
+        x: 77
+        y: 246
+        width: 25
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bd5836aad01a0c40800000000000000
+      internalID: 5479210427927256503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_2
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 251
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7cdc469a1cc03710800000000000000
+      internalID: 1671059876317289598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_3
+      rect:
+        serializedVersion: 2
+        x: 190
+        y: 163
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58131803422414230800000000000000
+      internalID: 3621248298582618501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_4
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 137
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37cabc29a93fe2e20800000000000000
+      internalID: 3327865019886709875
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_5
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 125
+        width: 5
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ebe541785a8b4900800000000000000
+      internalID: 669781082056813539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_6
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 117
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b218c3c3f88dd1a80800000000000000
+      internalID: -8494395212448366293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_7
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 106
+        width: 6
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc5acf25598f54030800000000000000
+      internalID: 3478459607439680973
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_8
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 91
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fae133aa796bb6940800000000000000
+      internalID: 5290522949788573359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 72
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69fe176d4ae1957b0800000000000000
+      internalID: -5235119398520229994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_10
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 7
+        width: 23
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 582c7d44b89d0e550800000000000000
+      internalID: 6188185080185733765
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_11
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 12
+        width: 16
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e86a7bfca6022490800000000000000
+      internalID: -7772642666864809759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_12
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 0
+        width: 30
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81a7d6202c28d1410800000000000000
+      internalID: 1449458424859163160
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_13
+      rect:
+        serializedVersion: 2
+        x: 105
+        y: 4
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 130e8df8b28762f60800000000000000
+      internalID: 8009221115817287729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_14
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 17
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1dcbbed1f303d12b0800000000000000
+      internalID: -5612276512990708527
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_15
+      rect:
+        serializedVersion: 2
+        x: 122
+        y: 14
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 889f266fef6170060800000000000000
+      internalID: 6919524636789242248
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_16
+      rect:
+        serializedVersion: 2
+        x: 133
+        y: 19
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a99722612a9f4520800000000000000
+      internalID: 2688536970734836137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroHealthBadge_17
+      rect:
+        serializedVersion: 2
+        x: 170
+        y: 11
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c14b4616b951dfa0800000000000000
+      internalID: -5777738208346684986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      HeroHealthBadge_0: -4816836036910159343
+      HeroHealthBadge_1: 5479210427927256503
+      HeroHealthBadge_10: 6188185080185733765
+      HeroHealthBadge_11: -7772642666864809759
+      HeroHealthBadge_12: 1449458424859163160
+      HeroHealthBadge_13: 8009221115817287729
+      HeroHealthBadge_14: -5612276512990708527
+      HeroHealthBadge_15: 6919524636789242248
+      HeroHealthBadge_16: 2688536970734836137
+      HeroHealthBadge_17: -5777738208346684986
+      HeroHealthBadge_2: 1671059876317289598
+      HeroHealthBadge_3: 3621248298582618501
+      HeroHealthBadge_4: 3327865019886709875
+      HeroHealthBadge_5: 669781082056813539
+      HeroHealthBadge_6: -8494395212448366293
+      HeroHealthBadge_7: 3478459607439680973
+      HeroHealthBadge_8: 5290522949788573359
+      HeroHealthBadge_9: -5235119398520229994
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

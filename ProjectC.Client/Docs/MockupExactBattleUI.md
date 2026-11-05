@@ -1,5 +1,7 @@
 # 원본 목업 기준 BattleScene UI 적용·검수 보고
 
+현재 프리팹의 후속 v4 적용 결과는 [v4 보고서](MockupRepaintBattleUI.md)를 참조한다. 아래는 v3 작업 당시의 기록이다.
+
 2026-11-06. Unity **6000.0.81f1**, Game View **1920×1080**. 원본 에디터를 종료하지 않고 `build/UnityMatchValidation` 복제본에서 적용·Play Mode 검증·촬영한 뒤, 검증한 에셋을 원본 프로젝트에 반영했다.
 
 ## 사용한 자료와 적용 범위

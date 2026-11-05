@@ -1,0 +1,520 @@
+fileFormatVersion: 2
+guid: 3a9abd6369e0e234cbb357a0c3819b60
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6238813305376623142
+    second: HeroRing_Opponent_0
+  - first:
+      213: 175106246890024156
+    second: HeroRing_Opponent_1
+  - first:
+      213: 2151671522461014578
+    second: HeroRing_Opponent_2
+  - first:
+      213: -1750067114425429724
+    second: HeroRing_Opponent_3
+  - first:
+      213: 6327442852395250618
+    second: HeroRing_Opponent_4
+  - first:
+      213: -5424232670011026280
+    second: HeroRing_Opponent_5
+  - first:
+      213: -8199836573608318040
+    second: HeroRing_Opponent_6
+  - first:
+      213: -8075026851322793950
+    second: HeroRing_Opponent_7
+  - first:
+      213: -6636672753761374551
+    second: HeroRing_Opponent_8
+  - first:
+      213: -4884023170837659296
+    second: HeroRing_Opponent_9
+  - first:
+      213: -5367969437554925012
+    second: HeroRing_Opponent_10
+  - first:
+      213: -6389658565545567835
+    second: HeroRing_Opponent_11
+  - first:
+      213: 723656331766048898
+    second: HeroRing_Opponent_12
+  - first:
+      213: 6516281576235454060
+    second: HeroRing_Opponent_13
+  - first:
+      213: 2070436626262589243
+    second: HeroRing_Opponent_14
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: HeroRing_Opponent_0
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 0
+        width: 509
+        height: 483
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 62a44f685a7b49650800000000000000
+      internalID: 6238813305376623142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_1
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 471
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cdce4db243a1e6200800000000000000
+      internalID: 175106246890024156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_2
+      rect:
+        serializedVersion: 2
+        x: 172
+        y: 475
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23adc9189d54cdd10800000000000000
+      internalID: 2151671522461014578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_3
+      rect:
+        serializedVersion: 2
+        x: 321
+        y: 477
+        width: 9
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 421549f4b3386b7e0800000000000000
+      internalID: -1750067114425429724
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_4
+      rect:
+        serializedVersion: 2
+        x: 330
+        y: 478
+        width: 6
+        height: 5
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab37a9100c79fc750800000000000000
+      internalID: 6327442852395250618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_5
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 472
+        width: 20
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8949cec102149b4b0800000000000000
+      internalID: -5424232670011026280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_6
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 469
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8abe1d5b414543e80800000000000000
+      internalID: -8199836573608318040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_7
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 368
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 220f92facddbfef80800000000000000
+      internalID: -8075026851322793950
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_8
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 290
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ae2a850b4dc5e3a0800000000000000
+      internalID: -6636672753761374551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 279
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 061c1738dc6783cb0800000000000000
+      internalID: -4884023170837659296
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_10
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 175
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c22a26dbc342185b0800000000000000
+      internalID: -5367969437554925012
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_11
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 179
+        width: 12
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a9df94736f5357a0800000000000000
+      internalID: -6389658565545567835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_12
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 60
+        width: 12
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 288a0628991fa0a00800000000000000
+      internalID: 723656331766048898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_13
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 46
+        width: 10
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6ecfef919b7e6a50800000000000000
+      internalID: 6516281576235454060
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Opponent_14
+      rect:
+        serializedVersion: 2
+        x: 324
+        y: 5
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3ff656542babbc10800000000000000
+      internalID: 2070436626262589243
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      HeroRing_Opponent_0: 6238813305376623142
+      HeroRing_Opponent_1: 175106246890024156
+      HeroRing_Opponent_10: -5367969437554925012
+      HeroRing_Opponent_11: -6389658565545567835
+      HeroRing_Opponent_12: 723656331766048898
+      HeroRing_Opponent_13: 6516281576235454060
+      HeroRing_Opponent_14: 2070436626262589243
+      HeroRing_Opponent_2: 2151671522461014578
+      HeroRing_Opponent_3: -1750067114425429724
+      HeroRing_Opponent_4: 6327442852395250618
+      HeroRing_Opponent_5: -5424232670011026280
+      HeroRing_Opponent_6: -8199836573608318040
+      HeroRing_Opponent_7: -8075026851322793950
+      HeroRing_Opponent_8: -6636672753761374551
+      HeroRing_Opponent_9: -4884023170837659296
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

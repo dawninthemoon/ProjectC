@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:08Z" duration="16.645812">
+  <test-suite type="TestSuite" id="1186" name="ProjectC.Client" fullname="ProjectC.Client" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:08Z" duration="16.645812" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1180" name="ProjectC.Client.PlayModeTests.dll" fullname="C:/Dev/ProjectC/build/UnityMatchValidation/Library/ScriptAssemblies/ProjectC.Client.PlayModeTests.dll" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:08Z" duration="16.629979" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="42944" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1181" name="ProjectC" fullname="ProjectC" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:08Z" duration="16.624038" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1182" name="Tests" fullname="ProjectC.Tests" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:08Z" duration="16.617790" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1147" name="MockupRepaintBattleUiPlayModeTests" fullname="ProjectC.Tests.MockupRepaintBattleUiPlayModeTests" classname="ProjectC.Tests.MockupRepaintBattleUiPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:05Z" duration="13.817236" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1148" name="V4RepaintLiveUiAndRequiredCaptures" fullname="ProjectC.Tests.MockupRepaintBattleUiPlayModeTests.V4RepaintLiveUiAndRequiredCaptures" methodname="V4RepaintLiveUiAndRequiredCaptures" classname="ProjectC.Tests.MockupRepaintBattleUiPlayModeTests" runstate="Runnable" seed="655840009" result="Passed" start-time="2026-11-05 15:34:51Z" end-time="2026-11-05 15:35:05Z" duration="13.799515" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[The character with Unicode value \u958B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u59CB was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u4F7F was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u7528 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u53EC was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u559A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u653B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u6483 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7834 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u76F8 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u624B was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u975E was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u516C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u958B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u76F8 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u624B was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u975E was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u516C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u958B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u76F8 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u624B was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u52B9 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u679C was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u767A was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u52D5 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u4F53 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u529B was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u81EA was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u5206 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7834 was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u58CA was not found in the [Pretendard-Medium] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogMessage].
+The character with Unicode value \u76F8 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u624B was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogActor].
+The character with Unicode value \u8A73 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \u7D30 was not found in the [Pretendard-SemiBold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [LogCardHint].
+The character with Unicode value \uD64D was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB828 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uACF5 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBC29 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC120 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBD09 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uD654 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBD80 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBE59 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC6D4 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC11C was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uACE0 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC11C was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB9AC was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uD544 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uACBD was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC0AC was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uD64D was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB828 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uACF5 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBC29 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uCCA0 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC2EC was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB300 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC7A5 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBD09 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC778 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC758 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBB38 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC11C was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBC31 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uADC0 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC57C was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uD589 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB4F1 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uBD88 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uB3D9 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+The character with Unicode value \uC790 was not found in the [NotoSerifJP-Bold] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Name].
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1149" name="MockupRepaintOnlinePlayModeTests" fullname="ProjectC.Tests.MockupRepaintOnlinePlayModeTests" classname="ProjectC.Tests.MockupRepaintOnlinePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-05 15:35:05Z" end-time="2026-11-05 15:35:08Z" duration="2.790775" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1150" name="V4UiPreservesServerCommandsAndReconnect" fullname="ProjectC.Tests.MockupRepaintOnlinePlayModeTests.V4UiPreservesServerCommandsAndReconnect" methodname="V4UiPreservesServerCommandsAndReconnect" classname="ProjectC.Tests.MockupRepaintOnlinePlayModeTests" runstate="Runnable" seed="979023156" result="Passed" start-time="2026-11-05 15:35:05Z" end-time="2026-11-05 15:35:08Z" duration="2.733739" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/nuts1/AppData/LocalLow/DefaultCompany/ProjectC_Client\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

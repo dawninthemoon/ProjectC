@@ -1,0 +1,1040 @@
+fileFormatVersion: 2
+guid: 5bf3a5cb43e91cd47b967a1ffd21026b
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4770198279090005919
+    second: HeroRing_Player_0
+  - first:
+      213: 1325763431519927149
+    second: HeroRing_Player_1
+  - first:
+      213: 8356047505107850487
+    second: HeroRing_Player_2
+  - first:
+      213: 7898993343506646081
+    second: HeroRing_Player_3
+  - first:
+      213: 5149781222228452
+    second: HeroRing_Player_4
+  - first:
+      213: -539331345821169715
+    second: HeroRing_Player_5
+  - first:
+      213: -3356635809334852229
+    second: HeroRing_Player_6
+  - first:
+      213: -7329015205928249316
+    second: HeroRing_Player_7
+  - first:
+      213: 4352735227807097090
+    second: HeroRing_Player_8
+  - first:
+      213: -3845307427230344389
+    second: HeroRing_Player_9
+  - first:
+      213: -8276774503301408808
+    second: HeroRing_Player_10
+  - first:
+      213: -6772615513438326509
+    second: HeroRing_Player_11
+  - first:
+      213: 7836396355915018059
+    second: HeroRing_Player_12
+  - first:
+      213: 1594964442700278783
+    second: HeroRing_Player_13
+  - first:
+      213: 6604115471427200819
+    second: HeroRing_Player_14
+  - first:
+      213: 9045872942272424209
+    second: HeroRing_Player_15
+  - first:
+      213: 1183490674650304151
+    second: HeroRing_Player_16
+  - first:
+      213: -2148988593593736006
+    second: HeroRing_Player_17
+  - first:
+      213: -6273468239434495156
+    second: HeroRing_Player_18
+  - first:
+      213: 5925353101713049073
+    second: HeroRing_Player_19
+  - first:
+      213: -7481842004426694034
+    second: HeroRing_Player_20
+  - first:
+      213: -9048062141851479558
+    second: HeroRing_Player_21
+  - first:
+      213: 7801891780691230899
+    second: HeroRing_Player_22
+  - first:
+      213: 7021440527699815563
+    second: HeroRing_Player_23
+  - first:
+      213: -1406061127746456116
+    second: HeroRing_Player_24
+  - first:
+      213: 3735213507457600379
+    second: HeroRing_Player_25
+  - first:
+      213: -2130872513652131726
+    second: HeroRing_Player_26
+  - first:
+      213: -7185745338745180404
+    second: HeroRing_Player_27
+  - first:
+      213: -2682873681885598589
+    second: HeroRing_Player_28
+  - first:
+      213: -5858883399159458025
+    second: HeroRing_Player_29
+  - first:
+      213: 8056500485489412608
+    second: HeroRing_Player_30
+  - first:
+      213: 1503463231012937935
+    second: HeroRing_Player_31
+  - first:
+      213: 6882521098929534841
+    second: HeroRing_Player_32
+  - first:
+      213: -5013998749108291782
+    second: HeroRing_Player_33
+  - first:
+      213: 8838769660632328908
+    second: HeroRing_Player_34
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: HeroRing_Player_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 18
+        width: 467
+        height: 502
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f97e65daf06233240800000000000000
+      internalID: 4770198279090005919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_1
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 510
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6bb2f711de066210800000000000000
+      internalID: 1325763431519927149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_2
+      rect:
+        serializedVersion: 2
+        x: 126
+        y: 504
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f41e340fe4a6f370800000000000000
+      internalID: 8356047505107850487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_3
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 512
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14483e2689cde9d60800000000000000
+      internalID: 7898993343506646081
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_4
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 511
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e10c60e2bb421000800000000000000
+      internalID: 5149781222228452
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_5
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 512
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc7881c9ff8e388f0800000000000000
+      internalID: -539331345821169715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_6
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 511
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b758d300485da61d0800000000000000
+      internalID: -3356635809334852229
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_7
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 512
+        width: 18
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c18d531408b1a4a90800000000000000
+      internalID: -7329015205928249316
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_8
+      rect:
+        serializedVersion: 2
+        x: 372
+        y: 511
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20165ceb0a5086c30800000000000000
+      internalID: 4352735227807097090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_9
+      rect:
+        serializedVersion: 2
+        x: 382
+        y: 507
+        width: 12
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3b93cba449b2aac0800000000000000
+      internalID: -3845307427230344389
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_10
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 429
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d795b4017df22d80800000000000000
+      internalID: -8276774503301408808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_11
+      rect:
+        serializedVersion: 2
+        x: 431
+        y: 369
+        width: 61
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3117539c216d202a0800000000000000
+      internalID: -6772615513438326509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_12
+      rect:
+        serializedVersion: 2
+        x: 465
+        y: 356
+        width: 27
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4fea7977f870cc60800000000000000
+      internalID: 7836396355915018059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_13
+      rect:
+        serializedVersion: 2
+        x: 481
+        y: 342
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ffb678cc5b3722610800000000000000
+      internalID: 1594964442700278783
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_14
+      rect:
+        serializedVersion: 2
+        x: 475
+        y: 217
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 337641af70886ab50800000000000000
+      internalID: 6604115471427200819
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_15
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 158
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 119277f8385698d70800000000000000
+      internalID: 9045872942272424209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_16
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 159
+        width: 31
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79ec4898f7a9c6010800000000000000
+      internalID: 1183490674650304151
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_17
+      rect:
+        serializedVersion: 2
+        x: 462
+        y: 156
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab4aa7c82424d22e0800000000000000
+      internalID: -2148988593593736006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_18
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 150
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4bcfcedfd920f8a0800000000000000
+      internalID: -6273468239434495156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_19
+      rect:
+        serializedVersion: 2
+        x: 437
+        y: 103
+        width: 34
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f58d5c80451b3250800000000000000
+      internalID: 5925353101713049073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_20
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 130
+        width: 23
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e62ec8466582b2890800000000000000
+      internalID: -7481842004426694034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_21
+      rect:
+        serializedVersion: 2
+        x: 475
+        y: 115
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: af15841bb63de6280800000000000000
+      internalID: -9048062141851479558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_22
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 98
+        width: 17
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b004240d33e54c60800000000000000
+      internalID: 7801891780691230899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_23
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 96
+        width: 18
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b8c241175fa217160800000000000000
+      internalID: 7021440527699815563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_24
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 83
+        width: 14
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc5ff2c9adaac7ce0800000000000000
+      internalID: -1406061127746456116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_25
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 9
+        width: 23
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b7b404025e426d330800000000000000
+      internalID: 3735213507457600379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_26
+      rect:
+        serializedVersion: 2
+        x: 106
+        y: 11
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 278fe1a1dbe9d62e0800000000000000
+      internalID: -2130872513652131726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_27
+      rect:
+        serializedVersion: 2
+        x: 119
+        y: 8
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0faca5afaa174c90800000000000000
+      internalID: -7185745338745180404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_28
+      rect:
+        serializedVersion: 2
+        x: 289
+        y: 5
+        width: 31
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38ce6fdc99484cad0800000000000000
+      internalID: -2682873681885598589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_29
+      rect:
+        serializedVersion: 2
+        x: 309
+        y: 14
+        width: 13
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 717daa4179011bea0800000000000000
+      internalID: -5858883399159458025
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_30
+      rect:
+        serializedVersion: 2
+        x: 324
+        y: 14
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00acb52a1807ecf60800000000000000
+      internalID: 8056500485489412608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_31
+      rect:
+        serializedVersion: 2
+        x: 327
+        y: 16
+        width: 11
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc02369c7df5dd410800000000000000
+      internalID: 1503463231012937935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_32
+      rect:
+        serializedVersion: 2
+        x: 435
+        y: 8
+        width: 12
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 97773dc6970a38f50800000000000000
+      internalID: 6882521098929534841
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_33
+      rect:
+        serializedVersion: 2
+        x: 448
+        y: 11
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a37b527f3b2ba6ab0800000000000000
+      internalID: -5013998749108291782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroRing_Player_34
+      rect:
+        serializedVersion: 2
+        x: 454
+        y: 0
+        width: 40
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cca6d713d2e99aa70800000000000000
+      internalID: 8838769660632328908
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      HeroRing_Player_0: 4770198279090005919
+      HeroRing_Player_1: 1325763431519927149
+      HeroRing_Player_10: -8276774503301408808
+      HeroRing_Player_11: -6772615513438326509
+      HeroRing_Player_12: 7836396355915018059
+      HeroRing_Player_13: 1594964442700278783
+      HeroRing_Player_14: 6604115471427200819
+      HeroRing_Player_15: 9045872942272424209
+      HeroRing_Player_16: 1183490674650304151
+      HeroRing_Player_17: -2148988593593736006
+      HeroRing_Player_18: -6273468239434495156
+      HeroRing_Player_19: 5925353101713049073
+      HeroRing_Player_2: 8356047505107850487
+      HeroRing_Player_20: -7481842004426694034
+      HeroRing_Player_21: -9048062141851479558
+      HeroRing_Player_22: 7801891780691230899
+      HeroRing_Player_23: 7021440527699815563
+      HeroRing_Player_24: -1406061127746456116
+      HeroRing_Player_25: 3735213507457600379
+      HeroRing_Player_26: -2130872513652131726
+      HeroRing_Player_27: -7185745338745180404
+      HeroRing_Player_28: -2682873681885598589
+      HeroRing_Player_29: -5858883399159458025
+      HeroRing_Player_3: 7898993343506646081
+      HeroRing_Player_30: 8056500485489412608
+      HeroRing_Player_31: 1503463231012937935
+      HeroRing_Player_32: 6882521098929534841
+      HeroRing_Player_33: -5013998749108291782
+      HeroRing_Player_34: 8838769660632328908
+      HeroRing_Player_4: 5149781222228452
+      HeroRing_Player_5: -539331345821169715
+      HeroRing_Player_6: -3356635809334852229
+      HeroRing_Player_7: -7329015205928249316
+      HeroRing_Player_8: 4352735227807097090
+      HeroRing_Player_9: -3845307427230344389
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

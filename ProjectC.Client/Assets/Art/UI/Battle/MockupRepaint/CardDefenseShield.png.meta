@@ -1,0 +1,572 @@
+fileFormatVersion: 2
+guid: 5ab5f487dad211141ba534b1bd664c16
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7366038504080929232
+    second: CardDefenseShield_0
+  - first:
+      213: -4203462524614442583
+    second: CardDefenseShield_1
+  - first:
+      213: 4823878380710609671
+    second: CardDefenseShield_2
+  - first:
+      213: 7188050828416700769
+    second: CardDefenseShield_3
+  - first:
+      213: 6798930179764924278
+    second: CardDefenseShield_4
+  - first:
+      213: -433886910829748090
+    second: CardDefenseShield_5
+  - first:
+      213: 8044084965775874748
+    second: CardDefenseShield_6
+  - first:
+      213: 1651228916549361774
+    second: CardDefenseShield_7
+  - first:
+      213: 3503136751681295825
+    second: CardDefenseShield_8
+  - first:
+      213: -2589120573695345434
+    second: CardDefenseShield_9
+  - first:
+      213: -5409514812148350264
+    second: CardDefenseShield_10
+  - first:
+      213: 3063814157722393106
+    second: CardDefenseShield_11
+  - first:
+      213: -3111444818307226784
+    second: CardDefenseShield_12
+  - first:
+      213: 8572557874143805775
+    second: CardDefenseShield_13
+  - first:
+      213: -7747517050744490262
+    second: CardDefenseShield_14
+  - first:
+      213: -5271757539906157205
+    second: CardDefenseShield_15
+  - first:
+      213: -1156000164704887083
+    second: CardDefenseShield_16
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: CardDefenseShield_0
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 0
+        width: 146
+        height: 157
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d1f7951efc693660800000000000000
+      internalID: 7366038504080929232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_1
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 152
+        width: 15
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a180b1da1d4aa5c0800000000000000
+      internalID: -4203462524614442583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_2
+      rect:
+        serializedVersion: 2
+        x: 73
+        y: 157
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70341f944dbd1f240800000000000000
+      internalID: 4823878380710609671
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_3
+      rect:
+        serializedVersion: 2
+        x: 102
+        y: 147
+        width: 13
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 161da3ff42611c360800000000000000
+      internalID: 7188050828416700769
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_4
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 145
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67f2299e9f6aa5e50800000000000000
+      internalID: 6798930179764924278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_5
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 144
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6802d4747268af9f0800000000000000
+      internalID: -433886910829748090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_6
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 98
+        width: 15
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cba912038a452af60800000000000000
+      internalID: 8044084965775874748
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_7
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 114
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6027c573f75ae610800000000000000
+      internalID: 1651228916549361774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_8
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 113
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d55493b054ad9030800000000000000
+      internalID: 3503136751681295825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_9
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 89
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ecbb345e88911cd0800000000000000
+      internalID: -2589120573695345434
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_10
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 95
+        width: 12
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c20fae60fa8de4b0800000000000000
+      internalID: -5409514812148350264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_11
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 82
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21a1bd06ebad48a20800000000000000
+      internalID: 3063814157722393106
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_12
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 48
+        width: 17
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06361924c6de1d4d0800000000000000
+      internalID: -3111444818307226784
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_13
+      rect:
+        serializedVersion: 2
+        x: 155
+        y: 83
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f41c1d897f7d7f670800000000000000
+      internalID: 8572557874143805775
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_14
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 60
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae6b71b5a4a4b7490800000000000000
+      internalID: -7747517050744490262
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_15
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 50
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6508ebc274f6d6b0800000000000000
+      internalID: -5271757539906157205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CardDefenseShield_16
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 37
+        width: 17
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ded87699ff05ffe0800000000000000
+      internalID: -1156000164704887083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      CardDefenseShield_0: 7366038504080929232
+      CardDefenseShield_1: -4203462524614442583
+      CardDefenseShield_10: -5409514812148350264
+      CardDefenseShield_11: 3063814157722393106
+      CardDefenseShield_12: -3111444818307226784
+      CardDefenseShield_13: 8572557874143805775
+      CardDefenseShield_14: -7747517050744490262
+      CardDefenseShield_15: -5271757539906157205
+      CardDefenseShield_16: -1156000164704887083
+      CardDefenseShield_2: 4823878380710609671
+      CardDefenseShield_3: 7188050828416700769
+      CardDefenseShield_4: 6798930179764924278
+      CardDefenseShield_5: -433886910829748090
+      CardDefenseShield_6: 8044084965775874748
+      CardDefenseShield_7: 1651228916549361774
+      CardDefenseShield_8: 3503136751681295825
+      CardDefenseShield_9: -2589120573695345434
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

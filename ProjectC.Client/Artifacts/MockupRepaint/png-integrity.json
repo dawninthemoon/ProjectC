@@ -1,0 +1,107 @@
+[
+  {
+    "file": "BattleBackground_1920x1080.png",
+    "sha256": "9ab90e5aae139de9beeebd7469fb34739c2b2705db779969f8800bec3b8c3c3e",
+    "unchanged": true
+  },
+  {
+    "file": "CardAttackFlower.png",
+    "sha256": "258468b997c9254901f68f2e989ab3204936bf0693488e35927449ddd2e2f83c",
+    "unchanged": true
+  },
+  {
+    "file": "CardBack.png",
+    "sha256": "c4850f20dbdd38e108f99663efcf9f0de17d5388c88b103bbb574c505ea9e0c0",
+    "unchanged": true
+  },
+  {
+    "file": "CardDefenseShield.png",
+    "sha256": "52e4a000aad7f4a7cfac7575129b5b20410f9d3e34bee24dce2bb8a2f4f41919",
+    "unchanged": true
+  },
+  {
+    "file": "CostChevron.png",
+    "sha256": "da45b6aa6ee0c8504679c4f6a319eb10f16813d94d8d104a49568d30e80e5a2b",
+    "unchanged": true
+  },
+  {
+    "file": "FieldMonsterFrame.png",
+    "sha256": "0a39e8b1904b2ac02cc8bf8625f3d51452c8f2dd7b759e3f88dabc7648c57807",
+    "unchanged": true
+  },
+  {
+    "file": "HandCardFrame.png",
+    "sha256": "93563fc82d99ed1b84ab1d033403ea10bfe43d231de3e3793ec0a8e9b19faa8f",
+    "unchanged": true
+  },
+  {
+    "file": "HeroHealthBadge.png",
+    "sha256": "7e360edf3fc0b7e8331635a3c994b05139565cb7eae6aa0b5f4890cfed079edc",
+    "unchanged": true
+  },
+  {
+    "file": "HeroRing_Opponent.png",
+    "sha256": "26be20b438a787e4047c7317f7ff2cbf0b7623b42145bebd06c9c7543f355efe",
+    "unchanged": true
+  },
+  {
+    "file": "HeroRing_Player.png",
+    "sha256": "dc452039e0669765b5ab5acaa4911c55735fd1b8ba8db20d9b52d4cddfab0000",
+    "unchanged": true
+  },
+  {
+    "file": "PhaseArrow.png",
+    "sha256": "b19f328bfcb9bb13b6126107abbc9f811912d3d9285ce0ee088d013d3d275500",
+    "unchanged": true
+  },
+  {
+    "file": "PhaseButton.png",
+    "sha256": "36bc8e20ffd8acdf38d0c46615ddc0dca9734b91499463fa3bcfff08a67aec3d",
+    "unchanged": true
+  },
+  {
+    "file": "SideButton_Log.png",
+    "sha256": "8bc75e647ce2dbd6a5cd303197681c164c3a74598ab494dddced72876e96e9af",
+    "unchanged": true
+  },
+  {
+    "file": "SideButton_Menu.png",
+    "sha256": "fb3bb00898196e08c5b7ce04fcc8edb39f1e0926fdf2e23bc417fbc88d16d35c",
+    "unchanged": true
+  },
+  {
+    "file": "SpecialCostPanel_Expandable.png",
+    "sha256": "46efcf15c1b66c64a1a0619c40405cab65c1aa461da3e20c966336c31b543006",
+    "unchanged": true
+  },
+  {
+    "file": "TimerHousing.png",
+    "sha256": "eda2082645658b1805f19c1555fd1bfd79e1a69141f2092c0eab31a9d6405737",
+    "unchanged": true
+  },
+  {
+    "file": "TimerTicks_On.png",
+    "sha256": "f5d2c5b4f8edeba68cb8a1aff94111aa2e61292953f824ad69b4a9d55910abf9",
+    "unchanged": true
+  },
+  {
+    "file": "TurnBanner.png",
+    "sha256": "339897d8b96fd307043e435c8dd17f29ddcec7a7699da503656d15547e25d760",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Deck.png",
+    "sha256": "ff48005d9d64e561ed28a72e87cda69766cf2a010e2be9096c0f4da9ac557d17",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Exile.png",
+    "sha256": "61c23353abf54c465f7c028144bbff855ac294a2fceac0c058d56a38ff7e743c",
+    "unchanged": true
+  },
+  {
+    "file": "ZoneTag_Grave.png",
+    "sha256": "cf2cea47f8ff99ad9e98bbeb808d65ef4118b45d5ad2a192fff0e1acd9dfdb6a",
+    "unchanged": true
+  }
+]
