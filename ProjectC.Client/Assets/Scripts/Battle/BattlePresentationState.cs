@@ -7,8 +7,10 @@ namespace ProjectC.Client
     // Numeric values are the existing protocol v2 event/zone values, not new rules.
     internal enum PresentationEvent
     {
-        Damage = 1, Destroy = 2, Move = 4, Life = 8, PlayerDamage = 10,
-        Summon = 11, Effect = 13, Transform = 15, Heal = 16, Stats = 17, Yokai = 18, Spell = 19
+        BattleStarted = 0, Damage = 1, Destroy = 2, BattleCompleted = 3, Move = 4,
+        TurnStarted = 5, TurnEnded = 6, PhaseChanged = 7, Life = 8, GameEnded = 9, PlayerDamage = 10,
+        Summon = 11, Draw = 12, Effect = 13, EffectResolved = 14, Transform = 15,
+        Heal = 16, Stats = 17, Yokai = 18, Spell = 19, MulliganCompleted = 20
     }
 
     internal enum PresentationZone

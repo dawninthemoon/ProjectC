@@ -156,6 +156,14 @@ namespace ProjectC.Client
 
         void Update()
         {
+            if (presenter.Log.IsOpen)
+            {
+                if (Keyboard.current?.escapeKey.wasPressedThisFrame == true)
+                {
+                    presenter.Log.Close();
+                }
+                return;
+            }
             if (Keyboard.current?.spaceKey.wasPressedThisFrame == true && presenter.PresentationBusy)
             {
                 presenter.SkipPresentation();

@@ -8,8 +8,10 @@ namespace ProjectC.Client
 {
     public sealed class BattleTurnHudView : MonoBehaviour
     {
-        private Image _ring;
-        private TMP_Text _turnUnit, _timeUnit;
+        private Image _ring, _ownerAccent;
+        private TMP_Text _turnUnit, _timeUnit, _status;
+        private Shadow _statusGlow;
+        private bool _bound;
         private int _turn = -1, _activePlayer = -1;
         private double _observedDuration;
         public float FillAmount => _ring.fillAmount;
@@ -23,14 +25,29 @@ namespace ProjectC.Client
 
         private void Awake()
         {
-            if (!this.Bind("TimeRing", out _ring) || !this.Bind("TurnUnit", out _turnUnit) || !this.Bind("TimeUnit", out _timeUnit))
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (_bound)
+            {
+                return;
+            }
+            if (!this.Bind("TimeRing", out _ring) || !this.Bind("TurnUnit", out _turnUnit)
+                || !this.Bind("TimeUnit", out _timeUnit) || !this.Bind("TurnOwner", out _status)
+                || !this.Bind("TurnOwnerAccent", out _ownerAccent))
             {
                 throw new InvalidOperationException("Turn HUD requires its radial ring and unit labels.");
             }
+            _statusGlow = _status.GetComponent<Shadow>();
+            _bound = true;
         }
 
-        public void Render(int turn, int activePlayer, bool running, double remaining)
+        public void Render(int turn, int activePlayer, bool running, double remaining,
+            int ownPlayer = 0, bool started = true, bool finished = false, bool choosing = false)
         {
+            Initialize();
             remaining = Math.Max(0, remaining);
             if (_turn != turn || _activePlayer != activePlayer || !running)
             {
@@ -45,6 +62,17 @@ namespace ProjectC.Client
             _ring.color = remaining <= 10 ? new Color(1f, .62f, .25f) : new Color(.12f, .9f, .88f);
             _turnUnit.text = BattleText.Get("ui_battle_turn");
             _timeUnit.text = running ? BattleText.Get("ui_battle_seconds") : "";
+            bool ownTurn = activePlayer != 0 && activePlayer == ownPlayer;
+            _status.text = BattleText.Get(finished ? "ui.turn.finished" : !started ? "ui.turn.waiting"
+                : choosing ? "ui.turn.choose" : ownTurn ? "ui.turn.yours" : "ui.turn.theirs");
+            _status.color = choosing ? new Color(1, .78f, .4f)
+                : ownTurn ? new Color(1, .94f, .72f) : new Color(.65f, .79f, 1);
+            _ownerAccent.color = choosing ? new Color(1, .6f, .1f, .65f)
+                : ownTurn ? new Color(.08f, .9f, .7f, .45f) : new Color(.2f, .3f, 1, .65f);
+            if (_statusGlow != null)
+            {
+                _statusGlow.effectColor = ownTurn ? new Color(.05f, .8f, .65f, .8f) : new Color(.16f, .25f, .6f, .7f);
+            }
         }
     }
 }

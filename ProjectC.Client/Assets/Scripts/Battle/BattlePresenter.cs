@@ -277,7 +277,8 @@ namespace ProjectC.Client
             Resync?.onClick.AddListener(Client.RequestSnapshot);
             ResultRematch.onClick.AddListener(Client.RequestRematch);
             ResultLeave.onClick.AddListener(Client.LeaveMatch);
-            Client.NoticeReceived += Log.Add;
+            Log.Initialize(this);
+            Client.NoticeReceived += Log.Notice;
             Client.EventReceived += ReceiveEvent;
             Client.SnapshotReceived += ReceiveSnapshot;
             Client.ViewInvalidated += Invalidate;
@@ -294,7 +295,7 @@ namespace ProjectC.Client
         {
             if (Client != null)
             {
-                Client.NoticeReceived -= Log.Add;
+                Client.NoticeReceived -= Log.Notice;
                 Client.EventReceived -= ReceiveEvent;
                 Client.SnapshotReceived -= ReceiveSnapshot;
                 Client.ViewInvalidated -= Invalidate;
@@ -306,6 +307,7 @@ namespace ProjectC.Client
             ClientAudio.StopBattleIfRunning();
             _turnTimerRunning = false;
             _turnHud?.ResetTimer();
+            Log.Invalidate();
             StopAllCoroutines();
             _playing = false;
             _batches.Clear();
@@ -342,6 +344,7 @@ namespace ProjectC.Client
 
         void ReceiveEvent(EventView e)
         {
+            Log.QueueEvent(e);
             if (events.Count >= MaximumPendingEvents)
             {
                 Debug.LogWarning("Battle presentation event backlog exceeded; restoring the latest snapshot.", this);
@@ -352,6 +355,7 @@ namespace ProjectC.Client
 
         private void ReceiveSnapshot(StateView snapshot)
         {
+            Log.AcceptSnapshot(snapshot);
             _turnTimerRunning = snapshot.TurnTimerRunning;
             // Correct against the server's timestamp pair, then advance with a monotonic local clock.
             _turnDeadline = Time.realtimeSinceStartupAsDouble + Math.Max(0,
@@ -704,7 +708,7 @@ namespace ProjectC.Client
                 PhaseLabel.text = BattleText.Get(rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1"
                     : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
                     : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
-                TurnLabel.text = rendered.TurnNumber.ToString();
+                TurnLabel.text = (Client.State ?? rendered).TurnNumber.ToString();
             }
             string language = CardPresentation.Library.Localization.Language;
             if (_hudLanguage != language && mine != null && enemy != null && rendered != null)
@@ -715,7 +719,8 @@ namespace ProjectC.Client
             double remaining = Math.Max(0, _turnDeadline - Time.realtimeSinceStartupAsDouble);
             int seconds = _turnTimerRunning ? (int)Math.Ceiling(remaining) : 0;
             _turnTimer.text = _turnTimerRunning ? seconds.ToString() : "--";
-            _turnHud.Render(rendered?.TurnNumber ?? 0, rendered?.ActivePlayerId ?? 0, _turnTimerRunning, remaining);
+            _turnHud.Render(Client.State?.TurnNumber ?? 0, Client.State?.ActivePlayerId ?? 0, _turnTimerRunning, remaining,
+                Client.PlayerId, Client.State?.Started ?? false, Client.State?.Finished ?? false, Client.Input.HasSelection);
             ResultRematch.interactable = !Client.WebsiteMode && Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
             if (ConnectionLabel != null)

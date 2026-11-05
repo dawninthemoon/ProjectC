@@ -1,1 +1,1 @@
-{"name":"ProjectC.Client.PlayModeTests","references":["ProjectC.Client.Runtime","Unity.ugui","Unity.TextMeshPro"],"optionalUnityReferences":["TestAssemblies"],"autoReferenced":false,"overrideReferences":true,"precompiledReferences":["nunit.framework.dll","Newtonsoft.Json.dll"]}
+{"name":"ProjectC.Client.PlayModeTests","references":["ProjectC.Client.Runtime","Unity.ugui","Unity.TextMeshPro","Unity.InputSystem"],"optionalUnityReferences":["TestAssemblies"],"autoReferenced":false,"overrideReferences":true,"precompiledReferences":["nunit.framework.dll","Newtonsoft.Json.dll"]}

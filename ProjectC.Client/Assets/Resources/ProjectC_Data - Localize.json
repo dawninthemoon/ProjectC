@@ -924,5 +924,263 @@
     "korean": "요력을 요구하는 카드 행동에 사용하는 자원입니다.",
     "english": "Used by card actions that require Yokai Power.",
     "japanese": "妖力を必要とするカードの行動に使用するリソースです。"
+  },
+  {
+    "lmk": "ui.turn.yours",
+    "korean": "내 턴",
+    "english": "Your Turn",
+    "japanese": "自分のターン"
+  },
+  {
+    "lmk": "ui.turn.theirs",
+    "korean": "상대 턴",
+    "english": "Opponent Turn",
+    "japanese": "相手のターン"
+  },
+  {
+    "lmk": "ui.turn.waiting",
+    "korean": "대기 중",
+    "english": "Waiting",
+    "japanese": "待機中"
+  },
+  {
+    "lmk": "ui.turn.finished",
+    "korean": "경기 종료",
+    "english": "Match Over",
+    "japanese": "対戦終了"
+  },
+  {
+    "lmk": "ui.turn.choose",
+    "korean": "효과 선택",
+    "english": "Choose Effect",
+    "japanese": "効果を選択"
+  },
+  {
+    "lmk": "ui.log.hidden_card",
+    "korean": "비공개 카드",
+    "english": "Hidden card",
+    "japanese": "非公開カード"
+  },
+  {
+    "lmk": "ui.log.card",
+    "korean": "카드",
+    "english": "Card",
+    "japanese": "カード"
+  },
+  {
+    "lmk": "ui.log.system",
+    "korean": "전투",
+    "english": "Battle",
+    "japanese": "バトル"
+  },
+  {
+    "lmk": "ui.log.own",
+    "korean": "나",
+    "english": "You",
+    "japanese": "自分"
+  },
+  {
+    "lmk": "ui.log.opponent",
+    "korean": "상대",
+    "english": "Opponent",
+    "japanese": "相手"
+  },
+  {
+    "lmk": "ui.log.attack",
+    "korean": "{0} → {1} 공격",
+    "english": "{0} attacks {1}",
+    "japanese": "{0} → {1} に攻撃"
+  },
+  {
+    "lmk": "ui.log.damage",
+    "korean": "{0} · 피해 {1} / 남은 체력 {2}",
+    "english": "{0} · {1} damage / HP {2}",
+    "japanese": "{0} · {1}ダメージ / 体力{2}"
+  },
+  {
+    "lmk": "ui.log.destroy",
+    "korean": "{0} 파괴",
+    "english": "{0} destroyed",
+    "japanese": "{0}を破壊"
+  },
+  {
+    "lmk": "ui.log.battle_end",
+    "korean": "공격 처리 완료",
+    "english": "Attack completed",
+    "japanese": "攻撃処理完了"
+  },
+  {
+    "lmk": "ui.log.draw",
+    "korean": "{0} 드로우",
+    "english": "Drew {0}",
+    "japanese": "{0}をドロー"
+  },
+  {
+    "lmk": "ui.log.play",
+    "korean": "카드 사용 · {0}",
+    "english": "Played {0}",
+    "japanese": "カード使用 · {0}"
+  },
+  {
+    "lmk": "ui.log.move",
+    "korean": "{0} → {1}",
+    "english": "{0} → {1}",
+    "japanese": "{0} → {1}"
+  },
+  {
+    "lmk": "ui.log.turn_start",
+    "korean": "턴 시작",
+    "english": "Turn started",
+    "japanese": "ターン開始"
+  },
+  {
+    "lmk": "ui.log.turn_end",
+    "korean": "턴 종료",
+    "english": "Turn ended",
+    "japanese": "ターン終了"
+  },
+  {
+    "lmk": "ui.log.phase",
+    "korean": "{0} 시작",
+    "english": "{0} started",
+    "japanese": "{0}開始"
+  },
+  {
+    "lmk": "ui.log.life",
+    "korean": "영웅 체력 {0}",
+    "english": "Hero HP {0}",
+    "japanese": "英雄の体力{0}"
+  },
+  {
+    "lmk": "ui.log.game_end",
+    "korean": "경기 종료",
+    "english": "Match ended",
+    "japanese": "対戦終了"
+  },
+  {
+    "lmk": "ui.log.player_damage",
+    "korean": "영웅에게 피해 {0}",
+    "english": "{0} damage to hero",
+    "japanese": "英雄に{0}ダメージ"
+  },
+  {
+    "lmk": "ui.log.summon",
+    "korean": "{0} 소환",
+    "english": "Summoned {0}",
+    "japanese": "{0}を召喚"
+  },
+  {
+    "lmk": "ui.log.effect",
+    "korean": "{0} 효과 발동",
+    "english": "{0} activated an effect",
+    "japanese": "{0}の効果発動"
+  },
+  {
+    "lmk": "ui.log.resolved",
+    "korean": "효과 처리 완료",
+    "english": "Effect resolved",
+    "japanese": "効果処理完了"
+  },
+  {
+    "lmk": "ui.log.transform",
+    "korean": "{0} 현현",
+    "english": "{0} manifested",
+    "japanese": "{0}が顕現"
+  },
+  {
+    "lmk": "ui.log.heal",
+    "korean": "{0} 회복",
+    "english": "{0} healed",
+    "japanese": "{0}を回復"
+  },
+  {
+    "lmk": "ui.log.stats",
+    "korean": "{0} 능력치 변경",
+    "english": "{0} stats changed",
+    "japanese": "{0}の能力値変更"
+  },
+  {
+    "lmk": "ui.log.resource",
+    "korean": "요력 {0}",
+    "english": "Yokai Power {0}",
+    "japanese": "妖力{0}"
+  },
+  {
+    "lmk": "ui.log.spell",
+    "korean": "주문 사용 · {0}",
+    "english": "Cast {0}",
+    "japanese": "スペル使用 · {0}"
+  },
+  {
+    "lmk": "ui.log.mulligan",
+    "korean": "멀리건 완료",
+    "english": "Mulligan completed",
+    "japanese": "マリガン完了"
+  },
+  {
+    "lmk": "ui.log.event",
+    "korean": "전투 이벤트",
+    "english": "Battle event",
+    "japanese": "バトルイベント"
+  },
+  {
+    "lmk": "ui.log.deck",
+    "korean": "덱",
+    "english": "Deck",
+    "japanese": "デッキ"
+  },
+  {
+    "lmk": "ui.log.hand",
+    "korean": "손패",
+    "english": "Hand",
+    "japanese": "手札"
+  },
+  {
+    "lmk": "ui.log.field",
+    "korean": "필드",
+    "english": "Field",
+    "japanese": "フィールド"
+  },
+  {
+    "lmk": "ui.log.grave",
+    "korean": "묘지",
+    "english": "Graveyard",
+    "japanese": "墓地"
+  },
+  {
+    "lmk": "ui.log.exile",
+    "korean": "제외존",
+    "english": "Exile",
+    "japanese": "除外"
+  },
+  {
+    "lmk": "ui.log.hidden_zone",
+    "korean": "비공개 영역",
+    "english": "Hidden zone",
+    "japanese": "非公開領域"
+  },
+  {
+    "lmk": "ui.log.turn_header",
+    "korean": "{0}턴",
+    "english": "Turn {0}",
+    "japanese": "{0}ターン"
+  },
+  {
+    "lmk": "ui.log.preparation",
+    "korean": "경기 준비",
+    "english": "Preparation",
+    "japanese": "対戦準備"
+  },
+  {
+    "lmk": "ui.log.details",
+    "korean": "카드 상세 ›",
+    "english": "Card details ›",
+    "japanese": "カード詳細 ›"
+  },
+  {
+    "lmk": "ui.log.empty",
+    "korean": "아직 기록된 행동이 없습니다.",
+    "english": "No actions recorded yet.",
+    "japanese": "まだ行動の記録はありません。"
   }
 ]
