@@ -44,10 +44,10 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (_itemPrefab == null || !this.Bind("CostViewport", out _viewport) || !this.Bind("CostContent", out _content)
-                || !this.Bind("CostTooltip", out _tooltip) || !this.Bind("CostTooltipTitle", out _title)
-                || !this.Bind("CostTooltipAmount", out _amount) || !this.Bind("CostTooltipDescription", out _description)
-                || !this.Bind("CostChevron", out _chevron) || !this.Bind("CostToggle", out Button toggle))
+            if (_itemPrefab == null || !this.Bind("CostViewportImage", out _viewport) || !this.Bind("CostContent", out _content)
+                || !this.Bind("CostTooltipImage", out _tooltip) || !this.Bind("CostTooltipTitleText", out _title)
+                || !this.Bind("CostTooltipAmountText", out _amount) || !this.Bind("CostTooltipDescriptionText", out _description)
+                || !this.Bind("CostChevronImage", out _chevron) || !this.Bind("CostToggleButton", out Button toggle))
             {
                 throw new InvalidOperationException("Special cost list is missing its prefab or hierarchy bindings.");
             }
@@ -57,7 +57,7 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Special cost viewport requires ScrollRect.");
             }
             toggle.onClick.AddListener(Toggle);
-            this.Bind("CostBody", out _body);
+            this.Bind("CostBodyImage", out _body);
             _bound = true;
             HideTooltip();
         }

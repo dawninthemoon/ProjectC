@@ -149,9 +149,6 @@ namespace ProjectC.Client.Editor
             {
                 viewport.gameObject.AddComponent<RectMask2D>();
             }
-            // Retain the legacy text field for tools, outside the dynamic layout and invisible.
-            ui.Log.Full.transform.SetParent(panel, false);
-            ui.Log.Full.gameObject.SetActive(false);
             var content = Rect(viewport, "LogContent");
             Place(content, 0, 0, 552, 1);
             content.anchorMin = new Vector2(0, 1);

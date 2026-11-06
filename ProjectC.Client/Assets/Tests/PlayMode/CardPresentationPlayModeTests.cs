@@ -31,10 +31,11 @@ namespace ProjectC.Tests
             Assert.AreSame(CardArtProvider.Load(id), artwork.sprite);
             Assert.IsNotNull(artwork.sprite);
             Assert.IsNotNull(artwork.GetComponentInParent<RectMask2D>());
-            Assert.AreEqual(attack.ToString(), Find<TMP_Text>(root, "AttackBadge").text);
-            Assert.AreEqual(hp.ToString(), Find<TMP_Text>(root, "HealthBadge").text);
+            string suffix = root is CardWidget ? "Text" : "";
+            Assert.AreEqual(attack.ToString(), Find<TMP_Text>(root, "AttackBadge" + suffix).text);
+            Assert.AreEqual(hp.ToString(), Find<TMP_Text>(root, "HealthBadge" + suffix).text);
             Assert.IsFalse(root.GetComponentsInChildren<TMP_Text>(true)
-                .Where(t => t.name == "Crest" || t.name == "Monogram").Single().gameObject.activeSelf);
+                .Where(t => t.name == "Crest" || t.name == "Monogram" + suffix).Single().gameObject.activeSelf);
             var rect = (RectTransform)root.transform;
             Assert.That(rect.rect.width / rect.rect.height, Is.InRange(.72f, .76f));
         }
@@ -103,10 +104,10 @@ namespace ProjectC.Tests
             var card = ui.Hand.Widgets[0];
             AssertFace(card, 1001, 3, 3);
             AssertFace(ui.OwnField.Widgets[0], 1002, 5, 2);
-            Assert.IsFalse(card.Status.gameObject.activeSelf);
+            Assert.IsFalse(card.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Status"));
             card.SetSelected(true);
             Assert.IsTrue(card.IsSelected);
-            Assert.IsEmpty(card.Status.text);
+            Assert.IsNotNull(card.Title);
             card.OnPointerEnter(null);
             yield return new WaitForSecondsRealtime(.3f);
             Assert.Greater(card.Face.localScale.x, 1);
@@ -119,8 +120,8 @@ namespace ProjectC.Tests
             Assert.AreSame(CardArtProvider.Load(1007), artwork.sprite, "Manifestation refreshes artwork on the existing widget");
             hand[0].CardType = 1;
             card.Bind(hand[0], false, false, false, true);
-            Assert.IsFalse(Find<TMP_Text>(card, "AttackBadge").transform.parent.gameObject.activeSelf);
-            Assert.IsFalse(Find<TMP_Text>(card, "HealthBadge").transform.parent.gameObject.activeSelf);
+            Assert.IsFalse(Find<TMP_Text>(card, "AttackBadgeText").transform.parent.gameObject.activeSelf);
+            Assert.IsFalse(Find<TMP_Text>(card, "HealthBadgeText").transform.parent.gameObject.activeSelf);
             hand[0].CardType = 0;
             card.Bind(hand[0], false, false, false, true);
             card.Bind(hand[0], true, false, false, true);
@@ -147,7 +148,7 @@ namespace ProjectC.Tests
             foreach (var widget in ui.Hand.Widgets)
             {
                 var corners = new Vector3[4];
-                Find<TMP_Text>(widget, "HealthBadge").rectTransform.GetWorldCorners(corners);
+                Find<TMP_Text>(widget, "HealthBadgeText").rectTransform.GetWorldCorners(corners);
                 foreach (var corner in corners)
                 {
                     Assert.GreaterOrEqual(canvas.InverseTransformPoint(corner).y, canvas.rect.yMin,

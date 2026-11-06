@@ -25,8 +25,8 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (!this.Bind("LogActor", out _actor) || !this.Bind("LogMessage", out _message)
-                || !this.Bind("LogCardHint", out _detail))
+            if (!this.Bind("LogActorText", out _actor) || !this.Bind("LogMessageText", out _message)
+                || !this.Bind("LogCardHintText", out _detail))
             {
                 throw new InvalidOperationException("Battle log row requires actor, message and card hint.");
             }

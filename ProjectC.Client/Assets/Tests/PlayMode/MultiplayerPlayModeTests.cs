@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -550,11 +551,11 @@ namespace ProjectC.Tests
             actions[0].onClick.Invoke();
             Assert.AreEqual(BattleInputState.SelectingEffectTarget, ui.Interaction.State);
             var enemy = ui.EnemyField.Widgets[0];
-            Assert.IsFalse(enemy.Status.gameObject.activeSelf);
+            Assert.IsFalse(enemy.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Status"));
             enemy.OnPointerClick(null);
-            Assert.IsFalse(enemy.Status.gameObject.activeSelf);
+            Assert.IsFalse(enemy.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Status"));
             var picker = ui.GetComponentInChildren<EffectTargetPicker>();
-            var confirm = picker.transform.Find("Confirm").GetComponent<UnityEngine.UI.Button>();
+            var confirm = picker.transform.Find("ConfirmButton").GetComponent<UnityEngine.UI.Button>();
             Assert.IsTrue(confirm.interactable);
             long seq = a.Sequence;
             confirm.onClick.Invoke();

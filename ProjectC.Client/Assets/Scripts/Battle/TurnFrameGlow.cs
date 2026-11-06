@@ -22,8 +22,8 @@ namespace ProjectC.Client
             var colors = _button.colors;
             colors.disabledColor = Color.white;
             _button.colors = colors;
-            this.Bind("TurnArrow", out _arrow);
-            if (!this.Bind("TurnGlow", out _glow))
+            this.Bind("TurnArrowImage", out _arrow);
+            if (!this.Bind("TurnGlowImage", out _glow))
             {
                 Debug.LogError("Turn button requires its TurnGlow image.", this);
                 enabled = false;

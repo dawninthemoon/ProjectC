@@ -31,7 +31,7 @@ namespace ProjectC.Client
                 return;
             }
             _frame = GetComponent<Image>();
-            if (!this.Bind("CostIcon", out _icon) || !this.Bind("CostValue", out _value))
+            if (!this.Bind("CostIcon", out _icon) || !this.Bind("CostValueText", out _value))
             {
                 throw new InvalidOperationException("Cost item requires icon and value.");
             }

@@ -193,42 +193,42 @@ namespace ProjectC.Client.Editor
             c.Title.enableAutoSizing = true;
             c.Title.fontSizeMin = 12;
             c.Title.fontSizeMax = 19;
-            c.Stats = Label(inner.transform, "Stats", "3 ATK     5/5 HP", 8, 155, 156, 26, 18);
-            var sr = (RectTransform)c.Stats.transform;
+            var legacyStats = Label(inner.transform, "Stats", "3 ATK     5/5 HP", 8, 155, 156, 26, 18);
+            var sr = (RectTransform)legacyStats.transform;
             sr.anchorMin = Vector2.zero;
             sr.anchorMax = new Vector2(1, 0);
             sr.pivot = new Vector2(0, 0);
             sr.anchoredPosition = new Vector2(8, 27);
             sr.sizeDelta = new Vector2(-16, 26);
-            c.Stats.enableAutoSizing = true;
-            c.Stats.fontSizeMin = 11;
-            c.Stats.fontSizeMax = 18;
-            var attack = Object.Instantiate(c.Stats, inner.transform);
+            legacyStats.enableAutoSizing = true;
+            legacyStats.fontSizeMin = 11;
+            legacyStats.fontSizeMax = 18;
+            var attack = Object.Instantiate(legacyStats, inner.transform);
             attack.name = "AttackBadge";
             var attackRect = (RectTransform)attack.transform;
             attackRect.anchorMax = new Vector2(.5f, 0);
             attack.text = "3 ATK";
-            var health = Object.Instantiate(c.Stats, inner.transform);
+            var health = Object.Instantiate(legacyStats, inner.transform);
             health.name = "HealthBadge";
             var healthRect = (RectTransform)health.transform;
             healthRect.anchorMin = new Vector2(.5f, 0);
             health.text = "5/5 HP";
-            c.Stats.text = "SPELL";
-            c.Stats.gameObject.SetActive(false);
+            legacyStats.text = "SPELL";
+            legacyStats.gameObject.SetActive(false);
             attack.gameObject.SetActive(!back);
             health.gameObject.SetActive(!back);
-            c.Status = Label(inner.transform, "Status", "READY", 8, 183, 156, 22, 12, Gold);
-            sr = (RectTransform)c.Status.transform;
+            var legacyStatus = Label(inner.transform, "Status", "READY", 8, 183, 156, 22, 12, Gold);
+            sr = (RectTransform)legacyStatus.transform;
             sr.anchorMin = Vector2.zero;
             sr.anchorMax = new Vector2(1, 0);
             sr.pivot = Vector2.zero;
             sr.anchoredPosition = new Vector2(8, 4);
             sr.sizeDelta = new Vector2(-16, 22);
-            c.Status.enableAutoSizing = true;
-            c.Status.fontSizeMin = 8;
-            c.Status.fontSizeMax = 12;
-            c.Accent = Box(inner.transform, "Accent", 0, 0, 3, 200, Teal).GetComponent<Image>();
-            var ar = (RectTransform)c.Accent.transform;
+            legacyStatus.enableAutoSizing = true;
+            legacyStatus.fontSizeMin = 8;
+            legacyStatus.fontSizeMax = 12;
+            var legacyAccent = Box(inner.transform, "Accent", 0, 0, 3, 200, Teal).GetComponent<Image>();
+            var ar = (RectTransform)legacyAccent.transform;
             ar.anchorMin = Vector2.zero;
             ar.anchorMax = new Vector2(0, 1);
             ar.offsetMin = Vector2.zero;
@@ -238,8 +238,8 @@ namespace ProjectC.Client.Editor
             {
                 ((RectTransform)root.transform).sizeDelta = new Vector2(68, 88);
                 c.Title.gameObject.SetActive(false);
-                c.Stats.gameObject.SetActive(false);
-                c.Status.gameObject.SetActive(false);
+                legacyStats.gameObject.SetActive(false);
+                legacyStatus.gameObject.SetActive(false);
                 Stretch((RectTransform)c.ArtworkImage.transform, 6, 6, 6, 6);
             }
             UpgradeCardPresentationAssets.ConfigureBattle(root, back);
@@ -254,11 +254,11 @@ namespace ProjectC.Client.Editor
         {
             var go = Box(null, "PlayerPanel", 0, 0, 450, 100, Panel);
             var p = go.AddComponent<PlayerPanelView>();
-            p.TurnMark = Box(go.transform, "TurnMark", 0, 0, 5, 100, Teal).GetComponent<Image>();
+            Box(go.transform, "TurnMark", 0, 0, 5, 100, Teal).GetComponent<Image>();
             p.Life = Label(go.transform, "Life", "3", 20, 10, 65, 65, 48, Gold);
             Label(go.transform, "LifeCaption", "LIFE", 25, 73, 65, 20, 13, Gold);
-            p.Name = Label(go.transform, "Name", "PLAYER", 105, 13, 325, 35, 25);
-            p.Counts = Label(go.transform, "Counts", "DECK / HAND / GRAVE", 105, 55, 325, 34, 16);
+            Label(go.transform, "Name", "PLAYER", 105, 13, 325, 35, 25);
+            Label(go.transform, "Counts", "DECK / HAND / GRAVE", 105, 55, 325, 34, 16);
             var asset = PrefabUtility
                 .SaveAsPrefabAsset(go, Folder + "/PlayerPanel.prefab")
                 .GetComponent<PlayerPanelView>();
@@ -451,7 +451,7 @@ namespace ProjectC.Client.Editor
             var log = Box(table.transform, "RecentEvents", 25, 570, 285, 345, Panel);
             p.Log = log.AddComponent<BattleLogView>();
             Label(log.transform, "Header", "BATTLE RECORD", 18, 15, 249, 35, 20, Gold);
-            p.Log.Recent = Label(
+            var legacyRecent = Label(
                 log.transform,
                 "Recent",
                 "Connect to begin.",
@@ -461,7 +461,7 @@ namespace ProjectC.Client.Editor
                 270,
                 16
             );
-            p.Log.Recent.alignment = TextAlignmentOptions.TopLeft;
+            legacyRecent.alignment = TextAlignmentOptions.TopLeft;
             p.Log.Feedback = Label(
                 table.transform,
                 "RejectionReason",
@@ -486,7 +486,7 @@ namespace ProjectC.Client.Editor
                 42,
                 15
             );
-            p.BattlePhase = Button(
+            Button(
                 table.transform,
                 "EnterBattle",
                 "ENTER BATTLE PHASE",
@@ -495,7 +495,7 @@ namespace ProjectC.Client.Editor
                 270,
                 52
             );
-            p.Summon = Button(
+            Button(
                 table.transform,
                 "Summon",
                 "SUMMON SELECTED",
@@ -505,8 +505,8 @@ namespace ProjectC.Client.Editor
                 52,
                 true
             );
-            p.Attack = Button(table.transform, "AttackTarget", "ATTACK TARGET", 1620, 595, 270, 52);
-            p.DirectAttack = Button(
+            Button(table.transform, "AttackTarget", "ATTACK TARGET", 1620, 595, 270, 52);
+            Button(
                 table.transform,
                 "DirectAttack",
                 "DIRECT ATTACK",
@@ -515,8 +515,8 @@ namespace ProjectC.Client.Editor
                 270,
                 52
             );
-            p.Cancel = Button(table.transform, "Deselect", "CLEAR SELECTION", 1620, 725, 270, 44);
-            p.SelectionLabel = Label(
+            Button(table.transform, "Deselect", "CLEAR SELECTION", 1620, 725, 270, 44);
+            Label(
                 table.transform,
                 "Selection",
                 "Select a card",
@@ -527,7 +527,7 @@ namespace ProjectC.Client.Editor
                 18,
                 Teal
             );
-            p.GraveyardToggle = Button(
+            Button(
                 table.transform,
                 "Graveyards",
                 "GRAVEYARDS",
@@ -547,7 +547,7 @@ namespace ProjectC.Client.Editor
                 270,
                 50
             );
-            p.ConnectionLabel = Label(
+            Label(
                 table.transform,
                 "Connection",
                 "OFFLINE",
@@ -558,7 +558,7 @@ namespace ProjectC.Client.Editor
                 16,
                 Teal
             );
-            p.DebugLabel = Label(table.transform, "ProtocolDebug", "", 1620, 1035, 270, 24, 12);
+            Label(table.transform, "ProtocolDebug", "", 1620, 1035, 270, 24, 12);
             // Modal panels are ordinary scene/prefab UI, hidden until requested.
             p.GraveyardPanel = Box(table.transform, "GraveyardPanel", 335, 160, 1250, 570, Panel);
             p.GraveyardPanel.GetComponent<Image>().raycastTarget = true;
@@ -624,11 +624,11 @@ namespace ProjectC.Client.Editor
             scroll.viewport = (RectTransform)viewport.transform;
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
-            p.Log.Full = Label(viewport.transform, "Lines", "", 10, 0, 1180, 480, 20);
-            p.Log.Full.alignment = TextAlignmentOptions.TopLeft;
-            var fitter = p.Log.Full.gameObject.AddComponent<ContentSizeFitter>();
+            var legacyFull = Label(viewport.transform, "Lines", "", 10, 0, 1180, 480, 20);
+            legacyFull.alignment = TextAlignmentOptions.TopLeft;
+            var fitter = legacyFull.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            scroll.content = (RectTransform)p.Log.Full.transform;
+            scroll.content = (RectTransform)legacyFull.transform;
             history.SetActive(false);
             p.Effects = root.AddComponent<BattleEffectsView>();
             var fx = p.Effects;

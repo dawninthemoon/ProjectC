@@ -12,7 +12,7 @@ namespace ProjectC.Client
         private const int MaximumEntries = 200;
         private const float FollowThreshold = .035f;
         // Retained serialized fields for existing prefab/debug tooling compatibility.
-        public TMP_Text Recent, Full, Feedback;
+        public TMP_Text Feedback;
         public GameObject History;
         public BattleVisualSettings Settings;
         [SerializeField] private BattleLogItemView _itemPrefab;
@@ -48,10 +48,10 @@ namespace ProjectC.Client
                 return;
             }
             _presenter = _presenter != null ? _presenter : GetComponentInParent<BattlePresenter>();
-            if (_presenter == null || _itemPrefab == null || !transform.parent.Bind("FullHistory", out _panel)
-                || !_panel.Bind("CloseLog", out Button close) || !_panel.Bind("LogPopupTitle", out _title)
-                || !_panel.Bind("LogEmpty", out _empty) || !transform.parent.Bind("RejectionReason", out Feedback)
-                || !transform.parent.Bind("Unread", out _unread))
+            if (_presenter == null || _itemPrefab == null || !transform.parent.Bind("FullHistoryImage", out _panel)
+                || !_panel.Bind("CloseLogButton", out Button close) || !_panel.Bind("LogPopupTitleText", out _title)
+                || !_panel.Bind("LogEmptyText", out _empty) || !transform.parent.Bind("RejectionReasonText", out Feedback)
+                || !transform.parent.Bind("UnreadText", out _unread))
             {
                 throw new InvalidOperationException("Battle log requires its popup, row prefab and HUD bindings.");
             }
@@ -219,7 +219,6 @@ namespace ProjectC.Client
             _empty.text = BattleText.Get("ui.log.empty");
             _empty.gameObject.SetActive(_entries.Count == 0);
             int index = 0, previousTurn = -1;
-            var lines = new List<string>();
             foreach (var entry in _entries)
             {
                 if (entry.Turn != previousTurn)
@@ -228,15 +227,10 @@ namespace ProjectC.Client
                     previousTurn = entry.Turn;
                 }
                 Row(index++).Render(this, entry, _presenter.Client.PlayerId);
-                lines.Add(entry.Text(_presenter.Client.PlayerId));
             }
             for (int i = index; i < _rows.Count; i++)
             {
                 _rows[i].gameObject.SetActive(false);
-            }
-            if (Full != null)
-            {
-                Full.text = string.Join("\n", lines);
             }
             LayoutRebuilder.ForceRebuildLayoutImmediate(Scroll.content);
         }

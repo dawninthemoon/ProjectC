@@ -28,8 +28,8 @@ namespace ProjectC.Client
         {
             _presenter = presenter;
             if (!this.Bind("GalleryContent", out _content)
-                || !this.Bind("GalleryTitle", out _title)
-                || !this.Bind("GalleryClose", out _close))
+                || !this.Bind("GalleryTitleText", out _title)
+                || !this.Bind("GalleryCloseButton", out _close))
             {
                 throw new InvalidOperationException("CardGallery requires content, title and close bindings.");
             }

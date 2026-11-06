@@ -107,7 +107,7 @@ namespace ProjectC.Tests
 
         private static Image Glow(CardWidget card)
         {
-            return card.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlow");
+            return card.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlowImage");
         }
 
         private static CardView[] Cards(int count, int first)

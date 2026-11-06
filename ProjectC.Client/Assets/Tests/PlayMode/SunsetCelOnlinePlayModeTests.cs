@@ -121,7 +121,7 @@ namespace ProjectC.Tests
             _client.ReconnectNetwork();
             yield return Until(() => _client.Connected && _client.State != previous && !ui.PresentationBusy);
             Assert.AreEqual("BattleBackground_SunsetCel_1920x1080", ui.GetComponentsInChildren<UnityEngine.UI.Image>(true)
-                .First(image => image.name == "MoonlitArenaBackdrop").sprite.name);
+                .First(image => image.name == "MoonlitArenaBackdropImage").sprite.name);
             Assert.IsNotNull(ui.OwnField.Widgets.Find(widget => widget.Card.Id == attacker));
             _client.DisconnectNetwork();
             _client = null;

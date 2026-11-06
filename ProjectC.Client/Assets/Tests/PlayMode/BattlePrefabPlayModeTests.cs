@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Linq;
 using System;
 using System.Collections;
 using System.IO;
@@ -136,9 +137,9 @@ namespace ProjectC.Tests
             );
             yield return null;
             Assert.AreEqual(4, ui.SelectedCardId);
-            Assert.IsFalse(ui.Summon.gameObject.activeInHierarchy);
-            Assert.IsFalse(ui.Attack.gameObject.activeInHierarchy);
-            Assert.IsFalse(ui.DirectAttack.gameObject.activeInHierarchy);
+            Assert.IsFalse(ui.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Summon"));
+            Assert.IsFalse(ui.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Attack"));
+            Assert.IsFalse(ui.GetComponentsInChildren<Transform>(true).Any(child => child.name == "DirectAttack"));
             var hand = ui.Hand.Widgets[0];
             hand.OnPointerEnter(null);
             yield return new WaitForSecondsRealtime(.3f);
@@ -148,7 +149,7 @@ namespace ProjectC.Tests
             Assert.Greater(hand.Face.localScale.x, 1);
             hand.OnPointerExit(null);
             Assert.IsTrue(ui.Detail.gameObject.activeSelf);
-            Assert.IsFalse(ui.OwnField.Widgets[1].Status.gameObject.activeSelf);
+            Assert.IsFalse(ui.OwnField.Widgets[1].GetComponentsInChildren<Transform>(true).Any(child => child.name == "Status"));
             ui.ClearSelection();
             yield return null;
             Assert.AreEqual(0, ui.TargetCardId);

@@ -128,13 +128,13 @@ namespace ProjectC.Client.Editor
             Place(Find(root, "EnemyFieldCaption"), 380, 218, 550, 28);
             Place(Find(root, "OwnFieldCaption"), 380, 480, 550, 28);
             Place((RectTransform)presenter.LogToggle.transform, 20, 810, 145, 40);
-            Place((RectTransform)presenter.GraveyardToggle.transform, 175, 810, 145, 40);
+            Place(Find(root, "Graveyards"), 175, 810, 145, 40);
             var unread = Find(root, "Unread");
             if (unread != null)
             {
                 Place(unread, 140, 810, 25, 40);
             }
-            presenter.BattlePhase.gameObject.SetActive(false);
+            Find(root, "EnterBattle").gameObject.SetActive(false);
             Place((RectTransform)presenter.EndTurn.transform, 1720, 465, 180, 74);
             presenter.EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.phase.to_battle");
             var timer = Label(table, "TurnTimer", presenter.PhaseLabel);

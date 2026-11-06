@@ -51,10 +51,10 @@ namespace ProjectC.Client
         public void Initialize(BattlePresenter value)
         {
             presenter = value;
-            this.Bind("DragVisualRoot", out visualRoot);
-            this.Bind("AttackArrow", out arrow);
-            this.Bind("ContextAction", out context);
-            this.Bind("EffectTargetPicker", out picker);
+            this.Bind("DragVisualRootImage", out visualRoot);
+            this.Bind("AttackArrowImage", out arrow);
+            this.Bind("ContextActionImage", out context);
+            this.Bind("EffectTargetPickerImage", out picker);
             _areas = GetComponentsInChildren<BattleHitArea>(true);
             foreach (var area in _areas)
             {

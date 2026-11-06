@@ -1,0 +1,17 @@
+{
+  "prefabBlocksMatchValidatedCopy": {
+    "BattleCard.prefab": true,
+    "BattleCostItem.prefab": true,
+    "BattleFieldCard.prefab": true,
+    "BattleLogItem.prefab": true,
+    "BattleScreen.prefab": true,
+    "CardAction.prefab": true,
+    "CardBack.prefab": true,
+    "NumberPopup.prefab": true,
+    "PlayerPanel.prefab": true
+  },
+  "hpSceneOverridePreserved": true,
+  "gameViewChangedPixelCount": 8,
+  "gameViewPixels": 2073600,
+  "removedGameObjects": 82
+}

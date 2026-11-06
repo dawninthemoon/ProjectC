@@ -58,7 +58,7 @@ namespace ProjectC.Tests
                 var card = ui.Hand.Widgets[0];
                 Assert.IsTrue(card.InHand);
                 Assert.IsTrue(card.transform.Find("FrameImage/CostBadgeFrame").gameObject.activeSelf, "The catalog's existing activation cost should be shown.");
-                Assert.AreEqual("HandCardGlowMask", Find(card.transform, "FrameGlow").GetComponent<Image>().sprite.name);
+                Assert.AreEqual("HandCardGlowMask", Find(card.transform, "FrameGlowImage").GetComponent<Image>().sprite.name);
                 yield return Capture($"hand-{count}");
             }
             var hovered = ui.Hand.Widgets[0];
@@ -75,10 +75,10 @@ namespace ProjectC.Tests
                 Assert.AreEqual(count, ui.OwnField.Widgets.Count);
                 var card = ui.OwnField.Widgets[0];
                 Assert.IsFalse(card.InHand);
-                Assert.IsFalse(Find(card.transform, "CostBadgeFrame").gameObject.activeSelf);
-                Assert.AreEqual("FieldCardGlowMask", Find(card.transform, "FrameGlow").GetComponent<Image>().sprite.name);
-                Assert.AreEqual("3", Find(card.transform, "AttackBadge").GetComponent<TMPro.TMP_Text>().text);
-                Assert.AreEqual("4", Find(card.transform, "HealthBadge").GetComponent<TMPro.TMP_Text>().text);
+                Assert.IsFalse(Find(card.transform, "CostBadgeImage").gameObject.activeSelf);
+                Assert.AreEqual("FieldCardGlowMask", Find(card.transform, "FrameGlowImage").GetComponent<Image>().sprite.name);
+                Assert.AreEqual("3", Find(card.transform, "AttackBadgeText").GetComponent<TMPro.TMP_Text>().text);
+                Assert.AreEqual("4", Find(card.transform, "HealthBadgeText").GetComponent<TMPro.TMP_Text>().text);
                 Assert.LessOrEqual(((RectTransform)card.transform).rect.width, ui.OwnField.GetComponent<RectTransform>().rect.width);
                 if (count == 10)
                 {
@@ -89,12 +89,12 @@ namespace ProjectC.Tests
             var chosen = ui.OwnField.Widgets[0];
             chosen.SetSelected(true);
             yield return null;
-            Assert.Greater(Find(chosen.transform, "FrameGlow").GetComponent<Image>().color.a, 0);
+            Assert.Greater(Find(chosen.transform, "FrameGlowImage").GetComponent<Image>().color.a, 0);
             yield return Capture("field-selected");
             chosen.SetSelected(false);
             chosen.SetHint(TargetHint.Available);
             yield return null;
-            Assert.Greater(Find(chosen.transform, "FrameGlow").GetComponent<Image>().color.a, 0);
+            Assert.Greater(Find(chosen.transform, "FrameGlowImage").GetComponent<Image>().color.a, 0);
             yield return Capture("field-target");
             var empty = SceneManager.CreateScene("RenewalStage3Cleanup");
             SceneManager.SetActiveScene(empty);

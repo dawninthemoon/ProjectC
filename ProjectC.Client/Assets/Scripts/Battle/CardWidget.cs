@@ -33,12 +33,10 @@ namespace ProjectC.Client
         public Image FrameImage;
         [FormerlySerializedAs("Art")]
         public Image ArtworkImage;
-        public Image Accent;
         [SerializeField] private FieldCardCropProfile _fieldCropProfile;
         private TMP_Text _attack;
         private TMP_Text _health;
         private TMP_Text _cost;
-        private Outline _highlight;
         private Image _frameGlow;
         private Color _glowColor;
         private bool _attackAllowed;
@@ -47,9 +45,7 @@ namespace ProjectC.Client
         private bool _hasActionPermissions;
         private Vector2 _facePosition;
         private Vector3 _faceScale;
-        public TMP_Text Title,
-            Stats,
-            Status;
+        public TMP_Text Title;
         public CardView Card
         {
             get; private set;
@@ -113,20 +109,16 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Card prefab requires FrameImage");
             }
             FrameImage = Face.GetComponent<Image>();
-            _highlight = Face.GetComponent<Outline>();
-            Face.Bind("FrameGlow", out _frameGlow);
-            if (FrameImage == null
-                || !Face.Bind("ArtworkImage", out ArtworkImage)
-                || !Face.Bind("Accent", out Accent)
-                || !Face.Bind("Name", out Title)
-                || !Face.Bind("Stats", out Stats)
-                || !Face.Bind("Status", out Status))
+            Face.Bind("FrameGlowImage", out _frameGlow);
+            if (FrameImage == null || !Face.Bind("ArtworkImage", out ArtworkImage))
             {
-                throw new InvalidOperationException("Card prefab requires frame, artwork, accent, name, stats, status and monogram components.");
+                throw new InvalidOperationException("Card prefab requires frame, artwork and name components.");
             }
-            Face.Bind("AttackBadge", out _attack);
-            Face.Bind("HealthBadge", out _health);
-            Face.Bind("CostBadge", out _cost);
+            // CardBack intentionally has no face text, keeping private card data out of its hierarchy.
+            Face.Bind("NameText", out Title);
+            Face.Bind("AttackBadgeText", out _attack);
+            Face.Bind("HealthBadgeText", out _health);
+            Face.Bind("CostBadgeText", out _cost);
             BattleText.StyleHeading(Title);
             BattleText.StyleValue(_attack);
             BattleText.StyleValue(_health);
@@ -139,9 +131,6 @@ namespace ProjectC.Client
             _faceScale = Face.localScale;
             opacity = GetComponent<CanvasGroup>();
             bound = true;
-            // This was a full-height rectangular status strip, unrelated to the curved frame.
-            // Keep the serialized reference/color for compatibility; FrameGlow now presents its state.
-            Accent.enabled = false;
         }
 
         public void Bind(CardView card, bool hidden, bool chosen, bool target, bool hand, bool ownedByLocalPlayer = false)
@@ -153,17 +142,20 @@ namespace ProjectC.Client
             OwnedByLocalPlayer = ownedByLocalPlayer || hand;
             IsSelected = chosen;
             hint = target ? TargetHint.Available : TargetHint.None;
-            Title.text = hidden ? "HIDDEN CARD" : CardPresentation.Name(card);
+            if (!hidden && Title == null)
+            {
+                throw new InvalidOperationException("Visible card prefab requires NameText.");
+            }
+            if (Title != null)
+            {
+                Title.text = hidden ? "" : CardPresentation.Name(card);
+            }
             bool visible = card != null && !hidden;
             bool hasStats = visible && card.CardType != 1;
             if (hasStats && (_attack == null || _health == null))
             {
                 throw new InvalidOperationException("Face card prefab requires AttackBadge and HealthBadge text components.");
             }
-            Stats.gameObject.SetActive(false);
-            Stats.text = "";
-            Status.gameObject.SetActive(false);
-            Status.text = "";
             if (_attack != null && _health != null)
             {
                 _attack.transform.parent.gameObject.SetActive(hasStats);
@@ -194,7 +186,10 @@ namespace ProjectC.Client
                 }
             }
             ArtworkImage.gameObject.SetActive(!hidden);
-            Title.gameObject.SetActive(!hidden && (hand || _fieldCropProfile == null));
+            if (Title != null)
+            {
+                Title.gameObject.SetActive(!hidden && (hand || _fieldCropProfile == null));
+            }
             RenderStatus();
         }
 
@@ -256,7 +251,7 @@ namespace ProjectC.Client
                 && (InHand ? (!_hasActionPermissions || _playAllowed) && Card.CanSummon
                     || (!_hasActionPermissions || _activationAllowed) && hasActivation
                     : _attackAllowed && Card.CanAttack || _activationAllowed && hasActivation);
-            Accent.color =
+            Color stateColor =
                 hint == TargetHint.Focused ? new Color(1, .97f, .73f)
                 : hint == TargetHint.Available ? new Color(.34f, .75f, 1f)
                 : IsSelected ? new Color(1f, .75f, .22f)
@@ -264,23 +259,15 @@ namespace ProjectC.Client
                 : IsHovered ? (usable ? new Color(.25f, 1f, .92f) : new Color(.88f, .9f, .94f))
                 : usable ? new Color(.15f, .91f, .86f)
                 : new Color(.28f, .36f, .43f);
-            if (_highlight != null)
-            {
-                // The rectangular uGUI outline obscures the authored metal silhouette.
-                _highlight.enabled = false;
-                _highlight.effectColor = Accent.color;
-            }
             if (_frameGlow != null)
             {
-                _glowColor = Accent.color;
+                _glowColor = stateColor;
                 bool emphasized = !Hidden && !IsInFlight && (hint != TargetHint.Unavailable || IsSelected);
                 _glowColor.a = !emphasized ? 0 : hint == TargetHint.Focused ? 1
                     : IsSelected ? 1 : hint == TargetHint.Available ? .98f
                     : IsHovered ? (usable ? 1 : .55f) : usable ? .9f : 0;
                 ApplyFrameGlow();
             }
-            Status.text = "";
-            Status.gameObject.SetActive(false);
         }
 
         private void ApplyFrameGlow()

@@ -55,7 +55,6 @@ namespace ProjectC.Client.Editor
                 {
                     var widget = root.GetComponent<CardWidget>();
                     var glow = root.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlow");
-                    widget.Accent.enabled = false;
                     glow.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(Art + pair.Item2 + ".png");
                     glow.material = material;
                     glow.type = Image.Type.Simple;

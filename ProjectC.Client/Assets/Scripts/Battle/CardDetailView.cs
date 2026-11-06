@@ -25,17 +25,17 @@ namespace ProjectC.Client
         {
             if (!bound)
             {
-                this.Bind("Name", out Title);
-                this.Bind("Stats", out Stats);
-                this.Bind("Rules", out Rules);
-                this.Bind("Forms", out Forms);
-                if (!this.Bind("ArtworkImage", out _artwork) || !this.Bind("CardType", out _type))
+                this.Bind("NameText", out Title);
+                this.Bind("StatsText", out Stats);
+                this.Bind("RulesText", out Rules);
+                this.Bind("FormsText", out Forms);
+                if (!this.Bind("ArtworkImage", out _artwork) || !this.Bind("CardTypeText", out _type))
                 {
                     throw new System.InvalidOperationException("Card inspector requires artwork, placeholder and type.");
                 }
-                this.Bind("ArtPlaceholder", out _artPlaceholder);
-                this.Bind("DetailViewport", out _viewport);
-                this.Bind("DetailContent", out _content);
+                this.Bind("ArtPlaceholderText", out _artPlaceholder);
+                this.Bind("DetailViewportImage", out _viewport);
+                this.Bind("DetailContentImage", out _content);
                 if ((_viewport == null) != (_content == null))
                 {
                     throw new System.InvalidOperationException("Card inspector requires both detail viewport and content.");

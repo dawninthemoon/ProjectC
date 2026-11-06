@@ -629,9 +629,9 @@ namespace ProjectC.Tests
             Assert.IsTrue(a.State.TurnStarted && a.State.TurnTimerRunning);
             Assert.IsTrue(a.State.Players.All(player => player.MulliganComplete));
             Assert.IsFalse(battle.Mulligan.gameObject.activeSelf);
-            Assert.IsFalse(battle.BattlePhase.gameObject.activeInHierarchy);
+            Assert.IsFalse(battle.GetComponentsInChildren<Transform>(true).Any(child => child.name == "BattlePhase"));
             Assert.IsTrue(battle.EndTurn.interactable);
-            Assert.IsTrue(battle.Bind("TurnTimer", out TMP_Text timer));
+            Assert.IsTrue(battle.Bind("TimerText", out TMP_Text timer));
             Assert.IsNotEmpty(timer.text);
         }
 

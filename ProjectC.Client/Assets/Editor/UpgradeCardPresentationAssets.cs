@@ -134,9 +134,6 @@ namespace ProjectC.Client.Editor
             widget.Face.anchoredPosition = Vector2.zero;
             ((RectTransform)root.transform).sizeDelta = new Vector2(back ? 68 : 180, (back ? 68 : 180) * CardHeightPerWidth);
             widget.ArtworkImage = Artwork(root, widget.ArtworkImage.transform, back ? 2 : 32, 2);
-            widget.Stats.gameObject.SetActive(false);
-            widget.Status.gameObject.SetActive(false);
-            widget.Stats.text = widget.Status.text = "";
             if (!back)
             {
                 var title = widget.Title.rectTransform;
@@ -144,8 +141,8 @@ namespace ProjectC.Client.Editor
                 widget.Title.alignment = TextAlignmentOptions.Center;
                 widget.Title.fontSizeMin = 12;
                 widget.Title.fontSizeMax = 19;
-                Badge(root, "AttackBadge", widget.Stats, widget.Title.transform.parent, false, 1.2f);
-                Badge(root, "HealthBadge", widget.Stats, widget.Title.transform.parent, true, 1.2f);
+                Badge(root, "AttackBadge", widget.Title, widget.Title.transform.parent, false, 1.2f);
+                Badge(root, "HealthBadge", widget.Title, widget.Title.transform.parent, true, 1.2f);
             }
         }
 

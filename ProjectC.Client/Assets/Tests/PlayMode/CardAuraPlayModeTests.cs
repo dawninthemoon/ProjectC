@@ -66,7 +66,7 @@ namespace ProjectC.Tests
                 {
                     foreach (var card in _ui.Hand.Widgets)
                     {
-                        Assert.IsFalse(card.Accent.enabled, "The obsolete full-height status strip must be replaced, not clipped.");
+                        Assert.IsFalse(card.GetComponentsInChildren<Image>(true).Any(image => image.name == "Accent"), "The obsolete status strip must be removed.");
                         Assert.AreEqual("HandAura", Glow(card).sprite.name);
                         Assert.IsFalse(Glow(card).raycastTarget);
                         Assert.IsFalse(Glow(card).GetComponentInParent<Mask>() != null);
@@ -215,7 +215,7 @@ namespace ProjectC.Tests
             int[] definitions = { 1001, 3001, 4002, 3004, 4005 };
             return Enumerable.Range(0, count).Select(i => new CardView { Id = start + i, DefinitionId = definitions[i % definitions.Length], Attack = 1 + i, Hp = 2 + i, MaxHp = 2 + i, CanSummon = i % 2 == 0, CanAttack = i % 2 == 0 }).ToArray();
         }
-        private static Image Glow(CardWidget card) => card.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlow");
+        private static Image Glow(CardWidget card) => card.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlowImage");
         private static void AssertInside(RectTransform rect)
         {
             var corners = new Vector3[4];

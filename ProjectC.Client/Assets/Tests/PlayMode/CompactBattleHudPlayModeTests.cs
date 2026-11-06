@@ -36,11 +36,11 @@ namespace ProjectC.Tests
             Snapshot(ui, 1, 3, true, 60000);
             yield return new WaitForSecondsRealtime(1.5f);
             var turnHud = ui.GetComponentInChildren<BattleTurnHudView>();
-            var ring = Find(turnHud.transform, "TimeRing").GetComponent<Image>();
+            var ring = Find(turnHud.transform, "TimerTicksOnImage").GetComponent<Image>();
             Assert.AreEqual(Image.Type.Filled, ring.type);
             Assert.AreEqual(Image.FillMethod.Radial360, ring.fillMethod);
             Assert.AreEqual("3", ui.TurnLabel.text);
-            Assert.That(int.Parse(Find(ui.transform, "TurnTimer").GetComponent<TMP_Text>().text), Is.InRange(57, 60));
+            Assert.That(int.Parse(Find(ui.transform, "TimerText").GetComponent<TMP_Text>().text), Is.InRange(57, 60));
             float before = ring.fillAmount;
             yield return new WaitForSecondsRealtime(.25f);
             Assert.Less(ring.fillAmount, before);
@@ -59,7 +59,7 @@ namespace ProjectC.Tests
             Assert.IsTrue(ui.Log.IsOpen);
             ui.LogToggle.onClick.Invoke();
             Assert.IsFalse(ui.Log.IsOpen);
-            Assert.AreEqual("25", Find(ui.transform, "OwnDeckCount").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("25", Find(ui.transform, "OwnDeckCountText").GetComponent<TMP_Text>().text);
             Assert.AreEqual("ExileIcon", Find(ui.transform, "OwnExileIcon").GetComponent<Image>().sprite.name);
             var list = ui.GetComponentsInChildren<BattleSpecialCostsView>(true).Single();
             Assert.AreEqual(1, list.Count);
@@ -90,8 +90,8 @@ namespace ProjectC.Tests
                     AssertHit(ui, list.Items[0].GetComponent<RectTransform>());
                     list.Items[0].OnPointerEnter(pointer);
                     Assert.IsTrue(list.TooltipVisible);
-                    Assert.AreEqual(definition.Name, Find(list.transform, "CostTooltipTitle").GetComponent<TMP_Text>().text);
-                    AssertInside(Find(list.transform, "CostTooltip"));
+                    Assert.AreEqual(definition.Name, Find(list.transform, "CostTooltipTitleText").GetComponent<TMP_Text>().text);
+                    AssertInside(Find(list.transform, "CostTooltipImage"));
                     yield return Capture("costs-" + count);
                     list.Items[0].OnPointerExit(pointer);
                     Assert.IsFalse(list.TooltipVisible);
@@ -156,8 +156,8 @@ namespace ProjectC.Tests
                 {
                     Assert.IsTrue(plate.rect.Contains(plate.InverseTransformPoint(corner)), "Title rect escapes the actual name plate.");
                 }
-                Assert.Greater(card.Title.transform.GetSiblingIndex(), Find(card.Face, "RenewalFrame").GetSiblingIndex());
-                AssertInside(Find(list.transform, "CostTooltip"));
+                Assert.Greater(card.Title.transform.GetSiblingIndex(), Find(card.Face, "CardFrameImage").GetSiblingIndex());
+                AssertInside(Find(list.transform, "CostTooltipImage"));
                 foreach (string name in new[] { "CostTooltipTitle", "CostTooltipAmount", "CostTooltipDescription" })
                 {
                     var text = Find(list.transform, name).GetComponent<TMP_Text>();
@@ -194,7 +194,7 @@ namespace ProjectC.Tests
                 AssertInside(ui.EndTurn.GetComponent<RectTransform>());
                 AssertInside(ui.LogToggle.GetComponent<RectTransform>());
                 list.Items[0].OnPointerEnter(pointer);
-                AssertInside(Find(list.transform, "CostTooltip"));
+                AssertInside(Find(list.transform, "CostTooltipImage"));
                 yield return Capture("ratio-" + resolution.x + "x" + resolution.y);
                 list.Items[0].OnPointerExit(pointer);
             }
@@ -203,7 +203,7 @@ namespace ProjectC.Tests
             ui.enabled = true;
             Snapshot(ui, 4, 4, false, 0, 0);
             yield return null;
-            Assert.AreEqual("--", Find(ui.transform, "TurnTimer").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("--", Find(ui.transform, "TimerText").GetComponent<TMP_Text>().text);
             Assert.AreEqual(0, ring.fillAmount);
             Assert.AreEqual(0, list.Count);
             Assert.IsFalse(list.gameObject.activeSelf);

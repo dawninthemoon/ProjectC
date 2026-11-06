@@ -2,7 +2,6 @@ using System;
 using Game.Utils;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ProjectC.Client
 {
@@ -11,9 +10,8 @@ namespace ProjectC.Client
         [SerializeField] private BattleCostDefinition _yokaiCost;
         private BattleSpecialCostsView _specialCosts;
         private readonly BattleCostDisplay[] _costs = new BattleCostDisplay[1];
-        private TMP_Text _ownDeck, _ownGrave, _ownExile, _enemyDeck, _enemyGrave, _enemyExile, _yokai, _enemyYokai;
-        private Image _gauge;
-        private RectTransform _yokaiPanel, _enemyYokaiPanel;
+        private TMP_Text _ownDeck, _ownGrave, _ownExile, _enemyDeck, _enemyGrave, _enemyExile, _enemyYokai;
+        private RectTransform _enemyYokaiPanel;
         private bool _bound;
 
         private void Awake()
@@ -27,26 +25,22 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (!this.Bind("OwnDeckCount", out _ownDeck)
-                || !this.Bind("OwnGraveCount", out _ownGrave)
-                || !this.Bind("OwnExileCount", out _ownExile)
-                || !this.Bind("EnemyDeckCount", out _enemyDeck)
-                || !this.Bind("EnemyGraveCount", out _enemyGrave)
-                || !this.Bind("EnemyExileCount", out _enemyExile)
-                || !this.Bind("YokaiValue", out _yokai)
-                || !this.Bind("YokaiFill", out _gauge)
-                || !this.Bind("YokaiPanel", out _yokaiPanel)
-                || !this.Bind("EnemyYokaiPanel", out _enemyYokaiPanel)
-                || !this.Bind("EnemyYokaiValue", out _enemyYokai)
+            if (!this.Bind("OwnDeckCountText", out _ownDeck)
+                || !this.Bind("OwnGraveCountText", out _ownGrave)
+                || !this.Bind("OwnExileCountText", out _ownExile)
+                || !this.Bind("EnemyDeckCountText", out _enemyDeck)
+                || !this.Bind("EnemyGraveCountText", out _enemyGrave)
+                || !this.Bind("EnemyExileCountText", out _enemyExile)
+                || !this.Bind("EnemyYokaiPanelImage", out _enemyYokaiPanel)
+                || !this.Bind("EnemyYokaiValueText", out _enemyYokai)
                 || !this.Bind("SpecialCosts", out _specialCosts) || _yokaiCost == null)
             {
-                throw new InvalidOperationException("Battle HUD requires both resource rows and Yokai gauge bindings.");
+                throw new InvalidOperationException("Battle HUD requires both resource rows and special cost bindings.");
             }
             foreach (var value in new[] { _ownDeck, _ownGrave, _ownExile, _enemyDeck, _enemyGrave, _enemyExile })
             {
                 BattleText.StyleValue(value);
             }
-            BattleText.StyleValue(_yokai);
             BattleText.StyleValue(_enemyYokai);
             _bound = true;
         }
@@ -54,7 +48,6 @@ namespace ProjectC.Client
         public void Render(PlayerView own, PlayerView enemy, int maximum)
         {
             Initialize();
-            _yokaiPanel.gameObject.SetActive(false);
             _enemyYokaiPanel.gameObject.SetActive(maximum > 0);
             _costs[0] = new BattleCostDisplay(_yokaiCost, own.YokaiPower, maximum);
             _specialCosts.Render(maximum > 0 ? _costs : Array.Empty<BattleCostDisplay>());
@@ -64,9 +57,7 @@ namespace ProjectC.Client
             _enemyDeck.text = enemy.DeckCount.ToString();
             _enemyGrave.text = (enemy.Graveyard?.Length ?? 0).ToString();
             _enemyExile.text = ((enemy.Exile?.Length ?? 0) + enemy.HiddenExileCount).ToString();
-            _yokai.text = $"{own.YokaiPower}/{maximum}";
             _enemyYokai.text = $"{enemy.YokaiPower}/{maximum}";
-            _gauge.fillAmount = maximum > 0 ? Mathf.Clamp01((float)own.YokaiPower / maximum) : 0;
         }
     }
 }

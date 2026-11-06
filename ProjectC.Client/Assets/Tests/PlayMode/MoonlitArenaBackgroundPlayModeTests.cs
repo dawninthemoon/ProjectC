@@ -28,7 +28,7 @@ namespace ProjectC.Tests
             var ui = Object.FindFirstObjectByType<BattlePresenter>();
             Assert.IsNotNull(ui);
             Assert.AreEqual(RenderMode.ScreenSpaceOverlay, ui.GetComponent<Canvas>().renderMode);
-            var backdrop = ui.GetComponentsInChildren<AspectFillImage>(true).Single(image => image.name == "MoonlitArenaBackdrop");
+            var backdrop = ui.GetComponentsInChildren<AspectFillImage>(true).Single(image => image.name == "MoonlitArenaBackdropImage");
             Assert.IsTrue(backdrop.gameObject.activeInHierarchy);
             Assert.IsNotNull(backdrop.sprite);
             Assert.AreEqual(1672, backdrop.sprite.rect.width);

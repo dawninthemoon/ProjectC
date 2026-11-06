@@ -150,7 +150,7 @@ namespace ProjectC.Tests
             Assert.IsNotNull(Hit(galleryCard).GetComponentInParent<CardWidget>());
             Click(galleryCard);
             var picker = _ui.GetComponentInChildren<EffectTargetPicker>(true);
-            Assert.IsTrue(picker.transform.Bind("Confirm", out Button confirm));
+            Assert.IsTrue(picker.transform.Bind("ConfirmButton", out Button confirm));
             Assert.IsTrue(confirm.interactable);
             Assert.IsTrue(_client.Input.CanExecute(GameplayInputAction.ConfirmSelection));
             _client.ApplyMessage(JsonUtility.ToJson(new ActionChoiceMessage
@@ -346,7 +346,7 @@ namespace ProjectC.Tests
             var gallery = _ui.GetComponentInChildren<CardGalleryView>(true);
             Click(gallery.GetComponentsInChildren<CardWidget>().First());
             var picker = _ui.GetComponentInChildren<EffectTargetPicker>(true);
-            Assert.IsTrue(picker.transform.Bind("Confirm", out Button confirm));
+            Assert.IsTrue(picker.transform.Bind("ConfirmButton", out Button confirm));
             Assert.IsTrue(confirm.interactable);
             confirm.onClick.Invoke();
             // Keep the live socket receiving, but hold its inbox away from the frame pump.

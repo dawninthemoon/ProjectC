@@ -103,7 +103,7 @@ namespace ProjectC.Tests
             Assert.IsFalse(_ui.Detail.gameObject.activeSelf);
             Assert.AreEqual(fieldPosition, _ui.OwnField.transform.position);
             Assert.AreEqual(panelPosition, _ui.Detail.transform.position);
-            Assert.IsTrue(Find<RectTransform>(_ui, "CardInfoSpace").gameObject.activeSelf);
+            Assert.IsTrue(Find<RectTransform>(_ui, "CardInfoSpaceImage").gameObject.activeSelf);
             Assert.AreEqual(BattleText.Get("ui.phase.to_battle"), _ui.EndTurn.GetComponentInChildren<TMP_Text>().text);
             Snapshot(1, 2);
             yield return null;
@@ -111,7 +111,7 @@ namespace ProjectC.Tests
             Snapshot(3, 3);
             yield return null;
             Assert.AreEqual(BattleText.Get("ui.phase.end_turn"), _ui.EndTurn.GetComponentInChildren<TMP_Text>().text);
-            var timer = Find<TMP_Text>(_ui, "TurnTimer");
+            var timer = Find<TMP_Text>(_ui, "TimerText");
             Assert.IsTrue(timer.text.Contains("00:03") || timer.text.Contains("00:02"));
             yield return new WaitForSecondsRealtime(2.7f);
             Assert.IsTrue(timer.text.Contains("00:00"));
@@ -189,7 +189,7 @@ namespace ProjectC.Tests
             yield return Setup();
             var before = JsonUtility.ToJson(_client.State);
             Choice(1, "single");
-            var picker = Find<EffectTargetPicker>(_ui, "EffectTargetPicker");
+            var picker = Find<EffectTargetPicker>(_ui, "EffectTargetPickerImage");
             var gallery = _ui.GetComponentInChildren<CardGalleryView>(true);
             var candidates = gallery.GetComponentsInChildren<CardWidget>();
             candidates[0].Clicked(candidates[0]);
@@ -198,7 +198,7 @@ namespace ProjectC.Tests
             Assert.AreEqual(CardPresentation.Name(Card(0, 1004)), _ui.Detail.Title.text);
             Assert.IsFalse(candidates[0].IsSelected);
             Assert.IsTrue(candidates[1].IsSelected);
-            Assert.IsTrue(Find<Button>(picker, "Confirm").interactable);
+            Assert.IsTrue(Find<Button>(picker, "ConfirmButton").interactable);
             var area = _root.GetComponentsInChildren<BattleHitArea>().First(a => a.Kind == BattleHitArea.AreaKind.OwnField);
             _ui.Interaction.ClickArea(area);
             Assert.IsTrue(_ui.Detail.gameObject.activeSelf, "Blocked background input must retain the choice preview");

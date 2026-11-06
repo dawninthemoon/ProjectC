@@ -71,18 +71,9 @@ namespace ProjectC.Client
         public BattleEffectsView Effects;
         public TMP_Text TurnLabel,
             PhaseLabel,
-            SelectionLabel,
-            ResultLabel,
-            ConnectionLabel,
-            DebugLabel;
-        public Button Summon,
-            BattlePhase,
-            Attack,
-            DirectAttack,
-            EndTurn,
-            Cancel,
+            ResultLabel;
+        public Button EndTurn,
             LobbyToggle,
-            GraveyardToggle,
             LogToggle,
             Resync,
             ResultRematch,
@@ -185,23 +176,23 @@ namespace ProjectC.Client
             // The scene-based front end no longer embeds the legacy lobby/debug panel.
             this.Bind("LobbyPanel", out Lobby);
             LobbyOverlay = Lobby != null ? Lobby.gameObject : null;
-            this.Bind("YourHand", out Hand);
-            this.Bind("OwnField", out OwnField);
-            this.Bind("OpponentField", out EnemyField);
-            this.Bind("OpponentHand", out EnemyHand);
-            this.Bind("YourGraveyard", out OwnGraveyard);
-            this.Bind("OpponentGraveyard", out EnemyGraveyard);
-            this.Bind("OwnPlayer", out OwnPlayer);
-            this.Bind("EnemyPlayer", out EnemyPlayer);
-            this.Bind("CardInspector", out Detail);
-            this.Bind("RecentEvents", out Log);
+            this.Bind("YourHandImage", out Hand);
+            this.Bind("OwnFieldImage", out OwnField);
+            this.Bind("OpponentFieldImage", out EnemyField);
+            this.Bind("OpponentHandImage", out EnemyHand);
+            this.Bind("YourGraveyardImage", out OwnGraveyard);
+            this.Bind("OpponentGraveyardImage", out EnemyGraveyard);
+            this.Bind("OwnPlayerImage", out OwnPlayer);
+            this.Bind("EnemyPlayerImage", out EnemyPlayer);
+            this.Bind("CardInspectorImage", out Detail);
+            this.Bind("RecentEventsImage", out Log);
             Modal = ModalBlocker.Create((RectTransform)transform);
             Interaction = GetComponent<BattleInteractionController>();
             Interaction.Initialize(this);
             _handRect = (RectTransform)Hand.transform;
             _handPosition = _handRect.anchoredPosition;
             _authoredHandSize = _handRect.sizeDelta;
-            if (!this.Bind("CardGallery", out _gallery))
+            if (!this.Bind("CardGalleryImage", out _gallery))
             {
                 throw new InvalidOperationException("Battle screen requires CardGallery.");
             }
@@ -218,10 +209,6 @@ namespace ProjectC.Client
                 deckButton.targetGraphic = deckImage;
             }
             Lobby?.Bind(Client);
-            Summon.onClick.AddListener(() => Command("PlayCard"));
-            BattlePhase.gameObject.SetActive(false);
-            Attack.onClick.AddListener(() => Command("Attack"));
-            DirectAttack.onClick.AddListener(() => Command("DirectAttack"));
             EndTurn.onClick.AddListener(() =>
             {
                 if (Interaction.State == BattleInputState.Idle || Interaction.State == BattleInputState.SelectingCardAction)
@@ -229,27 +216,15 @@ namespace ProjectC.Client
                     Command(Client.State?.Phase == (int)BattlePhaseKind.Main2 || Client.State?.Phase == (int)BattlePhaseKind.End ? "EndTurn" : "AdvancePhase");
                 }
             });
-            if (!this.Bind("TurnTimer", out _turnTimer))
+            if (!this.Bind("TimerText", out _turnTimer))
             {
-                throw new InvalidOperationException("Battle screen requires TurnTimer.");
+                throw new InvalidOperationException("Battle screen requires TimerText.");
             }
-            if (!this.Bind("TurnHud", out _turnHud))
+            if (!this.Bind("TurnHudImage", out _turnHud))
             {
-                throw new InvalidOperationException("Battle screen requires TurnHud.");
+                throw new InvalidOperationException("Battle screen requires TurnHudImage.");
             }
             BattleText.StyleValue(_turnTimer);
-            Cancel.onClick.AddListener(() =>
-            {
-                if (Client.Input.HasSelection || !Client.Input.CanExecute(GameplayInputAction.CancelSelection))
-                {
-                    return;
-                }
-                if (SelectedCardId != 0)
-                {
-                    ClientAudio.Play(SoundCue.CardDeselect);
-                }
-                ClearSelection();
-            });
             LobbyToggle.onClick.AddListener(() =>
             {
                 if (!Client.Input.CanExecute(GameplayInputAction.OpenBattleMenu))
@@ -265,9 +240,6 @@ namespace ProjectC.Client
                     showLobby = !showLobby;
                 }
             });
-            GraveyardToggle.onClick.AddListener(() =>
-                _gallery.ShowPublicZones()
-            );
             LogToggle.onClick.AddListener(() =>
             {
                 if (Client.Input.CanExecute(GameplayInputAction.ToggleBattleLog))
@@ -683,12 +655,6 @@ namespace ProjectC.Client
                 }
             }
             bool action = CanAct;
-            Summon.interactable = action && Client.Input.CanExecute(GameplayInputAction.PlayCard) && selected != null && selected.CanSummon;
-            BattlePhase.interactable = false;
-            Attack.interactable =
-                action && Client.Input.CanExecute(GameplayInputAction.Attack) && selected != null && selected.CanAttack && TargetCardId != 0;
-            DirectAttack.interactable =
-                action && Client.Input.CanExecute(GameplayInputAction.Attack) && selected != null && selected.CanDirectAttack && enemy?.Field?.Length == 0;
             EndTurn.interactable = action && (Interaction.State == BattleInputState.Idle
                 || Interaction.State == BattleInputState.SelectingCardAction)
                 && Client.Input.CanExecute(rendered?.Phase == (int)BattlePhaseKind.Main2 || rendered?.Phase == (int)BattlePhaseKind.End
@@ -734,17 +700,6 @@ namespace ProjectC.Client
                 Client.PlayerId, Client.State?.Started ?? false, Client.State?.Finished ?? false, Client.Input.HasSelection);
             ResultRematch.interactable = !Client.WebsiteMode && Client.Connected && !Client.Busy && !RematchRequested();
             ResultLeave.interactable = Client.Connected && !Client.Busy;
-            if (ConnectionLabel != null)
-            {
-                ConnectionLabel.text =
-                    (Client.Connected ? "ONLINE" : "OFFLINE") + "  /  " + Client.CurrentMatch;
-            }
-            if (DebugLabel != null)
-            {
-                DebugLabel.text =
-                    $"P{Client.PlayerId}  |  GAME {epoch}  |  SEQ {Client.Sequence}"
-                    + (Client.Busy ? "  /  WAITING" : "");
-            }
         }
 
         bool RematchRequested()
@@ -868,10 +823,6 @@ namespace ProjectC.Client
             PhaseLabel.text = BattleText.Get(
                 rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1" : rendered.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_battle_phase"
                 : rendered.Phase == (int)BattlePhaseKind.Main2 ? "ui_battle_main_phase_2" : "ui_battle_end_phase");
-            SelectionLabel.text =
-                selected == null
-                    ? "Select a card"
-                    : CardPresentation.Name(selected) + (TargetCardId == 0 ? "" : "  >  target #" + TargetCardId);
             foreach (var zone in Zones)
             {
                 foreach (var widget in zone.Widgets)

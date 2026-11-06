@@ -14,7 +14,7 @@ namespace ProjectC.Client
 
         public void Show(CardWidget widget, Action<ActivationView> activate)
         {
-            this.Bind("ActionContent", out RectTransform content);
+            this.Bind("ActionContentImage", out RectTransform content);
             foreach (var b in buttons)
             {
                 b.gameObject.SetActive(false);

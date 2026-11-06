@@ -80,8 +80,10 @@ namespace ProjectC.Client
             }
             if (e.Type == (int)PresentationEvent.Yokai && e.TargetPlayerId == presenter.Client.PlayerId)
             {
-                this.Bind("YokaiValue", out TMP_Text yokai);
-                target = yokai.transform;
+                if (this.Bind("SpecialCosts", out BattleSpecialCostsView costs) && costs.Items.Count > 0)
+                {
+                    target = costs.Items[0].transform;
+                }
             }
             var popup = Instantiate(_numberPopupPrefab, _flightRoot);
             popup.transform.position = target.TransformPoint(((RectTransform)target).rect.center);
@@ -114,28 +116,28 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (!this.Bind("DragVisualRoot", out _flightRoot)
-                || !this.Bind("TurnBanner", out TurnGroup)
-                || !this.Bind("CardEventPopup", out PopupGroup)
-                || !this.Bind("DrawCard", out DrawGroup)
-                || !this.Bind("TurnDim", out dim)
-                || !this.Bind("YourDeck", out OwnDeck)
-                || !this.Bind("OpponentDeck", out OpponentDeck))
+            if (!this.Bind("DragVisualRootImage", out _flightRoot)
+                || !this.Bind("TurnTransitionImage", out TurnGroup)
+                || !this.Bind("CardEventPopupImage", out PopupGroup)
+                || !this.Bind("DrawCardImage", out DrawGroup)
+                || !this.Bind("TurnDimImage", out dim)
+                || !this.Bind("YourDeckImage", out OwnDeck)
+                || !this.Bind("OpponentDeckImage", out OpponentDeck))
             {
                 throw new System.InvalidOperationException(
                     "Battle effects require DragVisualRoot, TurnBanner, CardEventPopup, DrawCard, TurnDim and both deck anchors.");
             }
-            if (!TurnGroup.transform.Bind("Title", out TurnTitle)
-                || !TurnGroup.transform.Bind("Subtitle", out TurnSubtitle)
-                || !PopupGroup.transform.Bind("Title", out PopupTitle)
-                || !PopupGroup.transform.Bind("Description", out PopupBody)
-                || !DrawGroup.transform.Bind("Back", out DrawLabel))
+            if (!TurnGroup.transform.Bind("TitleText", out TurnTitle)
+                || !TurnGroup.transform.Bind("SubtitleText", out TurnSubtitle)
+                || !PopupGroup.transform.Bind("TitleText", out PopupTitle)
+                || !PopupGroup.transform.Bind("DescriptionText", out PopupBody)
+                || !DrawGroup.transform.Bind("BackText", out DrawLabel))
             {
                 throw new System.InvalidOperationException("Battle effects are missing banner, popup or draw text bindings.");
             }
             DrawCard = (RectTransform)DrawGroup.transform;
-            this.Bind("YourHand", out OwnHand);
-            this.Bind("OpponentHand", out OpponentHand);
+            this.Bind("YourHandImage", out OwnHand);
+            this.Bind("OpponentHandImage", out OpponentHand);
             this.Bind("BattleVfxLayer", out _vfx);
             bound = true;
             foreach (var group in new[] { TurnGroup, PopupGroup, DrawGroup, dim })

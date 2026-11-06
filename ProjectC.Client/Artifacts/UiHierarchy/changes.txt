@@ -1,0 +1,242 @@
+Remove Stats
+Remove Status
+Remove Accent
+Remove RenewalTitle
+Parent ArtworkMask -> FrameImage
+Remove Inset
+Parent Name -> RenewalFrame
+Parent AttackBadgeFrame -> RenewalFrame
+Parent HealthBadgeFrame -> RenewalFrame
+Parent CostBadgeFrame -> RenewalFrame
+Rename FrameGlow -> FrameGlowImage
+Rename RenewalFrame -> CardFrameImage
+Rename Name -> NameText
+Rename AttackBadgeFrame -> AttackValueContainer
+Rename AttackBadge -> AttackBadgeText
+Rename HealthBadgeFrame -> HealthValueContainer
+Rename HealthBadge -> HealthBadgeText
+Rename CostBadgeFrame -> CostBadgeImage
+Rename CostBadge -> CostBadgeText
+Verified Assets/Prefabs/Battle\BattleCard.prefab at reference and alternate sizes
+Rename CostValue -> CostValueText
+Verified Assets/Prefabs/Battle\BattleCostItem.prefab at reference and alternate sizes
+Remove Stats
+Remove Status
+Remove Accent
+Remove RenewalTitle
+Remove FieldStatusFrame
+Parent ArtworkMask -> FrameImage
+Remove Inset
+Parent Name -> RenewalFrame
+Parent AttackBadgeFrame -> RenewalFrame
+Parent HealthBadgeFrame -> RenewalFrame
+Parent CostBadgeFrame -> RenewalFrame
+Rename FrameGlow -> FrameGlowImage
+Rename Monogram -> MonogramText
+Rename RenewalFrame -> CardFrameImage
+Rename Name -> NameText
+Rename AttackBadgeFrame -> AttackValueContainer
+Rename AttackBadge -> AttackBadgeText
+Rename HealthBadgeFrame -> HealthValueContainer
+Rename HealthBadge -> HealthBadgeText
+Rename CostBadgeFrame -> CostBadgeImage
+Rename CostBadge -> CostBadgeText
+Verified Assets/Prefabs/Battle\BattleFieldCard.prefab at reference and alternate sizes
+Rename LogActor -> LogActorText
+Rename LogMessage -> LogMessageText
+Rename LogCardHint -> LogCardHintText
+Verified Assets/Prefabs/Battle\BattleLogItem.prefab at reference and alternate sizes
+Remove Brand
+Remove Edition
+Remove ArenaGuides
+Remove Midline
+Remove EnemyFieldCaption
+Remove OwnFieldCaption
+Remove HandCaption
+Remove AutoStartHint
+Remove EnterBattle
+Remove Graveyards
+Remove LegacyDebugControls
+Remove YokaiPanel
+Remove TurnSocket
+Remove TimeSocket
+Remove TurnUnit
+Remove TimeUnit
+Remove TurnOwnerAccent
+Remove TimerRingFrame
+Remove PhaseInside
+Remove TurnPhasePlate
+Remove OwnResourceLabel
+Remove RenewalPortraitFrame
+Remove LifeCaption
+Remove Name
+Remove Counts
+Remove TurnMark
+Remove LifeIcon
+Remove RenewalPortraitFrame
+Remove LifeCaption
+Remove Name
+Remove Counts
+Remove TurnMark
+Remove LifeIcon
+Remove BodyFill
+Remove LeftRail
+Remove RightRail
+Remove Bottom
+Remove ChevronWell
+Remove Header
+Remove Recent
+Remove Header
+Remove Lines
+Remove Label
+Remove Label
+Remove Label
+Remove Label
+Parent TurnOwner -> TurnBannerArt
+Parent Turn -> TurnBannerArt
+Parent OwnExileBrowse -> OwnExileTagImage
+Parent EnemyExileBrowse -> EnemyExileTagImage
+Rename Background -> BackgroundImage
+Rename MoonlitArenaBackdrop -> MoonlitArenaBackdropImage
+Rename Table -> TableImage
+Rename Battlefield -> BattlefieldImage
+Rename CardInfoSpace -> CardInfoSpaceImage
+Rename CardInspector -> CardInspectorImage
+Rename Name -> NameText
+Rename Stats -> StatsText
+Rename DetailViewport -> DetailViewportImage
+Rename DetailContent -> DetailContentImage
+Rename Rules -> RulesText
+Rename Forms -> FormsText
+Rename ArtPlaceholder -> ArtPlaceholderText
+Rename CardType -> CardTypeText
+Rename OpponentDeck -> OpponentDeckImage
+Rename YourDeck -> YourDeckImage
+Rename OpponentHand -> OpponentHandImage
+Rename EnemyPlayer -> EnemyPlayerImage
+Rename HeroRing -> HeroRingImage
+Rename LifeBadge -> LifeBadgeImage
+Rename Life -> LifeText
+Rename OwnPlayer -> OwnPlayerImage
+Rename HeroRing -> HeroRingImage
+Rename LifeBadge -> LifeBadgeImage
+Rename Life -> LifeText
+Rename OpponentField -> OpponentFieldImage
+Rename OwnFieldDropZone -> OwnFieldDropZoneImage
+Rename OwnField -> OwnFieldImage
+Rename RecentEvents -> RecentEventsImage
+Rename RejectionReason -> RejectionReasonText
+Rename EndTurn -> EndTurnButton
+Rename Label -> LabelText
+Rename Phase -> PhaseText
+Rename TurnGlow -> TurnGlowImage
+Rename TurnArrow -> TurnArrowImage
+Rename History -> HistoryButton
+Rename LobbyToggle -> LobbyToggleButton
+Rename TurnDim -> TurnDimImage
+Rename TurnBanner -> TurnTransitionImage
+Rename Title -> TitleText
+Rename Subtitle -> SubtitleText
+Rename CardEventPopup -> CardEventPopupImage
+Rename Title -> TitleText
+Rename Description -> DescriptionText
+Rename DrawCard -> DrawCardImage
+Rename Back -> BackText
+Rename Unread -> UnreadText
+Rename DragVisualRoot -> DragVisualRootImage
+Rename AttackArrow -> AttackArrowImage
+Rename Shaft -> ShaftImage
+Rename Tip -> TipText
+Rename LowerWing -> LowerWingImage
+Rename UpperWing -> UpperWingImage
+Rename EffectTargetPicker -> EffectTargetPickerImage
+Rename Title -> TitleText
+Rename Viewport -> ViewportImage
+Rename Candidates -> CandidatesImage
+Rename Confirm -> ConfirmButton
+Rename Label -> LabelText
+Rename Cancel -> CancelButton
+Rename Label -> LabelText
+Rename GraveyardPanel -> GraveyardPanelImage
+Rename OwnCaption -> OwnCaptionText
+Rename YourGraveyardViewport -> YourGraveyardViewportImage
+Rename YourGraveyard -> YourGraveyardImage
+Rename EnemyCaption -> EnemyCaptionText
+Rename OpponentGraveyardViewport -> OpponentGraveyardViewportImage
+Rename OpponentGraveyard -> OpponentGraveyardImage
+Rename MatchResult -> MatchResultImage
+Rename Result -> ResultText
+Rename Hint -> HintText
+Rename Rematch -> RematchButton
+Rename Label -> LabelText
+Rename Leave -> LeaveButton
+Rename Label -> LabelText
+Rename ContextAction -> ContextActionImage
+Rename ActionContent -> ActionContentImage
+Rename EnemyResources -> EnemyResourcesImage
+Rename EnemyDeckCount -> EnemyDeckCountText
+Rename EnemyGraveCount -> EnemyGraveCountText
+Rename EnemyGraveBrowse -> EnemyGraveBrowseButton
+Rename EnemyExileCount -> EnemyExileCountText
+Rename EnemyExileBrowse -> EnemyExileBrowseButton
+Rename OwnResources -> OwnResourcesImage
+Rename OwnDeckCount -> OwnDeckCountText
+Rename OwnGraveCount -> OwnGraveCountText
+Rename OwnGraveBrowse -> OwnGraveBrowseButton
+Rename OwnExileCount -> OwnExileCountText
+Rename OwnExileBrowse -> OwnExileBrowseButton
+Rename CardGallery -> CardGalleryImage
+Rename GalleryTitle -> GalleryTitleText
+Rename GalleryClose -> GalleryCloseButton
+Rename GalleryCloseLabel -> GalleryCloseLabelText
+Rename GalleryViewport -> GalleryViewportImage
+Rename YourHand -> YourHandImage
+Rename EnemyYokaiPanel -> EnemyYokaiPanelImage
+Rename EnemyYokaiValue -> EnemyYokaiValueText
+Rename TurnHud -> TurnHudImage
+Rename TurnBannerArt -> TurnBannerImage
+Rename TurnOwner -> TurnOwnerText
+Rename Turn -> TurnText
+Rename TimerHousing -> TimerHousingImage
+Rename TimeTrack -> TimerTicksOffImage
+Rename TimeRing -> TimerTicksOnImage
+Rename TurnTimer -> TimerText
+Rename CostBody -> CostBodyImage
+Rename CostViewport -> CostViewportImage
+Rename CostToggle -> CostToggleButton
+Rename CostChevron -> CostChevronImage
+Rename CostTooltip -> CostTooltipImage
+Rename CostTooltipTitle -> CostTooltipTitleText
+Rename CostTooltipDivider -> CostTooltipDividerImage
+Rename CostTooltipAmount -> CostTooltipAmountText
+Rename CostTooltipDescription -> CostTooltipDescriptionText
+Rename FullHistory -> FullHistoryImage
+Rename Viewport -> ViewportImage
+Rename CloseLog -> CloseLogButton
+Rename Label -> LabelText
+Rename LogPopupTitle -> LogPopupTitleText
+Rename LogEmpty -> LogEmptyText
+Rename LogScrollbar -> LogScrollbarImage
+Rename Handle -> HandleImage
+Rename CenterTurnOwner -> CenterTurnOwnerText
+Rename CenterTurnNumber -> CenterTurnNumberText
+Verified Assets/Prefabs/Battle\BattleScreen.prefab at reference and alternate sizes
+Rename Label -> LabelText
+Verified Assets/Prefabs/Battle\CardAction.prefab at reference and alternate sizes
+Remove Stats
+Remove Status
+Remove Accent
+Parent ArtworkMask -> FrameImage
+Remove Inset
+Rename Monogram -> MonogramText
+Verified Assets/Prefabs/Battle\CardBack.prefab at reference and alternate sizes
+Rename Number -> NumberText
+Verified Assets/Prefabs/Battle\NumberPopup.prefab at reference and alternate sizes
+Remove LifeCaption
+Remove Name
+Remove Counts
+Remove TurnMark
+Rename HeroRing -> HeroRingImage
+Rename LifeBadge -> LifeBadgeImage
+Rename Life -> LifeText
+Verified Assets/Prefabs/Battle\PlayerPanel.prefab at reference and alternate sizes

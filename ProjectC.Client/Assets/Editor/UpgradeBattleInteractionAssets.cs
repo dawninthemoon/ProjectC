@@ -227,16 +227,16 @@ namespace ProjectC.Client.Editor
             p.PhaseLabel.fontSize = 18;
             Move(p.EndTurn, 1720, 465, 180, 74);
             SetButton(p.EndTurn, "END TURN");
-            Move(p.BattlePhase, 1720, 552, 180, 50);
-            SetButton(p.BattlePhase, "BATTLE PHASE");
+            Move(Find<Button>(root, "EnterBattle"), 1720, 552, 180, 50);
+            SetButton(Find<Button>(root, "EnterBattle"), "BATTLE PHASE");
             Move(Find<TMP_Text>(root, "AutoStartHint"), 1720, 610, 175, 65);
             Find<TMP_Text>(root, "AutoStartHint").fontSize = 14;
             Move(p.LobbyToggle, 1710, 24, 190, 44);
             SetButton(p.LobbyToggle, "MENU / LOBBY");
             Move(p.LogToggle, 26, 470, 160, 48);
             SetButton(p.LogToggle, "BATTLE LOG");
-            Move(p.GraveyardToggle, 26, 530, 160, 48);
-            SetButton(p.GraveyardToggle, "GRAVEYARD");
+            Move(Find<Button>(root, "Graveyards"), 26, 530, 160, 48);
+            SetButton(Find<Button>(root, "Graveyards"), "GRAVEYARD");
             var unread = table.Find("Unread");
             if (unread == null)
             {
@@ -247,22 +247,22 @@ namespace ProjectC.Client.Editor
             foreach (
                 var c in new Component[]
                 {
-                    p.Summon,
-                    p.Attack,
-                    p.DirectAttack,
-                    p.Cancel,
-                    p.SelectionLabel,
+                    Find<Button>(root, "Summon"),
+                    Find<Button>(root, "AttackTarget"),
+                    Find<Button>(root, "DirectAttack"),
+                    Find<Button>(root, "Deselect"),
+                    Find<TMP_Text>(root, "Selection"),
                 }
             )
             {
                 c.transform.SetParent(legacy.transform, false);
             }
             // Preserve the existing lobby; tuck protocol/resync inside it instead of the play surface.
-            p.ConnectionLabel.transform.SetParent(p.LobbyOverlay.transform, false);
-            Move(p.ConnectionLabel, 35, 705, 520, 30);
-            p.ConnectionLabel.fontSize = 14;
-            p.DebugLabel.transform.SetParent(p.LobbyOverlay.transform, false);
-            Move(p.DebugLabel, 570, 705, 250, 30);
+            Find<TMP_Text>(root, "Connection").transform.SetParent(p.LobbyOverlay.transform, false);
+            Move(Find<TMP_Text>(root, "Connection"), 35, 705, 520, 30);
+            Find<TMP_Text>(root, "Connection").fontSize = 14;
+            Find<TMP_Text>(root, "ProtocolDebug").transform.SetParent(p.LobbyOverlay.transform, false);
+            Move(Find<TMP_Text>(root, "ProtocolDebug"), 570, 705, 250, 30);
             p.Resync.transform.SetParent(p.LobbyOverlay.transform, false);
             Move(p.Resync, 825, 700, 140, 36);
             var help = Find<TMP_Text>(p.LobbyOverlay, "Help");
@@ -361,10 +361,10 @@ namespace ProjectC.Client.Editor
             Button(history.transform, "CloseLog", "X", 370, 18, 50, 38);
             var vp = Find<RectTransform>(history, "Viewport");
             Move(vp, 18, 80, 414, 600);
-            Move(p.Log.Full, 8, 0, 395, 600);
-            p.Log.Full.fontSize = 19;
-            p.Log.Full.raycastTarget = false;
-            p.Log.Full.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
+            Move(Find<TMP_Text>(p.Log.History, "Lines"), 8, 0, 395, 600);
+            Find<TMP_Text>(p.Log.History, "Lines").fontSize = 19;
+            Find<TMP_Text>(p.Log.History, "Lines").raycastTarget = false;
+            Find<TMP_Text>(p.Log.History, "Lines").GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
                 .FitMode
                 .PreferredSize;
             // Overlay layers contain real prefab objects. They never intercept gameplay rays.

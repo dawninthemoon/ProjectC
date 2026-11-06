@@ -1,0 +1,47 @@
+[
+  {
+    "prefab": "BattleCard.prefab",
+    "objectsBefore": 18,
+    "objectsAfter": 13
+  },
+  {
+    "prefab": "BattleCostItem.prefab",
+    "objectsBefore": 3,
+    "objectsAfter": 3
+  },
+  {
+    "prefab": "BattleFieldCard.prefab",
+    "objectsBefore": 20,
+    "objectsAfter": 14
+  },
+  {
+    "prefab": "BattleLogItem.prefab",
+    "objectsBefore": 4,
+    "objectsAfter": 4
+  },
+  {
+    "prefab": "BattleScreen.prefab",
+    "objectsBefore": 207,
+    "objectsAfter": 145
+  },
+  {
+    "prefab": "CardAction.prefab",
+    "objectsBefore": 2,
+    "objectsAfter": 2
+  },
+  {
+    "prefab": "CardBack.prefab",
+    "objectsBefore": 10,
+    "objectsAfter": 5
+  },
+  {
+    "prefab": "NumberPopup.prefab",
+    "objectsBefore": 2,
+    "objectsAfter": 2
+  },
+  {
+    "prefab": "PlayerPanel.prefab",
+    "objectsBefore": 10,
+    "objectsAfter": 6
+  }
+]

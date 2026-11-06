@@ -168,7 +168,7 @@ GameObject:
   - component: {fileID: 2783305513817968482}
   - component: {fileID: 4333525222905188402}
   m_Layer: 0
-  m_Name: Label
+  m_Name: LabelText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -307,3 +307,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 2
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}

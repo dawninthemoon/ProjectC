@@ -40,9 +40,9 @@ namespace ProjectC.Tests
             _ui.Client.ApplyMessage("{\"Type\":\"MatchCreated\",\"ProtocolVersion\":2,\"MatchId\":\"turnlog\",\"PlayerId\":1,\"GameNumber\":1}");
             Snapshot(1, 3, 120000);
             yield return new WaitForSecondsRealtime(2.5f);
-            var hud = Find(_ui.transform, "TurnHud");
-            var status = Find(hud, "TurnOwner").GetComponent<TMP_Text>();
-            var ring = Find(hud, "TimeRing").GetComponent<Image>();
+            var hud = Find(_ui.transform, "TurnHudImage");
+            var status = Find(hud, "TurnOwnerText").GetComponent<TMP_Text>();
+            var ring = Find(hud, "TimerTicksOnImage").GetComponent<Image>();
             Assert.AreEqual("ProjectC_TurnHUD_Textless", hud.GetComponent<Image>().sprite.name);
             Assert.AreEqual("3", _ui.TurnLabel.text);
             Assert.AreEqual(BattleText.Get("ui.turn.yours"), status.text);
@@ -56,13 +56,13 @@ namespace ProjectC.Tests
             yield return Capture("own-turn");
             _ui.LogToggle.onClick.Invoke();
             Assert.IsTrue(_ui.Log.IsOpen);
-            Assert.IsTrue(Find(_ui.Log.History.transform, "LogEmpty").gameObject.activeInHierarchy);
+            Assert.IsTrue(Find(_ui.Log.History.transform, "LogEmptyText").gameObject.activeInHierarchy);
             Assert.AreEqual(1, _ui.Modal.ActiveCount);
             Assert.AreEqual("ProjectC_BattleLog_PopupFrame", _ui.Log.History.GetComponent<Image>().sprite.name);
             Assert.Less(_ui.Modal.Tint.r, .1f);
             Assert.Greater(_ui.Modal.Tint.a, .5f);
             yield return Capture("log-empty");
-            Find(_ui.Log.History.transform, "CloseLog").GetComponent<Button>().onClick.Invoke();
+            Find(_ui.Log.History.transform, "CloseLogButton").GetComponent<Button>().onClick.Invoke();
             Assert.IsFalse(_ui.Log.IsOpen);
             Assert.AreEqual(0, _ui.Modal.ActiveCount);
             var events = new[]
@@ -125,7 +125,7 @@ namespace ProjectC.Tests
             Snapshot(2, 4, 80000);
             _ui.Log.Toggle();
             yield return null;
-            Assert.AreEqual(2, _ui.Log.History.GetComponentsInChildren<BattleLogItemView>().Count(value => !value.GetComponent<Button>().interactable && value.Entry.Turn > 0 && value.transform.Find("LogActor").gameObject.activeSelf == false));
+            Assert.AreEqual(2, _ui.Log.History.GetComponentsInChildren<BattleLogItemView>().Count(value => !value.GetComponent<Button>().interactable && value.Entry.Turn > 0 && value.transform.Find("LogActorText").gameObject.activeSelf == false));
             Assert.Greater(_ui.Log.Scroll.content.rect.height, _ui.Log.Scroll.viewport.rect.height);
             _ui.Log.Scroll.verticalNormalizedPosition = 1;
             yield return null;

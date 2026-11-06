@@ -63,7 +63,7 @@ namespace ProjectC.Tests
             var frame = ui.EndTurn.GetComponent<Image>();
             Assert.AreEqual("TurnFrame_Background_HiRes", frame.sprite.name);
             Assert.IsTrue(frame.preserveAspect);
-            var sparkle = ui.EndTurn.GetComponentsInChildren<Image>(true).Single(image => image.name == "TurnGlow");
+            var sparkle = ui.EndTurn.GetComponentsInChildren<Image>(true).Single(image => image.name == "TurnGlowImage");
             Assert.AreEqual("TurnSparkles_Overlay_HiRes", sparkle.sprite.name);
             Assert.IsFalse(sparkle.raycastTarget);
             Assert.AreEqual("UI/Default", sparkle.material.shader.name);

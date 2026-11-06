@@ -25,10 +25,10 @@ namespace ProjectC.Client
 
         private void Begin(bool canCancel, Action confirm, Action cancel)
         {
-            this.Bind("Title", out TMP_Text title);
-            this.Bind("Candidates", out RectTransform content);
-            this.Bind("Confirm", out _confirm);
-            this.Bind("Cancel", out Button back);
+            this.Bind("TitleText", out TMP_Text title);
+            this.Bind("CandidatesImage", out RectTransform content);
+            this.Bind("ConfirmButton", out _confirm);
+            this.Bind("CancelButton", out Button back);
             _cancel = back;
             _submitting = false;
             title.gameObject.SetActive(false);

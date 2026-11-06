@@ -12,8 +12,8 @@ namespace ProjectC.Client
         {
             if (shaft == null)
             {
-                this.Bind("Shaft", out shaft);
-                this.Bind("Tip", out tip);
+                this.Bind("ShaftImage", out shaft);
+                this.Bind("TipText", out tip);
             }
             gameObject.SetActive(true);
             var parent = (RectTransform)transform.parent;

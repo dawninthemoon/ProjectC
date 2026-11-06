@@ -40,9 +40,9 @@ namespace ProjectC.Tests
             _ui.Client.ApplyMessage("{\"Type\":\"MatchCreated\",\"ProtocolVersion\":2,\"MatchId\":\"turnlog\",\"PlayerId\":1,\"GameNumber\":1}");
             Snapshot(1, 3, 120000);
             yield return new WaitForSecondsRealtime(2.5f);
-            var hud = Find(_ui.transform, "TurnHud");
-            var status = Find(hud, "TurnOwner").GetComponent<TMP_Text>();
-            var ring = Find(hud, "TimeRing").GetComponent<Image>();
+            var hud = Find(_ui.transform, "TurnHudImage");
+            var status = Find(hud, "TurnOwnerText").GetComponent<TMP_Text>();
+            var ring = Find(hud, "TimerTicksOnImage").GetComponent<Image>();
             Assert.AreEqual("TurnBanner", hud.GetComponent<Image>().sprite.name);
             Assert.AreEqual("3", _ui.TurnLabel.text);
             Assert.AreEqual(BattleText.Get("ui.turn.yours"), status.text);
@@ -58,13 +58,13 @@ namespace ProjectC.Tests
             yield return ValidateCosts();
             _ui.LogToggle.onClick.Invoke();
             Assert.IsTrue(_ui.Log.IsOpen);
-            Assert.IsTrue(Find(_ui.Log.History.transform, "LogEmpty").gameObject.activeInHierarchy);
+            Assert.IsTrue(Find(_ui.Log.History.transform, "LogEmptyText").gameObject.activeInHierarchy);
             Assert.AreEqual(1, _ui.Modal.ActiveCount);
             Assert.AreEqual("ProjectC_BattleLog_PopupFrame", _ui.Log.History.GetComponent<Image>().sprite.name);
             Assert.Less(_ui.Modal.Tint.r, .1f);
             Assert.Greater(_ui.Modal.Tint.a, .5f);
             yield return Capture("log-empty");
-            Find(_ui.Log.History.transform, "CloseLog").GetComponent<Button>().onClick.Invoke();
+            Find(_ui.Log.History.transform, "CloseLogButton").GetComponent<Button>().onClick.Invoke();
             Assert.IsFalse(_ui.Log.IsOpen);
             Assert.AreEqual(0, _ui.Modal.ActiveCount);
             var events = new[]
@@ -123,16 +123,16 @@ namespace ProjectC.Tests
             yield return null;
             yield return null;
             Assert.AreEqual(BattleText.Get("ui.turn.theirs"), status.text);
-            Assert.AreEqual(status.text, Find(_ui.transform, "CenterTurnOwner").GetComponent<TMP_Text>().text);
+            Assert.AreEqual(status.text, Find(_ui.transform, "CenterTurnOwnerText").GetComponent<TMP_Text>().text);
             Assert.AreEqual("17", _ui.OwnPlayer.Life.text);
             Assert.AreEqual("16", _ui.EnemyPlayer.Life.text);
-            Assert.AreEqual("24", Find(_ui.transform, "OwnDeckCount").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("22", Find(_ui.transform, "EnemyDeckCount").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("1", Find(_ui.transform, "OwnExileCount").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("1", Find(_ui.transform, "EnemyExileCount").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("1", Find(_ui.transform, "EnemyGraveCount").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("12", Find(_ui.OwnField.Widgets[0].Face, "AttackBadge").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("9", Find(_ui.OwnField.Widgets[0].Face, "HealthBadge").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("24", Find(_ui.transform, "OwnDeckCountText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("22", Find(_ui.transform, "EnemyDeckCountText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("1", Find(_ui.transform, "OwnExileCountText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("1", Find(_ui.transform, "EnemyExileCountText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("1", Find(_ui.transform, "EnemyGraveCountText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("12", Find(_ui.OwnField.Widgets[0].Face, "AttackBadgeText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("9", Find(_ui.OwnField.Widgets[0].Face, "HealthBadgeText").GetComponent<TMP_Text>().text);
             Assert.AreNotEqual(ownTint, status.color);
             Assert.IsFalse(_ui.EndTurn.interactable);
             yield return Capture("opponent-turn");
@@ -140,7 +140,7 @@ namespace ProjectC.Tests
             Snapshot(2, 4, 80000);
             _ui.Log.Toggle();
             yield return null;
-            Assert.AreEqual(2, _ui.Log.History.GetComponentsInChildren<BattleLogItemView>().Count(value => !value.GetComponent<Button>().interactable && value.Entry.Turn > 0 && value.transform.Find("LogActor").gameObject.activeSelf == false));
+            Assert.AreEqual(2, _ui.Log.History.GetComponentsInChildren<BattleLogItemView>().Count(value => !value.GetComponent<Button>().interactable && value.Entry.Turn > 0 && value.transform.Find("LogActorText").gameObject.activeSelf == false));
             Assert.Greater(_ui.Log.Scroll.content.rect.height, _ui.Log.Scroll.viewport.rect.height);
             _ui.Log.Scroll.verticalNormalizedPosition = 1;
             yield return null;
@@ -189,17 +189,13 @@ namespace ProjectC.Tests
 
         private IEnumerator ValidateCardsAndCounters()
         {
-            var ornament = Find(_ui.transform, "TimerRingFrame").GetComponent<Image>();
-            Assert.AreEqual(Image.Type.Simple, ornament.type);
-            Assert.AreEqual(Quaternion.identity, ornament.rectTransform.localRotation);
-            Assert.IsFalse(ornament.enabled);
-            var housing = Find(_ui.transform, "TimerHousing").GetComponent<Image>();
+            var housing = Find(_ui.transform, "TimerHousingImage").GetComponent<Image>();
             Assert.AreEqual(Image.Type.Simple, housing.type);
             Assert.AreEqual(Quaternion.identity, housing.transform.localRotation);
             Assert.IsFalse(housing.raycastTarget);
             Assert.AreEqual("TimerHousing", housing.sprite.name);
-            var on = Find(_ui.transform, "TimeRing").GetComponent<Image>();
-            var off = Find(_ui.transform, "TimeTrack").GetComponent<Image>();
+            var on = Find(_ui.transform, "TimerTicksOnImage").GetComponent<Image>();
+            var off = Find(_ui.transform, "TimerTicksOffImage").GetComponent<Image>();
             Assert.AreSame(on.sprite, off.sprite);
             Assert.AreEqual("TimerTicks_On", on.sprite.name);
             Assert.AreEqual(on.rectTransform.rect.size, off.rectTransform.rect.size);
@@ -211,12 +207,15 @@ namespace ProjectC.Tests
                 foreach (var widget in zone.Widgets)
                 {
                     Assert.IsTrue(Raycast(widget.Face).transform.IsChildOf(widget.transform));
-                    var health = Find(widget.Face, "HealthBadgeFrame");
-                    var attack = Find(widget.Face, "AttackBadgeFrame");
+                    var health = Find(widget.Face, "HealthValueContainer");
+                    var attack = Find(widget.Face, "AttackValueContainer");
                     Assert.Less(attack.position.x, health.position.x);
-                    Assert.IsFalse(health.GetComponent<Image>().enabled);
-                    Assert.IsFalse(attack.GetComponent<Image>().enabled);
-                    Assert.IsFalse(Find(widget.Face, "Inset").GetComponent<Image>().enabled);
+                    Assert.IsNull(health.GetComponent<Image>());
+                    Assert.IsNull(attack.GetComponent<Image>());
+                    Assert.IsFalse(widget.Face.GetComponentsInChildren<Transform>(true).Any(child => child.name == "Inset"));
+                    var frame = Find(widget.Face, "CardFrameImage");
+                    Assert.IsTrue(widget.Title.transform.IsChildOf(frame));
+                    Assert.Less(Find(widget.Face, "ArtworkMask").GetSiblingIndex(), frame.GetSiblingIndex());
                     Assert.IsFalse(Find(widget.Face, "ArtworkMask").GetComponent<Mask>().showMaskGraphic);
                 }
             }
@@ -227,7 +226,7 @@ namespace ProjectC.Tests
             Assert.That(hand.Title.transform.parent.GetComponent<RectTransform>().anchoredPosition.x, Is.EqualTo(0));
             hand.Card.CanSummon = true;
             hand.SetActionPermissions(false, false, true);
-            Assert.Greater(Find(hand.Face, "FrameGlow").GetComponent<Image>().color.a, 0);
+            Assert.Greater(Find(hand.Face, "FrameGlowImage").GetComponent<Image>().color.a, 0);
             hand.SetSelected(true);
             yield return Capture("hand-selected");
             hand.SetSelected(false);
@@ -237,7 +236,7 @@ namespace ProjectC.Tests
             Assert.AreEqual(Quaternion.identity, own.transform.localRotation);
             own.Card.CanAttack = true;
             own.SetActionPermissions(true, false);
-            Assert.Greater(Find(own.Face, "FrameGlow").GetComponent<Image>().color.a, 0);
+            Assert.Greater(Find(own.Face, "FrameGlowImage").GetComponent<Image>().color.a, 0);
             own.SetSelected(true);
             _ui.EnemyField.Render(new[] { Card(31, 3001), Card(32, 4002) }, 5, false, 0, false, null, null, null);
             _ui.EnemyField.Layout.Snap();
@@ -259,8 +258,8 @@ namespace ProjectC.Tests
             changed.Attack = 12;
             changed.Hp = 9;
             own.Bind(changed, false, false, false, false, true);
-            Assert.AreEqual("12", Find(own.Face, "AttackBadge").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("9", Find(own.Face, "HealthBadge").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("12", Find(own.Face, "AttackBadgeText").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("9", Find(own.Face, "HealthBadgeText").GetComponent<TMP_Text>().text);
             var previous = _ui.Hand.Widgets.Select(widget => widget.Card).ToArray();
             _ui.Hand.Render(previous.Take(2).ToArray(), 0, false, 0, false, null, null, null);
             Assert.AreEqual(2, _ui.Hand.Widgets.Count);
@@ -274,18 +273,9 @@ namespace ProjectC.Tests
                 Assert.IsNull(back.Card);
                 Assert.IsFalse(back.ArtworkImage.gameObject.activeSelf);
             }
-            foreach (string prefix in new[] { "Own", "Enemy" })
-            {
-                foreach (string zoneName in new[] { "Deck", "Grave", "Exile" })
-                {
-                    var icon = Find(_ui.transform, prefix + zoneName + "Icon").GetComponent<Image>();
-                    Assert.IsFalse(icon.enabled);
-                    Assert.IsFalse(icon.raycastTarget);
-                }
-            }
             Assert.AreEqual("PhaseButton", _ui.EndTurn.GetComponent<Image>().sprite.name);
-            Assert.AreEqual("PhaseArrow", Find(_ui.EndTurn.transform, "TurnArrow").GetComponent<Image>().sprite.name);
-            Assert.Less(Find(_ui.transform, "OwnDeckCount").GetComponent<TMP_Text>().color.r, .3f);
+            Assert.AreEqual("PhaseArrow", Find(_ui.EndTurn.transform, "TurnArrowImage").GetComponent<Image>().sprite.name);
+            Assert.Less(Find(_ui.transform, "OwnDeckCountText").GetComponent<TMP_Text>().color.r, .3f);
             Assert.IsTrue(Raycast((RectTransform)_ui.EndTurn.transform).transform.IsChildOf(_ui.EndTurn.transform));
             string[] phaseKeys = { "ui_battle_main_phase_1", "ui_battle_battle_phase", "ui_battle_main_phase_2", "ui_battle_end_phase" };
             string[] actionKeys = { "ui_battle_battle_phase", "ui_battle_main_phase_2", "ui_battle_end_turn", "ui_battle_end_turn" };
@@ -295,14 +285,14 @@ namespace ProjectC.Tests
                 Snapshot(1, 3, 119000, phase: (int)phases[phase]);
                 yield return null;
                 Assert.AreEqual(BattleText.Get(phaseKeys[phase]), _ui.PhaseLabel.text);
-                Assert.AreEqual(BattleText.Get(actionKeys[phase]), Find(_ui.EndTurn.transform, "Label").GetComponent<TMP_Text>().text);
+                Assert.AreEqual(BattleText.Get(actionKeys[phase]), Find(_ui.EndTurn.transform, "LabelText").GetComponent<TMP_Text>().text);
             }
             Snapshot(1, 3, 119000);
             yield return null;
             Snapshot(1, 3, 0);
             yield return null;
-            Assert.AreEqual(0, Find(_ui.transform, "TimeRing").GetComponent<Image>().fillAmount);
-            Assert.IsTrue(Find(_ui.transform, "TimeTrack").GetComponent<Image>().enabled);
+            Assert.AreEqual(0, Find(_ui.transform, "TimerTicksOnImage").GetComponent<Image>().fillAmount);
+            Assert.IsTrue(Find(_ui.transform, "TimerTicksOffImage").GetComponent<Image>().enabled);
             yield return Capture("timer-zero");
             Snapshot(1, 3, 119000);
             yield return null;
@@ -331,22 +321,22 @@ namespace ProjectC.Tests
             _ui.EnemyField.Layout.Snap();
             yield return Capture("D-cost-expanded");
             yield return Capture("C-both-fields");
-            var bodyImage = Find(costs.transform, "CostBody").GetComponent<Image>();
+            var bodyImage = Find(costs.transform, "CostBodyImage").GetComponent<Image>();
             Assert.AreEqual(Image.Type.Sliced, bodyImage.type);
             Assert.AreEqual("SpecialCostPanel_Expandable", bodyImage.sprite.name);
             Assert.Greater(bodyImage.sprite.border.w, 0);
-            var toggle = Find(costs.transform, "CostToggle").GetComponent<Button>();
+            var toggle = Find(costs.transform, "CostToggleButton").GetComponent<Button>();
             toggle.onClick.Invoke();
             Assert.IsTrue(costs.IsCollapsed);
-            Assert.IsFalse(Find(costs.transform, "CostBody").gameObject.activeSelf);
-            Assert.IsFalse(Find(costs.transform, "CostViewport").gameObject.activeSelf);
+            Assert.IsFalse(Find(costs.transform, "CostBodyImage").gameObject.activeSelf);
+            Assert.IsFalse(Find(costs.transform, "CostViewportImage").gameObject.activeSelf);
             Assert.IsTrue(toggle.gameObject.activeInHierarchy);
-            Assert.That(Find(costs.transform, "CostChevron").localEulerAngles.z, Is.EqualTo(0).Within(.01f));
+            Assert.That(Find(costs.transform, "CostChevronImage").localEulerAngles.z, Is.EqualTo(0).Within(.01f));
             Assert.IsTrue(Raycast((RectTransform)toggle.transform).transform.IsChildOf(toggle.transform));
             yield return Capture("E-cost-collapsed");
             toggle.onClick.Invoke();
             Assert.IsFalse(costs.IsCollapsed);
-            Assert.That(Find(costs.transform, "CostChevron").localEulerAngles.z, Is.EqualTo(180).Within(.01f));
+            Assert.That(Find(costs.transform, "CostChevronImage").localEulerAngles.z, Is.EqualTo(180).Within(.01f));
             costs.Render(Enumerable.Range(0, 6).Select(index => new BattleCostDisplay(definition, index + 1)).ToArray());
             yield return null;
             Canvas.ForceUpdateCanvases();

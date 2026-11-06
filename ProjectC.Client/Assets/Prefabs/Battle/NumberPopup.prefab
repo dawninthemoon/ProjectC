@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8802918837020299128}
   - component: {fileID: 3496386429592908183}
   m_Layer: 0
-  m_Name: Number
+  m_Name: NumberText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -168,6 +168,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 3
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &4448395129869346548
 GameObject:
   m_ObjectHideFlags: 0

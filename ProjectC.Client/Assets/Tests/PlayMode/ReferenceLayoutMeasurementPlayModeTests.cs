@@ -51,7 +51,7 @@ namespace ProjectC.Tests
             Assert.AreEqual(1920, Screen.width);
             Assert.AreEqual(1080, Screen.height);
             Assert.AreEqual("2/10", Find(ui.transform, "YokaiValue").GetComponent<TMP_Text>().text);
-            Assert.AreEqual("0/10", Find(ui.transform, "EnemyYokaiValue").GetComponent<TMP_Text>().text);
+            Assert.AreEqual("0/10", Find(ui.transform, "EnemyYokaiValueText").GetComponent<TMP_Text>().text);
             Canvas.ForceUpdateCanvases();
             Directory.CreateDirectory("Artifacts/ReferenceLayout");
             var lines = new StringBuilder();
@@ -83,18 +83,18 @@ namespace ProjectC.Tests
                 ["turn_button"] = (RectTransform)ui.EndTurn.transform,
                 ["turn_phase_pill"] = Find(ui.EndTurn.transform, "TurnPhasePlate"),
                 ["enemy_portrait"] = (RectTransform)ui.EnemyPlayer.transform,
-                ["enemy_hp_badge"] = Find(ui.EnemyPlayer.transform, "LifeBadge"),
+                ["enemy_hp_badge"] = Find(ui.EnemyPlayer.transform, "LifeBadgeImage"),
                 ["hero_portrait"] = (RectTransform)ui.OwnPlayer.transform,
-                ["hero_hp_badge"] = Find(ui.OwnPlayer.transform, "LifeBadge"),
-                ["enemy_yokai_pill"] = Find(ui.transform, "EnemyYokaiPanel"),
+                ["hero_hp_badge"] = Find(ui.OwnPlayer.transform, "LifeBadgeImage"),
+                ["enemy_yokai_pill"] = Find(ui.transform, "EnemyYokaiPanelImage"),
                 ["yokai_tray_row_1"] = Find(ui.transform, "YokaiRow"),
             };
             for (int i = 0; i < 3; i++)
             {
                 mapped["field_enemy_c" + (i + 1)] = ui.EnemyField.Widgets[i].Face;
                 mapped["field_ally_c" + (i + 1)] = ui.OwnField.Widgets[i].Face;
-                mapped["resource_top_" + (i + 1)] = Find(Find(ui.transform, "EnemyResources"), "RenewalZone" + i);
-                mapped["resource_bottom_" + (i + 1)] = Find(Find(ui.transform, "OwnResources"), "RenewalZone" + i);
+                mapped["resource_top_" + (i + 1)] = Find(Find(ui.transform, "EnemyResourcesImage"), "RenewalZone" + i);
+                mapped["resource_bottom_" + (i + 1)] = Find(Find(ui.transform, "OwnResourcesImage"), "RenewalZone" + i);
             }
             var comparison = new StringBuilder("id\ttarget x,y,w,h\tactual x,y,w,h\tdelta x,y,w,h\n");
             foreach (var pair in mapped)
@@ -117,7 +117,7 @@ namespace ProjectC.Tests
                 (float)handTarget["w"], (float)handTarget["h"], comparison);
             var label = ui.EndTurn.GetComponentsInChildren<TMP_Text>(true).First(item => item.name == "Label");
             CheckPoint("turn_main_text_center", ScreenRect(label.rectTransform).center, elements, comparison);
-            CheckPoint("turn_arrow_center", ScreenRect(Find(ui.EndTurn.transform, "TurnArrow")).center, elements, comparison);
+            CheckPoint("turn_arrow_center", ScreenRect(Find(ui.EndTurn.transform, "TurnArrowImage")).center, elements, comparison);
             var frameRect = ScreenRect(ui.OwnField.Widgets[1].Face);
             var badges = elements["field_card_badges_relative"];
             foreach (var pair in new[] { (name: "attack_badge", node: "AttackBadgeFrame"), (name: "health_badge", node: "HealthBadgeFrame"), (name: "keyword_slot", node: "FieldStatusFrame") })
@@ -169,8 +169,8 @@ namespace ProjectC.Tests
             Assert.IsTrue(ui.Detail.gameObject.activeInHierarchy);
             AssertInside(focused.Face);
             yield return Capture("hand-hover-detail");
-            var viewport = Find(ui.Detail.transform, "DetailViewport");
-            var content = Find(ui.Detail.transform, "DetailContent");
+            var viewport = Find(ui.Detail.transform, "DetailViewportImage");
+            var content = Find(ui.Detail.transform, "DetailContentImage");
             ui.Detail.Rules.text = string.Join(" ", Enumerable.Repeat("긴 카드 효과 설명", 100));
             typeof(CardDetailView).GetMethod("RefreshHeight", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                 .Invoke(ui.Detail, null);
@@ -216,7 +216,7 @@ namespace ProjectC.Tests
             var hud = ui.GetComponentInChildren<BattleHudView>();
             hud.Render(new PlayerView(), new PlayerView(), 0);
             Assert.IsFalse(Find(ui.transform, "YokaiPanel").gameObject.activeSelf);
-            Assert.IsFalse(Find(ui.transform, "EnemyYokaiPanel").gameObject.activeSelf);
+            Assert.IsFalse(Find(ui.transform, "EnemyYokaiPanelImage").gameObject.activeSelf);
             var empty = SceneManager.CreateScene("ReferenceLayoutCleanup");
             SceneManager.SetActiveScene(empty);
             yield return SceneManager.UnloadSceneAsync("BattleScene");

@@ -170,7 +170,7 @@ GameObject:
   - component: {fileID: 6830937250993308317}
   - component: {fileID: 7797486474705888195}
   m_Layer: 0
-  m_Name: LogActor
+  m_Name: LogActorText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -309,6 +309,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 2
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2802929336746223067
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,7 +324,7 @@ GameObject:
   - component: {fileID: 3264758842444038609}
   - component: {fileID: 7275231909022145075}
   m_Layer: 0
-  m_Name: LogCardHint
+  m_Name: LogCardHintText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -461,6 +463,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 2
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &8491645376113177142
 GameObject:
   m_ObjectHideFlags: 0
@@ -474,7 +478,7 @@ GameObject:
   - component: {fileID: 2232658427049545798}
   - component: {fileID: 4870555613327057256}
   m_Layer: 0
-  m_Name: LogMessage
+  m_Name: LogMessageText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -613,3 +617,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _palette: {fileID: 11400000, guid: 0272330a02d9041e4b8a37616976b7a5, type: 2}
   _role: 1
+  _useAuthoredColor: 0
+  _authoredColor: {r: 1, g: 1, b: 1, a: 1}

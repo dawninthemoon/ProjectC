@@ -50,7 +50,7 @@ namespace ProjectC.Tests
 
         private static Image Glow(CardWidget widget)
         {
-            return widget.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlow");
+            return widget.GetComponentsInChildren<Image>(true).Single(image => image.name == "FrameGlowImage");
         }
     }
 }

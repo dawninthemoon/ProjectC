@@ -201,7 +201,7 @@ GameObject:
   - component: {fileID: 7262786020957935966}
   - component: {fileID: 399296421990922687}
   m_Layer: 0
-  m_Name: CostValue
+  m_Name: CostValueText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

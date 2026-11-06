@@ -302,7 +302,6 @@ namespace ProjectC.Client.Editor
             p.LogToggle.GetComponentInChildren<TMP_Text>().text = "전투 기록";
             Place((RectTransform)p.LobbyToggle.transform, 24, 1025, 230, 36);
             p.LobbyToggle.GetComponentInChildren<TMP_Text>().text = "메뉴";
-            p.GraveyardToggle.gameObject.SetActive(false);
             ConfigureGallery(root, table);
             ConfigurePopup(root);
             var picker = Find(root, "EffectTargetPicker");

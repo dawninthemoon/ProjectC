@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -128,7 +129,7 @@ namespace ProjectC.Tests
                 Assert.GreaterOrEqual(index, 0);
                 var candidates = ui.GetComponentInChildren<CardGalleryView>().GetComponentsInChildren<CardWidget>();
                 candidates[index].Clicked(candidates[index]);
-                var confirm = picker.transform.Find("Confirm").GetComponent<Button>();
+                var confirm = picker.transform.Find("ConfirmButton").GetComponent<Button>();
                 Assert.IsTrue(confirm.interactable);
 #if UNITY_EDITOR
                 yield return BattlePrefabPlayModeTests.Capture(
@@ -147,7 +148,7 @@ namespace ProjectC.Tests
                 Assert.AreEqual(2, a.State.Players[0].Graveyard.Length);
                 Assert.AreEqual(7, a.State.Players[0].DeckCount);
                 Assert.AreEqual(2, a.State.Players[0].YokaiPower);
-                StringAssert.Contains("YOKAI 2/10", ui.OwnPlayer.Counts.text);
+                Assert.AreEqual(2, ui.Client.State.Players.First(player => player.PlayerId == ui.Client.PlayerId).YokaiPower);
                 Assert.AreEqual(2, b.State.Players[0].Graveyard.Length);
             }
             finally
