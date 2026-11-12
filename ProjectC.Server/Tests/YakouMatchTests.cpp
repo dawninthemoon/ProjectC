@@ -1506,7 +1506,10 @@ int main()
         {
             // An authored untargeted summon trigger is safe to drain without
             // a player choice, including its exact deck/graveyard mutation.
-            auto match = Make(proto, {2001, 3005}, {});
+            auto autoProto = proto;
+            for (auto& id : autoProto.Decks["Decks"][0]["Cards"])
+                if (id == 2008) { id = 3005; break; }
+            auto match = Make(autoProto, {2001, 3005}, {});
             match.StartTurn(1);
             const int normal = match.Player(1).Hand[0];
             const int devour = match.Player(1).Hand[1];
@@ -1550,7 +1553,7 @@ int main()
             for (auto& card : altered.Cards.at("Cards"))
                 if (card.at("Id") == 2004)
                     card["Effects"] = Json::array({heal});
-            auto match = Make(altered, {2004, 2005, 2001, 3002, 3001}, {});
+            auto match = Make(altered, {2004, 2005, 2001, 2002, 3001}, {});
             match.StartTurn(1);
             const auto hand = match.Player(1).Hand;
             match.Summon(1, hand[0], "Discard", {hand[1]}, 0);
@@ -1583,7 +1586,7 @@ int main()
             for (auto& card : broken.Cards.at("Cards"))
                 if (card.at("Id") == 2004)
                     card["Effects"] = Json::array({impossible});
-            auto rejected = Make(broken, {2004, 2005, 2001, 3002, 3001}, {});
+            auto rejected = Make(broken, {2004, 2005, 2001, 2002, 3001}, {});
             rejected.StartTurn(1);
             auto const illegalHand = rejected.Player(1).Hand;
             rejected.Summon(1, illegalHand[0], "Discard", {illegalHand[1]}, 0);
@@ -1601,8 +1604,11 @@ int main()
         {
             // Replay makes both successful automatic drains and failed budgets
             // reproducible without exposing hidden deck identities to clients.
+            auto autoProto = proto;
+            for (auto& id : autoProto.Decks["Decks"][0]["Cards"])
+                if (id == 2008) { id = 3005; break; }
             std::array<std::vector<int>, 2> const decks{
-                Deck(proto, {2001, 3005}), Deck(proto, {})};
+                Deck(autoProto, {2001, 3005}), Deck(autoProto, {})};
             YakouReplayCommand start;
             start.Operation = YakouReplayOperation::StartTurn;
             start.Player = 1;
@@ -1617,8 +1623,8 @@ int main()
             auto bad = drain;
             bad.MaxEffects = 0;
             std::vector<YakouReplayCommand> const commands{start, summon, bad, drain};
-            auto const once = ReplayYakou(proto, 1, decks, commands);
-            auto const again = ReplayYakou(proto, 1, decks, commands);
+            auto const once = ReplayYakou(autoProto, 1, decks, commands);
+            auto const again = ReplayYakou(autoProto, 1, decks, commands);
             Check(once.Steps.size() == commands.size() &&
                   !once.Steps[2].Accepted &&
                   once.Steps[2].BeforeHash == once.Steps[2].AfterHash &&
