@@ -9,6 +9,18 @@ void YakouChain::CheckPlayer(int player)
     if (player != 1 && player != 2)
         throw std::invalid_argument("Invalid Yakou chain player");
 }
+void YakouChain::OpenWindow(int activePlayer)
+{
+    CheckPlayer(activePlayer);
+    if (open_ || !resolution_.empty() || !stack_.empty())
+    {
+        throw std::invalid_argument("Cannot open Yakou response window");
+    }
+    open_ = true;
+    priority_ = Other(activePlayer);
+    consecutivePasses_ = 0;
+}
+
 void YakouChain::Open(int activePlayer, YakouChainLink const& initial)
 {
     CheckPlayer(activePlayer);
