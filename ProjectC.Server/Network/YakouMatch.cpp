@@ -1307,6 +1307,45 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         }
         return reduction;
     };
+    // The only currently authored post-combat kill trigger resets the
+    // surviving attacker's countdown. Resolve it after simultaneous damage
+    // and the ordinary countdown reset, without leaking it into the manual
+    // pending-effect queue or allowing it to act on a destroyed source.
+    auto resolveCombatKill = [&](YakouUnit& source)
+    {
+        auto const card = CardDefinition(source.DefinitionId);
+        for (auto const& effect : card.at("Effects"))
+        {
+            if (effect.at("Trigger") != "OnDestroyedEnemyByCombat") continue;
+            Check(effect.at("Type") == "Triggered" &&
+                      effect.at("Actions").is_array() && effect.at("Actions").size() == 1,
+                  "Unsupported combat-kill trigger");
+            auto const& action = effect.at("Actions")[0];
+            Check(action.is_object() &&
+                      HasOnlyFields(action, {"Operation", "Target", "Value"}) &&
+                      action.at("Operation") == "SetCountdown" &&
+                      action.at("Target") == "Self" &&
+                      action.at("Value").is_number_integer(),
+                  "Unsupported combat-kill action");
+            int const value = action.at("Value").get<int>();
+            Check(value >= 0, "Invalid combat-kill countdown");
+            int const limit = effect.value("PerTurnLimit", 0);
+            if (limit > 0)
+            {
+                Check(effect.value("LimitScope", std::string("")) == "CardName",
+                      "Unsupported combat-kill limit scope");
+                auto const key = std::make_tuple(turn_, attacker.Id,
+                                                  card.at("NameKey").get<std::string>(),
+                                                  effect.at("Id").get<int>());
+                if (effectUses_[key] >= limit) continue;
+                ++effectUses_[key];
+            }
+            source.Countdown = value;
+            journal_.push_back("CombatKillCountdown:" +
+                               std::to_string(source.InstanceId) + ":" +
+                               std::to_string(value));
+        }
+    };
     for (auto const& attack : attacks_)
     {
         int const aSlot = FindSlot(attacker, attack.Card);
@@ -1318,6 +1357,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                   modifiedAttack >= std::numeric_limits<int>::min(),
               "Combat attack overflow");
         int const aDamage = static_cast<int>(std::max<std::int64_t>(0, modifiedAttack));
+        bool destroyedEnemyByCombat = false;
         if (!attack.Blocker)
         {
             defender.Life = std::max(0, defender.Life - aDamage);
@@ -1337,6 +1377,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 target.Damage += std::max(0, aDamage - reduction); // simultaneous combat
                 if (target.Hp() <= 0)
                 {
+                    destroyedEnemyByCombat = true;
                     int const id = target.InstanceId;
                     defender.Field[dSlot].reset();
                     defender.Graveyard.push_back(id);
@@ -1360,6 +1401,10 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 attacker.Field[aSlot]->Countdown =
                     CardDefinition(attacker.Field[aSlot]->DefinitionId)
                         .at("AttackInterval").get<int>();
+                if (destroyedEnemyByCombat)
+                {
+                    resolveCombatKill(*attacker.Field[aSlot]);
+                }
             }
         }
         if (defender.Life == 0)

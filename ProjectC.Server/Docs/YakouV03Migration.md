@@ -372,3 +372,25 @@ that future integration must preserve targeting, usage limits, and temporary
 modifier semantics. `OnDestroyedEnemyByCombat`, piercing, spell/response
 effects and full online `MatchSession` integration remain unimplemented.
 No JSON, Google Sheets, Unity scripts, prefabs or scenes were changed.
+
+## Combat victory countdown trigger (server prototype)
+
+A living raider that **actually destroys an assigned enemy blocker through
+simultaneous combat damage** now resolves the authored
+`OnDestroyedEnemyByCombat / SetCountdown(Self)` trigger after its normal attack
+countdown reset. This supports the printed effect on manifestation card 2102.
+It does not trigger for direct hero damage, a missing blocker, or a raider
+destroyed in that same combat. Printed card-name turn limits are checked in
+the same private effect-use map as other supported effects, and the updated
+countdown remains part of the existing deterministic server state.
+
+An unknown combat-kill operation, action shape, target, or limit scope fails
+closed: `ResolveRaid` uses a copy and commits only after full success, so
+failure cannot leave partial hero damage, graveyard mutations, or turn
+advancement. Server tests exercise the authored effect shape, the unsupported
+action rollback, and the unblocked-no-trigger case.
+
+**Still unfinished:** this is a narrow synchronous combat-only resolution path,
+not a general event scheduler. Full priority/chain windows, other battle
+trigger semantics and online MatchSession/WebSocket handling remain future
+work. No JSON, Google Sheets, Unity scripts, scenes, or prefabs were edited.
