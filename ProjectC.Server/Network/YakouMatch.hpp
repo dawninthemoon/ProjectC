@@ -132,6 +132,18 @@ public:
     // controller-selected target, never silently choose on a player's behalf.
     // The entire batch is transactional. Server-private prototype API.
     [[nodiscard]] int ResolveAutomaticTriggers(int maxEffects = 64);
+    // Explicit action-boundary integration: action and subsequent automatic
+    // effects commit together, or none of them do. Player choices still pause.
+    [[nodiscard]] int SummonAndRunAutomaticTriggers(
+        int player, int handInstance, std::string const& method,
+        std::vector<int> const& materialIds, int slot, int maxEffects = 64);
+    [[nodiscard]] int ActivateMainSpellAndRunAutomaticTriggers(
+        int player, int handInstance, int maxEffects = 64);
+    [[nodiscard]] int ResolveSelectedEffectAndRunAutomaticTriggers(
+        int player, int selectedTarget = 0, int maxEffects = 64);
+    [[nodiscard]] int ManifestAndRunAutomaticTriggers(
+        int player, int fieldInstance, int manifestationDefinition,
+        int maxEffects = 64);
     // Prototype-only: activates a no-cost main-phase spell whose authored
     // OnResolve effect is supported by the current manual effect resolver.
     // Actual spell response/negation windows are not wired yet.
