@@ -213,6 +213,61 @@ int main()
                       match.Player(2).Life == 19,
                   "Sequential battle, persistent damage and unblocked hero hit");
         }
+        {
+            // Authoritative effect resolution: two-card mill and targeted timer
+            // reduction must apply only after an accepted resolution command.
+            auto match = Make(proto, {2001, 3007, 2009, 2002, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            Check(match.PendingEffects().size() == 1, "Summon must enqueue mill");
+            auto const priorDeck = match.Player(1).Deck.size();
+            auto const priorGrave = match.Player(1).Graveyard.size();
+            Reject([&] { match.ResolvePendingEffect(2); });
+            Reject([&] { match.ResolvePendingEffect(1, hand[0]); });
+            Check(match.Player(1).Deck.size() == priorDeck &&
+                      match.PendingEffects().size() == 1,
+                  "Rejected mill must be atomic");
+            match.ResolvePendingEffect(1);
+            Check(match.Player(1).Deck.size() == priorDeck - 2 &&
+                      match.Player(1).Graveyard.size() == priorGrave + 2 &&
+                      match.PendingEffects().empty(), "Mill must move two cards to graveyard");
+            Reject([&] { match.ResolvePendingEffect(1); });
+
+            match.Summon(1, hand[1], "Discard", {hand[2]}, 1);
+            Check(match.PendingEffects().size() == 1,
+                  "Discard-summoned countdown trigger must be queued");
+            int const previous = match.Player(1).Field[0]->Countdown;
+            Reject([&] { match.ResolvePendingEffect(1, 999999); });
+            Reject([&] { match.ResolvePendingEffect(1, hand[1]); });
+            Check(match.Player(1).Field[0]->Countdown == previous &&
+                      match.PendingEffects().size() == 1,
+                  "Invalid target must leave both game state and queue unchanged");
+            match.ResolvePendingEffect(1, hand[0]);
+            Check(match.Player(1).Field[0]->Countdown ==
+                      std::max(0, previous - 1) && match.PendingEffects().empty(),
+                  "Friendly target countdown must decrease and consume trigger");
+        }
+        {
+            // The resolver must never silently treat an unsupported authored
+            // operation (Salvage) as an empty effect.
+            auto match = Make(proto, {2001, 2002, 2009, 3001, 3007}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            Check(!match.Player(1).Graveyard.empty(),
+                  "Mill setup for Necromancy");
+            int const material = match.Player(1).Graveyard.front();
+            match.Summon(1, hand[1], "Necromancy", {material}, 1);
+            Check(!match.PendingEffects().empty(), "Salvage trigger must be queued");
+            auto const count = match.PendingEffects().size();
+            auto const graveCount = match.Player(1).Graveyard.size();
+            Reject([&] { match.ResolvePendingEffect(1); });
+            Check(match.PendingEffects().size() == count &&
+                      match.Player(1).Graveyard.size() == graveCount,
+                  "Unsupported effect must fail without mutations");
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
