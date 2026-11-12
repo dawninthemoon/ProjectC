@@ -1120,6 +1120,79 @@ int main()
                       first.FinalState.ServerStateHash() == again.FinalState.ServerStateHash(),
                   "Chain replay must preserve invalid priority, paid response and closure");
         }
+        {
+            // The defender's free spell 3016 must resolve after response
+            // priority, then reduce only the first combat damage this raid.
+            auto shieldProto = proto;
+            for (auto& id : shieldProto.Decks["Decks"][0]["Cards"])
+                if (id == 3020) { id = 3016; break; }
+            auto prepare = [&](bool withShield)
+            {
+                auto match = Make(shieldProto, {2007}, {2002, 3016});
+                match.StartTurn(1);
+                int const attacker = match.Player(1).Hand[0];
+                match.Summon(1, attacker, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                int const blocker = match.Player(2).Hand[0];
+                match.Summon(2, blocker, "Normal", {}, 0);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.AssignBlockers(2, {{attacker, blocker}});
+                Check(match.Phase() == YakouPhase::RaidResponse &&
+                          match.PriorityPlayer() == 2,
+                      "Defending player must receive priority before raid shield");
+                int const spell = match.Player(2).Hand[0];
+                if (withShield)
+                {
+                    auto const beforeInvalid = match.ServerStateHash();
+                    Reject([&] { match.RespondWithRaidShield(1, spell, attacker); });
+                    Reject([&] { match.RespondWithRaidShield(2, spell, attacker); });
+                    Reject([&] { match.RespondWithRaidShield(2, blocker, blocker); });
+                    Check(match.ServerStateHash() == beforeInvalid,
+                          "Invalid shield priority, ownership and target must be atomic");
+                    match.RespondWithRaidShield(2, spell, blocker);
+                    Check(match.PriorityPlayer() == 1 &&
+                              match.Player(2).Graveyard.back() == spell,
+                          "Defender must pay the raid response and yield priority");
+                    Reject([&] { match.RespondWithRaidShield(2, spell, blocker); });
+                    Check(match.Player(2).Field[0]->Damage == 0,
+                          "Shield response must not deal or reduce damage before resolution");
+                    match.PassRaidResponse(1);
+                    match.PassRaidResponse(2);
+                }
+                else
+                {
+                    match.PassRaidResponse(2);
+                    match.PassRaidResponse(1);
+                }
+                return match;
+            };
+            {
+                auto match = prepare(true);
+                match.ResolveRaid(2);
+                Check(match.Player(2).Field[0] &&
+                          match.Player(2).Field[0]->Damage == 1 &&
+                          match.Player(1).Field[0] &&
+                          match.Player(1).Field[0]->Damage == 2,
+                      "3016 first-damage shield must reduce 3 incoming damage to 1");
+                Check(match.Phase() == YakouPhase::TurnStart &&
+                          match.ActivePlayer() == 2,
+                      "Defensive shield must not interrupt end-of-raid progression");
+            }
+            {
+                auto match = prepare(false);
+                match.ResolveRaid(2);
+                Check(!match.Player(2).Field[0] &&
+                          match.Player(2).Graveyard.size() == 1,
+                      "Without the shield, three damage destroys the 3-HP blocker");
+            }
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
