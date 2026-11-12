@@ -345,3 +345,30 @@ MatchSession integration must map seat IDs and authenticate the requesting
 viewer, version selection requests, reject stale inputs, and use the
 server-side cost/effect validators on submission. Do not expose the canonical
 private state or hash via this projection.
+
+## Immediate combat-only triggers in raid resolution
+
+`ResolveRaid` now evaluates the currently authored, combat-scoped
+`OnRaid / ModifyAttack(Self, CurrentCombat)` triggers **before** attack damage
+is calculated. The supported optional condition checks the controller's
+graveyard archetype count. Likewise, a present defending monster's
+`OnAssignedAsBlocker / ReduceDamage(Self, CurrentCombat)` is applied to the
+incoming combat damage, with the authored card-name per-turn limit enforced.
+This affects the actual battle without mutating printed attack or leaving
+temporary modifiers on units after the combat. Supported combat-only triggers
+are not enqueued a second time.
+
+The full raid command still commits transactionally through the existing
+candidate-copy boundary. Unexpected effects, targets, durations or
+conditions fail closed **before** committing combat damage. Tests cover both
+a secondary-theme raider/blocker pairing and the sample blocker with a
+card-name limit, as well as rejection of an unsupported raid operation.
+
+**Important limitation:** combat-only trigger handling presently takes place
+at raid resolution, **after the empty response window**. It is not a general
+trigger scheduler or response-aware effect stack. New response cards must be
+able to see the appropriate announced triggers before resolving the combat;
+that future integration must preserve targeting, usage limits, and temporary
+modifier semantics. `OnDestroyedEnemyByCombat`, piercing, spell/response
+effects and full online `MatchSession` integration remain unimplemented.
+No JSON, Google Sheets, Unity scripts, prefabs or scenes were changed.
