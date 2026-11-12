@@ -372,10 +372,23 @@ int main()
                 match.PassRaidResponse(2);
                 match.PassRaidResponse(1);
                 match.ResolveRaid(2);
-                Check(match.Player(1).Field[0] &&
-                          match.Player(1).Field[0]->Attack() == 3 &&
-                          match.Player(1).Field[0]->Damage == 1,
-                      "CurrentCombat attack bonus must not persist on surviving raider");
+                if (blockerDefinition == 3004)
+                {
+                    Check(match.Player(1).Field[0] &&
+                              match.Player(1).Field[0]->Attack() == 3 &&
+                              match.Player(1).Field[0]->Damage == 1,
+                          "CurrentCombat attack bonus must not persist on surviving raider");
+                }
+                else
+                {
+                    // Card 2006 has 2 ATK and deals lethal combat damage to
+                    // the raider's 2 HP. It is not a test fixture for survival.
+                    Check(!match.Player(1).Field[0] &&
+                              std::find(match.Player(1).Graveyard.begin(),
+                                        match.Player(1).Graveyard.end(), raider) !=
+                                  match.Player(1).Graveyard.end(),
+                          "A 2-attack blocker must destroy the 2-HP raider");
+                }
                 Check(match.Player(2).Field[1] &&
                           match.Player(2).Field[1]->Damage == 3,
                       "3 printed attack + 1 raid bonus - 1 blocker reduction = 3 damage");
