@@ -405,6 +405,13 @@ Json YakouMatch::ServerCanonicalState() const
             shields.push_back(Json::array({instance, amount}));
         state["RaidShields"] = std::move(shields);
     }
+    if (!raidAttackModifiers_.empty())
+    {
+        Json modifiers = Json::array();
+        for (auto const& [instance, delta] : raidAttackModifiers_)
+            modifiers.push_back(Json::array({instance, delta}));
+        state["RaidAttackModifiers"] = std::move(modifiers);
+    }
     return state;
 }
 
@@ -1600,22 +1607,60 @@ void YakouMatch::PassRaidResponseImpl(int player)
         for (auto const& link : links)
         {
             Check(link.Controller == 3 - ActivePlayer() &&
-                      link.Trigger == "OnResolve" && link.Targets.size() == 1,
-                  "Unsupported raid response link");
+                      link.Trigger == "OnResolve", "Unsupported raid response link");
             auto const card = CardDefinition(OriginalId(link.SourceInstance));
-            Check(card.at("Id") == 3016 &&
-                      link.EffectId == card.at("Effects")[0].at("Id").get<int>(),
+            const int id = card.at("Id").get<int>();
+            Check(link.EffectId == card.at("Effects")[0].at("Id").get<int>(),
                   "Unknown raid response effect");
-            int const target = link.Targets.front();
-            Check(FindUnit(Player(link.Controller), target) != nullptr,
-                  "Raid shield target left its owner's field");
             auto const& action = card.at("Effects")[0].at("Actions")[0];
-            int const amount = action.at("Amount").get<int>();
-            Check(amount > 0 &&
-                      (raidShields_.find(target) == raidShields_.end()),
-                  "Invalid or duplicate raid shield");
-            raidShields_[target] = amount;
-            journal_.push_back("RaidShieldResolved:" + std::to_string(target));
+            if (id == 3016)
+            {
+                Check(link.Targets.size() == 1, "Invalid raid shield targets");
+                int const target = link.Targets[0];
+                Check(FindUnit(Player(link.Controller), target) != nullptr,
+                      "Raid shield target left its owner's field");
+                int const amount = action.at("Amount").get<int>();
+                Check(amount > 0 && !raidShields_.contains(target),
+                      "Invalid or duplicate raid shield");
+                raidShields_[target] = amount;
+                journal_.push_back("RaidShieldResolved:" + std::to_string(target));
+            }
+            else if (id == 2011 || id == 3019)
+            {
+                Check(link.Targets.size() == 1, "Invalid raid attack target");
+                int const target = link.Targets.front();
+                Check(std::any_of(attacks_.begin(), attacks_.end(),
+                          [&](YakouAttack const& attack) { return attack.Card == target; }) &&
+                      FindUnit(Player(ActivePlayer()), target) != nullptr,
+                      "Raid attack target no longer exists");
+                int const delta = action.at("Delta").get<int>();
+                int const previous = raidAttackModifiers_.contains(target) ?
+                                     raidAttackModifiers_.at(target) : 0;
+                auto const sum = static_cast<std::int64_t>(previous) + delta;
+                Check(sum >= std::numeric_limits<int>::min() &&
+                      sum <= std::numeric_limits<int>::max(), "Attack modifier overflow");
+                raidAttackModifiers_[target] = static_cast<int>(sum);
+                journal_.push_back("RaidAttackReduced:" + std::to_string(target));
+            }
+            else if (id == 3018)
+            {
+                Check(link.Targets.size() == 2, "Invalid reassignment targets");
+                int const raider = link.Targets[0], newBlocker = link.Targets[1];
+                auto it = std::find_if(attacks_.begin(), attacks_.end(),
+                    [&](YakouAttack const& attack) { return attack.Card == raider; });
+                auto const* unit = FindUnit(Player(link.Controller), newBlocker);
+                Check(it != attacks_.end() && it->Blocker > 0 &&
+                      it->Blocker != newBlocker && unit != nullptr && unit->Hp() > 0,
+                      "Invalid replacement blocker at resolution");
+                int used = 0;
+                for (auto const& attack : attacks_)
+                    if (attack.Blocker == newBlocker) ++used;
+                Check(used < unit->MaxBlocks, "Blocker limit exceeded at resolution");
+                it->Blocker = newBlocker;
+                journal_.push_back("RaidBlockerReassigned:" + std::to_string(raider) +
+                                   ":" + std::to_string(newBlocker));
+            }
+            else Check(false, "Unsupported raid response card");
         }
         journal_.push_back("RaidResponseClosed");
     }
@@ -1765,7 +1810,9 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         if (aSlot < 0) continue;
         auto& source = *attacker.Field[aSlot];
         int const bonus = combatAttackBonus(source);
-        auto const modifiedAttack = static_cast<std::int64_t>(source.Attack()) + bonus;
+        int const debuff = raidAttackModifiers_.contains(source.InstanceId) ?
+                           raidAttackModifiers_.at(source.InstanceId) : 0;
+        auto const modifiedAttack = static_cast<std::int64_t>(source.Attack()) + bonus + debuff;
         Check(modifiedAttack <= std::numeric_limits<int>::max() &&
                   modifiedAttack >= std::numeric_limits<int>::min(),
               "Combat attack overflow");
@@ -1829,6 +1876,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         }
         if (defender.Life == 0)
         {
+            raidAttackModifiers_.clear();
             raidShields_.clear();
             phase_ = YakouPhase::Finished;
             winner_ = attacker.Id;
@@ -1841,6 +1889,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 
 void YakouMatch::TurnOver()
 {
+    raidAttackModifiers_.clear();
     raidShields_.clear();
     attacks_.clear();
     active_ = 1 - active_;
