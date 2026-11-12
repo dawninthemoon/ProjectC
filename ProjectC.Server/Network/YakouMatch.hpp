@@ -63,6 +63,16 @@ struct YakouPendingEffect
     std::string Trigger;
 };
 
+// Server-derived selection metadata. Candidates are instance IDs, never client-authored.
+struct YakouSummonChoice
+{
+    std::string Method;
+    std::string SourceZone;
+    std::size_t RequiredCount = 0;
+    std::vector<int> Candidates;
+    std::vector<int> AvailableSlots;
+};
+
 class YakouMatch
 {
 public:
@@ -86,6 +96,10 @@ public:
 
     // Every failure throws std::invalid_argument *before* any mutation.
     // These gameplay operations are not yet a public online protocol.
+    // Public to the controlling player only; transport must not reveal hand IDs
+    // to spectators or the opponent. Empty result means no legal summon methods.
+    [[nodiscard]] std::vector<YakouSummonChoice> SummonChoices(int player,
+                                                               int handInstance) const;
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
                 std::vector<int> const& materialIds, int slot);
