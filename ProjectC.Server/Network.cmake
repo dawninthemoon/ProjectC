@@ -47,6 +47,8 @@ add_executable(ProjectCYakouChainTests Tests/YakouChainTests.cpp)
 target_link_libraries(ProjectCYakouChainTests PRIVATE ProjectCNetwork)
 add_test(NAME YakouChainTests COMMAND ProjectCYakouChainTests)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME YakouClientDataSyncCheck COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/SyncYakouClientData.py --check)
 add_test(NAME CardDataExportCheck COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ExportCardData.py --check)
 add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}

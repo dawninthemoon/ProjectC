@@ -68,6 +68,26 @@ namespace ProjectC.Client
             return service;
         }
 
+        // A profile may replace conflicting card keys while retaining shared UI strings.
+        // Neither source service is mutated, so old and new card IDs cannot mix names.
+        public LocalizationService WithOverrides(LocalizationService overrides)
+        {
+            if (overrides == null)
+            {
+                throw new ArgumentNullException(nameof(overrides));
+            }
+            var merged = new LocalizationService(_diagnostic) { Language = Language };
+            foreach (var entry in _entries)
+            {
+                merged._entries.Add(entry.Key, new Dictionary<string, string>(entry.Value));
+            }
+            foreach (var entry in overrides._entries)
+            {
+                merged._entries[entry.Key] = new Dictionary<string, string>(entry.Value);
+            }
+            return merged;
+        }
+
         public bool ContainsKey(string key) => key != null && _entries.ContainsKey(key);
 
         public string GetText(string key)
