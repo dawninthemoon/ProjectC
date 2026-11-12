@@ -17,6 +17,9 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
     case YakouReplayOperation::Summon:
         match.Summon(command.Player, command.CardId, command.Method, command.Cards, command.Slot);
         break;
+    case YakouReplayOperation::ActivateMainSpell:
+        match.ActivateMainSpell(command.Player, command.CardId);
+        break;
     case YakouReplayOperation::Manifest:
         match.Manifest(command.Player, command.CardId, command.DefinitionId);
         break;

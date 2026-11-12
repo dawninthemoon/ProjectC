@@ -768,6 +768,55 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     *this = std::move(next);
 }
 
+void YakouMatch::ActivateMainSpell(int player, int handInstance)
+{
+    YakouMatch next = *this;
+    next.ActivateMainSpellImpl(player, handInstance);
+    *this = std::move(next);
+}
+
+void YakouMatch::ActivateMainSpellImpl(int player, int handInstance)
+{
+    RequireMain(player);
+    Check(pendingEffects_.empty(), "Resolve pending Yakou effects before casting a spell");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Hand, handInstance), "Spell must be in the controller's hand");
+    int const definitionId = OriginalId(handInstance);
+    auto const definition = CardDefinition(definitionId);
+    Check(definition.at("Type") == "Spell", "Only spells can be activated");
+    Check(definition.contains("SummonCostJson") &&
+              definition.at("SummonCostJson").is_object() &&
+              definition.at("SummonCostJson").contains("Activation") &&
+              definition.at("SummonCostJson").at("Activation").is_object() &&
+              definition.at("SummonCostJson").at("Activation").empty(),
+          "Paid spell costs are not yet supported by this activation API");
+    auto const& effects = definition.at("Effects");
+    Check(effects.is_array() && effects.size() == 1,
+          "Only one supported spell effect may be activated");
+    auto const& effect = effects.at(0);
+    Check(effect.at("Type") == "Triggered" &&
+              effect.at("Trigger") == "OnResolve" &&
+              effect.at("Actions").is_array() &&
+              effect.at("Actions").size() == 1,
+          "Unsupported main-phase spell effect");
+    CheckSupportedAction(effect.at("Actions")[0]);
+
+    // Move the authored spell into its public graveyard, then queue precisely
+    // its OnResolve operation. The outer candidate copy commits only if
+    // target availability, the per-turn limit and effect shape are valid.
+    Remove(owner.Hand, handInstance);
+    owner.Graveyard.push_back(handInstance);
+    Enqueue(player, handInstance, definitionId, "OnResolve");
+    Check(pendingEffects_.size() == 1 &&
+              pendingEffects_.front().SourceCard == handInstance,
+          "Spell did not enqueue exactly one effect");
+    auto const choices = PendingEffectChoices(player);
+    Check(choices.MinCount == 0 || !choices.Candidates.empty() ||
+              (choices.MinCount == 0 && choices.MaxCount == 0),
+          "Spell has no valid effect target");
+    journal_.push_back("SpellActivated:" + std::to_string(handInstance));
+}
+
 std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
                                                                int handInstance) const
 {
