@@ -1473,6 +1473,112 @@ void YakouMatch::RespondWithRaidShieldImpl(int player, int handInstance, int fri
     journal_.push_back("RaidShieldActivated:" + std::to_string(handInstance));
 }
 
+
+void YakouMatch::RespondWithRaidTactic(int player, int spell, int raider,
+                                       int replacement, std::vector<int> const& costs)
+{
+    YakouMatch next = *this;
+    next.RespondWithRaidTacticImpl(player, spell, raider, replacement, costs);
+    *this = std::move(next);
+}
+
+void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
+                                           int replacement, std::vector<int> const& costs)
+{
+    Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
+          response_.PriorityPlayer() == player && player == 3 - ActivePlayer() &&
+          response_.StackSize() == 0, "No legal raid tactic priority");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Hand, spell), "Tactic must be in controller's hand");
+    auto const card = CardDefinition(OriginalId(spell));
+    const int id = card.at("Id").get<int>();
+    Check((id == 2011 || id == 3018 || id == 3019) && card.at("Type") == "Spell",
+          "Unsupported raid tactic");
+    auto attacked = std::find_if(attacks_.begin(), attacks_.end(),
+        [&](YakouAttack const& attack) { return attack.Card == raider; });
+    Check(attacked != attacks_.end() && FindUnit(Player(ActivePlayer()), raider) != nullptr,
+          "Unknown raiding monster");
+    auto const& effects = card.at("Effects");
+    Check(effects.is_array() && effects.size() == 1 &&
+          effects[0].at("Type") == "Triggered" && effects[0].at("Trigger") == "OnResolve" &&
+          effects[0].at("Actions").is_array() && effects[0].at("Actions").size() == 1,
+          "Unsupported tactic effect definition");
+    auto const& effect = effects[0];
+    auto const& action = effect.at("Actions")[0];
+    if (id == 3018)
+    {
+        Check(action.is_object() &&
+              HasOnlyFields(action, {"Operation", "Target", "NewBlocker", "RespectBlockLimit"}) &&
+              action.at("Operation") == "ReassignBlocker" &&
+              action.at("Target") == "OneBlockedRaid" &&
+              action.at("NewBlocker") == "OtherEligibleFriendlyMonster" &&
+              action.at("RespectBlockLimit") == true,
+              "Unsupported blocker-reassignment action");
+        auto const* unit = FindUnit(owner, replacement);
+        Check(attacked->Blocker > 0 && replacement > 0 &&
+              attacked->Blocker != replacement && unit != nullptr && unit->Hp() > 0,
+              "Cannot assign this replacement blocker");
+        int inUse = 0;
+        for (auto const& attack : attacks_)
+            if (attack.Blocker == replacement) ++inUse;
+        Check(inUse < unit->MaxBlocks, "Replacement blocker has no capacity");
+    }
+    else
+    {
+        Check(replacement == 0 && action.is_object() &&
+              HasOnlyFields(action, {"Operation", "Target", "Delta", "Duration", "Minimum"}) &&
+              action.at("Operation") == "ModifyAttack" &&
+              action.at("Target") == "EnemyRaidingMonster" &&
+              action.at("Delta").is_number_integer() &&
+              action.at("Delta").get<int>() <= 0 &&
+              action.at("Minimum") == 0 &&
+              action.at("Duration") == (id == 2011 ? "CurrentCombat" : "CurrentRaidPhase"),
+              "Unsupported raid attack modifier");
+    }
+    auto const& activation = card.at("SummonCostJson").at("Activation");
+    const bool necromancy = id == 3019;
+    const char* key = necromancy ? "Necromancy" : "Discard";
+    const int expected = necromancy ? 2 : 1;
+    Check(activation.is_object() && activation.size() == 1 &&
+          activation.contains(key) && activation.at(key) == expected &&
+          costs.size() == static_cast<std::size_t>(expected), "Invalid raid tactic cost");
+    std::set<int> unique;
+    for (int instance : costs)
+        Check(instance > 0 && unique.insert(instance).second &&
+              (necromancy ? Contains(owner.Graveyard, instance)
+                          : (instance != spell && Contains(owner.Hand, instance))),
+              "Spoofed or duplicate raid tactic payment");
+    const int effectId = effect.at("Id").get<int>();
+    const int limit = effect.value("PerTurnLimit", 0);
+    Check(limit > 0 && effect.value("LimitScope", std::string("")) == "CardName",
+          "Unsupported tactic use limit");
+    auto const usage = std::make_tuple(turn_, player,
+                                      card.at("NameKey").get<std::string>(), effectId);
+    Check(effectUses_[usage] < limit, "Raid tactic per-turn limit reached");
+    for (int instance : costs)
+    {
+        if (necromancy)
+        {
+            Remove(owner.Graveyard, instance);
+            owner.Exile.push_back(instance);
+            Enqueue(player, instance, OriginalId(instance), "OnBanishedForNecromancyCost");
+        }
+        else
+        {
+            Remove(owner.Hand, instance);
+            owner.Graveyard.push_back(instance);
+            Enqueue(player, instance, OriginalId(instance), "OnDiscarded");
+        }
+    }
+    Check(pendingEffects_.empty(), "Unimplemented deferred cost triggers");
+    Remove(owner.Hand, spell);
+    owner.Graveyard.push_back(spell);
+    response_.Respond(player, YakouChainLink{player, spell, effectId, "OnResolve",
+              id == 3018 ? std::vector<int>{raider, replacement} : std::vector<int>{raider}});
+    ++effectUses_[usage];
+    journal_.push_back("RaidTacticActivated:" + std::to_string(spell));
+}
+
 void YakouMatch::PassRaidResponse(int player)
 {
     YakouMatch next = *this;
