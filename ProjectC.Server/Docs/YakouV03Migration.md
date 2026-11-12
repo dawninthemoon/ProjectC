@@ -149,3 +149,22 @@ and finally a compatible Unity UI.
 - The current prototype raid can resolve immediately following blocker
   assignment; the final design requires inserting the response window there.
 
+
+## Raid response window (follow-up PR)
+
+- After the defender submits a valid batch of blocker assignments, the prototype
+  enters `RaidResponse` rather than permitting immediate combat resolution.
+- The defender receives priority first. `PassRaidResponse` rejects calls from
+  non-priority players, and combat remains blocked until two consecutive passes.
+- This is an **empty response barrier only**. Activation of response spells or
+  field abilities, target verification, and execution of resolved chain links
+  remain unimplemented; do not call the prototype a playable effect-aware match.
+- The existing `YakouChain` LIFO/deferred-trigger primitive remains separate.
+  A future implementation must attach an effect interpreter before accepting
+  non-empty chain links, otherwise resolving combat would silently skip effects.
+- `YakouMatchTests` and `YakouChainTests` include authorization/pass-gate cases.
+  Actual CI execution status must be checked on the PR; edits alone are not a
+  claim of passing tests.
+- Legacy-mode preservation is no longer a user requirement for subsequent
+  Yakou migration. Prefer replacing old rule entrypoints after parity tests,
+  without deleting useful network/reconnect infrastructure prematurely.
