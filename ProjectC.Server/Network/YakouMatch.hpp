@@ -128,6 +128,10 @@ public:
     // Unsupported operations throw without changing match state or the queue.
     [[nodiscard]] YakouEffectChoice PendingEffectChoices(int player) const;
     void ResolvePendingEffect(int player, int selectedTarget = 0);
+    // Prototype-only: activates a no-cost main-phase spell whose authored
+    // OnResolve effect is supported by the current manual effect resolver.
+    // Actual spell response/negation windows are not wired yet.
+    void ActivateMainSpell(int player, int handInstance);
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
                 std::vector<int> const& materialIds, int slot);
@@ -142,6 +146,7 @@ public:
     void ResolveRaid(int defendingPlayer);
 
 private:
+    void ActivateMainSpellImpl(int player, int handInstance);
     void StartTurnImpl(int player);
     void SummonImpl(int player, int handInstance, std::string const& method,
                     std::vector<int> const& materialIds, int slot);
