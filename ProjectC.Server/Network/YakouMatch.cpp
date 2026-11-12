@@ -295,6 +295,12 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                    {"TurnNumber", turn_}, {"PriorityPlayerId", PriorityPlayer()},
                    {"WinnerPlayerId", winner_}, {"Players", std::move(players)},
                    {"Attacks", std::move(attacks)}};
+    // Both players can follow the public response depth and priority,
+    // but private target selections never leave the authoritative server.
+    if (phase_ == YakouPhase::RaidResponse)
+    {
+        result["RaidResponseDepth"] = response_.StackSize();
+    }
     // The pending queue can include a hidden hand card or deck-top choice.
     // Never expose its source, candidate IDs or target requirements to the
     // opposing viewer. The controlling player may request the first choice.
