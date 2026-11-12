@@ -1125,10 +1125,13 @@ int main()
             // priority, then reduce only the first combat damage this raid.
             auto shieldProto = proto;
             for (auto& id : shieldProto.Decks["Decks"][0]["Cards"])
-                if (id == 3020) { id = 3016; break; }
+            {
+                if (id == 3020) { id = 3016; }
+                else if (id == 3013) { id = 3003; }
+            }
             auto prepare = [&](bool withShield)
             {
-                auto match = Make(shieldProto, {2007}, {2002, 3016});
+                auto match = Make(shieldProto, {3003}, {2002, 3016});
                 match.StartTurn(1);
                 int const attacker = match.Player(1).Hand[0];
                 match.Summon(1, attacker, "Normal", {}, 0);
@@ -1177,10 +1180,9 @@ int main()
                 auto match = prepare(true);
                 match.ResolveRaid(2);
                 Check(match.Player(2).Field[0] &&
-                          match.Player(2).Field[0]->Damage == 1 &&
-                          match.Player(1).Field[0] &&
-                          match.Player(1).Field[0]->Damage == 2,
-                      "3016 first-damage shield must reduce 3 incoming damage to 1");
+                          match.Player(2).Field[0]->Damage == 2 &&
+                          !match.Player(1).Field[0],
+                      "3016 shield must reduce 4 incoming damage to 2; simultaneous counterdamage kills raider");
                 Check(match.Phase() == YakouPhase::TurnStart &&
                           match.ActivePlayer() == 2,
                       "Defensive shield must not interrupt end-of-raid progression");
@@ -1190,7 +1192,7 @@ int main()
                 match.ResolveRaid(2);
                 Check(!match.Player(2).Field[0] &&
                           match.Player(2).Graveyard.size() == 1,
-                      "Without the shield, three damage destroys the 3-HP blocker");
+                      "Without the shield, four damage destroys the 3-HP blocker");
             }
         }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
