@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <map>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -130,6 +131,100 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
     }
 }
 
+YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
+{
+    Check(player == 1 || player == 2, "Unknown effect controller");
+    Check(!pendingEffects_.empty(), "No queued Yakou effect");
+    auto const& queued = pendingEffects_.front();
+    Check(queued.Player == player, "Only the effect controller may inspect its candidates");
+    auto const card = CardDefinition(queued.DefinitionId);
+    Json const* definition = nullptr;
+    for (auto const& effect : card.at("Effects"))
+    {
+        if (effect.at("Id") == queued.EffectId && effect.at("Trigger") == queued.Trigger)
+        {
+            definition = &effect;
+            break;
+        }
+    }
+    Check(definition != nullptr && definition->at("Type") == "Triggered",
+          "Queued Yakou effect definition missing or unsupported");
+    int const limit = definition->value("PerTurnLimit", 0);
+    if (limit > 0)
+    {
+        Check(definition->value("LimitScope", std::string("")) == "CardName",
+              "Unsupported Yakou trigger limit scope");
+        auto const usage = std::make_tuple(turn_, player, card.at("NameKey").get<std::string>(), queued.EffectId);
+        auto const found = effectUses_.find(usage);
+        Check(found == effectUses_.end() || found->second < limit,
+              "Card-name effect turn limit reached");
+    }
+    auto const& actions = definition->at("Actions");
+    Check(actions.is_array() && actions.size() == 1,
+          "Unsupported multi-action or empty Yakou effect");
+    auto const& action = actions.at(0);
+    Check(!action.contains("Condition"), "Conditional Yakou effect not yet supported");
+    YakouEffectChoice choice;
+    choice.Operation = action.at("Operation").get<std::string>();
+    auto const& owner = Player(player);
+    if (choice.Operation == "Mill")
+    {
+        Check(action.at("From") == "FriendlyDeck" && action.at("To") == "Graveyard" &&
+                  action.at("Count").get<int>() > 0 && action.at("Count").get<int>() <= 30,
+              "Unsupported mill shape");
+        Check(owner.Deck.size() >= static_cast<std::size_t>(action.at("Count").get<int>()),
+              "Insufficient cards for authored mill");
+        return choice;
+    }
+    if (choice.Operation == "Salvage")
+    {
+        Check(action.at("From") == "FriendlyGraveyard" && action.at("To") == "Hand" &&
+                  action.at("Count") == 1 && !action.contains("ExcludePaidCostCards"),
+              "Unsupported salvage shape");
+        choice.SourceZone = "FriendlyGraveyard";
+        for (int instance : owner.Graveyard)
+        {
+            auto const definitionId = OriginalId(instance);
+            auto const candidate = CardDefinition(definitionId);
+            if (action.contains("CardType") && candidate.at("Type") != action.at("CardType"))
+            {
+                continue;
+            }
+            if (action.contains("RequiredArchetype") &&
+                !HasArchetype(definitionId, action.at("RequiredArchetype").get<std::string>()))
+            {
+                continue;
+            }
+            choice.Candidates.push_back(instance);
+        }
+    }
+    else
+    {
+        Check(choice.Operation == "ModifyCountdown" || choice.Operation == "SetCountdown" ||
+                  choice.Operation == "HealAccumulatedDamage", "Unsupported Yakou effect operation: " + choice.Operation);
+        auto const targetMode = action.at("Target").get<std::string>();
+        Check(targetMode == "Self" || targetMode == "FriendlyMonster" || targetMode == "OtherFriendlyMonster",
+              "Unsupported friendly monster target mode");
+        if (targetMode == "Self")
+        {
+            Check(FindUnit(owner, queued.SourceCard) != nullptr,
+                  "Self target must remain on the friendly field");
+            return choice;
+        }
+        choice.SourceZone = "FriendlyField";
+        for (auto const& field : owner.Field)
+        {
+            if (field && (targetMode != "OtherFriendlyMonster" || field->InstanceId != queued.SourceCard))
+            {
+                choice.Candidates.push_back(field->InstanceId);
+            }
+        }
+    }
+    choice.MaxCount = 1;
+    choice.MinCount = action.value("Optional", false) ? 0 : 1;
+    return choice;
+}
+
 void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
 {
     Check(player == 1 || player == 2, "Unknown effect controller");
@@ -156,11 +251,13 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     auto const operation = action.at("Operation").get<std::string>();
     // No partial effect handling: reject unsupported authored shape before
     // changing resources, usage counters or the pending queue.
-    Check(operation == "Mill" || operation == "ModifyCountdown",
+    Check(operation == "Mill" || operation == "ModifyCountdown" ||
+              operation == "SetCountdown" || operation == "HealAccumulatedDamage" ||
+              operation == "Salvage",
           "Unsupported Yakou effect operation: " + operation);
     Check(!action.contains("Condition"), "Conditional Yakou effect not yet supported");
 
-    auto const usage = std::make_tuple(turn_, player, queued.DefinitionId, queued.EffectId);
+    auto const usage = std::make_tuple(turn_, player, card.at("NameKey").get<std::string>(), queued.EffectId);
     int const limit = definition->value("PerTurnLimit", 0);
     if (limit > 0)
     {
@@ -175,6 +272,7 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     // and queue, then commit only after all validation succeeds.
     YakouMatch next = *this;
     auto& owner = next.MutablePlayer(player);
+    bool declined = false;
     if (operation == "Mill")
     {
         Check(action.at("From") == "FriendlyDeck" &&
@@ -192,12 +290,44 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
         next.journal_.push_back("EffectMill:" + std::to_string(queued.SourceCard) +
                                 ":" + std::to_string(count));
     }
+    else if (operation == "Salvage")
+    {
+        Check(action.at("From") == "FriendlyGraveyard" && action.at("To") == "Hand" &&
+                  action.at("Count") == 1 && !action.contains("ExcludePaidCostCards"),
+              "Unsupported salvage shape");
+        bool const optional = action.value("Optional", false);
+        if (selectedTarget == 0 && optional)
+        {
+            declined = true;
+            next.journal_.push_back("EffectDeclined:" + std::to_string(queued.SourceCard));
+        }
+        else
+        {
+            Check(selectedTarget > 0 && Contains(owner.Graveyard, selectedTarget),
+                  "Salvage target must be in the controller's graveyard");
+            auto const recovered = next.CardDefinition(next.OriginalId(selectedTarget));
+            if (action.contains("CardType"))
+            {
+                Check(recovered.at("Type") == action.at("CardType"),
+                      "Salvage target has the wrong card type");
+            }
+            if (action.contains("RequiredArchetype"))
+            {
+                Check(next.HasArchetype(next.OriginalId(selectedTarget),
+                                        action.at("RequiredArchetype").get<std::string>()),
+                      "Salvage target has the wrong archetype");
+            }
+            Remove(owner.Graveyard, selectedTarget);
+            owner.Hand.push_back(selectedTarget);
+            next.journal_.push_back("EffectSalvage:" + std::to_string(selectedTarget));
+        }
+    }
     else
     {
         auto const targetMode = action.at("Target").get<std::string>();
         Check(targetMode == "Self" || targetMode == "FriendlyMonster" ||
                   targetMode == "OtherFriendlyMonster",
-              "Unsupported countdown target mode");
+              "Unsupported friendly monster target mode");
         int const target = targetMode == "Self" ? queued.SourceCard : selectedTarget;
         if (targetMode == "Self")
         {
@@ -207,6 +337,7 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
         bool const optional = action.value("Optional", false);
         if (target == 0 && optional && targetMode != "Self")
         {
+            declined = true;
             next.journal_.push_back("EffectDeclined:" +
                                     std::to_string(queued.SourceCard));
         }
@@ -217,14 +348,35 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
                   "Missing or prohibited countdown target");
             int const slot = FindSlot(owner, target);
             Check(slot >= 0, "Countdown target must be a friendly field monster");
-            int const delta = action.at("Delta").get<int>();
             auto& unit = *owner.Field[slot];
-            unit.Countdown = std::max(0, unit.Countdown + delta);
-            next.journal_.push_back("EffectCountdown:" + std::to_string(target) +
-                                    ":" + std::to_string(delta));
+            if (operation == "HealAccumulatedDamage")
+            {
+                int const amount = action.at("Amount").get<int>();
+                Check(amount > 0, "Invalid healing amount");
+                unit.Damage = std::max(0, unit.Damage - amount);
+                next.journal_.push_back("EffectHeal:" + std::to_string(target) +
+                                        ":" + std::to_string(amount));
+            }
+            else if (operation == "SetCountdown")
+            {
+                int const value = action.at("Value").get<int>();
+                Check(value >= 0, "Invalid countdown value");
+                unit.Countdown = value;
+                next.journal_.push_back("EffectSetCountdown:" + std::to_string(target) +
+                                        ":" + std::to_string(value));
+            }
+            else
+            {
+                int const delta = action.at("Delta").get<int>();
+                auto const adjusted = static_cast<std::int64_t>(unit.Countdown) + delta;
+                Check(adjusted <= std::numeric_limits<int>::max(), "Countdown overflow");
+                unit.Countdown = static_cast<int>(std::max<std::int64_t>(0, adjusted));
+                next.journal_.push_back("EffectCountdown:" + std::to_string(target) +
+                                        ":" + std::to_string(delta));
+            }
         }
     }
-    if (limit > 0)
+    if (limit > 0 && !declined)
     {
         ++next.effectUses_[usage];
     }

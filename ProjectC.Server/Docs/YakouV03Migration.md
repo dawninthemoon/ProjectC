@@ -221,3 +221,36 @@ No game-mode or protocol switch has been made; the production WebSocket
 The initial resolver is invoked explicitly by a server caller. Future
 connection to the effect/response scheduler must require validated selection
 and maintain active-player/owner trigger ordering before invoking it.
+
+## Server-side effect targets and additional atomic operations
+
+The pending-effect prototype exposes `PendingEffectChoices(controller)` for
+server-derived candidate IDs and exact minimum/maximum selection counts. Only
+the effect controller can query these candidates; this method is not itself a
+WebSocket endpoint. Its supported operations are the same narrow shapes the
+resolver understands, and it rejects unsupported condition/operation shapes
+instead of returning misleading choices. Missing targets, exhausted limits,
+and insufficient mill cards fail closed.
+
+The candidate-copy resolver additionally handles:
+
+- `Salvage` of one card from the controller's graveyard to hand, enforcing the
+  authored card-type and archetype filters. Conditional salvage and
+  `ExcludePaidCostCards` remain unavailable until their trigger and payment
+  contexts can be preserved correctly.
+- `HealAccumulatedDamage` for controlled `Self`, `FriendlyMonster`, and
+  `OtherFriendlyMonster` targets. Healing cannot reduce accumulated damage
+  below zero.
+- `SetCountdown` on those same field target modes, with nonnegative values.
+  The current sample's `OnDestroyedEnemyByCombat` dispatch is not wired yet;
+  the operation test uses the same authored action with a test-only trigger.
+- Optional effects declined by their owner do not consume the card-name effect
+  allowance. Name-scoped usage is keyed by the authored `NameKey`, rather than
+  assuming every definition ID represents a distinct card name.
+
+These functions are still explicitly invoked server prototype APIs. Automatic
+trigger scheduling, the remaining operations, chain effects, public protocol,
+Unity online integration, reconnect/replay, and complete card coverage remain
+unfinished. In particular, the Korean description for card 2002 describes its
+salvage as optional, but its authored action currently has no `Optional` field;
+this implementation follows the unchanged JSON and does not infer a new rule.

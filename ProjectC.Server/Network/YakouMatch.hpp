@@ -75,6 +75,16 @@ struct YakouSummonChoice
     std::vector<int> AvailableSlots;
 };
 
+// Only the effect controller may receive these server-derived instance IDs.
+struct YakouEffectChoice
+{
+    std::string Operation;
+    std::string SourceZone;
+    int MinCount = 0;
+    int MaxCount = 0;
+    std::vector<int> Candidates;
+};
+
 class YakouMatch
 {
 public:
@@ -105,6 +115,7 @@ public:
     // Resolve exactly one queued authored trigger, using a server-validated
     // target instance (or zero for targetless/declined optional effects).
     // Unsupported operations throw without changing match state or the queue.
+    [[nodiscard]] YakouEffectChoice PendingEffectChoices(int player) const;
     void ResolvePendingEffect(int player, int selectedTarget = 0);
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
@@ -140,8 +151,8 @@ private:
     YakouChain response_;
     std::vector<YakouAttack> attacks_;
     std::vector<YakouPendingEffect> pendingEffects_;
-    // Turn, controller, printed card definition and authored effect identity.
-    std::map<std::tuple<int, int, int, int>, int> effectUses_;
+    // Turn, controller, authored card name key and authored effect identity.
+    std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
     std::vector<std::string> journal_;
 };
 } // namespace ProjectC::Network

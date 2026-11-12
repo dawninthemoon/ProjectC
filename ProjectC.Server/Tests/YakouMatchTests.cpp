@@ -249,6 +249,170 @@ int main()
                   "Friendly target countdown must decrease and consume trigger");
         }
         {
+            // Separately defined cards sharing an authored name key share the
+            // same name-scoped effect allowance, even if their IDs differ.
+            auto changed = proto;
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 3007)
+                {
+                    card["NameKey"] = "card_2003_name";
+                }
+            }
+            auto match = Make(changed, {2001, 2003, 3007, 2009, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            match.Summon(1, hand[2], "Discard", {hand[3]}, 1);
+            match.ResolvePendingEffect(1, hand[0]);
+            auto const grave = match.Player(1).Graveyard;
+            match.Summon(1, hand[1], "Necromancy", {grave[0], grave[1]}, 2);
+            int const before = match.Player(1).Field[0]->Countdown;
+            Reject([&] { (void)match.PendingEffectChoices(1); });
+            Reject([&] { match.ResolvePendingEffect(1, hand[0]); });
+            Check(match.Player(1).Field[0]->Countdown == before && !match.PendingEffects().empty(),
+                  "Shared-name effect limit rejection must leave state and trigger intact");
+        }
+        {
+            // Declining an optional trigger is not an activation and must not
+            // consume that printed card name's per-turn effect allowance.
+            auto changed = proto;
+            auto& cards = changed.Decks["Decks"][0]["Cards"];
+            for (auto& id : cards)
+            {
+                if (id == 3020)
+                {
+                    id = 3007;
+                    break;
+                }
+            }
+            auto match = Make(changed, {3007, 3007, 2001, 2009, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Discard", {hand[2]}, 0);
+            match.ResolvePendingEffect(1);
+            match.Summon(1, hand[1], "Discard", {hand[3]}, 1);
+            match.ResolvePendingEffect(1, hand[0]);
+            Check(match.Player(1).Field[0]->Countdown == 0 && match.PendingEffects().empty(),
+                  "A declined optional effect must not prevent a later valid activation");
+        }
+        {
+            // Salvage is validated against the authoritative graveyard and the
+            // authored monster/archetype filters, not client-supplied card data.
+            auto match = Make(proto, {2001, 2002, 3001, 3007, 2004, 2005, 2009}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            int const material = match.Player(1).Graveyard[0];
+            int const spell = match.Player(1).Graveyard[1];
+            match.Summon(1, hand[3], "Discard", {hand[4]}, 1);
+            match.ResolvePendingEffect(1); // Decline optional countdown adjustment.
+            match.Summon(1, hand[1], "Necromancy", {material}, 2);
+            match.ResolvePendingEffect(1); // Decline the paid card's queued optional trigger.
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "Salvage" && choice.SourceZone == "FriendlyGraveyard" &&
+                      choice.MinCount == 1 && choice.MaxCount == 1 &&
+                      choice.Candidates == std::vector<int>{hand[4]},
+                  "Salvage candidates must match server-authorized graveyard and card filters");
+            Reject([&] { (void)match.PendingEffectChoices(2); });
+            auto const grave = match.Player(1).Graveyard;
+            auto const held = match.Player(1).Hand;
+            auto const pending = match.PendingEffects().size();
+            Reject([&] { match.ResolvePendingEffect(2, hand[4]); });
+            Reject([&] { match.ResolvePendingEffect(1, material); });
+            Reject([&] { match.ResolvePendingEffect(1, spell); });
+            Check(match.Player(1).Graveyard == grave && match.Player(1).Hand == held &&
+                      match.PendingEffects().size() == pending,
+                  "Rejected salvage must leave all zones and queued effects unchanged");
+            match.ResolvePendingEffect(1, hand[4]);
+            Check(std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), hand[4]) !=
+                      match.Player(1).Hand.end() &&
+                      std::find(match.Player(1).Graveyard.begin(), match.Player(1).Graveyard.end(), hand[4]) ==
+                          match.Player(1).Graveyard.end() && match.PendingEffects().empty(),
+                  "Valid salvage must move the selected authored monster to hand");
+        }
+        {
+            // Exercise the authored manifestation countdown operation while
+            // keeping its original action intact in a local trigger fixture.
+            auto changed = proto;
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 2102)
+                {
+                    card["Effects"][0]["Trigger"] = "OnManifested";
+                }
+            }
+            auto match = Make(changed, {2001, 2008, 2004, 2005, 2009}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            match.Summon(1, hand[1], "Devour", {hand[0]}, 0);
+            match.ResolvePendingEffect(1);
+            match.Manifest(1, hand[1], 2102);
+            Check(match.Player(1).Field[0]->Countdown == 2, "Manifest countdown setup");
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "SetCountdown" && choice.MaxCount == 0,
+                  "Self countdown effect must not request an external target");
+            Reject([&] { match.ResolvePendingEffect(1, hand[2]); });
+            match.ResolvePendingEffect(1);
+            Check(match.Player(1).Field[0]->Countdown == 1 && match.PendingEffects().empty(),
+                  "Authored set-countdown operation must apply to the same field instance");
+        }
+        {
+            // Damage originates in actual simultaneous combat, then healing
+            // reduces accumulated damage without restoring beyond printed HP.
+            auto changed = proto;
+            auto& cards = changed.Decks["Decks"][0]["Cards"];
+            for (auto& id : cards)
+            {
+                if (id == 3020)
+                {
+                    id = 3002;
+                    break;
+                }
+            }
+            auto match = Make(changed, {2002, 3002, 2009, 3001, 3007}, {2001});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            int const blocker = match.Player(2).Hand[0];
+            match.Summon(2, blocker, "Normal", {}, 0);
+            match.ResolvePendingEffect(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.AssignBlockers(2, {{hand[0], blocker}});
+            match.PassRaidResponse(2);
+            match.PassRaidResponse(1);
+            match.ResolveRaid(2);
+            Check(match.Player(1).Field[0]->Damage == 1, "Combat setup must inflict one damage");
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.Summon(1, hand[1], "Normal", {}, 1);
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "HealAccumulatedDamage" && choice.SourceZone == "FriendlyField" &&
+                      choice.MinCount == 1 && choice.MaxCount == 1 &&
+                      choice.Candidates == std::vector<int>({hand[0], hand[1]}),
+                  "Healing candidates must be controlled monsters in field slot order");
+            Reject([&] { (void)match.PendingEffectChoices(2); });
+            Reject([&] { match.ResolvePendingEffect(1, blocker); });
+            Check(match.Player(1).Field[0]->Damage == 1 && !match.PendingEffects().empty(),
+                  "Illegal healing target must not mutate the match");
+            match.ResolvePendingEffect(1, hand[0]);
+            Check(match.Player(1).Field[0]->Damage == 0 && match.Player(1).Field[0]->Hp() == 3,
+                  "Healing must remove accumulated damage without overhealing");
+        }
+        {
             // The resolver must never silently treat an unsupported authored
             // operation (Salvage) as an empty effect.
             auto match = Make(proto, {2001, 2002, 2009, 3001, 3007}, {});
