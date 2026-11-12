@@ -15,7 +15,7 @@ namespace ProjectC::Network
 {
 // Separate, opt-in Yakou prototype state machine. Never used by legacy
 // MatchSession until the remaining authoring effects and response protocol work.
-enum class YakouPhase { TurnStart, Main, AssignBlockers, RaidResponse, Finished };
+enum class YakouPhase { TurnStart, Main, AssignBlockers, RaidResponse, Finished, SpellResponse };
 
 struct YakouUnit
 {
@@ -132,6 +132,10 @@ public:
     // OnResolve effect is supported by the current manual effect resolver.
     // Actual spell response/negation windows are not wired yet.
     void ActivateMainSpell(int player, int handInstance);
+    // Opt-in response-aware spell path; supported counterspell: 3020 only.
+    void BeginSpellResponse(int player, int handInstance, int targetInstance = 0);
+    void RespondWithNegation(int player, int handInstance, std::vector<int> const& discarded);
+    void PassSpellResponse(int player);
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
                 std::vector<int> const& materialIds, int slot);
@@ -147,6 +151,9 @@ public:
 
 private:
     void ActivateMainSpellImpl(int player, int handInstance);
+    void BeginSpellResponseImpl(int player, int handInstance, int targetInstance);
+    void RespondWithNegationImpl(int player, int handInstance, std::vector<int> const& discarded);
+    void PassSpellResponseImpl(int player);
     void StartTurnImpl(int player);
     void SummonImpl(int player, int handInstance, std::string const& method,
                     std::vector<int> const& materialIds, int slot);
