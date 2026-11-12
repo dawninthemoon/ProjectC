@@ -1436,8 +1436,8 @@ void YakouMatch::RespondWithRaidShieldImpl(int player, int handInstance, int fri
               response_.PriorityPlayer() == player &&
               player == 3 - ActivePlayer(),
           "Only the defending player with priority may activate a raid shield");
-    Check(response_.StackSize() == 0,
-          "This prototype supports only one defensive raid response");
+    Check(response_.StackSize() < 8,
+          "Maximum of eight defensive raid responses per window");
     auto& owner = MutablePlayer(player);
     Check(Contains(owner.Hand, handInstance), "Raid response must be in owner's hand");
     Check(FindUnit(owner, friendlyUnit) != nullptr,
@@ -1494,7 +1494,7 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
 {
     Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
           response_.PriorityPlayer() == player && player == 3 - ActivePlayer() &&
-          response_.StackSize() == 0, "No legal raid tactic priority");
+          response_.StackSize() < 8, "No legal raid tactic priority");
     auto& owner = MutablePlayer(player);
     Check(Contains(owner.Hand, spell), "Tactic must be in controller's hand");
     auto const card = CardDefinition(OriginalId(spell));
@@ -1600,10 +1600,12 @@ void YakouMatch::PassRaidResponseImpl(int player)
     journal_.push_back("RaidResponsePass:" + std::to_string(player));
     if (closed)
     {
-        // Resolve supported one-link defensive responses after double-pass.
-        // Unsupported chains fail atomically in the caller's candidate copy.
+        // Resolve supported defensive links in strict reverse activation
+        // order. Every link is checked against the state produced by the
+        // preceding link; any illegal intermediate result rolls back the
+        // entire closing pass and leaves the live response window open.
         auto const links = response_.TakeResolution();
-        Check(links.size() <= 1, "Unsupported raid chain length");
+        Check(links.size() <= 8, "Unsupported raid chain length");
         for (auto const& link : links)
         {
             Check(link.Controller == 3 - ActivePlayer() &&
