@@ -68,10 +68,35 @@ int main()
                       match.Player(1).Hand.size() == 5, "First player opening draw");
             int const first = match.Player(1).Hand[0];
             int const devour = match.Player(1).Hand[1];
+            {
+                auto choices = match.SummonChoices(1, first);
+                Check(choices.size() == 1 && choices[0].Method == "Normal" &&
+                          choices[0].RequiredCount == 0 &&
+                          choices[0].AvailableSlots.size() == 5,
+                      "Normal summon must be free in an empty field");
+                Check(match.SummonChoices(1, devour).empty(),
+                      "Devour must not be offered without allied material");
+                Reject([&] { (void)match.SummonChoices(2, first); });
+            }
             match.Summon(1, first, "Normal", {}, 2);
             Reject([&] { match.Summon(1, match.Player(1).Hand[0], "Normal", {}, 1); });
             Check(match.Player(1).Field[2].has_value() &&
                       match.Player(1).NormalSummons == 1, "Normal summon");
+            {
+                Check(match.SummonChoices(1, match.Player(1).Hand[0]).empty() ||
+                          match.Player(1).NormalSummons == 1,
+                      "Normal summon quota must stay spent");
+                auto choices = match.SummonChoices(1, devour);
+                Check(choices.size() == 1 && choices[0].Method == "Devour" &&
+                          choices[0].SourceZone == "FriendlyField" &&
+                          choices[0].RequiredCount == 1 &&
+                          choices[0].Candidates.size() == 1 &&
+                          choices[0].Candidates[0] == first &&
+                          std::find(choices[0].AvailableSlots.begin(),
+                                    choices[0].AvailableSlots.end(), 2) !=
+                              choices[0].AvailableSlots.end(),
+                      "Devour UI selection must derive owned material and slot");
+            }
             Reject([&] { match.Summon(1, devour, "Devour", {}, 2); });
             Check(match.Player(1).Hand.size() == 4 &&
                       match.Player(1).Field[2]->InstanceId == first,
@@ -90,6 +115,16 @@ int main()
             auto match = Make(proto, {2001, 3007, 2002, 2005, 2009}, {});
             match.StartTurn(1);
             auto hand = match.Player(1).Hand;
+            {
+                auto choices = match.SummonChoices(1, hand[1]);
+                Check(choices.size() == 1 && choices[0].Method == "Discard" &&
+                          choices[0].SourceZone == "FriendlyHand" &&
+                          choices[0].RequiredCount == 1 &&
+                          std::find(choices[0].Candidates.begin(),
+                                    choices[0].Candidates.end(), hand[1]) ==
+                              choices[0].Candidates.end(),
+                      "Discard cannot offer its own source card");
+            }
             match.Summon(1, hand[0], "Normal", {}, 0);
             Reject([&] { match.Summon(1, hand[1], "Discard", {hand[1]}, 1); });
             match.Summon(1, hand[1], "Discard", {hand[3]}, 1);
