@@ -930,6 +930,100 @@ int main()
                       match.Player(1).Graveyard.size() == graveCount,
                   "Unsupported effect must fail without mutations");
         }
+        {
+            // A no-cost main-phase spell must enter the effect queue through a
+            // real hand instance and preserve server authority throughout.
+            auto match = Make(proto, {2009, 2009, 2010, 2001, 2002}, {2009});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            int const spell = hand[0];
+            int const repeat = hand[1];
+            int const paid = hand[2];
+            auto const wrongPlayer = match.ServerStateHash();
+            Reject([&] { match.ActivateMainSpell(2, spell); });
+            Reject([&] { match.ActivateMainSpell(1, hand[3]); });
+            Reject([&] { match.ActivateMainSpell(1, paid); });
+            Reject([&] { match.ActivateMainSpell(1, match.Player(2).Hand[0]); });
+            Check(match.ServerStateHash() == wrongPlayer,
+                  "Illegal, paid or opponent spell activations must be atomic");
+            auto const priorDeck = match.Player(1).Deck.size();
+            auto const priorGrave = match.Player(1).Graveyard.size();
+            match.ActivateMainSpell(1, spell);
+            Check(std::find(match.Player(1).Hand.begin(),
+                            match.Player(1).Hand.end(), spell) == match.Player(1).Hand.end() &&
+                      match.Player(1).Graveyard.back() == spell &&
+                      match.PendingEffects().size() == 1 &&
+                      match.PendingEffectChoices(1).Operation == "Mill",
+                  "Free spell activation must move its card and queue the authored OnResolve");
+            auto const beforePending = match.ServerStateHash();
+            Reject([&] { match.ActivateMainSpell(1, repeat); });
+            Check(match.ServerStateHash() == beforePending,
+                  "Cannot activate another spell with an unresolved pending effect");
+            match.ResolvePendingEffect(1);
+            Check(match.PendingEffects().empty() &&
+                      match.Player(1).Deck.size() == priorDeck - 2 &&
+                      match.Player(1).Graveyard.size() == priorGrave + 3,
+                  "Spell resolution must use the same authoritative queued effect");
+            auto const beforeLimit = match.ServerStateHash();
+            Reject([&] { match.ActivateMainSpell(1, repeat); });
+            Check(match.ServerStateHash() == beforeLimit,
+                  "Printed card-name per-turn spell limit must reject duplicate activation");
+        }
+        {
+            // Targeted main spells reuse the existing server-owned target
+            // candidate/validation path rather than accepting a supplied ID.
+            auto authored = proto;
+            for (auto& id : authored.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3020) { id = 3011; break; }
+            }
+            auto match = Make(authored, {2001, 3011, 2009, 2002, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            auto const noTarget = match.ServerStateHash();
+            Reject([&] { match.ActivateMainSpell(1, hand[1]); });
+            Check(match.ServerStateHash() == noTarget,
+                  "Targeted spell cannot consume a hand card without legal targets");
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            match.ActivateMainSpell(1, hand[1]);
+            auto const selection = match.PendingEffectChoices(1);
+            Check(selection.Operation == "ModifyCountdown" &&
+                      selection.Candidates == std::vector<int>{hand[0]},
+                  "Activated spell's targets must be authoritative friendly field instances");
+            Reject([&] { match.ResolvePendingEffect(1, match.Player(2).Hand[0]); });
+            match.ResolvePendingEffect(1, hand[0]);
+            Check(match.PendingEffects().empty() &&
+                      match.Player(1).Field[0]->Countdown == 1,
+                  "Targeted main spell must apply only to a validated field card");
+        }
+        {
+            // The replay records the actual spell activation and effect
+            // resolution; repeated same-name activation remains a rejected
+            // command without altering the deterministic private state.
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009, 2009}), Deck(proto, {})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::ActivateMainSpell;
+            cast.Player = 1;
+            cast.CardId = 1;
+            YakouReplayCommand resolve;
+            resolve.Operation = YakouReplayOperation::ResolvePendingEffect;
+            resolve.Player = 1;
+            std::vector<YakouReplayCommand> const commands{start, cast, resolve,
+                                                            YakouReplayCommand{cast}};
+            auto const first = ReplayYakou(proto, 1, decks, commands);
+            auto const again = ReplayYakou(proto, 1, decks, commands);
+            Check(first.Steps.size() == 4 && first.Steps[1].Accepted &&
+                      first.Steps[2].Accepted && !first.Steps[3].Accepted &&
+                      first.Steps[3].BeforeHash == first.Steps[3].AfterHash &&
+                      first.FinalState.ServerStateHash() ==
+                          again.FinalState.ServerStateHash(),
+                  "Main spell replay must preserve deterministic acceptance and rejection");
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
