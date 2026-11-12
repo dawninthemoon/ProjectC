@@ -1575,14 +1575,14 @@ int main()
             // Trigger processing is all-or-nothing across the entire batch.
             // An impossible second effect cannot leave the first Mill applied.
             auto broken = altered;
+            Json impossible = heal;
+            impossible["Actions"] = Json::array({
+                {{"Operation", "Mill"}, {"From", "FriendlyDeck"},
+                 {"To", "Graveyard"}, {"Count", 31}}
+            });
             for (auto& card : broken.Cards.at("Cards"))
                 if (card.at("Id") == 2004)
-                    card["Effects"] = Json::array(
-                        {{{"Id", 1}, {"Type", "Triggered"},
-                          {"Trigger", "OnSummoned"},
-                          {"Actions", Json::array(
-                              {{{"Operation", "Mill"}, {"From", "FriendlyDeck"},
-                                {"To", "Graveyard"}, {"Count", 31}}})}}});
+                    card["Effects"] = Json::array({impossible});
             auto rejected = Make(broken, {2004, 2005, 2001, 3002, 3001}, {});
             rejected.StartTurn(1);
             auto const illegalHand = rejected.Player(1).Hand;
