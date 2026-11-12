@@ -792,6 +792,35 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     *this = std::move(next);
 }
 
+int YakouMatch::ResolveAutomaticTriggers(int maxEffects)
+{
+    Check(maxEffects > 0 && maxEffects <= 128,
+          "Automatic trigger drain must have a bounded positive budget");
+    Check(!response_.IsOpen(), "Cannot drain triggers during an open response window");
+    // The existing interpreter already applies each effect transactionally.
+    // Use an outer copy too: a failure in any later effect rolls back the
+    // entire batch, including its journal and per-turn usage counters.
+    YakouMatch next = *this;
+    int completed = 0;
+    while (completed < maxEffects && !next.pendingEffects_.empty())
+    {
+        auto const& pending = next.pendingEffects_.front();
+        // A pending effect's controller determines its private choices. The
+        // scheduler may inspect them server-side but cannot choose a target.
+        auto const choice = next.PendingEffectChoices(pending.Player);
+        if (choice.MinCount != 0 || choice.MaxCount != 0)
+        {
+            // Optional target selections are still player decisions. No
+            // auto-decline and no 'first candidate' shortcuts.
+            break;
+        }
+        next.ResolvePendingEffect(pending.Player);
+        ++completed;
+    }
+    *this = std::move(next);
+    return completed;
+}
+
 void YakouMatch::ActivateMainSpell(int player, int handInstance)
 {
     YakouMatch next = *this;

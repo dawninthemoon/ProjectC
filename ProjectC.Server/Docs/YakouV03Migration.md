@@ -573,3 +573,40 @@ two-player response stack, spell-speed windows, triggered effects inside
 the chain, multi-step automatic effects, online MatchSession/WebSocket,
 and Unity client commands are not implemented here. Existing card JSON and
 Unity resources are unchanged.
+
+## Automatic trigger queue runner (first bounded slice)
+
+`YakouMatch::ResolveAutomaticTriggers(maxEffects = 64)` is a **server-only,
+opt-in** automatic queue drain, backed by the existing authoritative
+`PendingEffectChoices` and `ResolvePendingEffect` interpreter. It
+processes the head of the pending trigger queue in stable event order while
+both `MinCount` and `MaxCount` are zero (including un-targeted `Mill`
+and server-determined `Self`/`DevouringMonster` effects). It stops
+*before* any player-selected target, even if there is only one candidate,
+or a target is optional. The scheduler never guesses a target and never
+silently declines an optional effect.
+
+A caller supplies a strictly positive budget of at most 128 effect
+resolutions per invocation, which prevents unbounded queue processing.
+The whole batch is copy-before-commit transactional: if any later queued
+operation has a malformed action, exhausted use limit, insufficient deck
+or other invalid state, **none** of the earlier effects, private deck
+positions, journal entries or usage counts commit. The caller can make a
+smaller bounded pass to commit a valid prefix. Empty queues and
+controller-selection boundaries return a processed count of zero.
+
+`YakouReplayOperation::ResolveAutomaticTriggers` captures the same
+explicit command with its own `MaxEffects` budget, so replay determinism
+and rejected-command hash invariants can be checked across automation.
+New C++ tests cover untargeted Mill, a Devour-triggered Self countdown,
+stopping at mandatory FriendlyMonster selection, rejected budgets,
+full-batch failure rollback and bounded-prefix progress.
+
+**Limitations:** The runner is **not yet automatically invoked by every
+game action** and is not an automatic event/chain priority scheduler.
+No new turn-start trigger, AP/NAP trigger reordering, chained triggers,
+nested resolution priority, deferred chains, online MatchSession commands,
+or client-side prompt handling is implied. Existing explicit manual
+`ResolvePendingEffect` calls remain supported; integrating automatic
+progression at safe authoritative action boundaries is next. Unity scripts,
+scenes, prefabs, cards JSON and Sheets are unchanged.

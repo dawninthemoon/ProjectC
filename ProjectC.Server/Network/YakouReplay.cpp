@@ -51,6 +51,9 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
     case YakouReplayOperation::ResolvePendingEffect:
         match.ResolvePendingEffect(command.Player, command.TargetId);
         break;
+    case YakouReplayOperation::ResolveAutomaticTriggers:
+        (void)match.ResolveAutomaticTriggers(command.MaxEffects);
+        break;
     case YakouReplayOperation::BeginSpellResponse:
         match.BeginSpellResponse(command.Player, command.CardId, command.TargetId);
         break;
