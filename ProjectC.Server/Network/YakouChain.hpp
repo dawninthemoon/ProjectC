@@ -18,6 +18,18 @@ struct YakouChainLink
     bool operator==(YakouChainLink const&) const = default;
 };
 
+// Server-private replay material. Never include this in a viewer snapshot:
+// chain targets may contain private card identities.
+struct YakouChainState
+{
+    bool Open = false;
+    int Priority = 0;
+    int ConsecutivePasses = 0;
+    std::vector<YakouChainLink> Stack;
+    std::vector<YakouChainLink> Resolution;
+    std::vector<YakouChainLink> Deferred;
+};
+
 class YakouChain
 {
 public:
@@ -35,6 +47,7 @@ public:
     // resolution consequently runs opponent triggers first).
     bool OpenDeferred(int activePlayer);
 
+    [[nodiscard]] YakouChainState ServerState() const;
     [[nodiscard]] bool IsOpen() const { return open_; }
     [[nodiscard]] int PriorityPlayer() const { return priority_; }
     [[nodiscard]] int StackSize() const { return static_cast<int>(stack_.size()); }

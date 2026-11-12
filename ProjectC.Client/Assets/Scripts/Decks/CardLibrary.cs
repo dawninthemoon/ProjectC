@@ -96,9 +96,48 @@ namespace ProjectC.Client
             return Load(cards.text, LocalizationService.Load(localize.text));
         }
 
-        public static CardLibrary Load(string text, LocalizationService localization = null)
+        public static CardLibrary Load(string text, LocalizationService localization = null) =>
+            LoadCore(text, localization, false);
+
+        // Explicit opt-in only. The live legacy catalog must never silently use
+        // same-ID Yakou definitions until the server announces that ruleset.
+        public static CardLibrary LoadYakouResources()
         {
-            var document = CardDataLoader.Load(text);
+            var shared = UnityEngine.Resources.Load<UnityEngine.TextAsset>("ProjectC_Data - Localize");
+            var cards = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CardData/YakouPrototypeCards");
+            var localized = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CardData/YakouPrototypeLocalize");
+            if (shared == null || cards == null || localized == null)
+            {
+                throw new InvalidOperationException("Yakou card/localization Resources are missing.");
+            }
+            return LoadYakou(cards.text, shared.text, localized.text);
+        }
+
+        public static CardLibrary LoadYakou(string cards, string sharedLocalization, string cardLocalization)
+        {
+            var shared = LocalizationService.Load(sharedLocalization);
+            var authored = LocalizationService.Load(cardLocalization);
+            var library = LoadCore(cards, shared.WithOverrides(authored), true);
+            if (string.IsNullOrEmpty(library.CatalogVersion))
+            {
+                throw new FormatException("Yakou catalog version is required.");
+            }
+            foreach (var card in library.cards.Values)
+            {
+                foreach (int formId in card.AllowedManifestations)
+                {
+                    if (!library.cards.TryGetValue(formId, out var form) || form.Type != "Manifestation")
+                    {
+                        throw new FormatException("Invalid manifestation reference #" + formId);
+                    }
+                }
+            }
+            return library;
+        }
+
+        private static CardLibrary LoadCore(string text, LocalizationService localization, bool allowManifestations)
+        {
+            var document = CardDataLoader.Load(text, allowManifestations);
             var items = document.Cards;
             if (localization == null && items.Any(item => item["NameKey"] != null))
             {
@@ -129,7 +168,7 @@ namespace ProjectC.Client
                     throw new FormatException("카드 이름과 타입이 필요합니다.");
                 }
                 string type = (string)item["Type"];
-                if (type != "Monster" && type != "Spell")
+                if (type != "Monster" && type != "Spell" && !(allowManifestations && type == "Manifestation"))
                 {
                     throw new FormatException("지원하지 않는 카드 타입입니다.");
                 }

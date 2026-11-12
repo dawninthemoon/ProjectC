@@ -45,7 +45,9 @@ namespace ProjectC.Client
             }
         }
 
-        public static CardDataDocument Load(string text)
+        public static CardDataDocument Load(string text) => Load(text, false);
+
+        internal static CardDataDocument Load(string text, bool allowManifestations)
         {
             var root = Parse(text);
             var rows = root as JArray ?? root["Cards"] as JArray;
@@ -82,19 +84,28 @@ namespace ProjectC.Client
                 }
                 card["Id"] = id;
                 string type = RequiredText(card, "Type");
-                if (type != "Monster" && type != "Spell")
+                if (type != "Monster" && type != "Spell" && !(allowManifestations && type == "Manifestation"))
                 {
                     throw new FormatException("Unknown card type: " + type);
                 }
+                if (type == "Manifestation" && card["MainDeckEligible"]?.Type != JTokenType.Boolean)
+                {
+                    throw new FormatException("Manifestations require explicit deck eligibility.");
+                }
+                if (type == "Manifestation" && (bool)card["MainDeckEligible"])
+                {
+                    throw new FormatException("Manifestations cannot be main-deck eligible.");
+                }
+                bool hasMonsterStats = type == "Monster" || type == "Manifestation";
                 foreach (string field in new[] { "Attack", "MaxHp" })
                 {
                     if (card[field]?.Type == JTokenType.String && string.IsNullOrWhiteSpace((string)card[field]))
                     {
                         card.Remove(field);
                     }
-                    if (card[field] != null || type == "Monster")
+                    if (card[field] != null || hasMonsterStats)
                     {
-                        card[field] = ReadInteger(card[field], field == "MaxHp" && type == "Monster" ? 1 : 0, MaximumStat);
+                        card[field] = ReadInteger(card[field], field == "MaxHp" && hasMonsterStats ? 1 : 0, MaximumStat);
                     }
                 }
                 bool keyed = card["NameKey"] != null || card["DescriptionKey"] != null;

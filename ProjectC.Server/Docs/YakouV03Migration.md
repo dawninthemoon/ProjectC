@@ -221,3 +221,102 @@ No game-mode or protocol switch has been made; the production WebSocket
 The initial resolver is invoked explicitly by a server caller. Future
 connection to the effect/response scheduler must require validated selection
 and maintain active-player/owner trigger ordering before invoking it.
+
+## Server-side effect targets and additional atomic operations
+
+The pending-effect prototype exposes `PendingEffectChoices(controller)` for
+server-derived candidate IDs and exact minimum/maximum selection counts. Only
+the effect controller can query these candidates; this method is not itself a
+WebSocket endpoint. Its supported operations are the same narrow shapes the
+resolver understands, and it rejects unsupported condition/operation shapes
+instead of returning misleading choices. Missing targets, exhausted limits,
+and insufficient mill cards fail closed.
+
+The candidate-copy resolver additionally handles:
+
+- `Salvage` of one card from the controller's graveyard to hand, enforcing the
+  authored card-type and archetype filters. The authored graveyard-archetype
+  condition is checked when its trigger is registered. Other conditions and
+  `ExcludePaidCostCards` remain unavailable until their trigger and payment
+  contexts can be preserved correctly.
+- `HealAccumulatedDamage` for controlled `Self`, `FriendlyMonster`, and
+  `OtherFriendlyMonster` targets, and the event-derived `DevouringMonster`
+  target. Healing cannot reduce accumulated damage below zero.
+- `SetCountdown` on those same field target modes, with nonnegative values.
+  The current sample's `OnDestroyedEnemyByCombat` dispatch is not wired yet;
+  the operation test uses the same authored action with a test-only trigger.
+- Optional effects declined by their owner do not consume the card-name effect
+  allowance. Name-scoped usage is keyed by the authored `NameKey`, rather than
+  assuming every definition ID represents a distinct card name.
+
+These functions are still explicitly invoked server prototype APIs. Automatic
+trigger scheduling, the remaining operations, chain effects, public protocol,
+Unity online integration, reconnect/replay, and complete card coverage remain
+unfinished. In particular, the Korean description for card 2002 describes its
+salvage as optional, but its authored action currently has no `Optional` field;
+this implementation follows the unchanged JSON and does not infer a new rule.
+
+## Field-only blocker limit passive
+
+The authored `IncreaseMaxBlocks` / `Self` / `WhileOnField` passive is evaluated
+before summoning a monster, and its printed base is kept separately from the
+effective `MaxBlocks`. `AssignBlockers` can therefore authorize two distinct
+attackers for card 3010 without trusting a client-supplied limit. Manifestation
+replaces the printed base and preserves any existing additive modifier.
+Unrecognized continuous effect shapes reject the action before mutation.
+
+This is still prototype-only: no network DTO or response-chain wiring has been
+added, and the separately documented missing-blocker combat policy is not
+resolved by enabling the passive.
+
+## Additional prototype safety and viewer projection
+
+- Triggered salvage checks the authored graveyard-archetype condition at
+  registration. Failed conditions do not consume an effect use. Unknown
+  conditions and unknown action fields fail closed.
+- Devour triggers retain the consuming card instance in their event context.
+  The devoured source's current definition is captured before it leaves the
+  field, so its effect is not silently replaced by its original form.
+- `LookAndChoose` supports the authored one-card choice among the deck top.
+  Only the controller can inspect the candidates. Unchosen cards go to the
+  bottom in their existing relative order; an insufficient deck fails closed.
+  Spell activation and `OnResolve` scheduling are not implemented yet.
+- Public game commands compute on a copied candidate and commit only after
+  success. A malformed late trigger condition, for example, cannot partially
+  consume a summon, its cost, or an input allowance.
+- `ViewerSnapshot(viewer)` is a prototype projection: it omits both deck
+  orders and the opponent hand, preserves five public field slots and attack
+  counters, shows each player's Ki, and gives the owner their own normal
+  summon availability. It is deliberately not a WebSocket message or a
+  reconnect checkpoint; pending selections, chains and private server state
+  still need explicit durable serialization. The prototype's player IDs 1/2
+  need mapping to the existing globally allocated online seat IDs.
+- Deck exhaustion and combat now record an explicit winner in this prototype.
+
+These APIs do not implement the effect scheduler, response spells, combat
+modifiers, replay/hash, MatchSession integration, or a playable online mode.
+
+## Server-private deterministic replay foundation
+
+`ReplayYakou` reconstructs a fresh prototype match from its initial shuffled
+server-private deck orders, first player, and ordered prototype command
+records. It replays accepted and rejected commands, preserves their results,
+and verifies that rejected commands do not change the full server state. The
+result includes the reconstructed `YakouMatch`, so a caller can inspect a
+pending effect or a raid response priority after replaying a partial journal.
+
+`ServerStateHash()` fingerprints a canonical schema containing the full card
+catalog and configuration, ordered private zones, public fields and stat
+layers, IDs, current turn/phase/winner, effect-use counters, pending effects and
+their event context, attacks, journal, and all current `YakouChain` fields.
+It uses deterministic FNV-1a 64-bit arithmetic as a replay comparison, not as
+an authentication or collision-resistant security primitive. Both the private
+state and this fingerprint are server-only and must never be sent to clients.
+A reference-hash test checks the same fixture on all CI platforms.
+
+This does **not** yet replace `MatchSession`'s legacy replay archive. There is
+no persistent Yakou journal, network request deduplication, server restart
+checkpoint loader, reconnect DTO or Unity reconnection flow. It only covers the
+prototype operations currently represented by `YakouReplayOperation`; future
+chain responses, costs and effects must extend both the command journal and
+canonical state before they can be called replay-safe.

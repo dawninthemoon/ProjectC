@@ -4,6 +4,11 @@
 
 namespace ProjectC::Network
 {
+YakouChainState YakouChain::ServerState() const
+{
+    return {open_, priority_, consecutivePasses_, stack_, resolution_, deferred_};
+}
+
 void YakouChain::CheckPlayer(int player)
 {
     if (player != 1 && player != 2)

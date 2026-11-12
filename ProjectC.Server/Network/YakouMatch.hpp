@@ -3,6 +3,7 @@
 #include "YakouChain.hpp"
 
 #include <array>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
@@ -29,6 +30,7 @@ struct YakouUnit
     bool WasDevourSummoned = false;
     bool Manifested = false;
     bool PostponedThisTurn = false;
+    int BaseMaxBlocks = 1;
     int MaxBlocks = 1;
     [[nodiscard]] int Attack() const { return BaseAttack + BonusAttack; }
     [[nodiscard]] int MaxHp() const { return BaseMaxHp + BonusMaxHp; }
@@ -63,6 +65,8 @@ struct YakouPendingEffect
     int DefinitionId = 0;
     int EffectId = 0;
     std::string Trigger;
+    // Immutable event context; the source may have left the field already.
+    int RelatedCard = 0;
 };
 
 // Server-derived selection metadata. Candidates are instance IDs, never client-authored.
@@ -73,6 +77,16 @@ struct YakouSummonChoice
     std::size_t RequiredCount = 0;
     std::vector<int> Candidates;
     std::vector<int> AvailableSlots;
+};
+
+// Only the effect controller may receive these server-derived instance IDs.
+struct YakouEffectChoice
+{
+    std::string Operation;
+    std::string SourceZone;
+    int MinCount = 0;
+    int MaxCount = 0;
+    std::vector<int> Candidates;
 };
 
 class YakouMatch
@@ -95,6 +109,13 @@ public:
     }
     [[nodiscard]] std::vector<std::string> const& Journal() const { return journal_; }
     [[nodiscard]] int PriorityPlayer() const { return response_.PriorityPlayer(); }
+    [[nodiscard]] int WinnerPlayer() const { return winner_; }
+    // Viewer projection excludes both deck orders and every opponent hand identity.
+    // This is a server prototype API, not yet a public WebSocket schema.
+    [[nodiscard]] Json ViewerSnapshot(int viewer) const;
+    // Internal replay verification only: includes private hands and deck order.
+    // Do not expose this hash or its source state to clients.
+    [[nodiscard]] std::uint64_t ServerStateHash() const;
 
     // Every failure throws std::invalid_argument *before* any mutation.
     // These gameplay operations are not yet a public online protocol.
@@ -105,6 +126,7 @@ public:
     // Resolve exactly one queued authored trigger, using a server-validated
     // target instance (or zero for targetless/declined optional effects).
     // Unsupported operations throw without changing match state or the queue.
+    [[nodiscard]] YakouEffectChoice PendingEffectChoices(int player) const;
     void ResolvePendingEffect(int player, int selectedTarget = 0);
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
@@ -120,12 +142,24 @@ public:
     void ResolveRaid(int defendingPlayer);
 
 private:
+    void StartTurnImpl(int player);
+    void SummonImpl(int player, int handInstance, std::string const& method,
+                    std::vector<int> const& materialIds, int slot);
+    void ManifestImpl(int player, int fieldInstance, int manifestationDefinition);
+    void PostponeImpl(int player, int fieldInstance);
+    void RedrawImpl(int player, std::vector<int> const& cards);
+    void BeginRaidImpl(int player);
+    void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
+    void PassRaidResponseImpl(int player);
+    void ResolveRaidImpl(int defendingPlayer);
+    [[nodiscard]] Json ServerCanonicalState() const;
     Json CardDefinition(int id) const;
     YakouPlayer& MutablePlayer(int id);
     YakouUnit& FieldUnit(YakouPlayer& player, int instanceId);
     void RequireMain(int player) const;
     void TurnOver();
-    void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger);
+    void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
+                 int relatedCard = 0);
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 
@@ -136,12 +170,13 @@ private:
     int active_ = 0;
     int first_ = 0;
     int turn_ = 1;
+    int winner_ = 0;
     YakouPhase phase_ = YakouPhase::TurnStart;
     YakouChain response_;
     std::vector<YakouAttack> attacks_;
     std::vector<YakouPendingEffect> pendingEffects_;
-    // Turn, controller, printed card definition and authored effect identity.
-    std::map<std::tuple<int, int, int, int>, int> effectUses_;
+    // Turn, controller, authored card name key and authored effect identity.
+    std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
     std::vector<std::string> journal_;
 };
 } // namespace ProjectC::Network
