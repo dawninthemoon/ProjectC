@@ -64,6 +64,23 @@ namespace ProjectC.Tests
         }
 
         [Test]
+        public void AuthoredDescriptionsFormatForEverySupportedLanguage()
+        {
+            var yakou = CardLibrary.LoadYakouResources();
+            foreach (string language in new[] { "korean", "japanese", "english" })
+            {
+                yakou.Localization.Language = language;
+                foreach (var card in yakou.Cards)
+                {
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(card.Description),
+                        $"Missing {language} description for {card.Id}");
+                    Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(card.Description, @"\{\d+\}"),
+                        $"Unresolved {language} description argument for {card.Id}");
+                }
+            }
+        }
+
+        [Test]
         public void MissingManifestationReferenceIsRejected()
         {
             var cards = JObject.Parse(Resource("CardData/YakouPrototypeCards"));
