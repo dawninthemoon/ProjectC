@@ -130,6 +130,108 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
     }
 }
 
+void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
+{
+    Check(player == 1 || player == 2, "Unknown effect controller");
+    Check(!pendingEffects_.empty(), "No queued Yakou effect");
+    auto const queued = pendingEffects_.front();
+    Check(queued.Player == player, "Only the effect controller may choose its target");
+
+    auto const card = CardDefinition(queued.DefinitionId);
+    Json const* definition = nullptr;
+    for (auto const& effect : card.at("Effects"))
+    {
+        if (effect.at("Id") == queued.EffectId && effect.at("Trigger") == queued.Trigger)
+        {
+            definition = &effect;
+            break;
+        }
+    }
+    Check(definition != nullptr, "Queued Yakou effect definition missing");
+    Check(definition->at("Type") == "Triggered", "Only triggered effects can resolve");
+    auto const& actions = definition->at("Actions");
+    Check(actions.is_array() && actions.size() == 1,
+          "Unsupported multi-action or empty Yakou effect");
+    auto const& action = actions.at(0);
+    auto const operation = action.at("Operation").get<std::string>();
+    // No partial effect handling: reject unsupported authored shape before
+    // changing resources, usage counters or the pending queue.
+    Check(operation == "Mill" || operation == "ModifyCountdown",
+          "Unsupported Yakou effect operation: " + operation);
+    Check(!action.contains("Condition"), "Conditional Yakou effect not yet supported");
+
+    auto const usage = std::make_tuple(turn_, player, queued.DefinitionId, queued.EffectId);
+    int const limit = definition->value("PerTurnLimit", 0);
+    if (limit > 0)
+    {
+        Check(definition->value("LimitScope", std::string("")) == "CardName",
+              "Unsupported Yakou trigger limit scope");
+        auto const it = effectUses_.find(usage);
+        Check(it == effectUses_.end() || it->second < limit,
+              "Card-name effect turn limit reached");
+    }
+
+    // Compute the complete mutation on a candidate, including its journal
+    // and queue, then commit only after all validation succeeds.
+    YakouMatch next = *this;
+    auto& owner = next.MutablePlayer(player);
+    if (operation == "Mill")
+    {
+        Check(action.at("From") == "FriendlyDeck" &&
+                  action.at("To") == "Graveyard", "Unsupported mill zones");
+        Check(selectedTarget == 0, "Mill does not accept a target");
+        int const count = action.at("Count").get<int>();
+        Check(count > 0 && count <= 30, "Invalid mill count");
+        Check(owner.Deck.size() >= static_cast<std::size_t>(count),
+              "Insufficient cards for authored mill");
+        for (int i = 0; i < count; ++i)
+        {
+            owner.Graveyard.push_back(owner.Deck.front());
+            owner.Deck.erase(owner.Deck.begin());
+        }
+        next.journal_.push_back("EffectMill:" + std::to_string(queued.SourceCard) +
+                                ":" + std::to_string(count));
+    }
+    else
+    {
+        auto const targetMode = action.at("Target").get<std::string>();
+        Check(targetMode == "Self" || targetMode == "FriendlyMonster" ||
+                  targetMode == "OtherFriendlyMonster",
+              "Unsupported countdown target mode");
+        int const target = targetMode == "Self" ? queued.SourceCard : selectedTarget;
+        if (targetMode == "Self")
+        {
+            Check(selectedTarget == 0 || selectedTarget == target,
+                  "Self effect cannot select a different monster");
+        }
+        bool const optional = action.value("Optional", false);
+        if (target == 0 && optional && targetMode != "Self")
+        {
+            next.journal_.push_back("EffectDeclined:" +
+                                    std::to_string(queued.SourceCard));
+        }
+        else
+        {
+            Check(target > 0 && (targetMode != "OtherFriendlyMonster" ||
+                                  target != queued.SourceCard),
+                  "Missing or prohibited countdown target");
+            int const slot = FindSlot(owner, target);
+            Check(slot >= 0, "Countdown target must be a friendly field monster");
+            int const delta = action.at("Delta").get<int>();
+            auto& unit = *owner.Field[slot];
+            unit.Countdown = std::max(0, unit.Countdown + delta);
+            next.journal_.push_back("EffectCountdown:" + std::to_string(target) +
+                                    ":" + std::to_string(delta));
+        }
+    }
+    if (limit > 0)
+    {
+        ++next.effectUses_[usage];
+    }
+    next.pendingEffects_.erase(next.pendingEffects_.begin());
+    *this = std::move(next);
+}
+
 std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
                                                                int handInstance) const
 {
