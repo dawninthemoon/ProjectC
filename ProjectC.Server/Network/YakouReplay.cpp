@@ -38,6 +38,9 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
     case YakouReplayOperation::PassRaidResponse:
         match.PassRaidResponse(command.Player);
         break;
+    case YakouReplayOperation::RespondWithRaidShield:
+        match.RespondWithRaidShield(command.Player, command.CardId, command.TargetId);
+        break;
     case YakouReplayOperation::ResolveRaid:
         match.ResolveRaid(command.Player);
         break;
