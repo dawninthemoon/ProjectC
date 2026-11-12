@@ -1408,8 +1408,10 @@ int main()
                 const int shield = hand[1];       // 3016
                 const int discard = hand[2];      // 3018
                 match.RespondWithRaidShield(2, shield, blocker);
-                Check(match.PriorityPlayer() == 1 && match.Phase() == YakouPhase::RaidResponse,
-                      "Shield link must pass priority to the attacker");
+                Check(match.PriorityPlayer() == 1 && match.Phase() == YakouPhase::RaidResponse &&
+                      match.ViewerSnapshot(1).at("RaidResponseDepth") == 1 &&
+                      match.ViewerSnapshot(2).at("RaidResponseDepth") == 1,
+                      "Shield link must pass priority and reveal only public depth");
                 const auto wrongTurn = match.ServerStateHash();
                 Reject([&] { match.RespondWithRaidTactic(2, attackDebuff, raider, 0,
                                                          {discard}); });
@@ -1419,8 +1421,10 @@ int main()
                 Check(match.PriorityPlayer() == 2,
                       "Active player pass must return priority to defender");
                 match.RespondWithRaidTactic(2, attackDebuff, raider, 0, {discard});
-                Check(match.PriorityPlayer() == 1,
-                      "Second response must reset consecutive passes and hand priority back");
+                Check(match.PriorityPlayer() == 1 &&
+                      match.ViewerSnapshot(1).at("RaidResponseDepth") == 2 &&
+                      match.ViewerSnapshot(2).at("RaidResponseDepth") == 2,
+                      "Second response must reset passes and publish the shared link count");
                 match.PassRaidResponse(1);
                 Check(match.PriorityPlayer() == 2,
                       "First pass after second response cannot close chain");
