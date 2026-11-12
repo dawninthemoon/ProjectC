@@ -23,6 +23,7 @@ enum class YakouReplayOperation
     AssignBlockers,
     PassRaidResponse,
     RespondWithRaidShield,
+    RespondWithRaidTactic,
     ResolveRaid,
     ResolvePendingEffect,
     BeginSpellResponse,
