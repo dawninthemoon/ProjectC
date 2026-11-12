@@ -394,3 +394,36 @@ action rollback, and the unblocked-no-trigger case.
 not a general event scheduler. Full priority/chain windows, other battle
 trigger semantics and online MatchSession/WebSocket handling remain future
 work. No JSON, Google Sheets, Unity scripts, scenes, or prefabs were edited.
+
+## First main-phase spell activation path (prototype-only)
+
+`ActivateMainSpell(controller, ownedHandInstance)` now validates ownership,
+active player's Main phase, the printed spell type, and a **completely empty
+activation-cost object**. For now it only accepts one authored
+`Triggered / OnResolve` effect whose single action is handled by the existing
+manual `ResolvePendingEffect` interpreter. It explicitly rejects any paid,
+unsupported or multi-action spell rather than consuming resources incorrectly.
+
+On successful activation, the spell moves from its owner's hand to graveyard,
+queues exactly one source-preserving pending effect, and can be resolved with
+`PendingEffectChoices`/`ResolvePendingEffect`. Activations with unresolved
+previous effects, invalid target availability, already-exhausted card-name
+limits, or spoofed card ownership are rejected **transactionally**, leaving
+the hand, deck, graveyard, queue and journal unchanged. In particular, the
+current authored zero-cost effects supported by this path are the deck-mill
+spell 2009, friendly countdown spell 3011 and friendly healing spell 3014
+(when a valid target exists). Existing spell rules and card data are unchanged.
+
+`YakouReplayOperation::ActivateMainSpell` captures the same server-private
+command for deterministic replay and rejection logging. C++ tests cover
+ownership and illegal costs, a targetless mill spell, a target-required field
+spell, duplicate activation, and replay determinism.
+
+**Important:** this is a **prototype activation entrypoint**, not the final
+online spell protocol. The card is moved to the graveyard and its pending
+effect becomes resolvable without an opponent response window. That sequencing
+is unsuitable for finalized response/negation play and must be replaced or
+gated by the authoritative chain lifecycle before enabling online matches.
+No WebSocket DTO, Unity action, response priority, spell cancellation, paid
+spell cost, or full card coverage is claimed. No JSON, Google Sheets, Unity
+scene, prefab, or C# source was modified.
