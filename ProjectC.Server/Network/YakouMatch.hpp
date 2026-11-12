@@ -1,5 +1,6 @@
 #pragma once
 #include "YakouPrototype.hpp"
+#include "YakouChain.hpp"
 
 #include <array>
 #include <optional>
@@ -11,7 +12,7 @@ namespace ProjectC::Network
 {
 // Separate, opt-in Yakou prototype state machine. Never used by legacy
 // MatchSession until the remaining authoring effects and response protocol work.
-enum class YakouPhase { TurnStart, Main, AssignBlockers, Finished };
+enum class YakouPhase { TurnStart, Main, AssignBlockers, RaidResponse, Finished };
 
 struct YakouUnit
 {
@@ -81,6 +82,7 @@ public:
         return pendingEffects_;
     }
     [[nodiscard]] std::vector<std::string> const& Journal() const { return journal_; }
+    [[nodiscard]] int PriorityPlayer() const { return response_.PriorityPlayer(); }
 
     // Every failure throws std::invalid_argument *before* any mutation.
     // These gameplay operations are not yet a public online protocol.
@@ -92,6 +94,9 @@ public:
     void Redraw(int player, std::vector<int> const& handInstances);
     void BeginRaid(int player);
     void AssignBlockers(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
+    // Two authorized consecutive passes close the raid preparation window.
+    // Card response activation is deliberately unavailable until effect execution exists.
+    void PassRaidResponse(int player);
     void ResolveRaid(int defendingPlayer);
 
 private:
@@ -112,6 +117,7 @@ private:
     int first_ = 0;
     int turn_ = 1;
     YakouPhase phase_ = YakouPhase::TurnStart;
+    YakouChain response_;
     std::vector<YakouAttack> attacks_;
     std::vector<YakouPendingEffect> pendingEffects_;
     std::vector<std::string> journal_;
