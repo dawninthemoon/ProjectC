@@ -58,11 +58,18 @@ int main()
 {
     try
     {
-        auto const proto = YakouPrototype::Load(
+        auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
         {
+            // Keep the cross-platform replay fixture independent of changing
+            // presentation-only description arguments in the authored catalog.
+            auto replayProto = proto;
+            for (auto& card : replayProto.Cards.at("Cards"))
+            {
+                card["DescriptionArgs"] = Json::array();
+            }
             std::array<std::vector<int>, 2> const decks{
-                Deck(proto, {2005, 2001, 2009, 3001, 3007}), Deck(proto, {2001, 2002})};
+                Deck(replayProto, {2005, 2001, 2009, 3001, 3007}), Deck(replayProto, {2001, 2002})};
             auto command = [](YakouReplayOperation operation, int player)
             {
                 YakouReplayCommand value;
@@ -92,19 +99,19 @@ int main()
             commands.push_back(blockers);
             commands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
             std::vector<YakouReplayCommand> const pendingCommands(commands.begin(), commands.begin() + 6);
-            auto const pending = ReplayYakou(proto, 1, decks, pendingCommands);
+            auto const pending = ReplayYakou(replayProto, 1, decks, pendingCommands);
             Check(pending.FinalState.PendingEffects().size() == 1 &&
                       pending.FinalState.PendingEffectChoices(2).Operation == "Mill",
                   "Replaying a partial journal must reconstruct its pending effect");
             Reject([&] { (void)pending.FinalState.PendingEffectChoices(1); });
-            auto const mid = ReplayYakou(proto, 1, decks, commands);
+            auto const mid = ReplayYakou(replayProto, 1, decks, commands);
             Check(mid.FinalState.PriorityPlayer() == 1 && !mid.Steps[2].Accepted &&
                       mid.Steps[2].BeforeHash == mid.Steps[2].AfterHash,
                   "Replay must preserve raid priority and rejected-command atomicity");
             commands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
             commands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
-            auto const first = ReplayYakou(proto, 1, decks, commands);
-            auto const second = ReplayYakou(proto, 1, decks, commands);
+            auto const first = ReplayYakou(replayProto, 1, decks, commands);
+            auto const second = ReplayYakou(replayProto, 1, decks, commands);
             constexpr std::uint64_t expectedReferenceHash = 18184515181999606374ULL;
             Check(first.FinalState.ServerStateHash() == expectedReferenceHash,
                   "Canonical replay fingerprint must agree across supported platforms");
@@ -115,9 +122,9 @@ int main()
             Check(!first.FinalState.Player(1).Field[0] &&
                       first.FinalState.Player(2).Field[0]->Damage == 1,
                   "Replay must reproduce actual combat and persistent damage");
-            auto const privateVariant = ReplayYakou(proto, 1,
-                {decks[0], Deck(proto, {2002, 2001})}, {});
-            auto const original = ReplayYakou(proto, 1, decks, {});
+            auto const privateVariant = ReplayYakou(replayProto, 1,
+                {decks[0], Deck(replayProto, {2002, 2001})}, {});
+            auto const original = ReplayYakou(replayProto, 1, decks, {});
             Check(privateVariant.FinalState.ViewerSnapshot(1) == original.FinalState.ViewerSnapshot(1) &&
                       privateVariant.FinalState.ServerStateHash() != original.FinalState.ServerStateHash(),
                   "Replay hash must include private state even though viewer snapshots do not");
