@@ -85,6 +85,30 @@ void ValidateCosts(Json const& card, std::string const& detail)
 
 } // namespace
 
+YakouCostRequirement YakouRequiredCost(Json const& card, std::string const& method)
+{
+    Require(card.is_object() && card.contains("SummonMethods") &&
+                card["SummonMethods"].is_array() &&
+                card.contains("SummonCostJson") &&
+                card["SummonCostJson"].is_object(), "missing card cost definition");
+    bool allowed = false;
+    for (auto const& entry : card["SummonMethods"])
+    {
+        if (entry.is_string() && entry.get<std::string>() == method) allowed = true;
+    }
+    Require(allowed && card["SummonCostJson"].contains(method),
+            "summon method not declared on card: " + method);
+    if (method == "Normal") return YakouCostRequirement{"", 0};
+    auto const& cost = card["SummonCostJson"][method];
+    Require(cost.is_object() && cost.contains("Count") &&
+                cost["Count"].is_number_integer() && cost["Count"].get<int>() > 0 &&
+                cost["Count"].get<int>() <= 30, "invalid authored cost count");
+    if (method == "Devour") return YakouCostRequirement{"FriendlyField", static_cast<std::size_t>(cost["Count"].get<int>())};
+    if (method == "Necromancy") return YakouCostRequirement{"FriendlyGraveyard", static_cast<std::size_t>(cost["Count"].get<int>())};
+    if (method == "Discard") return YakouCostRequirement{"FriendlyHand", static_cast<std::size_t>(cost["Count"].get<int>())};
+    throw std::runtime_error("Unknown Yakou method: " + method);
+}
+
 bool ValidateYakouExactSelection(std::vector<int> const& candidates,
                                  std::vector<int> const& selected,
                                  std::size_t requiredCount)
