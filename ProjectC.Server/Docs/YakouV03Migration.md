@@ -539,3 +539,37 @@ other response spell forms, card 2012's NextDamageEvent, automatic
 trigger/event scheduling, and production WebSocket/Unity integration.
 All of these remain subject to separate implementation and tests.
 No Unity files or card/localization JSON were changed.
+
+## Multiple defensive responses per raid (bounded LIFO prototype)
+
+The raid response window now accepts **up to eight supported defensive links**
+instead of a single link. After the defender activates any supported raid
+tactic or first-damage shield, priority passes to the active player. If the
+active player passes, the defender may respond again with another supported
+card. Adding that link resets the consecutive pass count. **Only two
+consecutive valid passes following the last activation** close the window.
+
+The existing `YakouChain` provides last-in-first-out resolution for the
+four already supported defensive cards: 3016 (first-damage shield), 2011
+(current-combat attack reduction), 3019 (current-raid attack reduction), and
+3018 (blocker reassignment). Effects are applied in reverse activation order;
+target availability and block capacity are validated against each intermediate
+state. Invalid resolutions reject the closing pass atomically, keeping the
+live chain and graveyards unchanged. Attack reductions can accumulate, with
+the authored zero floor applied at combat time; shields and attack modifiers
+expire at raid end.
+
+`ViewerSnapshot` now exposes the **public** `RaidResponseDepth` count
+during raid responses, in addition to the existing priority player ID.
+The chain's selected targets and server-private paid-cost material stay
+private. Deterministic replay exercises two consecutive defensive links
+with a failed out-of-priority insertion, then verifies LIFO resolution and
+the combined damage result.
+
+**Explicit limits:** This is still a bounded defensive-only prototype.
+The active player cannot activate an opposing response card; only the
+defending player can register links (after priority cycles). A general
+two-player response stack, spell-speed windows, triggered effects inside
+the chain, multi-step automatic effects, online MatchSession/WebSocket,
+and Unity client commands are not implemented here. Existing card JSON and
+Unity resources are unchanged.
