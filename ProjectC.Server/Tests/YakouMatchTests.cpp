@@ -1633,6 +1633,117 @@ int main()
                   once.FinalState.ServerStateHash() == again.FinalState.ServerStateHash(),
                   "Automatic trigger replay must be deterministic with atomic rejection");
         }
+        {
+            // New action boundary: summoning 2001 immediately drains authored
+            // untargeted Mill, while legacy Summon remains explicitly manual.
+            auto match = Make(proto, {2001, 2009, 2003, 3001, 2002}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            auto const deckBefore = match.Player(1).Deck.size();
+            Check(match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0) == 1 &&
+                  match.PendingEffects().empty() &&
+                  match.Player(1).Deck.size() == deckBefore - 2 &&
+                  match.Player(1).Graveyard.size() == 2,
+                  "Action-boundary summon must immediately resolve its authored Mill");
+            const auto beforeInvalid = match.ServerStateHash();
+            Reject([&] { (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, hand[1], 0); });
+            Check(match.ServerStateHash() == beforeInvalid &&
+                  std::find(match.Player(1).Hand.begin(),
+                            match.Player(1).Hand.end(), hand[1]) != match.Player(1).Hand.end(),
+                  "Invalid drain budget must roll back spell activation and hand removal");
+            auto const spellDeckBefore = match.Player(1).Deck.size();
+            Check(match.ActivateMainSpellAndRunAutomaticTriggers(1, hand[1]) == 1 &&
+                  match.PendingEffects().empty() &&
+                  match.Player(1).Deck.size() == spellDeckBefore - 2 &&
+                  match.Player(1).Graveyard.back() == hand[1],
+                  "Free main spell action and Mill must commit atomically");
+            const auto beforeRepeat = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 2); });
+            Check(match.ServerStateHash() == beforeRepeat,
+                  "Invalid repeated summon must preserve full canonical state");
+        }
+        {
+            // A user-selected trigger blocks the new boundary only after
+            // deterministic earlier triggers were executed. Manual target
+            // selection then resumes the same queue without choosing others.
+            auto altered = proto;
+            Json heal;
+            for (auto const& card : altered.Cards.at("Cards"))
+                if (card.at("Id") == 3002) heal = card.at("Effects").at(0);
+            Check(heal.is_object(), "Must have real authored Heal action");
+            heal["Trigger"] = "OnSummoned";
+            for (auto& card : altered.Cards.at("Cards"))
+                if (card.at("Id") == 2004)
+                    card["Effects"] = Json::array({heal});
+            auto match = Make(altered, {2004, 2005, 2001, 2002, 3001}, {});
+            match.StartTurn(1);
+            const auto hand = match.Player(1).Hand;
+            auto const deckBefore = match.Player(1).Deck.size();
+            Check(match.SummonAndRunAutomaticTriggers(
+                      1, hand[0], "Discard", {hand[1]}, 0) == 1 &&
+                  match.PendingEffects().size() == 1 &&
+                  match.PendingEffectChoices(1).Operation == "HealAccumulatedDamage" &&
+                  match.Player(1).Deck.size() == deckBefore - 1,
+                  "Discard Mill must drain and stop before player-selected healing");
+            auto const hold = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(
+                             2, hand[0]); });
+            Check(match.ServerStateHash() == hold,
+                  "Only trigger owner may continue the choice boundary");
+            Check(match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[0]) == 0 &&
+                  match.PendingEffects().empty(),
+                  "Explicit authorized target should resolve and drain remainder");
+        }
+        {
+            // An action is not committed if a later automatic trigger fails,
+            // even if the source/card payment would otherwise have succeeded.
+            auto broken = proto;
+            for (auto& card : broken.Cards.at("Cards"))
+                if (card.at("Id") == 2001)
+                    card["Effects"][0]["Actions"][0]["Count"] = 31;
+            auto match = Make(broken, {2001, 2009}, {});
+            match.StartTurn(1);
+            int const summon = match.Player(1).Hand[0];
+            const auto before = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                             1, summon, "Normal", {}, 0); });
+            Check(match.ServerStateHash() == before &&
+                  match.Player(1).Field[0] == std::nullopt &&
+                  match.PendingEffects().empty(),
+                  "Automatic trigger failure must roll back its originating summon");
+        }
+        {
+            // Atomic action-boundary commands are replayable without changing
+            // old explicit-command replay behavior or private hash semantics.
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2001, 2009}), Deck(proto, {})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = 1;
+            summon.Method = "Normal";
+            YakouReplayCommand spell;
+            spell.Operation = YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers;
+            spell.Player = 1;
+            spell.CardId = 2;
+            auto invalid = spell;
+            invalid.MaxEffects = 0;
+            std::vector<YakouReplayCommand> const commands{
+                start, summon, invalid, spell};
+            auto const first = ReplayYakou(proto, 1, decks, commands);
+            auto const second = ReplayYakou(proto, 1, decks, commands);
+            Check(first.Steps.size() == commands.size() &&
+                  first.Steps[1].Accepted && !first.Steps[2].Accepted &&
+                  first.Steps[2].BeforeHash == first.Steps[2].AfterHash &&
+                  first.Steps[3].Accepted &&
+                  first.FinalState.PendingEffects().empty() &&
+                  first.FinalState.ServerStateHash() ==
+                      second.FinalState.ServerStateHash(),
+                  "Action-boundary replay must preserve deterministic acceptance and rollback");
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
