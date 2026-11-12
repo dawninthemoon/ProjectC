@@ -343,6 +343,80 @@ int main()
                   "Sequential battle, persistent damage and unblocked hero hit");
         }
         {
+            // Raid-trigger attack bonuses and blocker-trigger damage reduction
+            // must affect this combat before simultaneous damage is applied.
+            auto withCombat = proto;
+            auto& sample = withCombat.Decks["Decks"][0]["Cards"];
+            sample[0] = 3003; // Include the two secondary-theme test cards.
+            sample[1] = 3004;
+            for (int blockerDefinition : {3004, 2006})
+            {
+                auto match = Make(withCombat, {3003}, {blockerDefinition});
+                match.StartTurn(1);
+                int const raider = match.Player(1).Hand[0];
+                match.Summon(1, raider, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                int const blocker = match.Player(2).Hand[0];
+                match.Summon(2, blocker, "Normal", {}, 1);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                Check(match.Phase() == YakouPhase::AssignBlockers &&
+                          match.Attacks().size() == 1, "Raider must be ready");
+                match.AssignBlockers(2, {{raider, blocker}});
+                match.PassRaidResponse(2);
+                match.PassRaidResponse(1);
+                match.ResolveRaid(2);
+                Check(match.Player(1).Field[0] &&
+                          match.Player(1).Field[0]->Attack() == 3 &&
+                          match.Player(1).Field[0]->Damage == 1,
+                      "CurrentCombat attack bonus must not persist on surviving raider");
+                Check(match.Player(2).Field[1] &&
+                          match.Player(2).Field[1]->Damage == 3,
+                      "3 printed attack + 1 raid bonus - 1 blocker reduction = 3 damage");
+                Check(match.PendingEffects().empty(),
+                      "Resolved combat-only triggers must not remain queued");
+            }
+        }
+        {
+            // Unknown combat trigger operations must be rejected without any
+            // damage, turn advancement or partial trigger consumption.
+            auto unsupported = proto;
+            auto& sample = unsupported.Decks["Decks"][0]["Cards"];
+            sample[0] = 3003;
+            for (auto& card : unsupported.Cards["Cards"])
+            {
+                if (card["Id"] == 3003)
+                    card["Effects"][0]["Actions"][0]["Operation"] = "UnsupportedRaidAction";
+            }
+            auto match = Make(unsupported, {3003}, {});
+            match.StartTurn(1);
+            int const raider = match.Player(1).Hand[0];
+            match.Summon(1, raider, "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.AssignBlockers(2, {});
+            match.PassRaidResponse(2);
+            match.PassRaidResponse(1);
+            auto const before = match.ServerStateHash();
+            Reject([&] { match.ResolveRaid(2); });
+            Check(match.ServerStateHash() == before &&
+                      match.Phase() == YakouPhase::RaidResponse,
+                  "Unsupported combat effect must fail before any state mutation");
+        }
+        {
             // The devoured source is in the graveyard when its effect resolves;
             // its event context must still identify the actual consuming monster.
             auto match = Make(proto, {3008, 2008, 2001, 2009, 2002}, {});
