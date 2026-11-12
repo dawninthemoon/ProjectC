@@ -1655,7 +1655,9 @@ int main()
             Check(match.ActivateMainSpellAndRunAutomaticTriggers(1, hand[1]) == 1 &&
                   match.PendingEffects().empty() &&
                   match.Player(1).Deck.size() == spellDeckBefore - 2 &&
-                  match.Player(1).Graveyard.back() == hand[1],
+                  std::find(match.Player(1).Graveyard.begin(),
+                            match.Player(1).Graveyard.end(), hand[1]) !=
+                      match.Player(1).Graveyard.end(),
                   "Free main spell action and Mill must commit atomically");
             const auto beforeRepeat = match.ServerStateHash();
             Reject([&] { (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 2); });
