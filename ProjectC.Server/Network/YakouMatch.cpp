@@ -174,7 +174,16 @@ void YakouMatch::Summon(int player, int handInstance, std::string const& method,
     Check(Contains(owner.Hand, handInstance), "Card is not in own hand");
     auto const card = CardDefinition(OriginalId(handInstance));
     Check(card.at("Type") == "Monster", "Only monsters can be summoned");
-    auto const requirement = YakouRequiredCost(card, method);
+    YakouCostRequirement requirement;
+    try
+    {
+        requirement = YakouRequiredCost(card, method);
+    }
+    catch (std::exception const& error)
+    {
+        throw std::invalid_argument("Card " + std::to_string(OriginalId(handInstance)) +
+                                    " cannot use " + method + ": " + error.what());
+    }
     auto const count = requirement.ExactCount;
     Check(materialIds.size() == count, "Incorrect number of summon materials");
     if (method == "Normal")
