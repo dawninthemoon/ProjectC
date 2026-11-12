@@ -1,0 +1,1334 @@
+{
+  "CatalogVersion": "yakou-2026-11-12-prototype-v02",
+  "Cards": [
+    {
+      "Id": 2001,
+      "NameKey": "card_2001_name",
+      "DescriptionKey": "card_2001_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "Mill",
+              "Count": 2,
+              "From": "FriendlyDeck",
+              "To": "Graveyard"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2002,
+      "NameKey": "card_2002_name",
+      "DescriptionKey": "card_2002_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 3,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Normal",
+        "Necromancy"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Necromancy": {
+          "Count": 1,
+          "From": "FriendlyGraveyard",
+          "To": "Exile"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnNecromancySummoned",
+          "Actions": [
+            {
+              "Operation": "Salvage",
+              "Count": 1,
+              "From": "FriendlyGraveyard",
+              "To": "Hand",
+              "CardType": "Monster",
+              "RequiredArchetype": "HyakkiYagyo"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2003,
+      "NameKey": "card_2003_name",
+      "DescriptionKey": "card_2003_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Necromancy"
+      ],
+      "SummonCostJson": {
+        "Necromancy": {
+          "Count": 2,
+          "From": "FriendlyGraveyard",
+          "To": "Exile"
+        }
+      },
+      "AllowedManifestations": [
+        2101
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "OtherFriendlyMonster",
+              "Delta": -1,
+              "Optional": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2004,
+      "NameKey": "card_2004_name",
+      "DescriptionKey": "card_2004_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 3,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Normal",
+        "Discard"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Discard": {
+          "Count": 1,
+          "From": "Hand",
+          "To": "Graveyard"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "Salvage",
+              "From": "FriendlyGraveyard",
+              "To": "Hand",
+              "Count": 1,
+              "CardType": "Monster",
+              "RequiredArchetype": "HyakkiYagyo",
+              "Optional": true,
+              "Condition": {
+                "GraveyardArchetypeCountAtLeast": 2
+              }
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2005,
+      "NameKey": "card_2005_name",
+      "DescriptionKey": "card_2005_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 1,
+      "AttackInterval": 1,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Normal",
+        "Discard"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Discard": {
+          "Count": 1,
+          "From": "Hand",
+          "To": "Graveyard"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnDiscarded",
+          "Actions": [
+            {
+              "Operation": "Mill",
+              "From": "FriendlyDeck",
+              "To": "Graveyard",
+              "Count": 1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        },
+        {
+          "Id": 2,
+          "Type": "Triggered",
+          "Trigger": "OnBanishedForNecromancyCost",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "FriendlyMonster",
+              "Delta": -1,
+              "Optional": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2006,
+      "NameKey": "card_2006_name",
+      "DescriptionKey": "card_2006_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 5,
+      "AttackInterval": 3,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnAssignedAsBlocker",
+          "Actions": [
+            {
+              "Operation": "ReduceDamage",
+              "Target": "Self",
+              "Amount": 1,
+              "Duration": "CurrentCombat"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2007,
+      "NameKey": "card_2007_name",
+      "DescriptionKey": "card_2007_desc",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 3,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Necromancy"
+      ],
+      "SummonCostJson": {
+        "Necromancy": {
+          "Count": 2,
+          "From": "FriendlyGraveyard",
+          "To": "Exile"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnRaid",
+          "Actions": [
+            {
+              "Operation": "ModifyAttack",
+              "Target": "Self",
+              "Delta": 1,
+              "Duration": "CurrentCombat",
+              "Condition": {
+                "FriendlyGraveyardArchetypeCountAtLeast": 2,
+                "Archetype": "HyakkiYagyo"
+              }
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2008,
+      "NameKey": "card_2008_name",
+      "DescriptionKey": "card_2008_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 3,
+      "AttackInterval": 3,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [
+        "Devour"
+      ],
+      "SummonCostJson": {
+        "Devour": {
+          "Count": 1,
+          "From": "FriendlyField",
+          "To": "Graveyard",
+          "Inherit": [
+            "BaseAttack",
+            "BaseMaxHp"
+          ],
+          "ResetCountdownToPrinted": true
+        }
+      },
+      "AllowedManifestations": [
+        2102
+      ],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnDevourSummoned",
+          "Actions": [
+            {
+              "Operation": "Mill",
+              "From": "FriendlyDeck",
+              "To": "Graveyard",
+              "Count": 1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2009,
+      "NameKey": "card_2009_name",
+      "DescriptionKey": "card_2009_desc",
+      "Type": "Spell",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "Mill",
+              "From": "FriendlyDeck",
+              "To": "Graveyard",
+              "Count": 2
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2010,
+      "NameKey": "card_2010_name",
+      "DescriptionKey": "card_2010_desc",
+      "Type": "Spell",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Necromancy": 2
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "SpecialSummon",
+              "From": "FriendlyGraveyard",
+              "To": "FriendlyField",
+              "Count": 1,
+              "CardType": "Monster",
+              "RequiredArchetype": "HyakkiYagyo",
+              "MaxPrintedAttack": 2,
+              "ExcludePaidCostCards": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2011,
+      "NameKey": "card_2011_name",
+      "DescriptionKey": "card_2011_desc",
+      "Type": "Spell",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Discard": 1
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ModifyAttack",
+              "Target": "EnemyRaidingMonster",
+              "Delta": -2,
+              "Minimum": 0,
+              "Duration": "CurrentCombat"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2012,
+      "NameKey": "card_2012_name",
+      "DescriptionKey": "card_2012_desc",
+      "Type": "Spell",
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Necromancy": 1
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ReduceDamage",
+              "Target": "FriendlyMonster",
+              "Amount": 2,
+              "Duration": "NextDamageEvent",
+              "Minimum": 0
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 2101,
+      "NameKey": "card_2101_name",
+      "DescriptionKey": "card_2101_desc",
+      "Type": "Manifestation",
+      "Attack": 4,
+      "MaxHp": 4,
+      "AttackInterval": 1,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Manifestation": {
+          "Ki": 2,
+          "Condition": {
+            "ArchetypeMonsterTotalAcrossZones": {
+              "Zones": [
+                "Graveyard",
+                "Exile"
+              ],
+              "Archetype": "HyakkiYagyo",
+              "AtLeast": 3
+            }
+          }
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnManifested",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "OtherFriendlyMonster",
+              "Delta": -1,
+              "Optional": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        },
+        {
+          "Id": 2,
+          "Type": "Triggered",
+          "Trigger": "OnRaid",
+          "Actions": [
+            {
+              "Operation": "GrantPiercing",
+              "Target": "Self",
+              "Duration": "CurrentCombat",
+              "OptionalCost": {
+                "Necromancy": 1,
+                "RequiredArchetype": "HyakkiYagyo"
+              }
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02",
+      "MainDeckEligible": false
+    },
+    {
+      "Id": 2102,
+      "NameKey": "card_2102_name",
+      "DescriptionKey": "card_2102_desc",
+      "Type": "Manifestation",
+      "Attack": 4,
+      "MaxHp": 5,
+      "AttackInterval": 2,
+      "Archetypes": [
+        "HyakkiYagyo"
+      ],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Manifestation": {
+          "Ki": 2,
+          "Condition": {
+            "WasDevourSummoned": true,
+            "FriendlyGraveyardArchetypeCountAtLeast": 2,
+            "Archetype": "HyakkiYagyo"
+          }
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnDestroyedEnemyByCombat",
+          "Actions": [
+            {
+              "Operation": "SetCountdown",
+              "Target": "Self",
+              "Value": 1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02",
+      "MainDeckEligible": false
+    },
+    {
+      "Id": 3001,
+      "NameKey": "card_3001_name",
+      "DescriptionKey": "card_3001_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "Mill",
+              "From": "FriendlyDeck",
+              "To": "Graveyard",
+              "Count": 1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3002,
+      "NameKey": "card_3002_name",
+      "DescriptionKey": "card_3002_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 3,
+      "AttackInterval": 3,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "HealAccumulatedDamage",
+              "Target": "FriendlyMonster",
+              "Amount": 2
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3003,
+      "NameKey": "card_3003_name",
+      "DescriptionKey": "card_3003_desc",
+      "Type": "Monster",
+      "Attack": 3,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnRaid",
+          "Actions": [
+            {
+              "Operation": "ModifyAttack",
+              "Target": "Self",
+              "Delta": 1,
+              "Duration": "CurrentCombat"
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3004,
+      "NameKey": "card_3004_name",
+      "DescriptionKey": "card_3004_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 5,
+      "AttackInterval": 3,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal"
+      ],
+      "SummonCostJson": {
+        "Normal": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnAssignedAsBlocker",
+          "Actions": [
+            {
+              "Operation": "ReduceDamage",
+              "Target": "Self",
+              "Amount": 1,
+              "Duration": "CurrentCombat"
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3005,
+      "NameKey": "card_3005_name",
+      "DescriptionKey": "card_3005_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 2,
+      "AttackInterval": 3,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Devour"
+      ],
+      "SummonCostJson": {
+        "Devour": {
+          "Count": 1,
+          "From": "FriendlyField",
+          "To": "Graveyard",
+          "Inherit": [
+            "BaseAttack",
+            "BaseMaxHp"
+          ],
+          "ResetCountdownToPrinted": true
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnDevourSummoned",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "Self",
+              "Delta": -1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3006,
+      "NameKey": "card_3006_name",
+      "DescriptionKey": "card_3006_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Necromancy"
+      ],
+      "SummonCostJson": {
+        "Necromancy": {
+          "Count": 1,
+          "From": "FriendlyGraveyard",
+          "To": "Exile"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnNecromancySummoned",
+          "Actions": [
+            {
+              "Operation": "HealAccumulatedDamage",
+              "Target": "OtherFriendlyMonster",
+              "Amount": 1,
+              "Optional": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3007,
+      "NameKey": "card_3007_name",
+      "DescriptionKey": "card_3007_desc",
+      "Type": "Monster",
+      "Attack": 1,
+      "MaxHp": 1,
+      "AttackInterval": 1,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Discard"
+      ],
+      "SummonCostJson": {
+        "Discard": {
+          "Count": 1,
+          "From": "Hand",
+          "To": "Graveyard"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnSummoned",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "OtherFriendlyMonster",
+              "Delta": -1,
+              "Optional": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3008,
+      "NameKey": "card_3008_name",
+      "DescriptionKey": "card_3008_desc",
+      "Type": "Monster",
+      "Attack": 0,
+      "MaxHp": 2,
+      "AttackInterval": 2,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal",
+        "Discard"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Discard": {
+          "Count": 1,
+          "From": "Hand",
+          "To": "Graveyard"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnDevoured",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "DevouringMonster",
+              "Delta": -1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3009,
+      "NameKey": "card_3009_name",
+      "DescriptionKey": "card_3009_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 3,
+      "AttackInterval": 2,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal",
+        "Necromancy"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Necromancy": {
+          "Count": 2,
+          "From": "FriendlyGraveyard",
+          "To": "Exile"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnTargetedByEnemySpell",
+          "Actions": [
+            {
+              "Operation": "ReduceDamage",
+              "Target": "Self",
+              "Amount": 1,
+              "Duration": "CurrentChain",
+              "DamageType": "Effect"
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3010,
+      "NameKey": "card_3010_name",
+      "DescriptionKey": "card_3010_desc",
+      "Type": "Monster",
+      "Attack": 2,
+      "MaxHp": 4,
+      "AttackInterval": 3,
+      "Archetypes": [],
+      "SummonMethods": [
+        "Normal",
+        "Discard"
+      ],
+      "SummonCostJson": {
+        "Normal": {},
+        "Discard": {
+          "Count": 2,
+          "From": "Hand",
+          "To": "Graveyard"
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Continuous",
+          "Trigger": "Passive",
+          "Actions": [
+            {
+              "Operation": "IncreaseMaxBlocks",
+              "Target": "Self",
+              "Value": 2,
+              "Duration": "WhileOnField"
+            }
+          ]
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3011,
+      "NameKey": "card_3011_name",
+      "DescriptionKey": "card_3011_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ModifyCountdown",
+              "Target": "FriendlyMonster",
+              "Delta": -1
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3012,
+      "NameKey": "card_3012_name",
+      "DescriptionKey": "card_3012_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Discard": 1
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "LookAndChoose",
+              "From": "FriendlyDeckTop",
+              "LookCount": 3,
+              "ChooseCount": 1,
+              "ChosenDestination": "Hand",
+              "RestDestination": "DeckBottom"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3013,
+      "NameKey": "card_3013_name",
+      "DescriptionKey": "card_3013_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Necromancy": 2
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "Salvage",
+              "From": "FriendlyGraveyard",
+              "To": "Hand",
+              "Count": 1,
+              "CardType": "Monster",
+              "ExcludePaidCostCards": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3014,
+      "NameKey": "card_3014_name",
+      "DescriptionKey": "card_3014_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "HealAccumulatedDamage",
+              "Target": "FriendlyMonster",
+              "Amount": 3
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3015,
+      "NameKey": "card_3015_name",
+      "DescriptionKey": "card_3015_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Discard": 2
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "IgnoreOneManifestCondition",
+              "Target": "FriendlyPlayer",
+              "Duration": "ThisTurn",
+              "KiCostUnaffected": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3016,
+      "NameKey": "card_3016_name",
+      "DescriptionKey": "card_3016_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {}
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ReduceDamage",
+              "Target": "FriendlyMonster",
+              "Amount": 2,
+              "Duration": "FirstDamageThisRaid"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3017,
+      "NameKey": "card_3017_name",
+      "DescriptionKey": "card_3017_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Necromancy": 1
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "PreventEffectDamage",
+              "Target": "FriendlyMonsterTargetedBySpell",
+              "Duration": "CurrentChain"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3018,
+      "NameKey": "card_3018_name",
+      "DescriptionKey": "card_3018_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Discard": 1
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ReassignBlocker",
+              "Target": "OneBlockedRaid",
+              "NewBlocker": "OtherEligibleFriendlyMonster",
+              "RespectBlockLimit": true
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3019,
+      "NameKey": "card_3019_name",
+      "DescriptionKey": "card_3019_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Necromancy": 2
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "ModifyAttack",
+              "Target": "EnemyRaidingMonster",
+              "Delta": -2,
+              "Duration": "CurrentRaidPhase",
+              "Minimum": 0
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    },
+    {
+      "Id": 3020,
+      "NameKey": "card_3020_name",
+      "DescriptionKey": "card_3020_desc",
+      "Type": "Spell",
+      "Archetypes": [],
+      "SummonMethods": [],
+      "SummonCostJson": {
+        "Activation": {
+          "Discard": 2
+        }
+      },
+      "AllowedManifestations": [],
+      "Effects": [
+        {
+          "Id": 1,
+          "Type": "Triggered",
+          "Trigger": "OnResolve",
+          "Actions": [
+            {
+              "Operation": "NegateSpellEffect",
+              "Target": "RespondedEnemySpell"
+            }
+          ],
+          "PerTurnLimit": 1,
+          "LimitScope": "CardName"
+        }
+      ],
+      "DescriptionArgs": [],
+      "CatalogVersion": "yakou-2026-11-12-prototype-v02"
+    }
+  ]
+}

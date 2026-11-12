@@ -34,7 +34,7 @@ Json NormalizeCards(Json const& input)
             throw std::runtime_error("Expected card object");
         }
         for (auto field :
-             {"Archetypes", "AllowedManifestations", "Effects", "DescriptionArgs", "Traits"})
+             {"Archetypes", "AllowedManifestations", "Effects", "DescriptionArgs", "Traits", "SummonMethods"})
         {
             if (row.contains(field) && row[field].is_string())
             {
@@ -46,7 +46,7 @@ Json NormalizeCards(Json const& input)
                 throw std::runtime_error("Expected card data array");
             }
         }
-        for (auto field : {"Id", "Attack", "MaxHp"})
+        for (auto field : {"Id", "Attack", "MaxHp", "AttackInterval"})
         {
             if (!row.contains(field) || !row[field].is_string())
             {
@@ -65,6 +65,16 @@ Json NormalizeCards(Json const& input)
                 throw std::runtime_error("Invalid card integer string");
             }
             row[field] = number;
+        }
+        if (row.contains("SummonCostJson") && row["SummonCostJson"].is_string())
+        {
+            auto const costText = row["SummonCostJson"].get<std::string>();
+            row["SummonCostJson"] = costText.empty() ? Json::object()
+                                                    : ParseJson(costText, MaximumCardDataBytes);
+        }
+        if (row.contains("SummonCostJson") && !row["SummonCostJson"].is_object())
+        {
+            throw std::runtime_error("SummonCostJson must be a JSON object");
         }
         if (row.contains("CatalogVersion"))
         {
@@ -526,7 +536,10 @@ CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
                 "MainDeckEligible",
                 "NameKey",
                 "DescriptionKey",
-                "DescriptionArgs"});
+                "DescriptionArgs",
+                "AttackInterval",
+                "SummonMethods",
+                "SummonCostJson"});
         CardDefinition card;
         card.Id = static_cast<int>(Number(entry, "Id", 1000000));
         if (entry.contains("NameKey") || entry.contains("DescriptionKey"))
@@ -570,13 +583,64 @@ CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
         }
         if (entry.contains("Type"))
         {
-            card.Type = Enum<CardType>(
-                entry, "Type", {{"Monster", CardType::Monster}, {"Spell", CardType::Spell}});
+            // Manifestations share the monster runtime type, but cannot appear in decks.
+            card.IsManifestation = entry["Type"] == "Manifestation";
+            card.Type = Enum<CardType>(entry,
+                                       "Type",
+                                       {{"Monster", CardType::Monster},
+                                        {"Spell", CardType::Spell},
+                                        {"Manifestation", CardType::Monster}});
+            if (card.IsManifestation)
+            {
+                card.MainDeckEligible = false;
+            }
         }
         if (card.Type == CardType::Monster)
         {
             card.Attack = static_cast<int>(Number(entry, "Attack", 100000));
             card.MaxHp = static_cast<int>(Number(entry, "MaxHp", 100000));
+        }
+        if (entry.contains("AttackInterval"))
+        {
+            card.AttackInterval = static_cast<int>(Number(entry, "AttackInterval", 64));
+            if (card.Type != CardType::Monster)
+            {
+                throw std::runtime_error("AttackInterval is monster-only");
+            }
+        }
+        if (entry.contains("SummonMethods"))
+        {
+            Array(entry["SummonMethods"], 8);
+            for (auto const& method : entry["SummonMethods"])
+            {
+                auto name = Text(Json{{"Value", method}}, "Value");
+                if (name != "Normal" && name != "Devour" && name != "Necromancy" &&
+                    name != "Discard")
+                {
+                    throw std::runtime_error("Unknown summon method");
+                }
+                if (std::find(card.SummonMethods.begin(), card.SummonMethods.end(), name) !=
+                    card.SummonMethods.end())
+                {
+                    throw std::runtime_error("Duplicate summon method");
+                }
+                card.SummonMethods.push_back(std::move(name));
+            }
+            if (card.Type != CardType::Monster || card.IsManifestation)
+            {
+                if (!card.SummonMethods.empty())
+                {
+                    throw std::runtime_error("SummonMethods must be empty for spells and manifestations");
+                }
+            }
+        }
+        if (entry.contains("SummonCostJson"))
+        {
+            if (!entry["SummonCostJson"].is_object())
+            {
+                throw std::runtime_error("SummonCostJson must be an object");
+            }
+            card.SummonCostJson = entry["SummonCostJson"].dump();
         }
         if (entry.contains("Archetypes"))
         {
@@ -597,6 +661,10 @@ CardCatalog CardCatalog::FromJson(Json const& cardInput, Json const& decks)
         if (entry.contains("MainDeckEligible"))
         {
             card.MainDeckEligible = Boolean(entry, "MainDeckEligible");
+            if (card.IsManifestation && card.MainDeckEligible)
+            {
+                throw std::runtime_error("Manifestation cannot be a main-deck card");
+            }
         }
         if (entry.contains("Traits"))
         {

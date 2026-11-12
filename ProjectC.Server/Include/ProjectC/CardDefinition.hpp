@@ -26,6 +26,11 @@ struct CardDefinition
     std::vector<CardDefinitionId> AllowedManifestations;
     std::vector<EffectDefinition> Effects;
     std::vector<std::string> Archetypes;
+    // Yakou prototype metadata. Read by the catalog; mechanics are not yet enabled.
+    int AttackInterval = 0;
+    std::vector<std::string> SummonMethods;
+    std::string SummonCostJson;
+    bool IsManifestation = false;
     std::string Rarity;
     std::string ArtKey;
     bool MainDeckEligible = true;

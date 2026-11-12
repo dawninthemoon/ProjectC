@@ -62,6 +62,26 @@ int main()
         Check(first.Effects.size() == 1 && first.DescriptionArgs.size() == 2 &&
                   first.DescriptionArgs.front().Default == "1",
               "Embedded arrays and description metadata");
+        // The new spreadsheet columns must survive normalization without enabling
+        // any new game rules prematurely. Legacy catalogs still load unchanged.
+        auto extended = sheet;
+        extended[0]["AttackInterval"] = "2";
+        extended[0]["SummonMethods"] = R"json(["Normal","Necromancy"])json";
+        extended[0]["SummonCostJson"] = R"json({"Normal":{},"Necromancy":{"Count":1}})json";
+        auto parsed = CardCatalog::FromJson(extended, decks);
+        Check(parsed.Definitions.front().AttackInterval == 2 &&
+                  parsed.Definitions.front().SummonMethods.size() == 2 &&
+                  parsed.Definitions.front().SummonCostJson.find("Necromancy") != std::string::npos,
+              "Yakou summon metadata must parse from Sheets strings");
+        auto malformed = extended;
+        malformed[0]["SummonCostJson"] = "{invalid";
+        Rejected(malformed, decks);
+        malformed = extended;
+        malformed[0]["SummonMethods"] = R"json(["SummonEverything"])json";
+        Rejected(malformed, decks);
+        malformed = extended;
+        malformed[0]["AttackInterval"] = "999";
+        Rejected(malformed, decks);
         auto normalized = CardCatalog::Load((data / "HyakkiYagyo").string());
         Check(!normalized.PersonalDeckError(normalized.Decks.front().Cards).size(),
               "Published deck remains playable");
