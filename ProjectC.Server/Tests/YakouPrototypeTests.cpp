@@ -56,7 +56,7 @@ int main()
         d["Decks"][0]["Cards"][0] = 2101; // manifestation cannot be in deck
         Reject([&] { validate(prototype.Cards, d, prototype.Localize, prototype.Config); });
         d = prototype.Decks;
-        d["Decks"][0]["Cards"].pop_back();
+        d["Decks"][0]["Cards"].erase(d["Decks"][0]["Cards"].end() - 1);
         Reject([&] { validate(prototype.Cards, d, prototype.Localize, prototype.Config); });
         auto g = prototype.Config;
         g["ki.baseRegenPerTurn"] = 1;
