@@ -87,6 +87,7 @@ namespace ProjectC.Client
                         picker != null ? (RectTransform)picker.transform : null,
                         gallery != null ? (RectTransform)gallery.transform : null,
                         presenter.Detail != null ? (RectTransform)presenter.Detail.transform : null);
+                    _selectionModal.BackdropTint = Color.clear;
                 }
                 picker?.SetSubmitting(presenter.Client.Input.SelectionPhase != SelectionInputPhase.Selecting);
             }
@@ -782,6 +783,14 @@ namespace ProjectC.Client
                 && State == BattleInputState.SelectingEffectTarget
             )
             {
+                if (!ReferenceEquals(serverChoice, pending))
+                {
+                    serverChoice = pending;
+                    serverTargets.RemoveAll(token => !System.Array.Exists(pending.Candidates, option => option.Token == token));
+                    picker.ShowServer(pending, PickServer, ConfirmServer, CancelSelection);
+                    picker.SetServerSelected(serverTargets);
+                    Hints();
+                }
                 return;
             }
             ResetInput();
@@ -990,6 +999,10 @@ namespace ProjectC.Client
                         }
                     }
                     widget.SetHint(hint);
+                    if (!widget.InHand)
+                    {
+                        CardSelectionMark.Set(widget, State == BattleInputState.SelectingEffectTarget && hint == TargetHint.Focused);
+                    }
                 }
             }
             foreach (var area in _areas)

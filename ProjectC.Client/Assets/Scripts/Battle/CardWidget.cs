@@ -141,6 +141,10 @@ namespace ProjectC.Client
             InHand = hand;
             OwnedByLocalPlayer = ownedByLocalPlayer || hand;
             IsSelected = chosen;
+            if (!hand)
+            {
+                CardSelectionMark.Set(this, false);
+            }
             hint = target ? TargetHint.Available : TargetHint.None;
             if (!hidden && Title == null)
             {

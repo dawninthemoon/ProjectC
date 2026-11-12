@@ -86,8 +86,12 @@ namespace ProjectC.Client
         public ModalBlocker Modal { get; private set; }
         public CardZoneView[] Zones =>
             new[] { Hand, OwnField, EnemyField, EnemyHand, OwnGraveyard, EnemyGraveyard };
+        private DefenseAssignmentView _defense;
+        public DefenseAssignmentView Defense => _defense != null ? _defense
+            : (_defense = GetComponentInChildren<DefenseAssignmentView>(true));
         public bool CanAct =>
-            Client.Connected
+            !(Defense?.IsOpen ?? false)
+            && Client.Connected
             && !Client.Busy
             && Client.State != null
             && Client.State.Started
@@ -680,6 +684,11 @@ namespace ProjectC.Client
             EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get(
                 rendered?.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_battle_phase"
                 : rendered?.Phase == (int)BattlePhaseKind.Battle ? "ui_battle_main_phase_2" : "ui_battle_end_turn");
+            Defense?.RenderPrimaryAction();
+            if (_gallery != null && _gallery.gameObject.activeInHierarchy && _gallery.Choosing)
+            {
+                _gallery.SelectionBar.RenderPrimaryAction();
+            }
             if (rendered != null)
             {
                 PhaseLabel.text = BattleText.Get(rendered.Phase == (int)BattlePhaseKind.Main1 ? "ui_battle_main_phase_1"

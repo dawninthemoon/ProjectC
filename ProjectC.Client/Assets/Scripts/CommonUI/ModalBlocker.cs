@@ -18,7 +18,16 @@ namespace ProjectC.Client
         private long _nextOrder;
         private bool _destroying;
         public int ActiveCount => _leases.Count;
-        public Color Tint { get => _image.color; set => _image.color = value; }
+        private Color _baseTint = new Color(0, 0, 0, .12f);
+        public Color Tint
+        {
+            get => _image.color;
+            set
+            {
+                _baseTint = value;
+                Refresh();
+            }
+        }
 
         public sealed class Lease : IDisposable
         {
@@ -30,6 +39,16 @@ namespace ProjectC.Client
             internal long Order;
             // Only browsing leases opt into dismissal; mandatory selections never do.
             public Action OutsideClicked { get; set; }
+            private Color? _backdropTint;
+            public Color? BackdropTint
+            {
+                get => _backdropTint;
+                set
+                {
+                    _backdropTint = value;
+                    _blocker?.Refresh();
+                }
+            }
             internal Lease(ModalBlocker blocker)
             {
                 _blocker = blocker;
@@ -105,6 +124,10 @@ namespace ProjectC.Client
                 }
             }
             var top = TopLease();
+            if (_image != null)
+            {
+                _image.color = top?.BackdropTint ?? _baseTint;
+            }
             if (top != null)
             {
                 foreach (var root in top.Foregrounds)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Utils;
 using TMPro;
 using UnityEngine;
@@ -14,9 +15,20 @@ namespace ProjectC.Client
         private BattlePresenter _presenter;
         private RectTransform _content;
         private TMP_Text _title;
+        private CardSelectionBar _selectionBar;
+        [SerializeField] private bool _showFieldMirrors = true;
+        private Outline _graveOutline;
+        private Color _graveOutlineColor;
+        private Vector2 _graveOutlineDistance;
+        private bool _graveOutlineEnabled;
+        private TMP_Text _graveLabel;
+        private readonly Dictionary<GameObject, bool> _browseVisibility = new Dictionary<GameObject, bool>();
+        private Vector2 _browseAnchorMin, _browseAnchorMax, _browsePivot, _browsePosition, _browseSize;
+        private bool _compactChoice;
+        private bool _detailWasVisible;
+        public CardSelectionBar SelectionBar => _selectionBar;
         private Button _close;
         private readonly List<CardWidget> _cards = new List<CardWidget>();
-        private readonly List<string> _tokens = new List<string>();
         public bool Choosing { get; private set; }
         private IDisposable _browseScope;
         private ModalBlocker.Lease _browseModal;
@@ -33,6 +45,11 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("CardGallery requires content, title and close bindings.");
             }
+            if (!this.Bind("CardSelectionBar", out _selectionBar))
+            {
+                throw new InvalidOperationException("CardGallery requires the shared CardSelectionBar prefab.");
+            }
+            _selectionBar.VisibilityChanged += HideChoiceDetails;
             _close.onClick.AddListener(Close);
             presenter.Client.OwnDeckContentsReceived += ShowRemainingDeck;
             presenter.Client.OwnDeckReadFailed += DeckReadFailed;
@@ -43,6 +60,8 @@ namespace ProjectC.Client
         public void Close()
         {
             ReleaseBrowse();
+            SetGraveyardFocus(false);
+            RestoreBrowseLayout();
             gameObject.SetActive(false);
             Choosing = false;
         }
@@ -50,6 +69,14 @@ namespace ProjectC.Client
         private void Begin(string title, bool choosing)
         {
             ReleaseBrowse();
+            if (choosing)
+            {
+                UseChoiceLayout();
+            }
+            else
+            {
+                RestoreBrowseLayout();
+            }
             Choosing = choosing;
             _title.text = title;
             _title.gameObject.SetActive(!choosing);
@@ -58,7 +85,6 @@ namespace ProjectC.Client
             {
                 card.transform.parent.gameObject.SetActive(false);
             }
-            _tokens.Clear();
             gameObject.SetActive(true);
         }
 
@@ -147,6 +173,10 @@ namespace ProjectC.Client
 
         private void Update()
         {
+            if (_graveLabel != null && _graveLabel.gameObject.activeSelf)
+            {
+                _graveLabel.text = BattleText.Get("ui.selection.own_grave");
+            }
             if (!_browsingDeck)
             {
                 return;
@@ -222,16 +252,97 @@ namespace ProjectC.Client
         public void ShowChoices(ActionChoiceView choice, Action<string> pick)
         {
             Begin(BattleText.Get("ui.choice.targets", choice.MinCount, choice.MaxCount), true);
-            int index = 0;
-            foreach (var option in choice.Candidates)
-            {
-                if (option.Card == null || option.Zone == (int)PresentationZone.Field)
+            var items = (choice.Candidates ?? Array.Empty<ActionChoiceCandidateView>())
+                .Where(option => option.Card != null || option.Zone == (int)PresentationZone.Field && option.CardId != 0)
+                .Where(option => _showFieldMirrors || option.Zone != (int)PresentationZone.Field)
+                .Select(option => new CardSelectionItem
                 {
-                    continue;
+                    Key = option.Token,
+                    Card = option.Card ?? _presenter.FindCard(option.CardId),
+                }).Where(item => item.Card != null).ToArray();
+            // The current DTO does not identify discard/devour/necromancy. Do not infer a rule from its zone.
+            string key = choice.IsCost
+                ? choice.MinCount == choice.MaxCount ? "ui.selection.cost_exact" : "ui.selection.cost"
+                : choice.MinCount == choice.MaxCount ? "ui.selection.targets_exact" : "ui.selection.targets";
+            ShowSelection(new CardSelectionRequest { RequestId = choice.ChoiceId,
+                TitleKey = key, TitleArguments = new object[] { choice.MinCount, choice.MaxCount }, Items = items,
+                MinCount = choice.MinCount, MaxCount = choice.MaxCount, AllowCancel = choice.CanCancel }, pick);
+            SetGraveyardFocus(choice.Candidates.Length > 0 && choice.Candidates.All(option =>
+                option.Zone == (int)PresentationZone.Graveyard && option.PlayerId == _presenter.Client.PlayerId));
+        }
+
+        private void ShowSelection(CardSelectionRequest request, Action<string> pick)
+        {
+            var picker = _presenter.GetComponentInChildren<EffectTargetPicker>(true);
+            _selectionBar.Show(request, _presenter.Hand.CardPrefab, pick, picker.ConfirmSelection,
+                picker.CancelSelection, card => _presenter.InspectCard(card, true));
+        }
+
+        private void UseChoiceLayout()
+        {
+            if (_compactChoice)
+            {
+                return;
+            }
+            _compactChoice = true;
+            var rect = (RectTransform)transform;
+            _browseAnchorMin = rect.anchorMin;
+            _browseAnchorMax = rect.anchorMax;
+            _browsePivot = rect.pivot;
+            _browsePosition = rect.anchoredPosition;
+            _browseSize = rect.sizeDelta;
+            _browseVisibility.Clear();
+            foreach (Transform child in transform)
+            {
+                if (child != _selectionBar.transform)
+                {
+                    _browseVisibility[child.gameObject] = child.gameObject.activeSelf;
+                    child.gameObject.SetActive(false);
                 }
-                string token = option.Token;
-                _tokens.Add(token);
-                Add(option.Card, index++).Clicked = card => pick(token);
+            }
+            GetComponent<Image>().enabled = false;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(.5f, .5f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        private void RestoreBrowseLayout()
+        {
+            if (!_compactChoice)
+            {
+                return;
+            }
+            if (_selectionBar.Hidden)
+            {
+                HideChoiceDetails(false);
+            }
+            _selectionBar.gameObject.SetActive(false);
+            var rect = (RectTransform)transform;
+            rect.anchorMin = _browseAnchorMin;
+            rect.anchorMax = _browseAnchorMax;
+            rect.pivot = _browsePivot;
+            rect.anchoredPosition = _browsePosition;
+            rect.sizeDelta = _browseSize;
+            GetComponent<Image>().enabled = true;
+            foreach (var entry in _browseVisibility)
+            {
+                entry.Key.SetActive(entry.Value);
+            }
+            _compactChoice = false;
+        }
+
+        private void HideChoiceDetails(bool hidden)
+        {
+            if (hidden)
+            {
+                _detailWasVisible = _presenter.Detail.gameObject.activeSelf;
+                _presenter.Detail.gameObject.SetActive(false);
+            }
+            else if (_detailWasVisible)
+            {
+                _presenter.Detail.gameObject.SetActive(true);
+                _detailWasVisible = false;
             }
         }
 
@@ -243,24 +354,28 @@ namespace ProjectC.Client
         public void ShowTargets(EffectSelectionView selection, Action<EffectTargetView> pick)
         {
             Begin(BattleText.Get("ui.choice.targets", selection.MinCount, selection.MaxCount), true);
-            int index = 0;
-            foreach (var target in selection.Candidates)
+            SetGraveyardFocus(selection.Candidates.Length > 0 && selection.Candidates.All(target =>
+                target.Zone == (int)PresentationZone.Graveyard && target.PlayerId == _presenter.Client.PlayerId));
+            var targets = selection.Candidates.Where(target => target.CardId != 0)
+                .Where(target => _showFieldMirrors || target.Zone != (int)PresentationZone.Field)
+                .Where(target => _presenter.FindCard(target.CardId) != null).ToArray();
+            ShowSelection(new CardSelectionRequest
             {
-                var value = _presenter.FindCard(target.CardId);
-                if (value == null || target.Zone == (int)PresentationZone.Field)
+                RequestId = "local-" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(selection),
+                TitleKey = selection.MinCount == selection.MaxCount ? "ui.selection.targets_exact" : "ui.selection.targets", TitleArguments = new object[] { selection.MinCount, selection.MaxCount },
+                MinCount = selection.MinCount, MaxCount = selection.MaxCount,
+                Items = targets.Select(target => new CardSelectionItem
                 {
-                    continue;
-                }
-                _tokens.Add(TargetKey(target));
-                Add(value, index++).Clicked = card => pick(target);
-            }
+                    Key = TargetKey(target), Card = _presenter.FindCard(target.CardId),
+                }).ToArray(),
+            }, key => pick(targets.First(target => TargetKey(target) == key)));
         }
 
         public void SetSelected(List<string> selected)
         {
-            for (int i = 0; i < _tokens.Count; ++i)
+            if (Choosing)
             {
-                _cards[i].SetSelected(selected.Contains(_tokens[i]));
+                _selectionBar.SetSelected(selected);
             }
         }
 
@@ -278,7 +393,60 @@ namespace ProjectC.Client
             _browseModal = null;
         }
 
-        private void OnDisable() => ReleaseBrowse();
+        private void SetGraveyardFocus(bool focused)
+        {
+            if (focused && _graveOutline == null)
+            {
+                if (!_presenter.Bind("OwnGraveTagImage", out Image tag))
+                {
+                    Debug.LogError("Graveyard selection requires OwnGraveTagImage.", this);
+                    return;
+                }
+                _graveOutline = tag.GetComponent<Outline>();
+                if (_graveOutline == null)
+                {
+                    _graveOutline = tag.gameObject.AddComponent<Outline>();
+                    _graveOutline.enabled = false;
+                }
+                _graveOutlineColor = _graveOutline.effectColor;
+                _graveOutlineDistance = _graveOutline.effectDistance;
+                _graveOutlineEnabled = _graveOutline.enabled;
+                var root = new GameObject("ChoiceGraveLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                _graveLabel = root.GetComponent<TMP_Text>();
+                var rect = _graveLabel.rectTransform;
+                rect.SetParent(tag.transform, false);
+                rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0);
+                rect.pivot = new Vector2(.5f, 1);
+                rect.anchoredPosition = new Vector2(0, -6);
+                rect.sizeDelta = new Vector2(130, 28);
+                _graveLabel.fontSize = _graveLabel.fontSizeMax = 22;
+                _graveLabel.fontSizeMin = 16;
+                _graveLabel.enableAutoSizing = true;
+                _graveLabel.alignment = TextAlignmentOptions.Center;
+                _graveLabel.raycastTarget = false;
+                BattleText.StyleHud(_graveLabel);
+            }
+            if (_graveOutline != null)
+            {
+                _graveOutline.effectColor = focused ? new Color(1, .65f, .2f, .9f) : _graveOutlineColor;
+                _graveOutline.effectDistance = focused ? new Vector2(3, -3) : _graveOutlineDistance;
+                _graveOutline.enabled = focused || _graveOutlineEnabled;
+                if (_graveLabel != null)
+                {
+                    if (focused)
+                    {
+                        _graveLabel.text = BattleText.Get("ui.selection.own_grave");
+                    }
+                    _graveLabel.gameObject.SetActive(focused);
+                }
+            }
+        }
+
+        private void OnDisable()
+        {
+            ReleaseBrowse();
+            SetGraveyardFocus(false);
+        }
         private void OnDestroy()
         {
             ReleaseBrowse();

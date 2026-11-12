@@ -1,0 +1,12 @@
+{
+  "head": "41221896b54495011e97f6e263fbcbf80343416a",
+  "originalAndVerifiedCloneCSharpFiles": 162,
+  "csharpMismatches": [],
+  "prefabMatchesVerifiedCloneIgnoringExistingYamlTrailingSpaces": true,
+  "localServerSourcesModified": false,
+  "playModeTests": {
+    "total": "19",
+    "passed": "17",
+    "failed": "2"
+  }
+}

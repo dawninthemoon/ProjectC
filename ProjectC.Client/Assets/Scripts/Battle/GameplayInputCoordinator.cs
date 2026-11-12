@@ -121,6 +121,9 @@ namespace ProjectC.Client
             }
             if (_serverChoice?.ChoiceId == choice.ChoiceId)
             {
+                // Candidate updates must not discard the draft or release an outstanding submission lock.
+                _serverChoice = choice;
+                SelectionScope((choice.Candidates ?? Array.Empty<ActionChoiceCandidateView>()).Select(value => value.Zone), choice.CanCancel);
                 return;
             }
             _serverChoice = choice;

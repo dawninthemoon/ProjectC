@@ -22,6 +22,10 @@ namespace ProjectC.Client
         private CardGalleryView _gallery;
         private Button _cancel;
         private bool _submitting;
+        private Action _confirmAction, _cancelAction;
+
+        public void ConfirmSelection() => _confirmAction?.Invoke();
+        public void CancelSelection() => _cancelAction?.Invoke();
 
         private void Begin(bool canCancel, Action confirm, Action cancel)
         {
@@ -31,14 +35,17 @@ namespace ProjectC.Client
             this.Bind("CancelButton", out Button back);
             _cancel = back;
             _submitting = false;
+            _confirmAction = confirm;
+            _cancelAction = cancel;
             title.gameObject.SetActive(false);
             // Cards and heroes are selected directly; private-zone cards use the gallery.
             // Preserve the authored hierarchy without displaying a duplicate text-button list.
             content.parent.gameObject.SetActive(false);
+            _confirm.gameObject.SetActive(false);
             _confirm.onClick.RemoveAllListeners();
             _confirm.onClick.AddListener(() => confirm());
             _confirm.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.choice.confirm");
-            back.gameObject.SetActive(canCancel);
+            back.gameObject.SetActive(false);
             back.interactable = canCancel;
             back.onClick.RemoveAllListeners();
             back.onClick.AddListener(() => cancel());
@@ -52,10 +59,7 @@ namespace ProjectC.Client
             _serverChoice = value;
             _selection = null;
             Begin(value.CanCancel, confirm, cancel);
-            if (Array.Exists(value.Candidates, option => option.Card != null && option.Zone != (int)PresentationZone.Field))
-            {
-                _gallery.ShowChoices(value, pick);
-            }
+            _gallery.ShowChoices(value, pick);
         }
 
         private void OnDisable()
@@ -74,10 +78,7 @@ namespace ProjectC.Client
             _selection = value;
             _serverChoice = null;
             Begin(true, confirm, cancel);
-            if (Array.Exists(value.Candidates, target => target.CardId != 0 && target.Zone != (int)PresentationZone.Field))
-            {
-                _gallery.ShowTargets(value, pick);
-            }
+            _gallery.ShowTargets(value, pick);
         }
 
         public void SetServerSelected(List<string> selected)
@@ -96,6 +97,7 @@ namespace ProjectC.Client
         public void SetSubmitting(bool submitting)
         {
             _submitting = submitting;
+            _gallery?.SelectionBar.SetSubmitting(submitting);
             if (_confirm != null && submitting)
             {
                 _confirm.interactable = false;

@@ -1,0 +1,79 @@
+BasicHUD: 1920x1080 turnTransitionAlpha=0
+Discard: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Graveyard: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Response-InteractivePrototype: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Defense: 1920x1080 turnTransitionAlpha=0
+Defense-japanese: 1920x1080 turnTransitionAlpha=0
+Defense-english: 1920x1080 turnTransitionAlpha=0
+Defense-1280x720: 1280x720 turnTransitionAlpha=0
+Defense-2560x1440: 2560x1440 turnTransitionAlpha=0
+Defense-2400x1080: 2400x1080 turnTransitionAlpha=0
+FieldCost: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Response-Prototype: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Response-korean: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Response-japanese: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Response-english: 1920x1080 turnTransitionAlpha=0
+  SelectionPanel: x=403.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=421.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1313.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=580.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1463.0 y(top)=740.0 w=54.0 h=34.0
+Selection-1280x720: 1280x720 turnTransitionAlpha=0
+  SelectionPanel: x=268.7 y(top)=518.7 w=742.7 h=166.0
+  SelectionViewport: x=280.7 y(top)=526.7 w=580.0 h=150.0
+  SelectionConfirm: x=875.3 y(top)=626.7 w=124.7 h=42.0
+  SelectionGuide: x=386.7 y(top)=489.3 w=506.7 h=26.7
+  SelectionEye: x=975.3 y(top)=493.3 w=36.0 h=22.7
+Selection-2560x1440: 2560x1440 turnTransitionAlpha=0
+  SelectionPanel: x=537.3 y(top)=1037.3 w=1485.3 h=332.0
+  SelectionViewport: x=561.3 y(top)=1053.3 w=1160.0 h=300.0
+  SelectionConfirm: x=1750.7 y(top)=1253.3 w=249.3 h=84.0
+  SelectionGuide: x=773.3 y(top)=978.7 w=1013.3 h=53.3
+  SelectionEye: x=1950.7 y(top)=986.7 w=72.0 h=45.3
+Selection-2400x1080: 2400x1080 turnTransitionAlpha=0
+  SelectionPanel: x=643.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=661.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1553.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=820.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1703.0 y(top)=740.0 w=54.0 h=34.0
+Selection-2560x1080: 2560x1080 turnTransitionAlpha=0
+  SelectionPanel: x=723.0 y(top)=778.0 w=1114.0 h=249.0
+  SelectionViewport: x=741.0 y(top)=790.0 w=870.0 h=225.0
+  SelectionConfirm: x=1633.0 y(top)=940.0 w=187.0 h=63.0
+  SelectionGuide: x=900.0 y(top)=734.0 w=760.0 h=40.0
+  SelectionEye: x=1783.0 y(top)=740.0 w=54.0 h=34.0

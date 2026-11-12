@@ -1182,5 +1182,95 @@
     "korean": "아직 기록된 행동이 없습니다.",
     "english": "No actions recorded yet.",
     "japanese": "まだ行動の記録はありません。"
+  },
+  {
+    "lmk": "ui.selection.count",
+    "korean": "{0} / {1} 선택됨",
+    "english": "{0} / {1} selected",
+    "japanese": "{0} / {1} 選択中"
+  },
+  {
+    "lmk": "ui.selection.range",
+    "korean": "{0} / {1}~{2} 선택됨",
+    "english": "{0} / {1}–{2} selected",
+    "japanese": "{0} / {1}～{2} 選択中"
+  },
+  {
+    "lmk": "ui.selection.targets",
+    "korean": "대상을 {0}~{1}개 선택하세요",
+    "english": "Choose {0}–{1} targets",
+    "japanese": "対象を{0}～{1}個選択してください"
+  },
+  {
+    "lmk": "ui.selection.discard",
+    "korean": "폐기 {0}: 버릴 손패를 선택하세요",
+    "english": "Discard {0}: choose cards from your hand",
+    "japanese": "廃棄 {0}：捨てる手札を選択してください"
+  },
+  {
+    "lmk": "ui.selection.grave",
+    "korean": "강령 {0}: 제외할 묘지 카드를 선택하세요",
+    "english": "Necromancy {0}: choose graveyard cards to banish",
+    "japanese": "降霊 {0}：除外する墓地のカードを選択してください"
+  },
+  {
+    "lmk": "ui.selection.field",
+    "korean": "포식 {0}: 아군 몬스터를 선택하세요",
+    "english": "Devour {0}: choose allied monsters",
+    "japanese": "捕食 {0}：味方モンスターを選択してください"
+  },
+  {
+    "lmk": "ui.defense.confirm",
+    "korean": "방어 확정",
+    "english": "Confirm defense",
+    "japanese": "防御確定"
+  },
+  {
+    "lmk": "ui.selection.hand_source",
+    "korean": "손패",
+    "english": "Hand",
+    "japanese": "手札"
+  },
+  {
+    "lmk": "ui.selection.field_source",
+    "korean": "필드",
+    "english": "Field",
+    "japanese": "場"
+  },
+  {
+    "lmk": "ui.selection.own_grave",
+    "korean": "내 묘지",
+    "english": "Your graveyard",
+    "japanese": "自分の墓地"
+  },
+  {
+    "lmk": "ui.selection.response",
+    "korean": "응전할 카드 또는 능력을 선택하세요",
+    "english": "Choose a response card or ability",
+    "japanese": "応戦するカードまたは能力を選択してください"
+  },
+  {
+    "lmk": "ui.selection.pass",
+    "korean": "패스",
+    "english": "Pass",
+    "japanese": "パス"
+  },
+  {
+    "lmk": "ui.selection.cost",
+    "korean": "비용으로 사용할 카드를 {0}~{1}장 선택하세요",
+    "english": "Choose {0}–{1} cards to pay the cost",
+    "japanese": "コストにするカードを{0}～{1}枚選択してください"
+  },
+  {
+    "lmk": "ui.selection.cost_exact",
+    "korean": "비용으로 사용할 카드 {0}장을 선택하세요",
+    "english": "Choose {0} cards to pay the cost",
+    "japanese": "コストにするカードを{0}枚選択してください"
+  },
+  {
+    "lmk": "ui.selection.targets_exact",
+    "korean": "대상을 {0}개 선택하세요",
+    "english": "Choose {0} targets",
+    "japanese": "対象を{0}個選択してください"
   }
 ]
