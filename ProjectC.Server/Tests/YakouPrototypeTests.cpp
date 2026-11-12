@@ -61,6 +61,17 @@ int main()
         auto g = prototype.Config;
         g["ki.baseRegenPerTurn"] = 1;
         Reject([&] { validate(prototype.Cards, prototype.Decks, prototype.Localize, g); });
+        auto authored = *std::find_if(prototype.Cards["Cards"].begin(),
+                                      prototype.Cards["Cards"].end(), [](Json const& x) {
+            return x["Id"] == 2008;
+        });
+        Check(YakouRequiredCost(authored, "Devour").SourceZone == "FriendlyField" &&
+                  YakouRequiredCost(authored, "Devour").ExactCount == 1,
+              "Devour 1 must take one allied field material");
+        authored["SummonCostJson"]["Devour"]["Count"] = 2;
+        Check(YakouRequiredCost(authored, "Devour").ExactCount == 2,
+              "Devour 2 must take two materials (global default is not a cap)");
+        Reject([&] { (void)YakouRequiredCost(authored, "Discard"); });
         Check(!ValidateYakouExactSelection({10, 11, 12}, {}, 2), "0/2 must not confirm");
         Check(!ValidateYakouExactSelection({10, 11, 12}, {10}, 2), "1/2 must not confirm");
         Check(ValidateYakouExactSelection({10, 11, 12}, {10, 11}, 2), "2/2 must confirm");
