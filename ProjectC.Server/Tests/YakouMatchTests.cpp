@@ -430,6 +430,88 @@ int main()
                   "Unsupported combat effect must fail before any state mutation");
         }
         {
+            // Use the real card 2102 kill-trigger shape on a short-countdown
+            // normal monster fixture to exercise the combat event without
+            // requiring a second unrelated manifestation setup.
+            auto killed = proto;
+            Json trigger;
+            for (auto const& card : killed.Cards["Cards"])
+                if (card["Id"] == 2102) trigger = card["Effects"][0];
+            Check(trigger.is_object(), "Missing authored combat-kill trigger fixture");
+            for (auto& card : killed.Cards["Cards"])
+                if (card["Id"] == 2006)
+                {
+                    card["AttackInterval"] = 1;
+                    card["Effects"].push_back(trigger);
+                }
+            auto makeCombat = [&](YakouPrototype const& data)
+            {
+                auto match = Make(data, {2006}, {2001});
+                match.StartTurn(1);
+                int const raider = match.Player(1).Hand[0];
+                match.Summon(1, raider, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                int const blocker = match.Player(2).Hand[0];
+                match.Summon(2, blocker, "Normal", {}, 1);
+                match.ResolvePendingEffect(2); // The defender's on-summon Mill.
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                Check(match.Phase() == YakouPhase::AssignBlockers, "Ready combat-kill raider");
+                match.AssignBlockers(2, {{raider, blocker}});
+                match.PassRaidResponse(2);
+                match.PassRaidResponse(1);
+                return match;
+            };
+            {
+                auto match = makeCombat(killed);
+                int const raider = match.Player(1).Field[0]->InstanceId;
+                match.ResolveRaid(2);
+                Check(match.Player(1).Field[0] &&
+                          match.Player(1).Field[0]->InstanceId == raider &&
+                          match.Player(1).Field[0]->Countdown == 1 &&
+                          match.Player(1).Field[0]->Damage == 1 &&
+                          !match.Player(2).Field[1],
+                      "Combat kill must apply SetCountdown after surviving raider reset");
+                Check(match.PendingEffects().empty(),
+                      "Immediately handled kill effect must not be queued for manual resolution");
+            }
+            {
+                auto unsupported = killed;
+                for (auto& card : unsupported.Cards["Cards"])
+                    if (card["Id"] == 2006)
+                        card["Effects"].back()["Actions"][0]["Operation"] = "UnsupportedKill";
+                auto match = makeCombat(unsupported);
+                auto const before = match.ServerStateHash();
+                Reject([&] { match.ResolveRaid(2); });
+                Check(match.ServerStateHash() == before,
+                      "Unsupported kill effect must roll back combat and leave response state intact");
+            }
+            {
+                auto match = Make(killed, {2006}, {});
+                match.StartTurn(1);
+                int const raider = match.Player(1).Hand[0];
+                match.Summon(1, raider, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.AssignBlockers(2, {});
+                match.PassRaidResponse(2);
+                match.PassRaidResponse(1);
+                match.ResolveRaid(2);
+                Check(match.Player(1).Field[0] &&
+                          match.Player(1).Field[0]->Countdown == 1,
+                      "Unblocked hero damage must not dispatch a combat-kill trigger");
+                Check(std::none_of(match.Journal().begin(), match.Journal().end(),
+                                   [](std::string const& line)
+                                   { return line.find("CombatKillCountdown:") == 0; }),
+                      "No combat-kill effect should resolve without a destroyed enemy");
+            }
+        }
+        {
             // The devoured source is in the graveyard when its effect resolves;
             // its event context must still identify the actual consuming monster.
             auto match = Make(proto, {3008, 2008, 2001, 2009, 2002}, {});
