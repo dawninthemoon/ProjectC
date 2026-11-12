@@ -284,7 +284,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
     char const* phase = phase_ == YakouPhase::TurnStart ? "TurnStart"
         : phase_ == YakouPhase::Main ? "Main"
         : phase_ == YakouPhase::AssignBlockers ? "AssignBlockers"
-        : phase_ == YakouPhase::RaidResponse ? "RaidResponse" : "Finished";
+        : phase_ == YakouPhase::RaidResponse ? "RaidResponse"
+        : phase_ == YakouPhase::SpellResponse ? "SpellResponse" : "Finished";
     Json attacks = Json::array();
     for (auto const& attack : attacks_)
     {
@@ -815,6 +816,175 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance)
               (choices.MinCount == 0 && choices.MaxCount == 0),
           "Spell has no valid effect target");
     journal_.push_back("SpellActivated:" + std::to_string(handInstance));
+}
+
+
+void YakouMatch::BeginSpellResponse(int player, int handInstance, int targetInstance)
+{
+    YakouMatch next = *this;
+    next.BeginSpellResponseImpl(player, handInstance, targetInstance);
+    *this = std::move(next);
+}
+
+void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int targetInstance)
+{
+    // Reuse all authored spell and cost checks; do not expose the provisional
+    // effect to the normal resolver before the priority window closes.
+    ActivateMainSpellImpl(player, handInstance);
+    auto const choice = PendingEffectChoices(player);
+    if (choice.MaxCount == 0)
+    {
+        Check(targetInstance == 0, "Targetless spell cannot select a target");
+    }
+    else
+    {
+        Check(targetInstance == 0 ? choice.MinCount == 0 :
+                  Contains(choice.Candidates, targetInstance),
+              "Selected spell target is not an authorized candidate");
+    }
+    auto const pending = pendingEffects_.front();
+    Check(pending.Player == player && pending.SourceCard == handInstance,
+          "Unexpected spell effect while opening chain");
+    pendingEffects_.erase(pendingEffects_.begin());
+    response_.Open(player, YakouChainLink{player, handInstance,
+                                          pending.EffectId, "OnResolve",
+                                          targetInstance ? std::vector<int>{targetInstance}
+                                                         : std::vector<int>{}});
+    phase_ = YakouPhase::SpellResponse;
+    journal_.push_back("SpellResponseOpened:" + std::to_string(handInstance));
+}
+
+void YakouMatch::RespondWithNegation(int player, int handInstance,
+                                    std::vector<int> const& discarded)
+{
+    YakouMatch next = *this;
+    next.RespondWithNegationImpl(player, handInstance, discarded);
+    *this = std::move(next);
+}
+
+void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
+                                        std::vector<int> const& discarded)
+{
+    Check(phase_ == YakouPhase::SpellResponse &&
+              response_.IsOpen() && response_.PriorityPlayer() == player,
+          "No spell response priority");
+    Check(player != ActivePlayer() && (player == 1 || player == 2),
+          "Only the opponent may negate this opening spell");
+    Check(response_.StackSize() == 1,
+          "This prototype supports one counterspell per response chain");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Hand, handInstance), "Counterspell is not in owner's hand");
+    auto const card = CardDefinition(OriginalId(handInstance));
+    Check(card.at("Id") == 3020 && card.at("Type") == "Spell" &&
+              card.at("SummonCostJson").at("Activation").is_object() &&
+              card.at("SummonCostJson").at("Activation").size() == 1 &&
+              card.at("SummonCostJson").at("Activation").at("Discard") == 2,
+          "Only authored discard-two counterspell is supported");
+    auto const& effects = card.at("Effects");
+    Check(effects.is_array() && effects.size() == 1 &&
+              effects[0].at("Trigger") == "OnResolve" &&
+              effects[0].at("Type") == "Triggered" &&
+              effects[0].at("Actions").is_array() &&
+              effects[0].at("Actions").size() == 1,
+          "Invalid counterspell effect");
+    auto const& action = effects[0].at("Actions")[0];
+    Check(action.is_object() &&
+              HasOnlyFields(action, {"Operation", "Target"}) &&
+              action.at("Operation") == "NegateSpellEffect" &&
+              action.at("Target") == "RespondedEnemySpell",
+          "Unsupported counterspell operation");
+    int const effectId = effects[0].at("Id").get<int>();
+    int const limit = effects[0].value("PerTurnLimit", 0);
+    Check(limit > 0 && effects[0].value("LimitScope", std::string("")) == "CardName",
+          "Counterspell requires supported card-name limit");
+    auto const usage = std::make_tuple(turn_, player,
+                                       card.at("NameKey").get<std::string>(), effectId);
+    Check(effectUses_[usage] < limit, "Counterspell per-turn limit reached");
+    Check(discarded.size() == 2 && discarded[0] != discarded[1] &&
+              discarded[0] != handInstance && discarded[1] != handInstance,
+          "Counterspell needs two distinct other hand cards");
+    for (int cardId : discarded)
+        Check(Contains(owner.Hand, cardId), "Invalid counterspell discard material");
+
+    // The chain's first link is the spell being answered. Its identity is
+    // server-derived; incoming clients never supply the target spell ID.
+    for (int cardId : discarded)
+    {
+        Remove(owner.Hand, cardId);
+        owner.Graveyard.push_back(cardId);
+    }
+    Remove(owner.Hand, handInstance);
+    owner.Graveyard.push_back(handInstance);
+    response_.Respond(player, YakouChainLink{player, handInstance, effectId,
+                                              "OnResolve", {}});
+    ++effectUses_[usage];
+    journal_.push_back("CounterspellActivated:" + std::to_string(handInstance));
+}
+
+void YakouMatch::PassSpellResponse(int player)
+{
+    YakouMatch next = *this;
+    next.PassSpellResponseImpl(player);
+    *this = std::move(next);
+}
+
+void YakouMatch::PassSpellResponseImpl(int player)
+{
+    Check(phase_ == YakouPhase::SpellResponse, "No spell response window");
+    bool const closed = response_.Pass(player);
+    journal_.push_back("SpellResponsePass:" + std::to_string(player));
+    if (!closed) return;
+    auto const resolution = response_.TakeResolution(); // LIFO: counter before original.
+    Check(!resolution.empty() && resolution.size() <= 2,
+          "Unsupported resolved spell chain length");
+    bool negated = false;
+    for (auto const& link : resolution)
+    {
+        if (link.Controller != ActivePlayer())
+        {
+            Check(resolution.size() == 2 && !negated &&
+                      link.Controller == 3 - ActivePlayer(),
+                  "Unexpected chain counterspell");
+            negated = true;
+            journal_.push_back("SpellNegated:" +
+                               std::to_string(resolution.back().SourceInstance));
+            continue;
+        }
+        Check(link.Trigger == "OnResolve" &&
+                  link.Controller == ActivePlayer() && link.EffectId > 0,
+              "Unexpected original spell link");
+        if (negated)
+        {
+            // Negated effects still consume their authored per-turn allowance.
+            auto const card = CardDefinition(OriginalId(link.SourceInstance));
+            auto const key = std::make_tuple(turn_, link.Controller,
+                                              card.at("NameKey").get<std::string>(),
+                                              link.EffectId);
+            for (auto const& effect : card.at("Effects"))
+            {
+                if (effect.at("Id") != link.EffectId) continue;
+                int const limit = effect.value("PerTurnLimit", 0);
+                if (limit > 0)
+                {
+                    Check(effect.value("LimitScope", std::string("")) == "CardName" &&
+                              effectUses_[key] < limit,
+                          "Negated spell already exhausted its per-turn use");
+                    ++effectUses_[key];
+                }
+            }
+        }
+        else
+        {
+            int const definitionId = OriginalId(link.SourceInstance);
+            Enqueue(link.Controller, link.SourceInstance, definitionId, "OnResolve");
+            Check(pendingEffects_.size() == 1,
+                  "Expected one original spell effect after response");
+            ResolvePendingEffect(link.Controller,
+                                 link.Targets.empty() ? 0 : link.Targets.front());
+        }
+    }
+    phase_ = YakouPhase::Main;
+    journal_.push_back("SpellResponseClosed");
 }
 
 std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
