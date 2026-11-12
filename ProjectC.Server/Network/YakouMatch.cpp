@@ -256,6 +256,25 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 }
             }
             visiblePlayer["CanNormalSummon"] = canNormal;
+            // Owner-only, server-derived summon choices. Do not mirror these
+            // candidate instance IDs into the opponent's public snapshot.
+            Json summonChoices = Json::array();
+            if (phase_ == YakouPhase::Main && player.Id == ActivePlayer())
+            {
+                for (int instance : player.Hand)
+                {
+                    for (auto const& option : SummonChoices(player.Id, instance))
+                    {
+                        summonChoices.push_back({{"CardId", instance},
+                                                  {"Method", option.Method},
+                                                  {"SourceZone", option.SourceZone},
+                                                  {"RequiredCount", option.RequiredCount},
+                                                  {"Candidates", option.Candidates},
+                                                  {"AvailableSlots", option.AvailableSlots}});
+                    }
+                }
+            }
+            visiblePlayer["SummonChoices"] = std::move(summonChoices);
             visiblePlayer["NormalSummonsUsed"] = player.NormalSummons;
             visiblePlayer["ManifestationsUsed"] = player.Manifestations;
             visiblePlayer["RedrawsUsed"] = player.Redraws;
@@ -271,9 +290,38 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
     {
         attacks.push_back({{"AttackerId", attack.Card}, {"Slot", attack.Slot}, {"BlockerId", attack.Blocker}});
     }
-    return {{"Phase", phase}, {"ActivePlayerId", ActivePlayer()}, {"TurnNumber", turn_},
-            {"PriorityPlayerId", PriorityPlayer()}, {"WinnerPlayerId", winner_},
-            {"Players", std::move(players)}, {"Attacks", std::move(attacks)}};
+    Json result = {{"Phase", phase}, {"ActivePlayerId", ActivePlayer()},
+                   {"TurnNumber", turn_}, {"PriorityPlayerId", PriorityPlayer()},
+                   {"WinnerPlayerId", winner_}, {"Players", std::move(players)},
+                   {"Attacks", std::move(attacks)}};
+    // The pending queue can include a hidden hand card or deck-top choice.
+    // Never expose its source, candidate IDs or target requirements to the
+    // opposing viewer. The controlling player may request the first choice.
+    if (!pendingEffects_.empty() && pendingEffects_.front().Player == viewer)
+    {
+        auto const& pending = pendingEffects_.front();
+        Json choice = {{"SourceCardId", pending.SourceCard},
+                       {"EffectId", pending.EffectId},
+                       {"Trigger", pending.Trigger}};
+        try
+        {
+            auto const requested = PendingEffectChoices(viewer);
+            choice["Status"] = "Ready";
+            choice["Operation"] = requested.Operation;
+            choice["SourceZone"] = requested.SourceZone;
+            choice["MinCount"] = requested.MinCount;
+            choice["MaxCount"] = requested.MaxCount;
+            choice["Candidates"] = requested.Candidates;
+        }
+        catch (std::invalid_argument const&)
+        {
+            // A future unsupported effect must remain explicitly unresolved,
+            // without failing a viewer snapshot or claiming it is actionable.
+            choice["Status"] = "Unavailable";
+        }
+        result["PendingSelection"] = std::move(choice);
+    }
+    return result;
 }
 
 Json YakouMatch::ServerCanonicalState() const

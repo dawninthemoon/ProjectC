@@ -147,6 +147,14 @@ int main()
             match.StartTurn(1);
             Check(match.ViewerSnapshot(1).at("Players")[0].at("CanNormalSummon") == true,
                   "Owner summon availability must come from actual legal choices");
+            auto const offered = match.ViewerSnapshot(1).at("Players")[0].at("SummonChoices");
+            Check(!offered.empty() && offered[0].at("Method") == "Normal" &&
+                      offered[0].at("RequiredCount") == 0 &&
+                      offered[0].at("AvailableSlots").size() == 5,
+                  "Owner snapshot must include authorized summon methods and slots");
+            Check(!match.ViewerSnapshot(2).at("Players")[0].contains("SummonChoices") &&
+                      !match.ViewerSnapshot(1).at("Players")[1].contains("SummonChoices"),
+                  "Opponents must not receive another hand's summon candidates");
             int const card = match.Player(1).Hand.front();
             match.Summon(1, card, "Normal", {}, 2);
             Check(match.ViewerSnapshot(1).at("Players")[0].at("CanNormalSummon") == false,
@@ -217,6 +225,14 @@ int main()
                       unit.WasDevourSummoned && match.Player(1).Graveyard.size() == 1,
                   "Devour must inherit printed stats but not countdown");
             Check(!match.PendingEffects().empty(), "Trigger information must not disappear");
+            auto const ownPending = match.ViewerSnapshot(1);
+            Check(ownPending.contains("PendingSelection") &&
+                      ownPending.at("PendingSelection").at("Status") == "Ready" &&
+                      ownPending.at("PendingSelection").at("Operation") == "Mill" &&
+                      ownPending.at("PendingSelection").at("Candidates").empty(),
+                  "Owner snapshot must expose a valid targetless effect");
+            Check(!match.ViewerSnapshot(2).contains("PendingSelection"),
+                  "An opponent must not learn queued effect choices");
             match.BeginRaid(1);
             Check(match.Phase() == YakouPhase::TurnStart && match.ActivePlayer() == 2,
                   "No-ready-attacker turn should pass");
