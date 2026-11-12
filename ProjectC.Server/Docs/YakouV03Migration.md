@@ -191,3 +191,33 @@ count, eligible material instance IDs, and prospective summon slots.
 The production `MatchSession` still uses the older rules and the Unity UI
 still lacks an authoritative Yakou cost-selection protocol. It is incorrect
 to claim these new cost choices already appear in live online matches.
+
+## First executable authored effects (incremental Stage E foundation)
+
+`YakouMatch::ResolvePendingEffect(controller, selectedTarget)` now consumes
+one queued triggered effect **only after** validating its authored definition,
+controller, effect usage limit and chosen target. It computes changes on a
+candidate match and commits once complete. Failed commands leave the pending
+queue, journal, card zones, countdowns and usage counters unchanged.
+
+Implemented operations in this first slice:
+
+- `Mill` from the friendly deck top to graveyard, including source-authorized
+  card count and a strict insufficient-deck rejection.
+- `ModifyCountdown` for `Self`, `FriendlyMonster`, and
+  `OtherFriendlyMonster`, with validated target instance and optional decline.
+- Card-name/effect per-turn limit validation for effects with
+  `PerTurnLimit` and `LimitScope: CardName`.
+
+**Not implemented:** automatic trigger dispatch, response-chain resolution,
+target selection requests/priority, deferred-trigger scheduling, or the
+remaining operations (including `Salvage`, `SpecialSummon`, damage modifiers,
+combat abilities, and `DevouringMonster` targeting). Unsupported operation
+or condition shapes fail explicitly and **remain queued**, rather than silently
+resolving. This PR is not sufficient to mark any whole sample deck playable.
+No game-mode or protocol switch has been made; the production WebSocket
+`MatchSession` continues to use the older rule engine.
+
+The initial resolver is invoked explicitly by a server caller. Future
+connection to the effect/response scheduler must require validated selection
+and maintain active-player/owner trigger ordering before invoking it.
