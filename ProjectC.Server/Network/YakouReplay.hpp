@@ -15,6 +15,7 @@ enum class YakouReplayOperation
 {
     StartTurn,
     Summon,
+    ActivateMainSpell,
     Manifest,
     Postpone,
     Redraw,
