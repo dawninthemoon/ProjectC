@@ -1365,6 +1365,140 @@ int main()
                       "Paid raid response replay must be deterministic and atomic");
             }
         }
+        {
+            // Multi-link raid chain: 3016 shield then 2011 attack debuff.
+            // The second defender response requires the active player to
+            // pass priority back. Both effects resolve LIFO on two passes.
+            auto tactical = proto;
+            for (auto& id : tactical.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3020) id = 3016;
+                else if (id == 2010) id = 3018;
+                else if (id == 3013) id = 3003;
+            }
+            auto ready = [&]()
+            {
+                auto match = Make(tactical, {3003}, {2001, 2002, 2011, 3016, 3018});
+                match.StartTurn(1);
+                const int raider = match.Player(1).Hand[0];
+                match.Summon(1, raider, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                const int source = match.Player(2).Hand[0];
+                match.Summon(2, source, "Normal", {}, 0);
+                match.ResolvePendingEffect(2);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                const int blocker = match.Player(2).Hand[0];
+                match.Summon(2, blocker, "Normal", {}, 1);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.AssignBlockers(2, {{raider, blocker}});
+                return match;
+            };
+            {
+                auto match = ready();
+                const int raider = match.Attacks()[0].Card;
+                const int blocker = match.Player(2).Field[1]->InstanceId;
+                const auto hand = match.Player(2).Hand;
+                const int attackDebuff = hand[0]; // 2011
+                const int shield = hand[1];       // 3016
+                const int discard = hand[2];      // 3018
+                match.RespondWithRaidShield(2, shield, blocker);
+                Check(match.PriorityPlayer() == 1 && match.Phase() == YakouPhase::RaidResponse,
+                      "Shield link must pass priority to the attacker");
+                const auto wrongTurn = match.ServerStateHash();
+                Reject([&] { match.RespondWithRaidTactic(2, attackDebuff, raider, 0,
+                                                         {discard}); });
+                Check(match.ServerStateHash() == wrongTurn,
+                      "Second response must not bypass alternating priority");
+                match.PassRaidResponse(1);
+                Check(match.PriorityPlayer() == 2,
+                      "Active player pass must return priority to defender");
+                match.RespondWithRaidTactic(2, attackDebuff, raider, 0, {discard});
+                Check(match.PriorityPlayer() == 1,
+                      "Second response must reset consecutive passes and hand priority back");
+                match.PassRaidResponse(1);
+                Check(match.PriorityPlayer() == 2,
+                      "First pass after second response cannot close chain");
+                match.PassRaidResponse(2);
+                Check(match.PriorityPlayer() == 0,
+                      "Two passes close multi-link raid chain");
+                auto const& journal = match.Journal();
+                auto debuffEvent = std::find_if(journal.begin(), journal.end(),
+                    [](std::string const& line)
+                    { return line.find("RaidAttackReduced:") == 0; });
+                auto shieldEvent = std::find_if(journal.begin(), journal.end(),
+                    [](std::string const& line)
+                    { return line.find("RaidShieldResolved:") == 0; });
+                Check(debuffEvent != journal.end() && shieldEvent != journal.end() &&
+                      debuffEvent < shieldEvent,
+                      "Later attack debuff must resolve before earlier shield (LIFO)");
+                match.ResolveRaid(2);
+                Check(match.Player(2).Field[1] &&
+                      match.Player(2).Field[1]->Damage == 0 &&
+                      !match.Player(1).Field[0] &&
+                      match.ActivePlayer() == 2,
+                      "2011 attack reduction and 3016 first-hit shield must compose in combat");
+            }
+            {
+                // Existing command replay must preserve the whole multi-link
+                // chain, including the rejected out-of-priority response.
+                std::array<std::vector<int>, 2> const decks{
+                    Deck(tactical, {3003}), Deck(tactical, {2001, 2002, 2011, 3016, 3018})};
+                auto make = [](YakouReplayOperation op, int player)
+                {
+                    YakouReplayCommand value;
+                    value.Operation = op; value.Player = player;
+                    return value;
+                };
+                auto attacker = make(YakouReplayOperation::Summon, 1);
+                attacker.CardId = 1; attacker.Method = "Normal";
+                auto source = make(YakouReplayOperation::Summon, 2);
+                source.CardId = 31; source.Method = "Normal";
+                auto blocker = make(YakouReplayOperation::Summon, 2);
+                blocker.CardId = 32; blocker.Method = "Normal"; blocker.Slot = 1;
+                auto assign = make(YakouReplayOperation::AssignBlockers, 2);
+                assign.Blockers = {{1, 32}};
+                auto shield = make(YakouReplayOperation::RespondWithRaidShield, 2);
+                shield.CardId = 34; shield.TargetId = 32;
+                auto debuff = make(YakouReplayOperation::RespondWithRaidTactic, 2);
+                debuff.CardId = 33; debuff.TargetId = 1; debuff.Cards = {35};
+                std::vector<YakouReplayCommand> const commands{
+                    make(YakouReplayOperation::StartTurn,1), attacker,
+                    make(YakouReplayOperation::BeginRaid,1),
+                    make(YakouReplayOperation::StartTurn,2), source,
+                    make(YakouReplayOperation::ResolvePendingEffect,2),
+                    make(YakouReplayOperation::BeginRaid,2),
+                    make(YakouReplayOperation::StartTurn,1),
+                    make(YakouReplayOperation::BeginRaid,1),
+                    make(YakouReplayOperation::StartTurn,2), blocker,
+                    make(YakouReplayOperation::BeginRaid,2),
+                    make(YakouReplayOperation::StartTurn,1),
+                    make(YakouReplayOperation::BeginRaid,1),
+                    assign, shield, debuff,
+                    make(YakouReplayOperation::PassRaidResponse,1),
+                    debuff,
+                    make(YakouReplayOperation::PassRaidResponse,1),
+                    make(YakouReplayOperation::PassRaidResponse,2),
+                    make(YakouReplayOperation::ResolveRaid,2)};
+                const auto replay = ReplayYakou(tactical, 1, decks, commands);
+                const auto again = ReplayYakou(tactical, 1, decks, commands);
+                Check(replay.Steps.size() == commands.size() &&
+                      !replay.Steps[16].Accepted &&
+                      replay.Steps[16].BeforeHash == replay.Steps[16].AfterHash &&
+                      replay.Steps[18].Accepted &&
+                      replay.Steps.back().Accepted &&
+                      replay.FinalState.Player(2).Field[1] &&
+                      replay.FinalState.Player(2).Field[1]->Damage == 0 &&
+                      replay.FinalState.ServerStateHash() ==
+                          again.FinalState.ServerStateHash(),
+                      "Multi-link raid replay must deterministically reject invalid priority");
+            }
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
