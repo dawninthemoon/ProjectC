@@ -1024,6 +1024,102 @@ int main()
                           again.FinalState.ServerStateHash(),
                   "Main spell replay must preserve deterministic acceptance and rejection");
         }
+        {
+            // A free main-phase spell waits for both players to pass before
+            // resolving. The wrong priority must not mutate any private state.
+            auto match = Make(proto, {2009, 2009}, {3020, 2001, 2002, 3001, 2004});
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const counter = match.Player(2).Hand[0];
+            auto const costOne = match.Player(2).Hand[1];
+            auto const costTwo = match.Player(2).Hand[2];
+            auto const deckSize = match.Player(1).Deck.size();
+            match.BeginSpellResponse(1, spell);
+            Check(match.Phase() == YakouPhase::SpellResponse &&
+                      match.PriorityPlayer() == 2 &&
+                      match.PendingEffects().empty() &&
+                      match.Player(1).Graveyard.back() == spell &&
+                      match.ViewerSnapshot(2).at("Phase") == "SpellResponse",
+                  "Original spell must open opponent priority without executing its effect");
+            auto const beforeSpoof = match.ServerStateHash();
+            Reject([&] { match.PassSpellResponse(1); });
+            Reject([&] { match.RespondWithNegation(1, spell, {costOne, costTwo}); });
+            Reject([&] { match.RespondWithNegation(2, counter, {costOne, costOne}); });
+            Reject([&] { match.RespondWithNegation(2, counter, {counter, costTwo}); });
+            Check(match.ServerStateHash() == beforeSpoof,
+                  "Unauthorized priority or invalid discard cost must be atomic");
+            match.RespondWithNegation(2, counter, {costOne, costTwo});
+            Check(match.Player(2).Graveyard.size() == 3 &&
+                      match.PriorityPlayer() == 1 &&
+                      match.Player(1).Deck.size() == deckSize,
+                  "Counterspell must pay exact discard cost and reset priority");
+            Reject([&] { match.RespondWithNegation(2, counter, {costOne, costTwo}); });
+            match.PassSpellResponse(1);
+            Check(match.PriorityPlayer() == 2 &&
+                      match.Phase() == YakouPhase::SpellResponse,
+                  "One pass cannot resolve a counterspell chain");
+            match.PassSpellResponse(2);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.PriorityPlayer() == 0 &&
+                      match.Player(1).Deck.size() == deckSize &&
+                      match.PendingEffects().empty() &&
+                      match.Player(1).Graveyard.size() == 1,
+                  "Resolved negation must cancel mill without undoing activated cards");
+            auto const used = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, match.Player(1).Hand[0]); });
+            Check(match.ServerStateHash() == used,
+                  "Negated spell must still consume its card-name per-turn allowance");
+        }
+        {
+            // With no response, the server resolves the original spell after
+            // the required two passes, and only then applies its effect.
+            auto match = Make(proto, {2009}, {3020, 2001, 2002});
+            match.StartTurn(1);
+            const int spell = match.Player(1).Hand[0];
+            auto const before = match.Player(1).Deck.size();
+            match.BeginSpellResponse(1, spell);
+            match.PassSpellResponse(2);
+            Check(match.Player(1).Deck.size() == before &&
+                      match.PriorityPlayer() == 1,
+                  "First pass must not resolve the original spell");
+            match.PassSpellResponse(1);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.Player(1).Deck.size() == before - 2 &&
+                      match.PendingEffects().empty(),
+                  "Unanswered spell must resolve after double-pass");
+        }
+        {
+            // Server-private replay reconstructs the same priority/negation
+            // sequence and rejected commands without changing the match hash.
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009}), Deck(proto, {3020, 2001, 2002})};
+            auto command = [](YakouReplayOperation op, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = op;
+                value.Player = player;
+                return value;
+            };
+            auto start = command(YakouReplayOperation::StartTurn, 1);
+            auto cast = command(YakouReplayOperation::BeginSpellResponse, 1);
+            cast.CardId = 1;
+            auto invalid = command(YakouReplayOperation::PassSpellResponse, 1);
+            auto counter = command(YakouReplayOperation::RespondWithNegation, 2);
+            counter.CardId = 31;
+            counter.Cards = {32, 33};
+            auto passOne = command(YakouReplayOperation::PassSpellResponse, 1);
+            auto passTwo = command(YakouReplayOperation::PassSpellResponse, 2);
+            std::vector<YakouReplayCommand> commands{
+                start, cast, invalid, counter, passOne, passTwo};
+            auto const first = ReplayYakou(proto, 1, decks, commands);
+            auto const again = ReplayYakou(proto, 1, decks, commands);
+            Check(first.Steps.size() == 6 && !first.Steps[2].Accepted &&
+                      first.Steps[2].BeforeHash == first.Steps[2].AfterHash &&
+                      first.Steps[3].Accepted && first.Steps[5].Accepted &&
+                      first.FinalState.Phase() == YakouPhase::Main &&
+                      first.FinalState.ServerStateHash() == again.FinalState.ServerStateHash(),
+                  "Chain replay must preserve invalid priority, paid response and closure");
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
