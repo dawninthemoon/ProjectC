@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <limits>
+#include <initializer_list>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -37,6 +38,93 @@ int FindSlot(YakouPlayer const& player, int instance)
     for (int i = 0; i < 5; ++i)
         if (player.Field[i] && player.Field[i]->InstanceId == instance) return i;
     return -1;
+}
+bool HasOnlyFields(Json const& object, std::initializer_list<char const*> allowed)
+{
+    if (!object.is_object())
+    {
+        return false;
+    }
+    for (auto it = object.begin(); it != object.end(); ++it)
+    {
+        if (std::none_of(allowed.begin(), allowed.end(),
+                         [&](char const* key) { return it.key() == key; }))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Do not silently omit a newly authored cost, condition, duration or target rule.
+void CheckSupportedAction(Json const& action)
+{
+    Check(action.is_object() && action.contains("Operation") && action.at("Operation").is_string(),
+          "Malformed Yakou effect operation");
+    auto const operation = action.at("Operation").get<std::string>();
+    if (action.contains("Condition"))
+    {
+        auto const& condition = action.at("Condition");
+        Check(operation == "Salvage" && condition.is_object() && condition.size() == 1 &&
+                  HasOnlyFields(condition, {"GraveyardArchetypeCountAtLeast"}) &&
+                  condition.at("GraveyardArchetypeCountAtLeast").is_number_integer() &&
+                  condition.at("GraveyardArchetypeCountAtLeast").get<int>() >= 0 &&
+                  action.contains("RequiredArchetype") && action.at("RequiredArchetype").is_string(),
+              "Conditional Yakou effect not yet supported");
+    }
+    bool supported = false;
+    if (operation == "Mill")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Count", "From", "To"});
+    }
+    else if (operation == "ModifyCountdown")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "Delta", "Optional"});
+    }
+    else if (operation == "SetCountdown")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "Value", "Optional"});
+    }
+    else if (operation == "HealAccumulatedDamage")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "Amount", "Optional"});
+    }
+    else if (operation == "Salvage")
+    {
+        supported = HasOnlyFields(action, {"Operation", "From", "To", "Count", "CardType", "RequiredArchetype", "Optional", "Condition"});
+    }
+    else if (operation == "LookAndChoose")
+    {
+        supported = HasOnlyFields(action, {"Operation", "From", "LookCount", "ChooseCount", "ChosenDestination", "RestDestination"});
+    }
+    Check(supported, "Unsupported Yakou effect operation or action fields: " + operation);
+}
+
+// Evaluate printed field-only passives before committing a summon or
+// manifestation. Unrecognized continuous effects must not silently disappear.
+int PrintedMaxBlocks(Json const& card)
+{
+    int maximum = 1;
+    for (auto const& effect : card.at("Effects"))
+    {
+        if (effect.at("Type") != "Continuous")
+        {
+            continue;
+        }
+        Check(effect.at("Trigger") == "Passive" && effect.at("Actions").is_array() &&
+                  !effect.at("Actions").empty(), "Unsupported continuous effect");
+        for (auto const& action : effect.at("Actions"))
+        {
+            Check(action.is_object() && action.size() == 4 &&
+                      action.at("Operation") == "IncreaseMaxBlocks" && action.at("Target") == "Self" &&
+                      action.at("Duration") == "WhileOnField" && action.at("Value").is_number_integer() &&
+                      !action.contains("Condition"), "Unsupported continuous action");
+            int const value = action.at("Value").get<int>();
+            Check(value > 0, "Invalid maximum blocker count");
+            maximum = std::max(maximum, value);
+        }
+    }
+    return maximum;
 }
 } // namespace
 
@@ -97,6 +185,97 @@ YakouPlayer const& YakouMatch::Player(int id) const
     Check(id == 1 || id == 2, "Unknown player");
     return players_[id - 1];
 }
+Json YakouMatch::ViewerSnapshot(int viewer) const
+{
+    Check(viewer == 1 || viewer == 2, "Unknown snapshot viewer");
+    auto visibleCard = [&](int instance)
+    {
+        int const definitionId = OriginalId(instance);
+        auto const definition = CardDefinition(definitionId);
+        return Json{{"Id", instance}, {"DefinitionId", definitionId},
+                    {"NameKey", definition.at("NameKey")},
+                    {"DescriptionKey", definition.at("DescriptionKey")},
+                    {"CardType", definition.at("Type") == "Spell" ? 1 : 0},
+                    {"Attack", definition.value("Attack", 0)},
+                    {"Hp", definition.value("MaxHp", 0)},
+                    {"MaxHp", definition.value("MaxHp", 0)}};
+    };
+    Json players = Json::array();
+    for (auto const& player : players_)
+    {
+        Json hand = Json::array();
+        if (player.Id == viewer)
+        {
+            for (int instance : player.Hand)
+            {
+                hand.push_back(visibleCard(instance));
+            }
+        }
+        Json grave = Json::array();
+        for (int instance : player.Graveyard)
+        {
+            grave.push_back(visibleCard(instance));
+        }
+        Json exile = Json::array();
+        for (int instance : player.Exile)
+        {
+            exile.push_back(visibleCard(instance));
+        }
+        Json field = Json::array();
+        for (auto const& entry : player.Field)
+        {
+            if (!entry)
+            {
+                field.push_back(nullptr);
+                continue;
+            }
+            auto const& unit = *entry;
+            auto definition = CardDefinition(unit.DefinitionId);
+            field.push_back({{"Id", unit.InstanceId}, {"DefinitionId", unit.DefinitionId},
+                             {"NameKey", definition.at("NameKey")},
+                             {"DescriptionKey", definition.at("DescriptionKey")},
+                             {"CardType", 0}, {"Attack", unit.Attack()}, {"Hp", unit.Hp()},
+                             {"MaxHp", unit.MaxHp()}, {"AttackCounter", unit.Countdown},
+                             {"MaxBlocks", unit.MaxBlocks}});
+        }
+        Json visiblePlayer = {{"PlayerId", player.Id}, {"Life", player.Life}, {"Ki", player.Ki},
+                              {"HandCount", player.Hand.size()}, {"DeckCount", player.Deck.size()},
+                              {"Hand", std::move(hand)}, {"FieldSlots", std::move(field)},
+                              {"Graveyard", std::move(grave)}, {"Exile", std::move(exile)}};
+        if (player.Id == viewer)
+        {
+            bool canNormal = false;
+            for (int instance : player.Hand)
+            {
+                auto const choices = SummonChoices(player.Id, instance);
+                if (std::any_of(choices.begin(), choices.end(),
+                                [](YakouSummonChoice const& option) { return option.Method == "Normal"; }))
+                {
+                    canNormal = true;
+                    break;
+                }
+            }
+            visiblePlayer["CanNormalSummon"] = canNormal;
+            visiblePlayer["NormalSummonsUsed"] = player.NormalSummons;
+            visiblePlayer["ManifestationsUsed"] = player.Manifestations;
+            visiblePlayer["RedrawsUsed"] = player.Redraws;
+        }
+        players.push_back(std::move(visiblePlayer));
+    }
+    char const* phase = phase_ == YakouPhase::TurnStart ? "TurnStart"
+        : phase_ == YakouPhase::Main ? "Main"
+        : phase_ == YakouPhase::AssignBlockers ? "AssignBlockers"
+        : phase_ == YakouPhase::RaidResponse ? "RaidResponse" : "Finished";
+    Json attacks = Json::array();
+    for (auto const& attack : attacks_)
+    {
+        attacks.push_back({{"AttackerId", attack.Card}, {"Slot", attack.Slot}, {"BlockerId", attack.Blocker}});
+    }
+    return {{"Phase", phase}, {"ActivePlayerId", ActivePlayer()}, {"TurnNumber", turn_},
+            {"PriorityPlayerId", PriorityPlayer()}, {"WinnerPlayerId", winner_},
+            {"Players", std::move(players)}, {"Attacks", std::move(attacks)}};
+}
+
 YakouPlayer& YakouMatch::MutablePlayer(int id)
 {
     Check(id == 1 || id == 2, "Unknown player");
@@ -120,14 +299,45 @@ void YakouMatch::RequireMain(int player) const
     Check(phase_ == YakouPhase::Main, "Not in Yakou main phase");
     Check(player == ActivePlayer(), "Not active player");
 }
-void YakouMatch::Enqueue(int player, int instance, int definition, std::string const& trigger)
+void YakouMatch::Enqueue(int player, int instance, int definition, std::string const& trigger,
+                         int relatedCard)
 {
     auto const data = CardDefinition(definition);
     for (auto const& effect : data.at("Effects"))
     {
-        if (effect.at("Trigger") == trigger)
-            pendingEffects_.push_back({player, instance, definition,
-                                       effect.at("Id").get<int>(), trigger});
+        if (effect.at("Trigger") != trigger)
+        {
+            continue;
+        }
+        auto const& actions = effect.at("Actions");
+        if (actions.is_array() && actions.size() == 1 && actions[0].is_object() &&
+            actions[0].value("Operation", std::string("")) == "Salvage" &&
+            actions[0].contains("Condition"))
+        {
+            // This authored condition is checked at trigger registration. Other
+            // condition shapes remain queued and fail closed at resolution.
+            auto const& action = actions[0];
+            auto const& condition = action.at("Condition");
+            if (condition.is_object() && condition.contains("GraveyardArchetypeCountAtLeast"))
+            {
+                CheckSupportedAction(action);
+                auto const archetype = action.at("RequiredArchetype").get<std::string>();
+                int tally = 0;
+                for (int card : Player(player).Graveyard)
+                {
+                    if (HasArchetype(OriginalId(card), archetype))
+                    {
+                        ++tally;
+                    }
+                }
+                if (tally < condition.at("GraveyardArchetypeCountAtLeast").get<int>())
+                {
+                    continue;
+                }
+            }
+        }
+        pendingEffects_.push_back({player, instance, definition,
+                                   effect.at("Id").get<int>(), trigger, relatedCard});
     }
 }
 
@@ -163,7 +373,7 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
     Check(actions.is_array() && actions.size() == 1,
           "Unsupported multi-action or empty Yakou effect");
     auto const& action = actions.at(0);
-    Check(!action.contains("Condition"), "Conditional Yakou effect not yet supported");
+    CheckSupportedAction(action);
     YakouEffectChoice choice;
     choice.Operation = action.at("Operation").get<std::string>();
     auto const& owner = Player(player);
@@ -174,6 +384,19 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
               "Unsupported mill shape");
         Check(owner.Deck.size() >= static_cast<std::size_t>(action.at("Count").get<int>()),
               "Insufficient cards for authored mill");
+        return choice;
+    }
+    if (choice.Operation == "LookAndChoose")
+    {
+        Check(action.at("From") == "FriendlyDeckTop" && action.at("ChooseCount") == 1 &&
+                  action.at("ChosenDestination") == "Hand" && action.at("RestDestination") == "DeckBottom",
+              "Unsupported look-and-choose shape");
+        int const count = action.at("LookCount").get<int>();
+        Check(count > 0 && count <= 30 && owner.Deck.size() >= static_cast<std::size_t>(count),
+              "Insufficient cards for look-and-choose");
+        choice.SourceZone = "FriendlyDeckTop";
+        choice.MinCount = choice.MaxCount = 1;
+        choice.Candidates.assign(owner.Deck.begin(), owner.Deck.begin() + count);
         return choice;
     }
     if (choice.Operation == "Salvage")
@@ -203,12 +426,13 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
         Check(choice.Operation == "ModifyCountdown" || choice.Operation == "SetCountdown" ||
                   choice.Operation == "HealAccumulatedDamage", "Unsupported Yakou effect operation: " + choice.Operation);
         auto const targetMode = action.at("Target").get<std::string>();
-        Check(targetMode == "Self" || targetMode == "FriendlyMonster" || targetMode == "OtherFriendlyMonster",
-              "Unsupported friendly monster target mode");
-        if (targetMode == "Self")
+        Check(targetMode == "Self" || targetMode == "FriendlyMonster" || targetMode == "OtherFriendlyMonster" ||
+                  targetMode == "DevouringMonster", "Unsupported friendly monster target mode");
+        if (targetMode == "Self" || targetMode == "DevouringMonster")
         {
-            Check(FindUnit(owner, queued.SourceCard) != nullptr,
-                  "Self target must remain on the friendly field");
+            int const automaticTarget = targetMode == "Self" ? queued.SourceCard : queued.RelatedCard;
+            Check(automaticTarget > 0 && FindUnit(owner, automaticTarget) != nullptr,
+                  "Automatic target must remain on the friendly field");
             return choice;
         }
         choice.SourceZone = "FriendlyField";
@@ -248,14 +472,9 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     Check(actions.is_array() && actions.size() == 1,
           "Unsupported multi-action or empty Yakou effect");
     auto const& action = actions.at(0);
+    // Validate the complete authored shape before changing any state.
+    CheckSupportedAction(action);
     auto const operation = action.at("Operation").get<std::string>();
-    // No partial effect handling: reject unsupported authored shape before
-    // changing resources, usage counters or the pending queue.
-    Check(operation == "Mill" || operation == "ModifyCountdown" ||
-              operation == "SetCountdown" || operation == "HealAccumulatedDamage" ||
-              operation == "Salvage",
-          "Unsupported Yakou effect operation: " + operation);
-    Check(!action.contains("Condition"), "Conditional Yakou effect not yet supported");
 
     auto const usage = std::make_tuple(turn_, player, card.at("NameKey").get<std::string>(), queued.EffectId);
     int const limit = definition->value("PerTurnLimit", 0);
@@ -288,6 +507,34 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
             owner.Deck.erase(owner.Deck.begin());
         }
         next.journal_.push_back("EffectMill:" + std::to_string(queued.SourceCard) +
+                                ":" + std::to_string(count));
+    }
+    else if (operation == "LookAndChoose")
+    {
+        Check(action.at("From") == "FriendlyDeckTop" && action.at("ChooseCount") == 1 &&
+                  action.at("ChosenDestination") == "Hand" && action.at("RestDestination") == "DeckBottom",
+              "Unsupported look-and-choose shape");
+        int const count = action.at("LookCount").get<int>();
+        Check(count > 0 && count <= 30 && owner.Deck.size() >= static_cast<std::size_t>(count),
+              "Insufficient cards for look-and-choose");
+        auto const end = owner.Deck.begin() + count;
+        Check(std::find(owner.Deck.begin(), end, selectedTarget) != end,
+              "Selected card must be among the authorized deck-top cards");
+        std::vector<int> viewed(owner.Deck.begin(), end);
+        owner.Deck.erase(owner.Deck.begin(), end);
+        for (int instance : viewed)
+        {
+            if (instance == selectedTarget)
+            {
+                owner.Hand.push_back(instance);
+            }
+            else
+            {
+                owner.Deck.push_back(instance);
+            }
+        }
+        // The journal contains a public count, never the identities of looked-at cards.
+        next.journal_.push_back("EffectLookAndChoose:" + std::to_string(queued.SourceCard) +
                                 ":" + std::to_string(count));
     }
     else if (operation == "Salvage")
@@ -326,13 +573,15 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
     {
         auto const targetMode = action.at("Target").get<std::string>();
         Check(targetMode == "Self" || targetMode == "FriendlyMonster" ||
-                  targetMode == "OtherFriendlyMonster",
+                  targetMode == "OtherFriendlyMonster" || targetMode == "DevouringMonster",
               "Unsupported friendly monster target mode");
-        int const target = targetMode == "Self" ? queued.SourceCard : selectedTarget;
-        if (targetMode == "Self")
+        bool const automatic = targetMode == "Self" || targetMode == "DevouringMonster";
+        int const target = targetMode == "Self" ? queued.SourceCard
+            : targetMode == "DevouringMonster" ? queued.RelatedCard : selectedTarget;
+        if (automatic)
         {
-            Check(selectedTarget == 0 || selectedTarget == target,
-                  "Self effect cannot select a different monster");
+            Check(target > 0 && (selectedTarget == 0 || selectedTarget == target),
+                  "Automatic effect cannot select a different monster");
         }
         bool const optional = action.value("Optional", false);
         if (target == 0 && optional && targetMode != "Self")
@@ -466,6 +715,13 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
 
 void YakouMatch::StartTurn(int player)
 {
+    YakouMatch next = *this;
+    next.StartTurnImpl(player);
+    *this = std::move(next);
+}
+
+void YakouMatch::StartTurnImpl(int player)
+{
     Check(phase_ == YakouPhase::TurnStart && player == ActivePlayer(),
           "Cannot start this turn");
     auto& owner = MutablePlayer(player);
@@ -477,6 +733,7 @@ void YakouMatch::StartTurn(int player)
     if (owner.Deck.size() < static_cast<std::size_t>(drawn))
     {
         phase_ = YakouPhase::Finished;
+        winner_ = 3 - player;
         journal_.push_back("DeckExhausted:" + std::to_string(player));
         return;
     }
@@ -502,12 +759,21 @@ void YakouMatch::StartTurn(int player)
 void YakouMatch::Summon(int player, int handInstance, std::string const& method,
                         std::vector<int> const& materialIds, int slot)
 {
+    YakouMatch next = *this;
+    next.SummonImpl(player, handInstance, method, materialIds, slot);
+    *this = std::move(next);
+}
+
+void YakouMatch::SummonImpl(int player, int handInstance, std::string const& method,
+                        std::vector<int> const& materialIds, int slot)
+{
     RequireMain(player);
     auto& owner = MutablePlayer(player);
     Check(slot >= 0 && slot < 5, "Invalid fixed field slot");
     Check(Contains(owner.Hand, handInstance), "Card is not in own hand");
     auto const card = CardDefinition(OriginalId(handInstance));
     Check(card.at("Type") == "Monster", "Only monsters can be summoned");
+    int const maxBlocks = PrintedMaxBlocks(card);
     YakouCostRequirement requirement;
     try
     {
@@ -552,9 +818,10 @@ void YakouMatch::Summon(int player, int handInstance, std::string const& method,
         {
             int const index = FindSlot(owner, instance);
             Check(index >= 0, "Missing devour material");
+            int const sourceDefinition = owner.Field[index]->DefinitionId;
             owner.Field[index].reset();
             owner.Graveyard.push_back(instance);
-            Enqueue(player, instance, OriginalId(instance), "OnDevoured");
+            Enqueue(player, instance, sourceDefinition, "OnDevoured", handInstance);
         }
     }
     else if (method == "Necromancy")
@@ -583,7 +850,9 @@ void YakouMatch::Summon(int player, int handInstance, std::string const& method,
                                    .BonusAttack = bonusAttack,
                                    .BonusMaxHp = bonusMaxHp,
                                    .Countdown = card.at("AttackInterval").get<int>(),
-                                   .WasDevourSummoned = method == "Devour"};
+                                   .WasDevourSummoned = method == "Devour",
+                                   .BaseMaxBlocks = maxBlocks,
+                                   .MaxBlocks = maxBlocks};
     if (method == "Normal") ++owner.NormalSummons;
     Enqueue(player, handInstance, OriginalId(handInstance), "OnSummoned");
     if (method == "Devour") Enqueue(player, handInstance, OriginalId(handInstance), "OnDevourSummoned");
@@ -593,6 +862,13 @@ void YakouMatch::Summon(int player, int handInstance, std::string const& method,
 
 void YakouMatch::Manifest(int player, int fieldInstance, int manifestationDefinition)
 {
+    YakouMatch next = *this;
+    next.ManifestImpl(player, fieldInstance, manifestationDefinition);
+    *this = std::move(next);
+}
+
+void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDefinition)
+{
     RequireMain(player);
     auto& owner = MutablePlayer(player);
     Check(owner.Manifestations == 0, "Already manifested this turn");
@@ -601,6 +877,10 @@ void YakouMatch::Manifest(int player, int fieldInstance, int manifestationDefini
     auto const source = CardDefinition(unit.DefinitionId);
     auto const target = CardDefinition(manifestationDefinition);
     Check(target.at("Type") == "Manifestation", "Invalid manifestation definition");
+    int const printedBlocks = PrintedMaxBlocks(target);
+    auto const effectiveBlocks = static_cast<std::int64_t>(printedBlocks) + unit.MaxBlocks - unit.BaseMaxBlocks;
+    Check(effectiveBlocks > 0 && effectiveBlocks <= std::numeric_limits<int>::max(),
+          "Invalid manifestation blocker limit");
     bool allowed = false;
     for (auto const& entry : source.at("AllowedManifestations"))
         if (entry == manifestationDefinition) allowed = true;
@@ -641,6 +921,8 @@ void YakouMatch::Manifest(int player, int fieldInstance, int manifestationDefini
     ++owner.Manifestations;
     unit.BaseAttack = target.at("Attack").get<int>();
     unit.BaseMaxHp = target.at("MaxHp").get<int>();
+    unit.BaseMaxBlocks = printedBlocks;
+    unit.MaxBlocks = static_cast<int>(effectiveBlocks);
     unit.DefinitionId = manifestationDefinition;
     unit.Manifested = true;
     unit.Countdown = std::max(0, unit.Countdown - 1);
@@ -657,6 +939,13 @@ void YakouMatch::Manifest(int player, int fieldInstance, int manifestationDefini
 
 void YakouMatch::Postpone(int player, int fieldInstance)
 {
+    YakouMatch next = *this;
+    next.PostponeImpl(player, fieldInstance);
+    *this = std::move(next);
+}
+
+void YakouMatch::PostponeImpl(int player, int fieldInstance)
+{
     RequireMain(player);
     auto& owner = MutablePlayer(player);
     auto& unit = FieldUnit(owner, fieldInstance);
@@ -669,6 +958,13 @@ void YakouMatch::Postpone(int player, int fieldInstance)
 }
 
 void YakouMatch::Redraw(int player, std::vector<int> const& cards)
+{
+    YakouMatch next = *this;
+    next.RedrawImpl(player, cards);
+    *this = std::move(next);
+}
+
+void YakouMatch::RedrawImpl(int player, std::vector<int> const& cards)
 {
     RequireMain(player);
     auto& owner = MutablePlayer(player);
@@ -696,6 +992,13 @@ void YakouMatch::Redraw(int player, std::vector<int> const& cards)
 
 void YakouMatch::BeginRaid(int player)
 {
+    YakouMatch next = *this;
+    next.BeginRaidImpl(player);
+    *this = std::move(next);
+}
+
+void YakouMatch::BeginRaidImpl(int player)
+{
     RequireMain(player);
     attacks_.clear();
     auto const& owner = Player(player);
@@ -712,6 +1015,14 @@ void YakouMatch::BeginRaid(int player)
 }
 
 void YakouMatch::AssignBlockers(int defendingPlayer,
+                                std::vector<std::pair<int, int>> const& assignments)
+{
+    YakouMatch next = *this;
+    next.AssignBlockersImpl(defendingPlayer, assignments);
+    *this = std::move(next);
+}
+
+void YakouMatch::AssignBlockersImpl(int defendingPlayer,
                                 std::vector<std::pair<int, int>> const& assignments)
 {
     Check(phase_ == YakouPhase::AssignBlockers, "No raid awaiting blockers");
@@ -743,6 +1054,13 @@ void YakouMatch::AssignBlockers(int defendingPlayer,
 
 void YakouMatch::PassRaidResponse(int player)
 {
+    YakouMatch next = *this;
+    next.PassRaidResponseImpl(player);
+    *this = std::move(next);
+}
+
+void YakouMatch::PassRaidResponseImpl(int player)
+{
     Check(phase_ == YakouPhase::RaidResponse, "No raid response window");
     bool const closed = response_.Pass(player);
     journal_.push_back("RaidResponsePass:" + std::to_string(player));
@@ -756,6 +1074,13 @@ void YakouMatch::PassRaidResponse(int player)
 }
 
 void YakouMatch::ResolveRaid(int defendingPlayer)
+{
+    YakouMatch next = *this;
+    next.ResolveRaidImpl(defendingPlayer);
+    *this = std::move(next);
+}
+
+void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 {
     Check(phase_ == YakouPhase::RaidResponse && !response_.IsOpen() &&
               defendingPlayer != ActivePlayer() &&
@@ -816,6 +1141,7 @@ void YakouMatch::ResolveRaid(int defendingPlayer)
         if (defender.Life == 0)
         {
             phase_ = YakouPhase::Finished;
+            winner_ = attacker.Id;
             journal_.push_back("GameOver:" + std::to_string(attacker.Id));
             return;
         }

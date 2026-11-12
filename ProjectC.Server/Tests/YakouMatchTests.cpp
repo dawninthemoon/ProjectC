@@ -60,6 +60,49 @@ int main()
         auto const proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
         {
+            auto match = Make(proto, {2001, 2008, 3008, 3007, 2009}, {2002, 2004});
+            auto const one = match.ViewerSnapshot(1);
+            auto const two = match.ViewerSnapshot(2);
+            Check(one.at("Players")[0].at("Hand").size() == 5 &&
+                      one.at("Players")[1].at("Hand").empty() &&
+                      two.at("Players")[0].at("Hand").empty() &&
+                      two.at("Players")[1].at("Hand").size() == 5,
+                  "A viewer may see only their own hand identities");
+            Check(!one.at("Players")[0].contains("Deck") && !one.at("Players")[1].contains("Deck") &&
+                      one.at("Players")[0].at("DeckCount") == 25 &&
+                      !one.at("Players")[1].contains("CanNormalSummon") &&
+                      one.at("Players")[1].at("FieldSlots").size() == 5,
+                  "Neither player's deck order may appear in the viewer snapshot");
+            Reject([&] { (void)match.ViewerSnapshot(3); });
+            match.StartTurn(1);
+            Check(match.ViewerSnapshot(1).at("Players")[0].at("CanNormalSummon") == true,
+                  "Owner summon availability must come from actual legal choices");
+            int const card = match.Player(1).Hand.front();
+            match.Summon(1, card, "Normal", {}, 2);
+            Check(match.ViewerSnapshot(1).at("Players")[0].at("CanNormalSummon") == false,
+                  "A consumed normal summon must immediately clear availability");
+            auto const visible = match.ViewerSnapshot(2);
+            Check(visible.at("Players")[0].at("FieldSlots")[0].is_null() &&
+                      visible.at("Players")[0].at("FieldSlots")[2].at("Id") == card &&
+                      visible.at("Players")[0].at("FieldSlots")[2].at("AttackCounter") == 2,
+                  "Public field cards and fixed slots must be projected to either viewer");
+        }
+        {
+            auto match = Make(proto, {}, {});
+            for (int step = 0; step < 100 && match.Phase() != YakouPhase::Finished; ++step)
+            {
+                int const active = match.ActivePlayer();
+                match.StartTurn(active);
+                if (match.Phase() != YakouPhase::Finished)
+                {
+                    match.BeginRaid(active);
+                }
+            }
+            Check(match.Phase() == YakouPhase::Finished && match.WinnerPlayer() == 1 &&
+                      match.ViewerSnapshot(1).at("WinnerPlayerId") == 1,
+                  "Deck exhaustion must finish the game and identify the opposing winner");
+        }
+        {
             auto match = Make(proto, {2001, 2008, 3008, 3007, 2009}, {});
             Check(match.Player(1).Hand.size() == 5 && match.Player(1).Ki == 3,
                   "Opening hand or Ki incorrect");
@@ -214,6 +257,93 @@ int main()
                   "Sequential battle, persistent damage and unblocked hero hit");
         }
         {
+            // The devoured source is in the graveyard when its effect resolves;
+            // its event context must still identify the actual consuming monster.
+            auto match = Make(proto, {3008, 2008, 2001, 2009, 2002}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.Summon(1, hand[1], "Devour", {hand[0]}, 0);
+            Check(match.PendingEffects().size() == 2 &&
+                      match.PendingEffects()[0].SourceCard == hand[0] &&
+                      match.PendingEffects()[0].RelatedCard == hand[1],
+                  "Devour event must retain the original source and consuming monster");
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "ModifyCountdown" && choice.MaxCount == 0,
+                  "The devouring monster is an automatic server-derived target");
+            int const before = match.Player(1).Field[0]->Countdown;
+            Reject([&] { match.ResolvePendingEffect(1, hand[2]); });
+            Check(match.Player(1).Field[0]->Countdown == before && match.PendingEffects().size() == 2,
+                  "A spoofed devouring target must not mutate the match");
+            match.ResolvePendingEffect(1);
+            Check(match.Player(1).Field[0]->Countdown == before - 1 &&
+                      match.PendingEffects().front().SourceCard == hand[1],
+                  "The graveyard source effect must adjust only its consuming monster");
+            match.ResolvePendingEffect(1); // Consuming monster's own authored mill.
+            Check(match.PendingEffects().empty(), "Both distinct devour triggers should resolve");
+        }
+        {
+            // A while-on-field passive comes from the defender's authored
+            // definition; it permits two distinct attackers in one raid.
+            auto changed = proto;
+            auto& cards = changed.Decks["Decks"][0]["Cards"];
+            for (auto& id : cards)
+            {
+                if (id == 3020)
+                {
+                    id = 3010;
+                    break;
+                }
+            }
+            auto match = Make(changed, {2005, 3007, 2001, 2009, 2002}, {3010});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.Summon(1, hand[1], "Discard", {hand[3]}, 1);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            int const blocker = match.Player(2).Hand[0];
+            match.Summon(2, blocker, "Normal", {}, 0);
+            Check(match.Player(2).Field[0]->BaseMaxBlocks == 2 &&
+                      match.Player(2).Field[0]->MaxBlocks == 2,
+                  "Printed while-on-field passive must provide two blocks");
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            Reject([&] { match.AssignBlockers(2, {{hand[0], blocker}, {hand[0], blocker}}); });
+            Check(match.Attacks()[0].Blocker == 0 && match.Attacks()[1].Blocker == 0,
+                  "Rejected duplicate-attacker allocation must not partially apply");
+            match.AssignBlockers(2, {{hand[0], blocker}, {hand[1], blocker}});
+            Check(match.Attacks()[0].Blocker == blocker && match.Attacks()[1].Blocker == blocker,
+                  "Both attackers must be assignable to the two-block defender");
+        }
+        {
+            auto changed = proto;
+            auto& cards = changed.Decks["Decks"][0]["Cards"];
+            for (auto& id : cards)
+            {
+                if (id == 3020)
+                {
+                    id = 3010;
+                    break;
+                }
+            }
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 3010)
+                {
+                    card["Effects"][0]["Actions"][0]["Target"] = "EnemyMonster";
+                }
+            }
+            auto match = Make(changed, {3010}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            Reject([&] { match.Summon(1, hand[0], "Normal", {}, 0); });
+            Check(match.Player(1).Hand == hand && !match.Player(1).Field[0] &&
+                      match.Player(1).NormalSummons == 0,
+                  "Unsupported passive must reject a summon before any state change");
+        }
+        {
             // Authoritative effect resolution: two-card mill and targeted timer
             // reduction must apply only after an accepted resolution command.
             auto match = Make(proto, {2001, 3007, 2009, 2002, 3001}, {});
@@ -332,6 +462,119 @@ int main()
                       std::find(match.Player(1).Graveyard.begin(), match.Player(1).Graveyard.end(), hand[4]) ==
                           match.Player(1).Graveyard.end() && match.PendingEffects().empty(),
                   "Valid salvage must move the selected authored monster to hand");
+        }
+        {
+            auto match = Make(proto, {2004, 2001, 2009, 3007, 2002}, {});
+            match.StartTurn(1);
+            match.Summon(1, match.Player(1).Hand[0], "Normal", {}, 0);
+            Check(match.PendingEffects().empty(),
+                  "An unmet authored graveyard condition must not enqueue a trigger");
+        }
+        {
+            auto match = Make(proto, {2001, 2004, 2009, 3007, 2002}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1);
+            match.Summon(1, hand[1], "Discard", {hand[2]}, 1);
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "Salvage" && choice.MinCount == 0 && choice.MaxCount == 1 &&
+                      !choice.Candidates.empty(),
+                  "A met graveyard condition must offer optional valid salvage candidates");
+            int const selected = choice.Candidates.front();
+            match.ResolvePendingEffect(1, selected);
+            Check(std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), selected) !=
+                      match.Player(1).Hand.end() && match.PendingEffects().empty(),
+                  "Conditional salvage must move only the selected legal card");
+        }
+        {
+            auto changed = proto;
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 2004)
+                {
+                    card["Effects"][0]["Actions"][0]["Condition"]["UnknownRule"] = true;
+                }
+            }
+            auto match = Make(changed, {2004}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            auto const journal = match.Journal();
+            Reject([&] { match.Summon(1, hand[0], "Normal", {}, 0); });
+            Check(match.Player(1).Hand == hand && !match.Player(1).Field[0] &&
+                      match.Player(1).NormalSummons == 0 && match.Journal() == journal,
+                  "A late unsupported trigger condition must roll back the entire summon");
+        }
+        {
+            // Future authored costs must not be ignored by a partially
+            // implemented operation or its candidate-query path.
+            auto changed = proto;
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 2001)
+                {
+                    card["Effects"][0]["Actions"][0]["OptionalCost"] = {{"Discard", 1}};
+                }
+            }
+            auto match = Make(changed, {2001}, {});
+            match.StartTurn(1);
+            int const source = match.Player(1).Hand[0];
+            match.Summon(1, source, "Normal", {}, 0);
+            auto const deck = match.Player(1).Deck;
+            Reject([&] { (void)match.PendingEffectChoices(1); });
+            Reject([&] { match.ResolvePendingEffect(1); });
+            Check(match.Player(1).Deck == deck && match.Player(1).Graveyard.empty() &&
+                      match.PendingEffects().size() == 1,
+                  "An unsupported authored cost must not be silently omitted");
+        }
+        {
+            // The authored deck-top choice is exercised in a local trigger
+            // fixture until spell activation and its response window exist.
+            auto changed = proto;
+            Json look;
+            for (auto const& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 3012)
+                {
+                    look = card["Effects"][0];
+                }
+            }
+            look["Id"] = 2;
+            look["Trigger"] = "OnSummoned";
+            for (auto& card : changed.Cards["Cards"])
+            {
+                if (card["Id"] == 2001)
+                {
+                    card["Effects"].push_back(look);
+                }
+            }
+            auto match = Make(changed, {2001, 2002, 3001, 3007, 2004}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Normal", {}, 0);
+            match.ResolvePendingEffect(1); // The original authored mill resolves first.
+            auto const deck = match.Player(1).Deck;
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Operation == "LookAndChoose" && choice.SourceZone == "FriendlyDeckTop" &&
+                      choice.MinCount == 1 && choice.MaxCount == 1 &&
+                      choice.Candidates == std::vector<int>({deck[0], deck[1], deck[2]}),
+                  "Only the authorized top three cards must be offered");
+            Reject([&] { (void)match.PendingEffectChoices(2); });
+            auto const enemyProjection = match.ViewerSnapshot(2).dump();
+            for (int hidden : choice.Candidates)
+            {
+                Check(enemyProjection.find("\"Id\":" + std::to_string(hidden)) == std::string::npos,
+                      "A deck-top choice must never expose its identities to the opponent");
+            }
+            Reject([&] { match.ResolvePendingEffect(1, deck[3]); });
+            Check(match.Player(1).Deck == deck && match.PendingEffects().size() == 1,
+                  "An illegal deck selection must be atomic");
+            match.ResolvePendingEffect(1, deck[1]);
+            auto const& remaining = match.Player(1).Deck;
+            Check(remaining.front() == deck[3] && remaining[remaining.size() - 2] == deck[0] &&
+                      remaining.back() == deck[2] && match.Player(1).Hand.back() == deck[1] &&
+                      match.PendingEffects().empty(),
+                  "Unchosen cards must reach the deck bottom in their original order");
         }
         {
             // Exercise the authored manifestation countdown operation while

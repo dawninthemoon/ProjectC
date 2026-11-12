@@ -29,6 +29,7 @@ struct YakouUnit
     bool WasDevourSummoned = false;
     bool Manifested = false;
     bool PostponedThisTurn = false;
+    int BaseMaxBlocks = 1;
     int MaxBlocks = 1;
     [[nodiscard]] int Attack() const { return BaseAttack + BonusAttack; }
     [[nodiscard]] int MaxHp() const { return BaseMaxHp + BonusMaxHp; }
@@ -63,6 +64,8 @@ struct YakouPendingEffect
     int DefinitionId = 0;
     int EffectId = 0;
     std::string Trigger;
+    // Immutable event context; the source may have left the field already.
+    int RelatedCard = 0;
 };
 
 // Server-derived selection metadata. Candidates are instance IDs, never client-authored.
@@ -105,6 +108,10 @@ public:
     }
     [[nodiscard]] std::vector<std::string> const& Journal() const { return journal_; }
     [[nodiscard]] int PriorityPlayer() const { return response_.PriorityPlayer(); }
+    [[nodiscard]] int WinnerPlayer() const { return winner_; }
+    // Viewer projection excludes both deck orders and every opponent hand identity.
+    // This is a server prototype API, not yet a public WebSocket schema.
+    [[nodiscard]] Json ViewerSnapshot(int viewer) const;
 
     // Every failure throws std::invalid_argument *before* any mutation.
     // These gameplay operations are not yet a public online protocol.
@@ -131,12 +138,23 @@ public:
     void ResolveRaid(int defendingPlayer);
 
 private:
+    void StartTurnImpl(int player);
+    void SummonImpl(int player, int handInstance, std::string const& method,
+                    std::vector<int> const& materialIds, int slot);
+    void ManifestImpl(int player, int fieldInstance, int manifestationDefinition);
+    void PostponeImpl(int player, int fieldInstance);
+    void RedrawImpl(int player, std::vector<int> const& cards);
+    void BeginRaidImpl(int player);
+    void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
+    void PassRaidResponseImpl(int player);
+    void ResolveRaidImpl(int defendingPlayer);
     Json CardDefinition(int id) const;
     YakouPlayer& MutablePlayer(int id);
     YakouUnit& FieldUnit(YakouPlayer& player, int instanceId);
     void RequireMain(int player) const;
     void TurnOver();
-    void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger);
+    void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
+                 int relatedCard = 0);
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 
@@ -147,6 +165,7 @@ private:
     int active_ = 0;
     int first_ = 0;
     int turn_ = 1;
+    int winner_ = 0;
     YakouPhase phase_ = YakouPhase::TurnStart;
     YakouChain response_;
     std::vector<YakouAttack> attacks_;
