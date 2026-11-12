@@ -1503,6 +1503,130 @@ int main()
                       "Multi-link raid replay must deterministically reject invalid priority");
             }
         }
+        {
+            // An authored untargeted summon trigger is safe to drain without
+            // a player choice, including its exact deck/graveyard mutation.
+            auto match = Make(proto, {2001, 3005}, {});
+            match.StartTurn(1);
+            const int normal = match.Player(1).Hand[0];
+            const int devour = match.Player(1).Hand[1];
+            match.Summon(1, normal, "Normal", {}, 0);
+            const auto deckBefore = match.Player(1).Deck.size();
+            Check(match.PendingEffects().size() == 1, "Mill must be pending first");
+            const auto budgetHash = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveAutomaticTriggers(0); });
+            Reject([&] { (void)match.ResolveAutomaticTriggers(129); });
+            Check(match.ServerStateHash() == budgetHash,
+                  "Invalid scheduler budget must leave all server state intact");
+            Check(match.ResolveAutomaticTriggers(64) == 1 &&
+                  match.PendingEffects().empty() &&
+                  match.Player(1).Deck.size() == deckBefore - 2 &&
+                  match.Player(1).Graveyard.size() == 2,
+                  "Automatic Mill must consume exactly the authored count");
+            // An authored Self target is also deterministic: do not present it
+            // as a selectable target simply because the operation names one.
+            match.Summon(1, devour, "Devour", {normal}, 0);
+            Check(match.PendingEffects().size() == 1 &&
+                  match.PendingEffectChoices(1).MaxCount == 0,
+                  "Devour-summoned Self countdown is an automatic effect");
+            Check(match.ResolveAutomaticTriggers(1) == 1 &&
+                  match.PendingEffects().empty() &&
+                  match.Player(1).Field[0] &&
+                  match.Player(1).Field[0]->Countdown == 2,
+                  "Automatic Self countdown must resolve after Devour");
+            Check(match.ResolveAutomaticTriggers(64) == 0,
+                  "Empty automatic queue should be a valid no-op");
+        }
+        {
+            // A discarded 2005 queues Mill, followed by a user-targeted
+            // healing effect. Drain only the deterministic prefix and do
+            // not auto-pick or auto-decline the next controller's choice.
+            auto altered = proto;
+            Json heal;
+            for (auto const& card : altered.Cards.at("Cards"))
+                if (card.at("Id") == 3002) heal = card.at("Effects").at(0);
+            Check(heal.is_object(), "Healing fixture must use real authored effect");
+            heal["Trigger"] = "OnSummoned";
+            for (auto& card : altered.Cards.at("Cards"))
+                if (card.at("Id") == 2004)
+                    card["Effects"] = Json::array({heal});
+            auto match = Make(altered, {2004, 2005, 2001, 3002, 3001}, {});
+            match.StartTurn(1);
+            const auto hand = match.Player(1).Hand;
+            match.Summon(1, hand[0], "Discard", {hand[1]}, 0);
+            Check(match.PendingEffects().size() == 2 &&
+                  match.PendingEffects()[0].SourceCard == hand[1] &&
+                  match.PendingEffects()[1].SourceCard == hand[0],
+                  "Effect queue must preserve discard-before-summon event order");
+            const auto deckBefore = match.Player(1).Deck.size();
+            Check(match.ResolveAutomaticTriggers(64) == 1 &&
+                  match.PendingEffects().size() == 1 &&
+                  match.Player(1).Deck.size() == deckBefore - 1 &&
+                  match.PendingEffectChoices(1).Operation == "HealAccumulatedDamage",
+                  "Scheduler must stop before mandatory player target selection");
+            const auto waitingHash = match.ServerStateHash();
+            Check(match.ResolveAutomaticTriggers(64) == 0 &&
+                  match.ServerStateHash() == waitingHash,
+                  "Repeated scheduler calls must not choose the target silently");
+            match.ResolvePendingEffect(1, hand[0]);
+            Check(match.PendingEffects().empty(),
+                  "Manual selection must resume the queue after an automatic prefix");
+
+            // Trigger processing is all-or-nothing across the entire batch.
+            // An impossible second effect cannot leave the first Mill applied.
+            auto broken = altered;
+            for (auto& card : broken.Cards.at("Cards"))
+                if (card.at("Id") == 2004)
+                    card["Effects"] = Json::array(
+                        {{{"Id", 1}, {"Type", "Triggered"},
+                          {"Trigger", "OnSummoned"},
+                          {"Actions", Json::array(
+                              {{{"Operation", "Mill"}, {"From", "FriendlyDeck"},
+                                {"To", "Graveyard"}, {"Count", 31}}})}}});
+            auto rejected = Make(broken, {2004, 2005, 2001, 3002, 3001}, {});
+            rejected.StartTurn(1);
+            auto const illegalHand = rejected.Player(1).Hand;
+            rejected.Summon(1, illegalHand[0], "Discard", {illegalHand[1]}, 0);
+            Check(rejected.PendingEffects().size() == 2,
+                  "Rollback fixture must enqueue both authored effects");
+            auto const beforeFailure = rejected.ServerStateHash();
+            Reject([&] { (void)rejected.ResolveAutomaticTriggers(64); });
+            Check(rejected.ServerStateHash() == beforeFailure &&
+                  rejected.PendingEffects().size() == 2,
+                  "Failure of later automatic effect must roll back earlier resolved effects");
+            Check(rejected.ResolveAutomaticTriggers(1) == 1 &&
+                  rejected.PendingEffects().size() == 1,
+                  "A bounded one-effect prefix must still commit independently");
+        }
+        {
+            // Replay makes both successful automatic drains and failed budgets
+            // reproducible without exposing hidden deck identities to clients.
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2001, 3005}), Deck(proto, {})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::Summon;
+            summon.Player = 1;
+            summon.CardId = 1;
+            summon.Method = "Normal";
+            YakouReplayCommand drain;
+            drain.Operation = YakouReplayOperation::ResolveAutomaticTriggers;
+            drain.MaxEffects = 64;
+            auto bad = drain;
+            bad.MaxEffects = 0;
+            std::vector<YakouReplayCommand> const commands{start, summon, bad, drain};
+            auto const once = ReplayYakou(proto, 1, decks, commands);
+            auto const again = ReplayYakou(proto, 1, decks, commands);
+            Check(once.Steps.size() == commands.size() &&
+                  !once.Steps[2].Accepted &&
+                  once.Steps[2].BeforeHash == once.Steps[2].AfterHash &&
+                  once.Steps[3].Accepted &&
+                  once.FinalState.PendingEffects().empty() &&
+                  once.FinalState.ServerStateHash() == again.FinalState.ServerStateHash(),
+                  "Automatic trigger replay must be deterministic with atomic rejection");
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
