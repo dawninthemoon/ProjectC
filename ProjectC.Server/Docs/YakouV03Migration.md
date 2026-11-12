@@ -427,3 +427,42 @@ gated by the authoritative chain lifecycle before enabling online matches.
 No WebSocket DTO, Unity action, response priority, spell cancellation, paid
 spell cost, or full card coverage is claimed. No JSON, Google Sheets, Unity
 scene, prefab, or C# source was modified.
+
+## Opt-in server spell priority and authored negation (limited first slice)
+
+The prototype now has a separate response-aware activation path:
+`BeginSpellResponse(player, ownedHandSpell, targetInstance)` uses the same
+zero-cost/one-action validation as the legacy `ActivateMainSpell` path, but
+holds the original effect in the private `YakouChain` stack instead of
+resolving it immediately. The phase is `SpellResponse`, the opposing player
+receives first priority, and illegal passes are rejected without mutation.
+
+`RespondWithNegation(opponent, counterspellInstance, discardedInstances)`
+currently recognizes **only authored card 3020**. It validates response
+priority, actual owner hand, the authored `Discard:2` cost, two distinct
+other owned hand instances, the printed `NegateSpellEffect` action, and
+card-name effect limits. Paid materials and the response spell move to
+the controller's graveyard. The target is the server-owned opening spell,
+never a client-supplied target ID. This slice permits one response link,
+not arbitrary chained responses.
+
+After two authorized consecutive `PassSpellResponse` calls, the server
+takes the chain's LIFO resolution. A resolved counterspell suppresses the
+original spell effect, but the original spell remains in the graveyard and
+its card-name per-turn usage allowance is consumed. With no counterspell,
+the original effect executes through the existing validated selection and
+effect resolver. A wrong priority, illegal cost, invalid selected target,
+or unsupported effect fails transactionally; failed last-pass resolution
+does not mutate the live match. Phase returns to Main when the chain closes.
+
+All three new operations are covered by server-private `YakouReplay`
+commands, including rejected operations and full-state deterministic hashes.
+
+**Limitations:** the original `ActivateMainSpell` prototype API remains
+available for compatibility and **does not** open a response window; the
+new `BeginSpellResponse` path is opt-in and is not exposed to production
+MatchSession/WebSocket. Only card 3020 can respond here. The other response
+spells, nested counters, raid response windows, deferred triggers, and
+automatic chain resolution of multiple effect-bearing links are **not**
+implemented. Do not switch live matchmaking to this prototype yet.
+No Unity code, scenes, prefabs, JSON, or spreadsheet data were modified.
