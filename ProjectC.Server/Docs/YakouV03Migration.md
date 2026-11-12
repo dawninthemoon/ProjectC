@@ -499,3 +499,43 @@ responses, attack modification, blocker reassignment, effect-damage
 prevention, and actual WebSocket/Unity match activation still require
 separate work. This prototype must not be presented as full response
 support. No Unity code, scenes, prefabs, card JSON or Sheets changed.
+
+## Authored paid raid tactics: attack reductions and blocker reassignment
+
+The opt-in server prototype now supports three additional defensive
+one-link raid responses in `RespondWithRaidTactic`:
+
+- **2011** `ModifyAttack / EnemyRaidingMonster / CurrentCombat`: validates
+  a single other owned hand card as `Discard:1`, moves it to graveyard,
+  and reduces the selected opponent raider's combat attack by the authored
+  signed delta, with an attack floor of zero.
+- **3019** `ModifyAttack / EnemyRaidingMonster / CurrentRaidPhase`: pays
+  `Necromancy:2` by exiling exactly two distinct cards from the defender's
+  graveyard and applies the authored raid-phase attack modifier to the
+  selected opponent attacker. Temporary reductions expire at raid end.
+- **3018** `ReassignBlocker / OneBlockedRaid`: pays `Discard:1`,
+  requires an existing blocked raid, and changes its blocker at response
+  resolution to another living controlled field monster. The server checks
+  the replacement's `MaxBlocks` against its current assignments at
+  activation **and** resolution, never trusting a client-computed block
+  count.
+
+Each validates printed action schema, target, exact cost zone/count,
+distinct instance IDs, controller priority, authored card-name turn
+limit, and one supported response link before moving cards. The normal
+chain double-pass closes the response and applies the modifier or
+assignment before combat. All operations use candidate-copy atomicity.
+Server-private canonical state includes active attack modifiers and the
+replay journal records selected raiders, optional replacement blocker
+and paid card IDs. Old empty-modifier replay hashes remain unchanged.
+
+Tests include the complete turn progression through Mill-based
+Necromancy material, invalid payment and spoofed targets, actual
+damage differences, blocker reassignment, and deterministic replay of
+both accepted and rejected commands.
+
+**Not yet supported:** chained or nested multiple raid responses;
+other response spell forms, card 2012's NextDamageEvent, automatic
+trigger/event scheduling, and production WebSocket/Unity integration.
+All of these remain subject to separate implementation and tests.
+No Unity files or card/localization JSON were changed.
