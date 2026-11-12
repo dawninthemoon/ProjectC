@@ -24,6 +24,9 @@ enum class YakouReplayOperation
     PassRaidResponse,
     ResolveRaid,
     ResolvePendingEffect,
+    BeginSpellResponse,
+    RespondWithNegation,
+    PassSpellResponse,
 };
 
 struct YakouReplayCommand

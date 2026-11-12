@@ -44,6 +44,15 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
     case YakouReplayOperation::ResolvePendingEffect:
         match.ResolvePendingEffect(command.Player, command.TargetId);
         break;
+    case YakouReplayOperation::BeginSpellResponse:
+        match.BeginSpellResponse(command.Player, command.CardId, command.TargetId);
+        break;
+    case YakouReplayOperation::RespondWithNegation:
+        match.RespondWithNegation(command.Player, command.CardId, command.Cards);
+        break;
+    case YakouReplayOperation::PassSpellResponse:
+        match.PassSpellResponse(command.Player);
+        break;
     default:
         throw std::invalid_argument("Unknown Yakou replay operation");
     }
