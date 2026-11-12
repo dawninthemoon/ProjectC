@@ -1,6 +1,7 @@
 #include "YakouPrototype.hpp"
 #include <algorithm>
 #include <fstream>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <unordered_set>
