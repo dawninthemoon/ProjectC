@@ -276,6 +276,93 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
             {"Players", std::move(players)}, {"Attacks", std::move(attacks)}};
 }
 
+Json YakouMatch::ServerCanonicalState() const
+{
+    Json players = Json::array();
+    for (auto const& player : players_)
+    {
+        Json field = Json::array();
+        for (auto const& entry : player.Field)
+        {
+            if (!entry)
+            {
+                field.push_back(nullptr);
+                continue;
+            }
+            auto const& unit = *entry;
+            field.push_back({{"Instance", unit.InstanceId}, {"Definition", unit.DefinitionId},
+                             {"BaseAttack", unit.BaseAttack}, {"BaseMaxHp", unit.BaseMaxHp},
+                             {"BonusAttack", unit.BonusAttack}, {"BonusMaxHp", unit.BonusMaxHp},
+                             {"Damage", unit.Damage}, {"Countdown", unit.Countdown},
+                             {"WasDevourSummoned", unit.WasDevourSummoned}, {"Manifested", unit.Manifested},
+                             {"PostponedThisTurn", unit.PostponedThisTurn},
+                             {"BaseMaxBlocks", unit.BaseMaxBlocks}, {"MaxBlocks", unit.MaxBlocks}});
+        }
+        players.push_back({{"Id", player.Id}, {"Life", player.Life}, {"Ki", player.Ki},
+                           {"NormalSummons", player.NormalSummons}, {"Manifestations", player.Manifestations},
+                           {"Redraws", player.Redraws}, {"Deck", player.Deck}, {"Hand", player.Hand},
+                           {"Graveyard", player.Graveyard}, {"Exile", player.Exile}, {"Field", std::move(field)}});
+    }
+    Json original = Json::array();
+    std::vector<std::pair<int, int>> definitions(original_.begin(), original_.end());
+    std::sort(definitions.begin(), definitions.end());
+    for (auto const& [instance, definition] : definitions)
+    {
+        original.push_back(Json::array({instance, definition}));
+    }
+    Json attacks = Json::array();
+    for (auto const& attack : attacks_)
+    {
+        attacks.push_back(Json::array({attack.Card, attack.Slot, attack.Blocker}));
+    }
+    Json pending = Json::array();
+    for (auto const& effect : pendingEffects_)
+    {
+        pending.push_back({{"Player", effect.Player}, {"SourceCard", effect.SourceCard},
+                           {"Definition", effect.DefinitionId}, {"Effect", effect.EffectId},
+                           {"Trigger", effect.Trigger}, {"RelatedCard", effect.RelatedCard}});
+    }
+    Json uses = Json::array();
+    for (auto const& [key, count] : effectUses_)
+    {
+        uses.push_back(Json::array({std::get<0>(key), std::get<1>(key), std::get<2>(key), std::get<3>(key), count}));
+    }
+    auto const chain = response_.ServerState();
+    auto links = [](std::vector<YakouChainLink> const& values)
+    {
+        Json result = Json::array();
+        for (auto const& link : values)
+        {
+            result.push_back({{"Controller", link.Controller}, {"SourceInstance", link.SourceInstance},
+                              {"EffectId", link.EffectId}, {"Trigger", link.Trigger}, {"Targets", link.Targets}});
+        }
+        return result;
+    };
+    return {{"Schema", 1}, {"CatalogCards", catalog_->Cards}, {"Config", catalog_->Config},
+            {"Players", std::move(players)}, {"OriginalDefinitions", std::move(original)},
+            {"NextInstance", nextInstance_}, {"Active", active_}, {"First", first_},
+            {"Turn", turn_}, {"Phase", static_cast<int>(phase_)}, {"Winner", winner_},
+            {"Attacks", std::move(attacks)}, {"PendingEffects", std::move(pending)},
+            {"EffectUses", std::move(uses)}, {"Journal", journal_},
+            {"Chain", {{"Open", chain.Open}, {"Priority", chain.Priority}, {"Passes", chain.ConsecutivePasses},
+                       {"Stack", links(chain.Stack)}, {"Resolution", links(chain.Resolution)},
+                       {"Deferred", links(chain.Deferred)}}}};
+}
+
+std::uint64_t YakouMatch::ServerStateHash() const
+{
+    // FNV-1a is a deterministic replay fingerprint, not an authentication hash.
+    constexpr std::uint64_t offset = 14695981039346656037ULL;
+    constexpr std::uint64_t prime = 1099511628211ULL;
+    std::uint64_t hash = offset;
+    for (unsigned char byte : ServerCanonicalState().dump())
+    {
+        hash ^= byte;
+        hash *= prime;
+    }
+    return hash;
+}
+
 YakouPlayer& YakouMatch::MutablePlayer(int id)
 {
     Check(id == 1 || id == 2, "Unknown player");

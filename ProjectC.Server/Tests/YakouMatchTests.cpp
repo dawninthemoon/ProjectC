@@ -1,4 +1,5 @@
 #include "YakouMatch.hpp"
+#include "YakouReplay.hpp"
 #include "CardCatalog.hpp"
 
 #include <algorithm>
@@ -59,6 +60,68 @@ int main()
     {
         auto const proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2005, 2001, 2009, 3001, 3007}), Deck(proto, {2001, 2002})};
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> commands;
+            commands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto summonOne = command(YakouReplayOperation::Summon, 1);
+            summonOne.CardId = 1;
+            summonOne.Method = "Normal";
+            commands.push_back(summonOne);
+            commands.push_back(summonOne); // Rejected duplicate: already on field.
+            commands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            commands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            auto summonTwo = command(YakouReplayOperation::Summon, 2);
+            summonTwo.CardId = 31;
+            summonTwo.Method = "Normal";
+            commands.push_back(summonTwo);
+            commands.push_back(command(YakouReplayOperation::ResolvePendingEffect, 2));
+            commands.push_back(command(YakouReplayOperation::BeginRaid, 2));
+            commands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            commands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            auto blockers = command(YakouReplayOperation::AssignBlockers, 2);
+            blockers.Blockers = {{1, 31}};
+            commands.push_back(blockers);
+            commands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            std::vector<YakouReplayCommand> const pendingCommands(commands.begin(), commands.begin() + 6);
+            auto const pending = ReplayYakou(proto, 1, decks, pendingCommands);
+            Check(pending.FinalState.PendingEffects().size() == 1 &&
+                      pending.FinalState.PendingEffectChoices(2).Operation == "Mill",
+                  "Replaying a partial journal must reconstruct its pending effect");
+            Reject([&] { (void)pending.FinalState.PendingEffectChoices(1); });
+            auto const mid = ReplayYakou(proto, 1, decks, commands);
+            Check(mid.FinalState.PriorityPlayer() == 1 && !mid.Steps[2].Accepted &&
+                      mid.Steps[2].BeforeHash == mid.Steps[2].AfterHash,
+                  "Replay must preserve raid priority and rejected-command atomicity");
+            commands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
+            commands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
+            auto const first = ReplayYakou(proto, 1, decks, commands);
+            auto const second = ReplayYakou(proto, 1, decks, commands);
+            constexpr std::uint64_t expectedReferenceHash = 18184515181999606374ULL;
+            Check(first.FinalState.ServerStateHash() == expectedReferenceHash,
+                  "Canonical replay fingerprint must agree across supported platforms");
+            Check(first.FinalState.ServerStateHash() == second.FinalState.ServerStateHash() &&
+                      first.FinalState.ServerStateHash() != mid.FinalState.ServerStateHash() &&
+                      first.Steps.size() == commands.size(),
+                  "Identical command journals must produce the same full server state hash");
+            Check(!first.FinalState.Player(1).Field[0] &&
+                      first.FinalState.Player(2).Field[0]->Damage == 1,
+                  "Replay must reproduce actual combat and persistent damage");
+            auto const privateVariant = ReplayYakou(proto, 1,
+                {decks[0], Deck(proto, {2002, 2001})}, {});
+            auto const original = ReplayYakou(proto, 1, decks, {});
+            Check(privateVariant.FinalState.ViewerSnapshot(1) == original.FinalState.ViewerSnapshot(1) &&
+                      privateVariant.FinalState.ServerStateHash() != original.FinalState.ServerStateHash(),
+                  "Replay hash must include private state even though viewer snapshots do not");
+        }
         {
             auto match = Make(proto, {2001, 2008, 3008, 3007, 2009}, {2002, 2004});
             auto const one = match.ViewerSnapshot(1);

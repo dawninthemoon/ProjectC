@@ -3,6 +3,7 @@
 #include "YakouChain.hpp"
 
 #include <array>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
@@ -112,6 +113,9 @@ public:
     // Viewer projection excludes both deck orders and every opponent hand identity.
     // This is a server prototype API, not yet a public WebSocket schema.
     [[nodiscard]] Json ViewerSnapshot(int viewer) const;
+    // Internal replay verification only: includes private hands and deck order.
+    // Do not expose this hash or its source state to clients.
+    [[nodiscard]] std::uint64_t ServerStateHash() const;
 
     // Every failure throws std::invalid_argument *before* any mutation.
     // These gameplay operations are not yet a public online protocol.
@@ -148,6 +152,7 @@ private:
     void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
     void PassRaidResponseImpl(int player);
     void ResolveRaidImpl(int defendingPlayer);
+    [[nodiscard]] Json ServerCanonicalState() const;
     Json CardDefinition(int id) const;
     YakouPlayer& MutablePlayer(int id);
     YakouUnit& FieldUnit(YakouPlayer& player, int instanceId);

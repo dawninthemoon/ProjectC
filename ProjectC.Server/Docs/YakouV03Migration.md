@@ -295,3 +295,28 @@ resolved by enabling the passive.
 
 These APIs do not implement the effect scheduler, response spells, combat
 modifiers, replay/hash, MatchSession integration, or a playable online mode.
+
+## Server-private deterministic replay foundation
+
+`ReplayYakou` reconstructs a fresh prototype match from its initial shuffled
+server-private deck orders, first player, and ordered prototype command
+records. It replays accepted and rejected commands, preserves their results,
+and verifies that rejected commands do not change the full server state. The
+result includes the reconstructed `YakouMatch`, so a caller can inspect a
+pending effect or a raid response priority after replaying a partial journal.
+
+`ServerStateHash()` fingerprints a canonical schema containing the full card
+catalog and configuration, ordered private zones, public fields and stat
+layers, IDs, current turn/phase/winner, effect-use counters, pending effects and
+their event context, attacks, journal, and all current `YakouChain` fields.
+It uses deterministic FNV-1a 64-bit arithmetic as a replay comparison, not as
+an authentication or collision-resistant security primitive. Both the private
+state and this fingerprint are server-only and must never be sent to clients.
+A reference-hash test checks the same fixture on all CI platforms.
+
+This does **not** yet replace `MatchSession`'s legacy replay archive. There is
+no persistent Yakou journal, network request deduplication, server restart
+checkpoint loader, reconnect DTO or Unity reconnection flow. It only covers the
+prototype operations currently represented by `YakouReplayOperation`; future
+chain responses, costs and effects must extend both the command journal and
+canonical state before they can be called replay-safe.
