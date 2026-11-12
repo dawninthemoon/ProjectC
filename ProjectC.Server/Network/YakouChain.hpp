@@ -21,6 +21,8 @@ struct YakouChainLink
 class YakouChain
 {
 public:
+    // Empty response window for raid preparation. Defender receives priority first.
+    void OpenWindow(int activePlayer);
     void Open(int activePlayer, YakouChainLink const& initial);
     void Respond(int player, YakouChainLink const& link);
     // Returns true only after two consecutive passes close the current window.

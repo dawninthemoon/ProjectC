@@ -401,12 +401,29 @@ void YakouMatch::AssignBlockers(int defendingPlayer,
         attack->Blocker = blocker;
     }
     attacks_ = std::move(proposed);
+    phase_ = YakouPhase::RaidResponse;
+    response_.OpenWindow(ActivePlayer());
     journal_.push_back("BlockersAssigned:" + std::to_string(assignments.size()));
+    journal_.push_back("RaidResponseOpened");
+}
+
+void YakouMatch::PassRaidResponse(int player)
+{
+    Check(phase_ == YakouPhase::RaidResponse, "No raid response window");
+    bool const closed = response_.Pass(player);
+    journal_.push_back("RaidResponsePass:" + std::to_string(player));
+    if (closed)
+    {
+        // Empty chain resolution is intentional: no response effects are supported
+        // yet, and the raid must not resolve while a player has priority.
+        Check(response_.TakeResolution().empty(), "Unresolved response effects");
+        journal_.push_back("RaidResponseClosed");
+    }
 }
 
 void YakouMatch::ResolveRaid(int defendingPlayer)
 {
-    Check(phase_ == YakouPhase::AssignBlockers &&
+    Check(phase_ == YakouPhase::RaidResponse && !response_.IsOpen() &&
               defendingPlayer != ActivePlayer() &&
               (defendingPlayer == 1 || defendingPlayer == 2),
           "Cannot resolve raid");

@@ -25,6 +25,14 @@ int main()
     try
     {
         YakouChain chain;
+        chain.OpenWindow(1);
+        Check(chain.IsOpen() && chain.PriorityPlayer() == 2 &&
+                  chain.StackSize() == 0, "Empty raid response window opens for defender");
+        Reject([&] { chain.Pass(1); });
+        Check(!chain.Pass(2) && chain.PriorityPlayer() == 1,
+              "Defender pass grants attacker priority");
+        Check(chain.Pass(1) && !chain.IsOpen() &&
+                  chain.TakeResolution().empty(), "Two passes close empty window");
         chain.Open(1, Link(1, 1));
         Check(chain.StackSize() == 1 && chain.PriorityPlayer() == 2,
               "First effect is chain 1 and grants opponent priority");

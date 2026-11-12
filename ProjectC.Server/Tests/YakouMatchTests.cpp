@@ -164,6 +164,16 @@ int main()
                                                  {hand1[1], blocker}}); });
             Check(match.Attacks()[0].Blocker == 0, "Invalid blockers must be atomic");
             match.AssignBlockers(2, {{hand1[0], blocker}});
+            Check(match.Phase() == YakouPhase::RaidResponse &&
+                      match.PriorityPlayer() == 2, "Defender must get raid response priority");
+            Reject([&] { match.ResolveRaid(2); });
+            Reject([&] { match.PassRaidResponse(1); });
+            match.PassRaidResponse(2);
+            Check(match.PriorityPlayer() == 1, "Priority should alternate after first pass");
+            Reject([&] { match.ResolveRaid(2); });
+            match.PassRaidResponse(1);
+            Check(match.PriorityPlayer() == 0, "Two passes must close response window");
+            Reject([&] { match.PassRaidResponse(2); });
             match.ResolveRaid(2);
             Check(!match.Player(1).Field[0].has_value() &&
                       match.Player(1).Field[1]->Countdown == 1 &&
