@@ -821,6 +821,47 @@ int YakouMatch::ResolveAutomaticTriggers(int maxEffects)
     return completed;
 }
 
+int YakouMatch::SummonAndRunAutomaticTriggers(
+    int player, int handInstance, std::string const& method,
+    std::vector<int> const& materialIds, int slot, int maxEffects)
+{
+    YakouMatch next = *this;
+    next.Summon(player, handInstance, method, materialIds, slot);
+    int const processed = next.ResolveAutomaticTriggers(maxEffects);
+    *this = std::move(next);
+    return processed;
+}
+
+int YakouMatch::ActivateMainSpellAndRunAutomaticTriggers(
+    int player, int handInstance, int maxEffects)
+{
+    YakouMatch next = *this;
+    next.ActivateMainSpell(player, handInstance);
+    int const processed = next.ResolveAutomaticTriggers(maxEffects);
+    *this = std::move(next);
+    return processed;
+}
+
+int YakouMatch::ResolveSelectedEffectAndRunAutomaticTriggers(
+    int player, int selectedTarget, int maxEffects)
+{
+    YakouMatch next = *this;
+    next.ResolvePendingEffect(player, selectedTarget);
+    int const processed = next.ResolveAutomaticTriggers(maxEffects);
+    *this = std::move(next);
+    return processed;
+}
+
+int YakouMatch::ManifestAndRunAutomaticTriggers(
+    int player, int fieldInstance, int manifestationDefinition, int maxEffects)
+{
+    YakouMatch next = *this;
+    next.Manifest(player, fieldInstance, manifestationDefinition);
+    int const processed = next.ResolveAutomaticTriggers(maxEffects);
+    *this = std::move(next);
+    return processed;
+}
+
 void YakouMatch::ActivateMainSpell(int player, int handInstance)
 {
     YakouMatch next = *this;
