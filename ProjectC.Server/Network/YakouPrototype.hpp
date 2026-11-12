@@ -25,6 +25,14 @@ struct YakouPrototype
                                    Json const& config);
 };
 
+// Card-authored exact cost requirement; never derive Devour N from the global default.
+struct YakouCostRequirement
+{
+    std::string SourceZone;
+    std::size_t ExactCount = 0;
+};
+[[nodiscard]] YakouCostRequirement YakouRequiredCost(Json const& card, std::string const& method);
+
 // Reusable server-side quantity/ownership check for the compact selection UI.
 // The required count comes from the *card's* cost, never from a global default.
 // Candidates must already be server-authorized for the requested zone/owner.
