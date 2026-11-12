@@ -104,3 +104,48 @@ Printed devoured ATK/MaxHP bonuses are inherited; its new countdown is its own p
 
 Do not silently choose these balance rules. For blocked implementation, document
 the safest policy and keep affected feature unavailable until it is explicitly chosen.
+
+
+## Prototype state-machine implementation (PR #8)
+
+`Network/YakouMatch.{hpp,cpp}` is an isolated, deterministic **server-side
+prototype**, not yet the published network match engine. It implements:
+
+- Opening hands, own-turn refill (first player's first-turn draw excluded),
+  one normal summon, authored Devour/Discard/Necromancy cost payment,
+  printed-stat devour inheritance, preserved five-slot field layout.
+- Ki 3/no regeneration; Ki-funded redraw, postponement and manifestation
+  (including authored prototype conditions and preservation of devour bonuses).
+- Own-turn countdown ticks, automatically declared attackers, defender-owned
+  batch blocker assignment, left-to-right combat, persistent damage,
+  direct damage when unblocked, and surviving attacker's countdown reset.
+- `PendingEffects` records triggered effects; **it does not resolve them**.
+  Do not infer that the sample deck is yet playable using its real effects.
+- No Unity/MatchSession integration. Legacy player-facing commands are untouched.
+
+`Network/YakouChain.{hpp,cpp}` is likewise an independent priority primitive:
+first activation is link 1, following response is link 2, two consecutive
+passes lead to last-in-first-out resolution, deferred triggers register active
+player first and opponent second. It has **not** been wired to `YakouMatch`
+or the full card effect interpreter.
+
+Tests: `YakouMatchTests` and `YakouChainTests` plus the existing
+`YakouPrototypeTests`; CI is the source of truth for pass/fail status.
+The game is **not yet feature complete**. Remaining critical work includes
+full rule-aware effect interpreter, response eligibility and target legality,
+mid-raid response windows, reconnect/replay serialization and protocol,
+and finally a compatible Unity UI.
+
+### Known decisions still requiring an implementation policy
+
+- New full-field replacement versus Devour must not be assumed to be free
+  in the cost solver until the design ambiguity is resolved.
+- The live sample includes `OnSummoned`/discard/exile triggers; those are
+  recorded by `YakouMatch` but not applied.
+- The chain primitive stores links and returns them in resolution order;
+  it is **not** a substitute for resolving actions.
+- Damage before transformation remains a separate integer counter; effects
+  that modify max HP must be layered separately in the future.
+- The current prototype raid can resolve immediately following blocker
+  assignment; the final design requires inserting the response window there.
+
