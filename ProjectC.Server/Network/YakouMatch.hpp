@@ -147,6 +147,8 @@ public:
     // Two authorized consecutive passes close the raid preparation window.
     // Card response activation is deliberately unavailable until effect execution exists.
     void PassRaidResponse(int player);
+    // Defensive response spell 3016: owner-only target, first damage this raid.
+    void RespondWithRaidShield(int player, int handInstance, int friendlyUnit);
     void ResolveRaid(int defendingPlayer);
 
 private:
@@ -163,6 +165,7 @@ private:
     void BeginRaidImpl(int player);
     void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
     void PassRaidResponseImpl(int player);
+    void RespondWithRaidShieldImpl(int player, int handInstance, int friendlyUnit);
     void ResolveRaidImpl(int defendingPlayer);
     [[nodiscard]] Json ServerCanonicalState() const;
     Json CardDefinition(int id) const;
@@ -186,6 +189,8 @@ private:
     YakouPhase phase_ = YakouPhase::TurnStart;
     YakouChain response_;
     std::vector<YakouAttack> attacks_;
+    // Server-private, one-shot damage reductions, removed at raid end.
+    std::map<int, int> raidShields_;
     std::vector<YakouPendingEffect> pendingEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;

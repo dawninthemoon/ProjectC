@@ -466,3 +466,36 @@ spells, nested counters, raid response windows, deferred triggers, and
 automatic chain resolution of multiple effect-bearing links are **not**
 implemented. Do not switch live matchmaking to this prototype yet.
 No Unity code, scenes, prefabs, JSON, or spreadsheet data were modified.
+
+## First defensive raid response: 3016 FirstDamageThisRaid shield
+
+The server-prototype `RespondWithRaidShield(defender, ownedSpellInstance,
+ownedFieldUnit)` activates the authored zero-cost card **3016**, only when
+the defending player has priority in `RaidResponse`. It validates the
+controller's actual hand, legal friendly field target, exact authored
+`ReduceDamage / FriendlyMonster / FirstDamageThisRaid` action, printed
+card-name usage limit and one-link response window. The spell moves into
+its owner's graveyard; unauthorized priority, spoofed targets, illegal
+spells or repeated responses fail atomically.
+
+After two valid consecutive passes, the existing `YakouChain` returns
+the response link in resolution order. The server applies a one-shot
+raid shield. When the selected monster first receives positive combat
+damage in the raid, damage is reduced by its authored `Amount` (floor
+zero) and the shield is consumed. Any unused shield expires on turn
+transition or game end. This is a temporary server-owned effect, not a
+printed stat mutation. When active, shield data is included in the
+server-only canonical replay state; empty shields preserve historical
+reference replay fixtures. A new replay operation captures defensive
+response command inputs.
+
+Tests compare a blocked 3-attack raid with and without card 3016,
+validate opponent priority and target authorization, and verify turn
+progression after the shielded combat.
+
+**Not complete:** this supports one specific raid-response spell and
+one link only. Stacked reductions, other response spell costs, nested
+responses, attack modification, blocker reassignment, effect-damage
+prevention, and actual WebSocket/Unity match activation still require
+separate work. This prototype must not be presented as full response
+support. No Unity code, scenes, prefabs, card JSON or Sheets changed.

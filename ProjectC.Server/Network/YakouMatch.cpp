@@ -387,7 +387,7 @@ Json YakouMatch::ServerCanonicalState() const
         }
         return result;
     };
-    return {{"Schema", 1}, {"CatalogCards", catalog_->Cards}, {"Config", catalog_->Config},
+    Json state = {{"Schema", 1}, {"CatalogCards", catalog_->Cards}, {"Config", catalog_->Config},
             {"Players", std::move(players)}, {"OriginalDefinitions", std::move(original)},
             {"NextInstance", nextInstance_}, {"Active", active_}, {"First", first_},
             {"Turn", turn_}, {"Phase", static_cast<int>(phase_)}, {"Winner", winner_},
@@ -396,6 +396,16 @@ Json YakouMatch::ServerCanonicalState() const
             {"Chain", {{"Open", chain.Open}, {"Priority", chain.Priority}, {"Passes", chain.ConsecutivePasses},
                        {"Stack", links(chain.Stack)}, {"Resolution", links(chain.Resolution)},
                        {"Deferred", links(chain.Deferred)}}}};
+    // Preserve the existing canonical replay fixture whenever no raid shield
+    // is pending; include live reductions in the private hash when present.
+    if (!raidShields_.empty())
+    {
+        Json shields = Json::array();
+        for (auto const& [instance, amount] : raidShields_)
+            shields.push_back(Json::array({instance, amount}));
+        state["RaidShields"] = std::move(shields);
+    }
+    return state;
 }
 
 std::uint64_t YakouMatch::ServerStateHash() const
@@ -1406,6 +1416,63 @@ void YakouMatch::AssignBlockersImpl(int defendingPlayer,
     journal_.push_back("RaidResponseOpened");
 }
 
+void YakouMatch::RespondWithRaidShield(int player, int handInstance, int friendlyUnit)
+{
+    YakouMatch next = *this;
+    next.RespondWithRaidShieldImpl(player, handInstance, friendlyUnit);
+    *this = std::move(next);
+}
+
+void YakouMatch::RespondWithRaidShieldImpl(int player, int handInstance, int friendlyUnit)
+{
+    Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
+              response_.PriorityPlayer() == player &&
+              player == 3 - ActivePlayer(),
+          "Only the defending player with priority may activate a raid shield");
+    Check(response_.StackSize() == 0,
+          "This prototype supports only one defensive raid response");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Hand, handInstance), "Raid response must be in owner's hand");
+    Check(FindUnit(owner, friendlyUnit) != nullptr,
+          "Raid shield target must be a controlled field monster");
+    auto const card = CardDefinition(OriginalId(handInstance));
+    Check(card.at("Id") == 3016 && card.at("Type") == "Spell",
+          "Only authored raid shield 3016 is supported");
+    Check(card.at("SummonCostJson").at("Activation").is_object() &&
+              card.at("SummonCostJson").at("Activation").empty(),
+          "Raid shield must have no activation costs");
+    auto const& effects = card.at("Effects");
+    Check(effects.is_array() && effects.size() == 1 &&
+              effects[0].at("Type") == "Triggered" &&
+              effects[0].at("Trigger") == "OnResolve" &&
+              effects[0].at("Actions").is_array() &&
+              effects[0].at("Actions").size() == 1,
+          "Unsupported raid shield effect shape");
+    auto const& action = effects[0].at("Actions")[0];
+    Check(action.is_object() &&
+              HasOnlyFields(action, {"Operation", "Target", "Amount", "Duration"}) &&
+              action.at("Operation") == "ReduceDamage" &&
+              action.at("Target") == "FriendlyMonster" &&
+              action.at("Duration") == "FirstDamageThisRaid" &&
+              action.at("Amount").is_number_integer(),
+          "Unsupported raid shield operation");
+    Check(action.at("Amount").get<int>() > 0, "Raid shield must reduce positive damage");
+    int const limit = effects[0].value("PerTurnLimit", 0);
+    Check(limit > 0 && effects[0].value("LimitScope", std::string("")) == "CardName",
+          "Unsupported raid shield use limit");
+    auto const key = std::make_tuple(turn_, player,
+                                     card.at("NameKey").get<std::string>(),
+                                     effects[0].at("Id").get<int>());
+    Check(effectUses_[key] < limit, "Raid shield card-name limit reached");
+
+    Remove(owner.Hand, handInstance);
+    owner.Graveyard.push_back(handInstance);
+    response_.Respond(player, YakouChainLink{player, handInstance,
+                        effects[0].at("Id").get<int>(), "OnResolve", {friendlyUnit}});
+    ++effectUses_[key];
+    journal_.push_back("RaidShieldActivated:" + std::to_string(handInstance));
+}
+
 void YakouMatch::PassRaidResponse(int player)
 {
     YakouMatch next = *this;
@@ -1420,9 +1487,30 @@ void YakouMatch::PassRaidResponseImpl(int player)
     journal_.push_back("RaidResponsePass:" + std::to_string(player));
     if (closed)
     {
-        // Empty chain resolution is intentional: no response effects are supported
-        // yet, and the raid must not resolve while a player has priority.
-        Check(response_.TakeResolution().empty(), "Unresolved response effects");
+        // Resolve supported one-link defensive responses after double-pass.
+        // Unsupported chains fail atomically in the caller's candidate copy.
+        auto const links = response_.TakeResolution();
+        Check(links.size() <= 1, "Unsupported raid chain length");
+        for (auto const& link : links)
+        {
+            Check(link.Controller == 3 - ActivePlayer() &&
+                      link.Trigger == "OnResolve" && link.Targets.size() == 1,
+                  "Unsupported raid response link");
+            auto const card = CardDefinition(OriginalId(link.SourceInstance));
+            Check(card.at("Id") == 3016 &&
+                      link.EffectId == card.at("Effects")[0].at("Id").get<int>(),
+                  "Unknown raid response effect");
+            int const target = link.Targets.front();
+            Check(FindUnit(Player(link.Controller), target) != nullptr,
+                  "Raid shield target left its owner's field");
+            auto const& action = card.at("Effects")[0].at("Actions")[0];
+            int const amount = action.at("Amount").get<int>();
+            Check(amount > 0 &&
+                      (raidShields_.find(target) == raidShields_.end()),
+                  "Invalid or duplicate raid shield");
+            raidShields_[target] = amount;
+            journal_.push_back("RaidShieldResolved:" + std::to_string(target));
+        }
         journal_.push_back("RaidResponseClosed");
     }
 }
@@ -1593,7 +1681,14 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 int const dDamage = std::max(0, target.Attack());
                 source.Damage += dDamage;
                 int const reduction = combatDamageReduction(target);
-                target.Damage += std::max(0, aDamage - reduction); // simultaneous combat
+                int remainingDamage = std::max(0, aDamage - reduction);
+                auto shield = raidShields_.find(target.InstanceId);
+                if (shield != raidShields_.end() && remainingDamage > 0)
+                {
+                    remainingDamage = std::max(0, remainingDamage - shield->second);
+                    raidShields_.erase(shield); // first actual damage event
+                }
+                target.Damage += remainingDamage; // simultaneous combat
                 if (target.Hp() <= 0)
                 {
                     destroyedEnemyByCombat = true;
@@ -1628,6 +1723,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         }
         if (defender.Life == 0)
         {
+            raidShields_.clear();
             phase_ = YakouPhase::Finished;
             winner_ = attacker.Id;
             journal_.push_back("GameOver:" + std::to_string(attacker.Id));
@@ -1639,6 +1735,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 
 void YakouMatch::TurnOver()
 {
+    raidShields_.clear();
     attacks_.clear();
     active_ = 1 - active_;
     ++turn_;
