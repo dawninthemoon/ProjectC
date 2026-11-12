@@ -320,3 +320,28 @@ checkpoint loader, reconnect DTO or Unity reconnection flow. It only covers the
 prototype operations currently represented by `YakouReplayOperation`; future
 chain responses, costs and effects must extend both the command journal and
 canonical state before they can be called replay-safe.
+
+## Owner-scoped selection projection for future online DTO
+
+`YakouMatch::ViewerSnapshot(viewer)` now includes `Players[viewer].SummonChoices`
+when that player is in their own main phase. Each entry is derived from the
+authoritative hand and includes `CardId`, `Method`, `SourceZone`,
+`RequiredCount`, `Candidates`, and `AvailableSlots`.
+The opponent's player object **never** contains these selection candidates.
+
+When the oldest queued effect belongs to the viewer, the top-level
+`PendingSelection` provides the corresponding `SourceCardId`, `EffectId`,
+`Trigger`, and a `Status` field. `Ready` includes the supported operation,
+source zone, minimum and maximum selection count, and candidate instance IDs.
+`Unavailable` explicitly indicates that the authored effect is not currently
+resolvable through the prototype selection API, without dropping its queue
+entry or breaking the viewer projection. The opponent receives no
+`PendingSelection`.
+
+**Scope and limits:** This is a read-only projection, not an online command
+protocol, scheduler, effect execution, replay command, or reconnect DTO.
+No Unity code/scene/prefab or card/localization JSON was changed. Future
+MatchSession integration must map seat IDs and authenticate the requesting
+viewer, version selection requests, reject stale inputs, and use the
+server-side cost/effect validators on submission. Do not expose the canonical
+private state or hash via this projection.
