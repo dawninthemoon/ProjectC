@@ -1223,13 +1223,101 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
           "Cannot resolve raid");
     auto& attacker = players_[active_];
     auto& defender = MutablePlayer(defendingPlayer);
+
+    // Resolve the narrow set of authored combat-only triggers before damage.
+    // No persistent attack/damage stat layer is introduced: CurrentCombat
+    // expires after this individual combat, including when the unit survives.
+    // Other authored combat shapes must fail closed instead of applying damage
+    // first and leaving an unresolvable trigger behind.
+    auto combatAttackBonus = [&](YakouUnit const& unit) -> int
+    {
+        int bonus = 0;
+        auto const card = CardDefinition(unit.DefinitionId);
+        for (auto const& effect : card.at("Effects"))
+        {
+            if (effect.at("Trigger") != "OnRaid") continue;
+            Check(effect.at("Type") == "Triggered" &&
+                      effect.at("Actions").is_array() && effect.at("Actions").size() == 1,
+                  "Unsupported raid trigger");
+            auto const& action = effect.at("Actions")[0];
+            Check(action.is_object() &&
+                      HasOnlyFields(action, {"Operation", "Target", "Delta", "Duration", "Condition"}) &&
+                      action.at("Operation") == "ModifyAttack" &&
+                      action.at("Target") == "Self" &&
+                      action.at("Duration") == "CurrentCombat" &&
+                      action.at("Delta").is_number_integer(),
+                  "Unsupported raid combat effect");
+            if (action.contains("Condition"))
+            {
+                auto const& condition = action.at("Condition");
+                Check(condition.is_object() &&
+                          HasOnlyFields(condition, {"FriendlyGraveyardArchetypeCountAtLeast", "Archetype"}) &&
+                          condition.at("FriendlyGraveyardArchetypeCountAtLeast").is_number_integer() &&
+                          condition.at("Archetype").is_string(),
+                      "Unsupported raid effect condition");
+                int tally = 0;
+                for (int instance : attacker.Graveyard)
+                    if (HasArchetype(OriginalId(instance),
+                                     condition.at("Archetype").get<std::string>()))
+                        ++tally;
+                if (tally < condition.at("FriendlyGraveyardArchetypeCountAtLeast").get<int>())
+                    continue;
+            }
+            auto const sum = static_cast<std::int64_t>(bonus) + action.at("Delta").get<int>();
+            Check(sum >= std::numeric_limits<int>::min() &&
+                      sum <= std::numeric_limits<int>::max(), "Raid attack modifier overflow");
+            bonus = static_cast<int>(sum);
+        }
+        return bonus;
+    };
+    auto combatDamageReduction = [&](YakouUnit const& unit) -> int
+    {
+        int reduction = 0;
+        auto const card = CardDefinition(unit.DefinitionId);
+        for (auto const& effect : card.at("Effects"))
+        {
+            if (effect.at("Trigger") != "OnAssignedAsBlocker") continue;
+            Check(effect.at("Type") == "Triggered" &&
+                      effect.at("Actions").is_array() && effect.at("Actions").size() == 1,
+                  "Unsupported blocker trigger");
+            auto const& action = effect.at("Actions")[0];
+            Check(action.is_object() &&
+                      HasOnlyFields(action, {"Operation", "Target", "Amount", "Duration"}) &&
+                      action.at("Operation") == "ReduceDamage" &&
+                      action.at("Target") == "Self" &&
+                      action.at("Duration") == "CurrentCombat" &&
+                      action.at("Amount").is_number_integer(),
+                  "Unsupported blocker combat effect");
+            int const amount = action.at("Amount").get<int>();
+            Check(amount >= 0, "Invalid blocker damage reduction");
+            int const limit = effect.value("PerTurnLimit", 0);
+            if (limit > 0)
+            {
+                Check(effect.value("LimitScope", std::string("")) == "CardName",
+                      "Unsupported blocker effect limit scope");
+                auto const key = std::make_tuple(turn_, defender.Id,
+                                                  card.at("NameKey").get<std::string>(),
+                                                  effect.at("Id").get<int>());
+                if (effectUses_[key] >= limit) continue;
+                ++effectUses_[key];
+            }
+            Check(reduction <= std::numeric_limits<int>::max() - amount,
+                  "Blocker damage reduction overflow");
+            reduction += amount;
+        }
+        return reduction;
+    };
     for (auto const& attack : attacks_)
     {
         int const aSlot = FindSlot(attacker, attack.Card);
         if (aSlot < 0) continue;
         auto& source = *attacker.Field[aSlot];
-        Enqueue(attacker.Id, source.InstanceId, source.DefinitionId, "OnRaid");
-        int const aDamage = std::max(0, source.Attack());
+        int const bonus = combatAttackBonus(source);
+        auto const modifiedAttack = static_cast<std::int64_t>(source.Attack()) + bonus;
+        Check(modifiedAttack <= std::numeric_limits<int>::max() &&
+                  modifiedAttack >= std::numeric_limits<int>::min(),
+              "Combat attack overflow");
+        int const aDamage = static_cast<int>(std::max<std::int64_t>(0, modifiedAttack));
         if (!attack.Blocker)
         {
             defender.Life = std::max(0, defender.Life - aDamage);
@@ -1245,7 +1333,8 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 auto& target = *defender.Field[dSlot];
                 int const dDamage = std::max(0, target.Attack());
                 source.Damage += dDamage;
-                target.Damage += aDamage; // simultaneous combat
+                int const reduction = combatDamageReduction(target);
+                target.Damage += std::max(0, aDamage - reduction); // simultaneous combat
                 if (target.Hp() <= 0)
                 {
                     int const id = target.InstanceId;
