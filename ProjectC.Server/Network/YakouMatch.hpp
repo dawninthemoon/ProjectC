@@ -149,6 +149,11 @@ public:
     void PassRaidResponse(int player);
     // Defensive response spell 3016: owner-only target, first damage this raid.
     void RespondWithRaidShield(int player, int handInstance, int friendlyUnit);
+    // Authored raid tactics 2011/3018/3019; selected attacker and optional
+    // replacement blocker are server validated, costs are explicit IDs.
+    void RespondWithRaidTactic(int player, int handInstance,
+                               int raidingUnit, int newBlocker,
+                               std::vector<int> const& costCards);
     void ResolveRaid(int defendingPlayer);
 
 private:
@@ -166,6 +171,9 @@ private:
     void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
     void PassRaidResponseImpl(int player);
     void RespondWithRaidShieldImpl(int player, int handInstance, int friendlyUnit);
+    void RespondWithRaidTacticImpl(int player, int handInstance,
+                                   int raidingUnit, int newBlocker,
+                                   std::vector<int> const& costCards);
     void ResolveRaidImpl(int defendingPlayer);
     [[nodiscard]] Json ServerCanonicalState() const;
     Json CardDefinition(int id) const;
@@ -191,6 +199,8 @@ private:
     std::vector<YakouAttack> attacks_;
     // Server-private, one-shot damage reductions, removed at raid end.
     std::map<int, int> raidShields_;
+    // Signed temporary attack modifiers indexed by attacking instance.
+    std::map<int, int> raidAttackModifiers_;
     std::vector<YakouPendingEffect> pendingEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
