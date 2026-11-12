@@ -1195,6 +1195,176 @@ int main()
                       "Without the shield, four damage destroys the 3-HP blocker");
             }
         }
+
+        {
+            // Three authored, paid defensive response spells share a real
+            // two-turn preparation: defender mills two cards for Necromancy,
+            // then places two blockers before the raider becomes ready.
+            auto tactical = proto;
+            for (auto& id : tactical.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013) id = 3003;
+                else if (id == 2010) id = 3018;
+                else if (id == 2012) id = 3019;
+            }
+            auto ready = [&]()
+            {
+                auto match = Make(tactical, {3003},
+                                  {2001, 2002, 2011, 3018, 3019});
+                match.StartTurn(1);
+                const int attacker = match.Player(1).Hand[0];
+                match.Summon(1, attacker, "Normal", {}, 0);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                const int source = match.Player(2).Hand[0];
+                match.Summon(2, source, "Normal", {}, 0);
+                match.ResolvePendingEffect(2); // Mill exactly two cost cards.
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                match.StartTurn(2);
+                const int blocker = match.Player(2).Hand[0];
+                match.Summon(2, blocker, "Normal", {}, 1);
+                match.BeginRaid(2);
+                match.StartTurn(1);
+                match.BeginRaid(1);
+                Check(match.Attacks().size() == 1 &&
+                      match.Attacks()[0].Card == attacker &&
+                      match.Player(2).Graveyard.size() >= 2,
+                      "Paid raid tactics require a ready raider and paid materials");
+                match.AssignBlockers(2, {{attacker, blocker}});
+                return match;
+            };
+            {
+                auto match = ready();
+                const int attacker = match.Attacks()[0].Card;
+                const int blocker = match.Player(2).Field[1]->InstanceId;
+                const int spell = match.Player(2).Hand[0]; // 2011
+                const int cost = match.Player(2).Hand[1];  // 3018
+                const auto before = match.ServerStateHash();
+                Reject([&] { match.RespondWithRaidTactic(1, spell, attacker, 0, {cost}); });
+                Reject([&] { match.RespondWithRaidTactic(2, spell, 9999, 0, {cost}); });
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, 0, {spell}); });
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, 0, {}); });
+                Check(match.ServerStateHash() == before,
+                      "Invalid attack debuff payment or target must be atomic");
+                match.RespondWithRaidTactic(2, spell, attacker, 0, {cost});
+                Check(match.PriorityPlayer() == 1 &&
+                      match.Player(2).Graveyard.back() == spell,
+                      "2011 must discard one distinct owned hand card and yield priority");
+                match.PassRaidResponse(1);
+                match.PassRaidResponse(2);
+                match.ResolveRaid(2);
+                Check(match.Player(2).Field[1] &&
+                      match.Player(2).Field[1]->InstanceId == blocker &&
+                      match.Player(2).Field[1]->Damage == 2 &&
+                      !match.Player(1).Field[0],
+                      "2011 -2 attack changes 3003's raid damage from 4 to 2");
+            }
+            {
+                auto match = ready();
+                const int attacker = match.Attacks()[0].Card;
+                const int spell = match.Player(2).Hand[2]; // 3019
+                const auto grave = match.Player(2).Graveyard;
+                const auto before = match.ServerStateHash();
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, 0,
+                                                         {grave[0], grave[0]}); });
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, 0,
+                                                         {grave[0], attacker}); });
+                Check(match.ServerStateHash() == before,
+                      "3019 must require two distinct owned graveyard cards");
+                match.RespondWithRaidTactic(2, spell, attacker, 0, {grave[0], grave[1]});
+                Check(match.Player(2).Exile.size() == 2 &&
+                      match.Player(2).Graveyard.back() == spell,
+                      "3019 pays Necromancy:2 by exiling two exact graveyard instances");
+                match.PassRaidResponse(1);
+                match.PassRaidResponse(2);
+                match.ResolveRaid(2);
+                Check(match.Player(2).Field[1] &&
+                      match.Player(2).Field[1]->Damage == 2 &&
+                      !match.Player(1).Field[0],
+                      "3019 current-raid attack debuff must apply before combat");
+            }
+            {
+                auto match = ready();
+                const int attacker = match.Attacks()[0].Card;
+                const int original = match.Player(2).Field[1]->InstanceId;
+                const int replacement = match.Player(2).Field[0]->InstanceId;
+                const int spell = match.Player(2).Hand[1]; // 3018
+                const int discard = match.Player(2).Hand[0]; // 2011
+                const auto before = match.ServerStateHash();
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, original,
+                                                         {discard}); });
+                Reject([&] { match.RespondWithRaidTactic(2, spell, attacker, 9999,
+                                                         {discard}); });
+                Check(match.ServerStateHash() == before,
+                      "3018 must reject same, missing or illegal replacement blocker");
+                match.RespondWithRaidTactic(2, spell, attacker, replacement, {discard});
+                Check(match.Attacks()[0].Blocker == original,
+                      "Blocker cannot be reassigned before response passes resolve");
+                match.PassRaidResponse(1);
+                match.PassRaidResponse(2);
+                Check(match.Attacks()[0].Blocker == replacement,
+                      "3018 reassignment must happen at chain resolution");
+                match.ResolveRaid(2);
+                Check(match.Player(2).Field[1] &&
+                      match.Player(2).Field[1]->InstanceId == original &&
+                      !match.Player(2).Field[0] &&
+                      match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->Damage == 1,
+                      "3018 must redirect the actual combat to the other blocker");
+            }
+            {
+                // Replay the paid 2011 response from the same server-private
+                // deterministic opening decks, including invalid cost rejection.
+                std::array<std::vector<int>, 2> const decks{
+                    Deck(tactical, {3003}),
+                    Deck(tactical, {2001, 2002, 2011, 3018, 3019})};
+                auto makeCmd = [](YakouReplayOperation op, int player)
+                {
+                    YakouReplayCommand cmd;
+                    cmd.Operation = op;
+                    cmd.Player = player;
+                    return cmd;
+                };
+                auto summonOne = makeCmd(YakouReplayOperation::Summon, 1);
+                summonOne.CardId = 1; summonOne.Method = "Normal";
+                auto summonTwo = makeCmd(YakouReplayOperation::Summon, 2);
+                summonTwo.CardId = 31; summonTwo.Method = "Normal";
+                auto blocker = makeCmd(YakouReplayOperation::Summon, 2);
+                blocker.CardId = 32; blocker.Method = "Normal"; blocker.Slot = 1;
+                auto assign = makeCmd(YakouReplayOperation::AssignBlockers, 2);
+                assign.Blockers = {{1,32}};
+                auto tactic = makeCmd(YakouReplayOperation::RespondWithRaidTactic, 2);
+                tactic.CardId = 33; tactic.TargetId = 1; tactic.Cards = {34};
+                auto badTactic = tactic;
+                badTactic.Cards = {33};
+                std::vector<YakouReplayCommand> const commands{
+                    makeCmd(YakouReplayOperation::StartTurn,1), summonOne,
+                    makeCmd(YakouReplayOperation::BeginRaid,1),
+                    makeCmd(YakouReplayOperation::StartTurn,2), summonTwo,
+                    makeCmd(YakouReplayOperation::ResolvePendingEffect,2),
+                    makeCmd(YakouReplayOperation::BeginRaid,2),
+                    makeCmd(YakouReplayOperation::StartTurn,1),
+                    makeCmd(YakouReplayOperation::BeginRaid,1),
+                    makeCmd(YakouReplayOperation::StartTurn,2), blocker,
+                    makeCmd(YakouReplayOperation::BeginRaid,2),
+                    makeCmd(YakouReplayOperation::StartTurn,1),
+                    makeCmd(YakouReplayOperation::BeginRaid,1),
+                    assign, badTactic, tactic,
+                    makeCmd(YakouReplayOperation::PassRaidResponse,1),
+                    makeCmd(YakouReplayOperation::PassRaidResponse,2),
+                    makeCmd(YakouReplayOperation::ResolveRaid,2)};
+                const auto one = ReplayYakou(tactical,1,decks,commands);
+                const auto two = ReplayYakou(tactical,1,decks,commands);
+                Check(one.Steps.size() == commands.size() &&
+                      !one.Steps[15].Accepted &&
+                      one.Steps[15].BeforeHash == one.Steps[15].AfterHash &&
+                      one.Steps[16].Accepted && one.Steps.back().Accepted &&
+                      one.FinalState.ServerStateHash() == two.FinalState.ServerStateHash(),
+                      "Paid raid response replay must be deterministic and atomic");
+            }
+        }
         std::cout << "Yakou special summons, Ki, manifest and blocker raids passed\n";
         return 0;
     }
