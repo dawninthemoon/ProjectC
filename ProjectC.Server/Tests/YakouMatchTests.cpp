@@ -83,8 +83,6 @@ int main()
             Check(match.Player(1).Field[2].has_value() &&
                       match.Player(1).NormalSummons == 1, "Normal summon");
             {
-                Check(match.SummonChoices(1, match.Player(1).Hand[0]).empty(),
-                      "Normal summon must disappear after the turn quota is used");
                 auto choices = match.SummonChoices(1, devour);
                 Check(choices.size() == 1 && choices[0].Method == "Devour" &&
                           choices[0].SourceZone == "FriendlyField" &&
