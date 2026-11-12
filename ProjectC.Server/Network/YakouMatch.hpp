@@ -3,8 +3,10 @@
 #include "YakouChain.hpp"
 
 #include <array>
+#include <map>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -100,6 +102,10 @@ public:
     // to spectators or the opponent. Empty result means no legal summon methods.
     [[nodiscard]] std::vector<YakouSummonChoice> SummonChoices(int player,
                                                                int handInstance) const;
+    // Resolve exactly one queued authored trigger, using a server-validated
+    // target instance (or zero for targetless/declined optional effects).
+    // Unsupported operations throw without changing match state or the queue.
+    void ResolvePendingEffect(int player, int selectedTarget = 0);
     void StartTurn(int player);
     void Summon(int player, int handInstance, std::string const& method,
                 std::vector<int> const& materialIds, int slot);
@@ -134,6 +140,8 @@ private:
     YakouChain response_;
     std::vector<YakouAttack> attacks_;
     std::vector<YakouPendingEffect> pendingEffects_;
+    // Turn, controller, printed card definition and authored effect identity.
+    std::map<std::tuple<int, int, int, int>, int> effectUses_;
     std::vector<std::string> journal_;
 };
 } // namespace ProjectC::Network
