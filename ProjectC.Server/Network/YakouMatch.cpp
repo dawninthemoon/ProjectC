@@ -130,6 +130,86 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
     }
 }
 
+std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
+                                                               int handInstance) const
+{
+    Check(player == 1 || player == 2, "Unknown player");
+    auto const& owner = Player(player);
+    // Never expose costs or candidates for cards that are not in the
+    // requesting player's own hand.
+    Check(Contains(owner.Hand, handInstance), "Card is not in own hand");
+    if (phase_ != YakouPhase::Main || player != ActivePlayer())
+    {
+        return {};
+    }
+    auto const card = CardDefinition(OriginalId(handInstance));
+    if (card.at("Type") != "Monster")
+    {
+        return {};
+    }
+
+    std::vector<YakouSummonChoice> choices;
+    for (auto const& methodValue : card.at("SummonMethods"))
+    {
+        auto const method = methodValue.get<std::string>();
+        auto const requirement = YakouRequiredCost(card, method);
+        if (method == "Normal" && owner.NormalSummons != 0)
+        {
+            continue;
+        }
+        YakouSummonChoice choice;
+        choice.Method = method;
+        choice.SourceZone = requirement.SourceZone;
+        choice.RequiredCount = requirement.ExactCount;
+        if (method == "Devour")
+        {
+            for (auto const& unit : owner.Field)
+            {
+                if (unit && unit->Hp() > 0)
+                {
+                    choice.Candidates.push_back(unit->InstanceId);
+                }
+            }
+        }
+        else if (method == "Necromancy")
+        {
+            choice.Candidates = owner.Graveyard;
+        }
+        else if (method == "Discard")
+        {
+            for (int instance : owner.Hand)
+            {
+                if (instance != handInstance)
+                {
+                    choice.Candidates.push_back(instance);
+                }
+            }
+        }
+        else
+        {
+            Check(method == "Normal", "Unsupported summon cost method");
+        }
+        if (choice.Candidates.size() < choice.RequiredCount)
+        {
+            continue;
+        }
+        for (int slot = 0; slot < 5; ++slot)
+        {
+            if (!owner.Field[slot] ||
+                (method == "Devour" &&
+                 Contains(choice.Candidates, owner.Field[slot]->InstanceId)))
+            {
+                choice.AvailableSlots.push_back(slot);
+            }
+        }
+        if (!choice.AvailableSlots.empty())
+        {
+            choices.push_back(std::move(choice));
+        }
+    }
+    return choices;
+}
+
 void YakouMatch::StartTurn(int player)
 {
     Check(phase_ == YakouPhase::TurnStart && player == ActivePlayer(),

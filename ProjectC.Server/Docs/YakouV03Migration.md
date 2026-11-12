@@ -168,3 +168,26 @@ and finally a compatible Unity UI.
 - Legacy-mode preservation is no longer a user requirement for subsequent
   Yakou migration. Prefer replacing old rule entrypoints after parity tests,
   without deleting useful network/reconnect infrastructure prematurely.
+
+## Server-authored summon choice descriptors (follow-up)
+
+`YakouMatch::SummonChoices(player, handInstance)` returns only the methods
+declared by that card's `SummonMethods`/`SummonCostJson`, using current
+authoritative game state. Each method includes its cost kind, exact selection
+count, eligible material instance IDs, and prospective summon slots.
+
+- Normal is free and disappears once the turn's normal summon is used.
+- Devour selects only controlled field monsters. Occupied slots are advertised
+  only when their occupant can be consumed as one of the materials.
+- Necromancy selects only the controller's graveyard cards.
+- Discard selects only other cards from the controller's hand.
+- A method with insufficient eligible materials or no possible destination slot
+  is omitted. The final `Summon` command **still validates** all chosen IDs and
+  counts; descriptors are not client authority.
+- Calling for an opponent's hand instance is rejected. The network layer must
+  restrict these descriptors to their owner.
+
+**Scope:** This is a state-dependent backend query, not a WebSocket DTO.
+The production `MatchSession` still uses the older rules and the Unity UI
+still lacks an authoritative Yakou cost-selection protocol. It is incorrect
+to claim these new cost choices already appear in live online matches.
