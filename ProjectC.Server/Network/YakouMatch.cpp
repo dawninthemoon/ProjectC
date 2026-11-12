@@ -796,6 +796,7 @@ int YakouMatch::ResolveAutomaticTriggers(int maxEffects)
 {
     Check(maxEffects > 0 && maxEffects <= 128,
           "Automatic trigger drain must have a bounded positive budget");
+    Check(!response_.IsOpen(), "Cannot drain triggers during an open response window");
     // The existing interpreter already applies each effect transactionally.
     // Use an outer copy too: a failure in any later effect rolls back the
     // entire batch, including its journal and per-turn usage counters.
