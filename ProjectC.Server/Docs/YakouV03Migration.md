@@ -734,3 +734,53 @@ and resume tokens, lifecycle timers, wire envelopes, message
 size/rate protections, two-real-client WebSocket tests, and complete
 runtime card effect support. This class alone does not make
 `RuntimeReady` true.
+
+## Developer-only Yakou real WebSocket transport (opt-in)
+
+The existing Beast WebSocket listener can now route a **separate Yakou
+prototype room**, but this mode is **disabled by default**. Launch a
+local/development server with `--yakou-prototype on` to enable it.
+The option fails at startup if website/ranked API mode is configured:
+the unranked Yakou test transport is not an account-authenticated
+production game and must not be enabled on the public ranked endpoint.
+
+All requests use the existing `ProtocolVersion:2` and `RequestId`
+envelope. The independent opt-in messages are:
+
+| Request | Required extra fields | Success/notifications |
+| --- | --- | --- |
+| `YakouCreate` | none | `YakouCreated` with `MatchId`, seat 1 and secret `ResumeToken` |
+| `YakouJoin` | `MatchId` | `YakouJoined` with seat 2 and secret `ResumeToken` |
+| `YakouResume` | `MatchId`, `ResumeToken` | `YakouResumed` with rotated token; old seat connection receives `YakouReplaced` |
+| `YakouCommand` | `MatchId`, `Command` | `YakouCommandResult` with accepted/rejected status and sequence |
+| `YakouSnapshot` | `MatchId` | `YakouSnapshot` with server-projected `State` |
+| `YakouLeave` | `MatchId` | both seats receive `YakouClosed` |
+
+Commands are allowed only after both seats join. A successful action
+broadcasts separate **viewer-projected** snapshots to the two bound
+connections; the requesting seat receives the result first. Exact
+`RequestId` retries are idempotent through `YakouSession`, with no
+new broadcast. A request ID reused with different contents is rejected.
+The server creates connection handles, match IDs and cryptographically
+random resume tokens; packets cannot declare a seat or reuse a revoked
+token. Rebinding a seat invalidates its old transport and rotates its
+secret. The room times out through the existing manager maintenance
+loop (waiting/playing timeout settings), and both seats detach on
+`YakouLeave`, expiration or server shutdown.
+
+The new `YakouWebSocketIntegration` CTest launches the actual server
+with opt-in enabled and uses two real RFC6455 connections plus a
+third unbound connection to verify legacy `ListDecks` isolation,
+admission, asymmetric hand privacy, unauthorized commands, automatic
+Mill on summon, broadcast sequences, idempotent retries, conflict
+rejection, secret-based resume, token rotation, and leave cleanup.
+
+**Security and scope:** this is a **developer-only prototype**, not
+production-ready gameplay or account authentication. A room ID is a
+private invite capability; a resume token is a bearer secret and must
+be kept off public logs and telemetry. No rating, website account,
+production matchmaking, spectator role, reconnect timeout negotiation,
+full card rule coverage, public Unity client API, or ranked replay
+archive is claimed. `RuntimeReady` remains false. The existing legacy
+MatchSession path is unchanged. No Unity assets or authored card JSON
+were modified.

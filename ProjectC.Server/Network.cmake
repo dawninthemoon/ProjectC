@@ -15,7 +15,7 @@ FetchContent_Declare(Json
 FetchContent_MakeAvailable(Json)
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
-add_library(ProjectCNetwork Network/WebsiteApi.cpp Network/Protocol.cpp Network/CardCatalog.cpp Network/YakouPrototype.cpp Network/YakouMatch.cpp Network/YakouChain.cpp Network/YakouReplay.cpp Network/YakouCommandGateway.cpp Network/YakouSession.cpp Network/MatchSession.cpp Network/MatchManager.cpp Network/WebSocketServer.cpp)
+add_library(ProjectCNetwork Network/WebsiteApi.cpp Network/Protocol.cpp Network/CardCatalog.cpp Network/YakouPrototype.cpp Network/YakouMatch.cpp Network/YakouChain.cpp Network/YakouReplay.cpp Network/YakouCommandGateway.cpp Network/YakouSession.cpp Network/YakouTransportHub.cpp Network/MatchSession.cpp Network/MatchManager.cpp Network/WebSocketServer.cpp)
 target_include_directories(ProjectCNetwork PUBLIC Network)
 target_compile_definitions(ProjectCNetwork PRIVATE PROJECTC_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Data")
 target_include_directories(ProjectCNetwork SYSTEM PRIVATE ${boostheaders_SOURCE_DIR})
@@ -61,6 +61,9 @@ add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 add_test(NAME ContentWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+add_test(NAME YakouWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/YakouWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(YakouWebSocketIntegration PROPERTIES TIMEOUT 90)
 set_tests_properties(NetworkTests WebSocketIntegration ContentWebSocketIntegration PROPERTIES TIMEOUT 45)
 
 add_test(NAME PersonalDeckWebSocketIntegration COMMAND ${Python3_EXECUTABLE}

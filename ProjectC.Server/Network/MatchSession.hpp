@@ -20,6 +20,8 @@ struct ClientSession
     bool ApiPending = false;
     std::uint64_t ApiGeneration = 0;
     std::string MatchId; // Bound by server; never assigned from SubmitCommand.
+    std::string YakouMatchId; // Separate opt-in prototype room.
+    std::string YakouConnectionKey; // Internal server-generated handle, never network-visible.
 };
 enum class MatchStatus
 {
