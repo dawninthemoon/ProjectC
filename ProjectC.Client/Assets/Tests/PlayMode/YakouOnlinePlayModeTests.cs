@@ -235,6 +235,10 @@ namespace ProjectC.Tests
             ActionButton("응전 제출", _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 1);
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
+            a.DisconnectNetwork();
+            a.ReconnectNetwork();
+            yield return Until(() => a.Yakou.Bound && a.Yakou.State != null &&
+                (int)a.Yakou.State["PriorityPlayerId"] == 1 && ((JArray)a.Yakou.State["ResponseStack"]).Count == 1);
             long beforePass = a.Yakou.Sequence;
             screen.EndTurn.onClick.Invoke();
             ActionButton("습격 응전 패스").onClick.Invoke();
