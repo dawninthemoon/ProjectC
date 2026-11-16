@@ -319,6 +319,17 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
             choice["MinCount"] = requested.MinCount;
             choice["MaxCount"] = requested.MaxCount;
             choice["Candidates"] = requested.Candidates;
+            // Only the choice owner may see the definitions of cards revealed
+            // from a hidden zone. Never include these in the other projection.
+            if (requested.SourceZone == "FriendlyDeckTop")
+            {
+                Json cards = Json::array();
+                for (int instance : requested.Candidates)
+                {
+                    cards.push_back(visibleCard(instance));
+                }
+                choice["CandidateCards"] = std::move(cards);
+            }
         }
         catch (std::invalid_argument const&)
         {

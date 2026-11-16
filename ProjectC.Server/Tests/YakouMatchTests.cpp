@@ -815,7 +815,19 @@ int main()
                       choice.Candidates == std::vector<int>({deck[0], deck[1], deck[2]}),
                   "Only the authorized top three cards must be offered");
             Reject([&] { (void)match.PendingEffectChoices(2); });
-            auto const enemyProjection = match.ViewerSnapshot(2).dump();
+            auto const ownerSelection = match.ViewerSnapshot(1).at("PendingSelection");
+            Check(ownerSelection.at("CandidateCards").size() == choice.Candidates.size(),
+                  "The choice owner must receive visible definitions for the revealed cards");
+            for (std::size_t i = 0; i < choice.Candidates.size(); ++i)
+            {
+                Check(ownerSelection.at("CandidateCards")[i].at("Id") == choice.Candidates[i] &&
+                          ownerSelection.at("CandidateCards")[i].at("DefinitionId").get<int>() > 0,
+                      "Each revealed candidate must have its own definition");
+            }
+            auto const enemySnapshot = match.ViewerSnapshot(2);
+            Check(!enemySnapshot.contains("PendingSelection"),
+                  "The opposing viewer must not receive private selection cards");
+            auto const enemyProjection = enemySnapshot.dump();
             for (int hidden : choice.Candidates)
             {
                 Check(enemyProjection.find("\"Id\":" + std::to_string(hidden)) == std::string::npos,
