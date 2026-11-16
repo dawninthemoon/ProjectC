@@ -121,10 +121,15 @@ int main()
 
         // A second match proves choice authority and that an unresolved
         // selected effect does not silently force a target for the controller.
-        auto choices = NewGateway(proto);
+        auto choiceProto = proto;
+        for (auto& id : choiceProto.Decks["Decks"][0]["Cards"])
+            if (id == 2003) { id = 3007; break; }
+        YakouCommandGateway choices(choiceProto, 1,
+            {OrderedDeck(choiceProto, {2001, 3007, 2009, 2002, 3001}),
+             OrderedDeck(choiceProto, {2001, 2002, 2005, 2009, 3001})});
         Check(choices.Execute(1, {{"Type", "StartTurn"}}).at("Accepted") == true,
               "Second match should start");
-        auto const id = choices.Match().Player(1).Hand[1]; // 2003: OtherFriendlyMonster
+        auto const id = choices.Match().Player(1).Hand[1]; // 3007: Normal + optional OtherFriendlyMonster
         auto pending = choices.Execute(1,
             {{"Type", "Summon"}, {"CardId", id}, {"Method", "Normal"},
              {"Materials", Json::array()}, {"Slot", 0}});
