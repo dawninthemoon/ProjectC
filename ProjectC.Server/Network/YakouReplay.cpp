@@ -18,7 +18,7 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
         match.Summon(command.Player, command.CardId, command.Method, command.Cards, command.Slot);
         break;
     case YakouReplayOperation::ActivateMainSpell:
-        match.ActivateMainSpell(command.Player, command.CardId);
+        match.ActivateMainSpell(command.Player, command.CardId, command.Cards);
         break;
     case YakouReplayOperation::Manifest:
         match.Manifest(command.Player, command.CardId, command.DefinitionId);
@@ -61,7 +61,7 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
         break;
     case YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers:
         (void)match.ActivateMainSpellAndRunAutomaticTriggers(
-            command.Player, command.CardId, command.MaxEffects);
+            command.Player, command.CardId, command.MaxEffects, command.Cards);
         break;
     case YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers:
         (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(

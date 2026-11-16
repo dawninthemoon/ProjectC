@@ -13,6 +13,7 @@ namespace
 constexpr std::uint64_t MaxInstance = static_cast<std::uint64_t>(std::numeric_limits<int>::max());
 constexpr std::size_t MaxMaterials = 30;
 constexpr std::size_t MaxAssignments = 5;
+constexpr int AutomaticTriggerBudget = 64;
 
 int Id(Json const& value, char const* key)
 {
@@ -67,8 +68,9 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "ActivateMainSpell")
     {
-        Fields(request, {"Type", "CardId"});
-        (void)match.ActivateMainSpellAndRunAutomaticTriggers(seat, Id(request, "CardId"));
+        Fields(request, {"Type", "CardId", "Costs"});
+        (void)match.ActivateMainSpellAndRunAutomaticTriggers(seat, Id(request, "CardId"), AutomaticTriggerBudget,
+            request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
     }
     else if (type == "ChooseEffect")
     {
