@@ -1,0 +1,242 @@
+#include "YakouTransportHub.hpp"
+#include "CardCatalog.hpp"
+#include "Protocol.hpp"
+
+#include <algorithm>
+#include <filesystem>
+#include <stdexcept>
+#include <utility>
+
+namespace ProjectC::Network
+{
+namespace
+{
+std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog)
+{
+    auto const cards = catalog.Decks.at("Decks").at(0).at("Cards").get<std::vector<int>>();
+    if (cards.size() != 30)
+        throw std::runtime_error("Yakou prototype requires authored 30-card decks");
+    return {cards, cards};
+}
+bool IsYakouType(std::string const& name)
+{
+    return name == "YakouCreate" || name == "YakouJoin" ||
+           name == "YakouResume" || name == "YakouCommand" ||
+           name == "YakouSnapshot" || name == "YakouLeave";
+}
+void Reply(std::shared_ptr<ClientSession> const& client,
+           std::string const& type, std::string const& requestId,
+           std::string const& matchId, Json const& body)
+{
+    auto message = Envelope(type, requestId, matchId);
+    message["Payload"] = body;
+    client->Send(message);
+}
+}
+
+YakouTransportHub::YakouTransportHub(std::string const& dataDirectory,
+                                     std::size_t maxRooms)
+    : catalog_(YakouPrototype::Load(std::filesystem::path(dataDirectory) / "YakouPrototype")),
+      maxRooms_(maxRooms)
+{
+    (void)Decks(catalog_);
+}
+
+void YakouTransportHub::SnapshotBoth(std::string const& id, Room const& room,
+                                     std::string const& requestId) const
+{
+    for (int seat = 1; seat <= 2; ++seat)
+    {
+        auto client = room.Clients[seat - 1].lock();
+        if (client && client->Connected && client->YakouMatchId == id)
+            Reply(client, "YakouSnapshot", requestId, id,
+                  {{"Seat", seat}, {"Sequence", room.Session->Sequence()},
+                   {"State", room.Session->Snapshot(client->YakouConnectionKey)}});
+    }
+}
+
+void YakouTransportHub::CloseRoom(std::string const& id, std::string const& reason)
+{
+    auto it = rooms_.find(id);
+    if (it == rooms_.end()) return;
+    for (auto& weak : it->second.Clients)
+    {
+        auto client = weak.lock();
+        if (!client) continue;
+        if (client->YakouMatchId == id)
+        {
+            client->YakouMatchId.clear();
+            client->YakouConnectionKey.clear();
+            Reply(client, "YakouClosed", "", id, {{"Reason", reason}});
+        }
+    }
+    rooms_.erase(it);
+}
+
+void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
+                                Json const& input, std::string const& requestId,
+                                std::string const& type)
+{
+    auto reject = [&](std::string const& reason)
+    {
+        Reply(client, "YakouRejected", requestId, client->YakouMatchId,
+              {{"Reason", reason}});
+    };
+    if (!IsYakouType(type))
+    {
+        reject("UnknownYakouCommand");
+        return;
+    }
+    if (type == "YakouCreate")
+    {
+        Fields(input, {"Type", "ProtocolVersion", "RequestId"});
+        if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
+            client->ApiPending)
+        {
+            reject("AlreadyJoined");
+            return;
+        }
+        if (rooms_.size() >= maxRooms_)
+        {
+            reject("MatchLimit");
+            return;
+        }
+        std::string const id = "Y" + Token().substr(0, 24);
+        Room room;
+        room.Session = std::make_unique<YakouSession>(catalog_, 1, Decks(catalog_));
+        room.Tokens[0] = Token();
+        client->YakouMatchId = id;
+        client->YakouConnectionKey = Token();
+        room.Session->Bind(1, client->YakouConnectionKey);
+        room.Clients[0] = client;
+        auto [it, inserted] = rooms_.emplace(id, std::move(room));
+        if (!inserted) throw std::runtime_error("Duplicate Yakou room ID");
+        Reply(client, "YakouCreated", requestId, id,
+              {{"Seat", 1}, {"ResumeToken", it->second.Tokens[0]}});
+        SnapshotBoth(id, it->second);
+        return;
+    }
+    if (type == "YakouJoin")
+    {
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId"});
+        if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
+            client->ApiPending)
+        {
+            reject("AlreadyJoined");
+            return;
+        }
+        const auto id = String(input, "MatchId", 64);
+        auto found = rooms_.find(id);
+        if (found == rooms_.end()) { reject("MatchNotFound"); return; }
+        auto& room = found->second;
+        if (room.Joined) { reject("MatchFull"); return; }
+        room.Tokens[1] = Token();
+        client->YakouMatchId = id;
+        client->YakouConnectionKey = Token();
+        room.Session->Bind(2, client->YakouConnectionKey);
+        room.Clients[1] = client;
+        room.Joined = true;
+        room.LastActivity = Clock::now();
+        Reply(client, "YakouJoined", requestId, id,
+              {{"Seat", 2}, {"ResumeToken", room.Tokens[1]}});
+        SnapshotBoth(id, room);
+        return;
+    }
+    if (type == "YakouResume")
+    {
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "ResumeToken"});
+        if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
+            client->ApiPending)
+        {
+            reject("AlreadyJoined");
+            return;
+        }
+        auto id = String(input, "MatchId", 64);
+        auto token = String(input, "ResumeToken", 128);
+        auto found = rooms_.find(id);
+        if (found == rooms_.end()) { reject("MatchNotFound"); return; }
+        auto& room = found->second;
+        int seat = token == room.Tokens[0] ? 1 : token == room.Tokens[1] && room.Joined ? 2 : 0;
+        if (seat == 0) { reject("InvalidResumeToken"); return; }
+        if (auto old = room.Clients[seat - 1].lock())
+        {
+            old->YakouMatchId.clear();
+            old->YakouConnectionKey.clear();
+            Reply(old, "YakouReplaced", "", id, {{"Reason", "Reconnected"}});
+        }
+        client->YakouMatchId = id;
+        client->YakouConnectionKey = Token();
+        room.Session->Bind(seat, client->YakouConnectionKey);
+        room.Clients[seat - 1] = client;
+        // Rotate resume credentials after a successful use.
+        room.Tokens[seat - 1] = Token();
+        room.LastActivity = Clock::now();
+        Reply(client, "YakouResumed", requestId, id,
+              {{"Seat", seat}, {"ResumeToken", room.Tokens[seat - 1]}});
+        SnapshotBoth(id, room);
+        return;
+    }
+
+    Fields(input, type == "YakouCommand" ?
+           std::initializer_list<char const*>{"Type","ProtocolVersion","RequestId","MatchId","Command"} :
+           std::initializer_list<char const*>{"Type","ProtocolVersion","RequestId","MatchId"});
+    auto id = String(input, "MatchId", 64);
+    if (client->YakouMatchId != id || client->YakouConnectionKey.empty())
+    {
+        reject("NotJoined");
+        return;
+    }
+    auto found = rooms_.find(id);
+    if (found == rooms_.end()) { reject("MatchNotFound"); return; }
+    auto& room = found->second;
+    room.LastActivity = Clock::now();
+    if (type == "YakouLeave")
+    {
+        CloseRoom(id, "PlayerLeft");
+        return;
+    }
+    if (type == "YakouSnapshot")
+    {
+        Reply(client, "YakouSnapshot", requestId, id,
+              {{"Sequence", room.Session->Sequence()},
+               {"State", room.Session->Snapshot(client->YakouConnectionKey)}});
+        return;
+    }
+    if (!room.Joined) { reject("WaitingForOpponent"); return; }
+    auto const before = room.Session->Sequence();
+    auto const result = room.Session->Dispatch(
+        client->YakouConnectionKey, requestId, input.at("Command"));
+    Reply(client, "YakouCommandResult", requestId, id,
+          {{"Accepted", result.at("Accepted")}, {"Reason", result.at("Reason")},
+           {"Sequence", result.at("Sequence")}});
+    if (room.Session->Sequence() != before)
+        SnapshotBoth(id, room);
+}
+
+void YakouTransportHub::Disconnect(std::shared_ptr<ClientSession> const& client)
+{
+    if (client->YakouMatchId.empty()) return;
+    auto found = rooms_.find(client->YakouMatchId);
+    if (found != rooms_.end())
+        found->second.Session->Unbind(client->YakouConnectionKey);
+    client->YakouMatchId.clear();
+    client->YakouConnectionKey.clear();
+}
+
+void YakouTransportHub::Cleanup(Clock::time_point now,
+                                std::chrono::seconds waiting,
+                                std::chrono::seconds playing)
+{
+    std::vector<std::string> expired;
+    for (auto const& [id, room] : rooms_)
+        if (now - room.LastActivity >= (room.Joined ? playing : waiting))
+            expired.push_back(id);
+    for (auto const& id : expired) CloseRoom(id, "Expired");
+}
+
+void YakouTransportHub::Shutdown()
+{
+    while (!rooms_.empty())
+        CloseRoom(rooms_.begin()->first, "ServerShutdown");
+}
+} // namespace ProjectC::Network
