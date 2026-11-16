@@ -651,3 +651,45 @@ not the fully automatic AP/NAP priority scheduler; multiple choice
 prompts, nested response speed, deferred trigger registration, and
 online reconnect/resume still require later implementation.
 No Unity source/scenes/prefabs, card JSON or Google Sheets were changed.
+
+## Isolated authoritative command gateway (server transport boundary)
+
+`YakouCommandGateway` is a new **opt-in C++ server component** for the
+new Yakou rule interpreter. It is compiled into `ProjectCNetwork` but
+is **not routed from** `MatchManager::Receive` or the production
+`MatchSession`. Consequently this change does not enable online Yakou
+matchmaking or change the legacy GameCore protocol.
+
+The hosting server supplies `authenticatedPlayer` from its own trusted
+connection/seat binding; no `Player` field is accepted in client-originated
+commands. A strictly allowlisted `Type` selects one of the supported
+prototype actions: StartTurn, Summon, ActivateMainSpell, ChooseEffect,
+Manifest, Postpone, Redraw, BeginRaid, AssignBlockers,
+RespondWithRaidShield, RespondWithRaidTactic, PassRaidResponse, ResolveRaid,
+BeginSpellResponse, RespondWithNegation, and PassSpellResponse.
+Instance identifiers, payment lists, blocker assignments and slots are
+parsed as bounded integers or bounded arrays. A caller **must** identify
+a verified seat before invoking the gateway.
+
+Each command runs against a fresh candidate match copy. Successful commands
+commit the new state and return the authenticated player's
+`ViewerSnapshot`; rejected commands discard the copy and return the
+unchanged authenticated viewer projection with the generic
+`Reason: "Rejected"` (not raw exception messages). Client-authored
+scheduler budgets are not allowed; the existing 64-trigger server limit
+is used by integrated summon/spell/choice/manifest operations. Viewer
+snapshots retain hidden-hand and target-selection filtering.
+
+A dedicated `YakouCommandGatewayTests` CTest suite covers forged
+player fields, attempts to act on the opponent's hand, malformed input,
+invalid slots, unexpected fields, atomic rollback, automatic summon and
+spell effects, authenticated snapshots, and choice ownership. This
+isolation test does **not** establish a real network session.
+
+**Still required before online enablement:** add explicit opt-in Yakou
+lobby/session creation, verified seat-to-connection bindings,
+request/response envelopes and stable request IDs, reconnection,
+time limits, secure replay archive, protocol compatibility, and
+two-client WebSocket integration tests. Keep `RuntimeReady=false`
+until authored effects and full game flow are supported. No Unity,
+card JSON, sheet or legacy battle logic was modified.
