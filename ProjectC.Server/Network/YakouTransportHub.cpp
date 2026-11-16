@@ -11,6 +11,16 @@ namespace ProjectC::Network
 {
 namespace
 {
+constexpr auto ResumeRetryWindow = std::chrono::seconds(30);
+constexpr std::size_t ResumeRetryRequestIdLength = 32;
+bool IsResumeRetryId(std::string const& id)
+{
+    return id.size() == ResumeRetryRequestIdLength &&
+           std::all_of(id.begin(), id.end(), [](char c)
+           {
+               return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+           });
+}
 std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog)
 {
     auto const cards = catalog.Decks.at("Decks").at(0).at("Cards").get<std::vector<int>>();
@@ -157,6 +167,20 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         if (found == rooms_.end()) { reject("MatchNotFound"); return; }
         auto& room = found->second;
         int seat = token == room.Tokens[0] ? 1 : token == room.Tokens[1] && room.Joined ? 2 : 0;
+        bool retry = false;
+        if (seat == 0)
+        {
+            for (int index = 0; index < 2; ++index)
+            {
+                if ((index == 0 || room.Joined) && token == room.PreviousTokens[index]
+                    && requestId == room.ResumeRequests[index] && Clock::now() < room.ResumeRetryUntil[index])
+                {
+                    seat = index + 1;
+                    retry = true;
+                    break;
+                }
+            }
+        }
         if (seat == 0) { reject("InvalidResumeToken"); return; }
         if (auto old = room.Clients[seat - 1].lock())
         {
@@ -168,8 +192,23 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         client->YakouConnectionKey = Token();
         room.Session->Bind(seat, client->YakouConnectionKey);
         room.Clients[seat - 1] = client;
-        // Rotate resume credentials after a successful use.
-        room.Tokens[seat - 1] = Token();
+        // Allow only the exact, short-lived retry of an unacknowledged rotation.
+        // A later authenticated request retires the previous token immediately.
+        if (!retry)
+        {
+            if (IsResumeRetryId(requestId))
+            {
+                room.PreviousTokens[seat - 1] = room.Tokens[seat - 1];
+                room.ResumeRequests[seat - 1] = requestId;
+                room.ResumeRetryUntil[seat - 1] = Clock::now() + ResumeRetryWindow;
+            }
+            else
+            {
+                room.PreviousTokens[seat - 1].clear();
+                room.ResumeRequests[seat - 1].clear();
+            }
+            room.Tokens[seat - 1] = Token();
+        }
         room.LastActivity = Clock::now();
         Reply(client, "YakouResumed", requestId, id,
               {{"Seat", seat}, {"ResumeToken", room.Tokens[seat - 1]}});
@@ -190,6 +229,14 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
     if (found == rooms_.end()) { reject("MatchNotFound"); return; }
     auto& room = found->second;
     room.LastActivity = Clock::now();
+    for (int index = 0; index < 2; ++index)
+    {
+        if (auto bound = room.Clients[index].lock(); bound && bound == client)
+        {
+            room.PreviousTokens[index].clear();
+            room.ResumeRequests[index].clear();
+        }
+    }
     if (type == "YakouLeave")
     {
         CloseRoom(id, "PlayerLeft");

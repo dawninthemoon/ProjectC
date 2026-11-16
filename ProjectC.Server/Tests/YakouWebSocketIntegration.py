@@ -76,7 +76,9 @@ def run(port):
         # A stolen/malformed resume token must not bind another seat.
         stranger.send("YakouResume", MatchId=match, ResumeToken="bad-token")
         assert expect(stranger, "YakouRejected")["Payload"]["Reason"] == "InvalidResumeToken"
-        stranger.send("YakouResume", MatchId=match, ResumeToken=token_a)
+        resume_request = {"Type": "YakouResume", "ProtocolVersion": 2,
+                          "RequestId": os.urandom(16).hex(), "MatchId": match, "ResumeToken": token_a}
+        stranger.raw(__import__("json").dumps(resume_request))
         resumed = expect(stranger, "YakouResumed")
         token_new = resumed["Payload"]["ResumeToken"]
         tokens.append(token_new)
@@ -92,6 +94,30 @@ def run(port):
             assert expect(c, "YakouRejected")["Payload"]["Reason"] == "InvalidResumeToken"
         finally:
             c.close()
+        # Simulate a lost resume response: the exact previous request may be
+        # retried and returns the same rotated token, not a second rotation.
+        c = Peer(port)
+        try:
+            c.raw(__import__("json").dumps(resume_request))
+            retry = expect(c, "YakouResumed")
+            assert retry["Payload"]["ResumeToken"] == token_new
+            expect(c, "YakouSnapshot")
+            expect(stranger, "YakouReplaced")
+            c.send("YakouSnapshot", MatchId=match)
+            expect(c, "YakouSnapshot")
+            # Once the rotated credential is acknowledged, even the exact
+            # previous request cannot rebind the seat.
+            d = Peer(port)
+            try:
+                d.raw(__import__("json").dumps(resume_request))
+                assert expect(d, "YakouRejected")["Payload"]["Reason"] == "InvalidResumeToken"
+            finally:
+                d.close()
+            stranger.close()
+            stranger = c
+        except Exception:
+            c.close()
+            raise
         duplicate = command(stranger, match, "summon", {"Type": "Summon", "CardId": first_id,
                                                          "Method": "Normal", "Materials": [], "Slot": 0})
         assert duplicate["Payload"] == summoned["Payload"]

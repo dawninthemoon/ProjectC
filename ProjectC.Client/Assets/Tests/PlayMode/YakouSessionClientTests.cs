@@ -117,5 +117,67 @@ namespace ProjectC.Tests
             client.Create();
             Assert.AreNotEqual(id, (string)JObject.Parse(sent[1])["RequestId"]);
         }
+
+        [Test]
+        public void LostResumeReplyRetriesTheIdenticalRequest()
+        {
+            var sent = new List<string>();
+            var client = new YakouSessionClient(sent.Add);
+            client.Create();
+            var id = (string)JObject.Parse(sent[0])["RequestId"];
+            client.ApplyMessage(Message("YakouCreated", "Y1", new JObject
+            {
+                ["Seat"] = 1, ["ResumeToken"] = "original",
+            }, id));
+            client.Disconnected();
+            client.Resume();
+            string resume = sent[1];
+            client.Disconnected();
+            client.Resume();
+            Assert.AreEqual(resume, sent[2]);
+            id = (string)JObject.Parse(resume)["RequestId"];
+            client.ApplyMessage(Message("YakouResumed", "Y1", new JObject
+            {
+                ["Seat"] = 1, ["ResumeToken"] = "rotated",
+            }, id));
+            client.Disconnected();
+            client.Resume();
+            Assert.AreNotEqual(id, (string)JObject.Parse(sent[3])["RequestId"]);
+            Assert.AreEqual("rotated", (string)JObject.Parse(sent[3])["ResumeToken"]);
+        }
+
+        [Test]
+        public void CommittedCommandWithLostReplyUsesCachedResultAndKeepsNewerSnapshot()
+        {
+            var sent = new List<string>();
+            var client = new YakouSessionClient(sent.Add);
+            client.Create();
+            string bindId = (string)JObject.Parse(sent[0])["RequestId"];
+            client.ApplyMessage(Message("YakouCreated", "Y1", new JObject
+            {
+                ["Seat"] = 1, ["ResumeToken"] = "original",
+            }, bindId));
+            client.ApplyMessage(Message("YakouSnapshot", "Y1", Snapshot(0)));
+            client.Command(new JObject { ["Type"] = "StartTurn" });
+            var command = JObject.Parse(sent[1]);
+            client.Disconnected();
+            client.Resume();
+            string resumeId = (string)JObject.Parse(sent[2])["RequestId"];
+            client.ApplyMessage(Message("YakouResumed", "Y1", new JObject
+            {
+                ["Seat"] = 1, ["ResumeToken"] = "rotated",
+            }, resumeId));
+            client.ApplyMessage(Message("YakouSnapshot", "Y1", Snapshot(2)));
+            client.RetryPending();
+            Assert.IsTrue(JToken.DeepEquals(command, JObject.Parse(sent[3])));
+            client.ApplyMessage(Message("YakouCommandResult", "Y1", new JObject
+            {
+                ["Accepted"] = true, ["Reason"] = "", ["Sequence"] = 1,
+            }, (string)command["RequestId"]));
+            client.ApplyMessage(Message("YakouSnapshot", "Y1", Snapshot(0)));
+            Assert.IsFalse(client.Busy);
+            Assert.AreEqual(2, client.Sequence);
+            Assert.AreEqual(2, (long)client.State["TurnNumber"]);
+        }
     }
 }
