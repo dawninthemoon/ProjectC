@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Newtonsoft.Json.Linq;
@@ -25,6 +26,7 @@ namespace ProjectC.Tests
         private GameObject _first;
         private GameObject _second;
         private GameObject _battle;
+        private GameObject _opponentBattle;
 
         [TearDown]
         public void Cleanup()
@@ -32,6 +34,10 @@ namespace ProjectC.Tests
             if (_battle != null)
             {
                 Object.DestroyImmediate(_battle);
+            }
+            if (_opponentBattle != null)
+            {
+                Object.DestroyImmediate(_opponentBattle);
             }
             if (_first != null)
             {
@@ -115,6 +121,18 @@ namespace ProjectC.Tests
             Assert.IsTrue(yakou.Bind("OpponentHandImage", out CardZoneView hidden));
             Assert.AreEqual(5, hidden.Widgets.Count);
             Assert.IsTrue(hidden.Widgets.TrueForAll(widget => widget.Hidden && widget.Card == null));
+            var networkProperty = typeof(ClientApp).GetProperty("Network").GetSetMethod(true);
+            networkProperty.Invoke(app, new object[] { b });
+            _opponentBattle = Object.Instantiate(prefab);
+            networkProperty.Invoke(app, new object[] { a });
+            yield return null;
+            var opponentUi = _opponentBattle.GetComponent<YakouBattlePresenter>();
+            var opponentScreen = _opponentBattle.GetComponent<BattlePresenter>();
+            Assert.IsNotNull(opponentUi);
+            Assert.IsTrue(opponentUi.Bind("YourHandImage", out CardZoneView secondHand));
+            Assert.IsTrue(opponentUi.Bind("OpponentHandImage", out CardZoneView secondHidden));
+            Assert.AreEqual(5, secondHand.Widgets.Count);
+            Assert.IsTrue(secondHidden.Widgets.TrueForAll(widget => widget.Hidden && widget.Card == null));
             screen.EndTurn.onClick.Invoke();
             ActionButton("턴 시작").onClick.Invoke();
             yield return Until(() => a.Yakou.Sequence == 1 && !a.Yakou.Busy);
@@ -150,6 +168,17 @@ namespace ProjectC.Tests
             Assert.AreEqual(0, ((JArray)a.Yakou.State["Players"][1]["Hand"]).Count);
             yield return Send(a, new JObject { ["Type"] = "BeginRaid" });
             yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
+            yield return Send(b, new JObject { ["Type"] = "StartTurn" });
+            var otherNormal = ((JArray)b.Yakou.State["Players"][1]["SummonChoices"])
+                .First(choice => (string)choice["Method"] == "Normal");
+            int blocker = (int)otherNormal["CardId"];
+            Assert.IsTrue(opponentUi.Bind("YourHandImage", out CardZoneView opponentHand));
+            opponentHand.Widgets.Find(widget => widget.Card.Id == blocker).OnPointerClick(null);
+            ActionButton("소환: Normal", _opponentBattle).onClick.Invoke();
+            ActionButton("필드 슬롯 1", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (int?)b.Yakou.State["Players"][1]["FieldSlots"][0]?["Id"] == blocker);
+            yield return Send(b, new JObject { ["Type"] = "BeginRaid" });
+            yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             for (int turns = 0; (string)a.Yakou.State["Phase"] != "AssignBlockers" && turns < 8; ++turns)
             {
                 var active = (int)a.Yakou.State["ActivePlayerId"] == 1 ? a : b;
@@ -159,19 +188,35 @@ namespace ProjectC.Tests
                 yield return Until(() => other.Yakou.Sequence == active.Yakou.Sequence);
             }
             Assert.AreEqual("AssignBlockers", (string)a.Yakou.State["Phase"]);
-            yield return Send(b, new JObject { ["Type"] = "AssignBlockers", ["Blockers"] = new JArray() });
-            yield return Send(b, new JObject { ["Type"] = "PassRaidResponse" });
-            yield return Send(a, new JObject { ["Type"] = "PassRaidResponse" });
-            yield return Send(b, new JObject { ["Type"] = "ResolveRaid" });
+            Assert.IsTrue(opponentUi.Bind("OpponentFieldImage", out CardZoneView opponentEnemyField));
+            Assert.IsTrue(opponentUi.Bind("OwnFieldImage", out CardZoneView opponentOwnField));
+            opponentEnemyField.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
+            opponentOwnField.Widgets.Find(widget => widget.Card.Id == blocker).OnPointerClick(null);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("방어 배정 확정", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "RaidResponse");
+            Assert.AreEqual(blocker, (int)b.Yakou.State["Attacks"][0]["BlockerId"]);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("습격 응전 패스", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (int)b.Yakou.State["PriorityPlayerId"] == 1);
+            yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
+            long beforePass = a.Yakou.Sequence;
+            screen.EndTurn.onClick.Invoke();
+            ActionButton("습격 응전 패스").onClick.Invoke();
+            yield return Until(() => !a.Yakou.Busy && a.Yakou.Sequence == beforePass + 1);
+            yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("습격 해결", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "TurnStart");
             Assert.AreEqual("TurnStart", (string)b.Yakou.State["Phase"]);
             Assert.AreEqual(2, (int)b.Yakou.State["ActivePlayerId"]);
             b.Yakou.Leave();
             yield return Until(() => a.Yakou.MatchId == null && b.Yakou.MatchId == null);
         }
 
-        private Button ActionButton(string text)
+        private Button ActionButton(string text, GameObject root = null)
         {
-            foreach (var button in _battle.GetComponentsInChildren<Button>(true))
+            foreach (var button in (root != null ? root : _battle).GetComponentsInChildren<Button>(true))
             {
                 var label = button.GetComponentInChildren<TMP_Text>();
                 if (button.gameObject.activeInHierarchy && label != null && label.text == text)
