@@ -8,8 +8,12 @@ using System.Net.Sockets;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using ProjectC.Client;
+using Game.Utils;
+using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace ProjectC.Tests
@@ -20,10 +24,15 @@ namespace ProjectC.Tests
         private Process _server;
         private GameObject _first;
         private GameObject _second;
+        private GameObject _battle;
 
         [TearDown]
         public void Cleanup()
         {
+            if (_battle != null)
+            {
+                Object.DestroyImmediate(_battle);
+            }
             if (_first != null)
             {
                 Object.DestroyImmediate(_first);
@@ -69,6 +78,11 @@ namespace ProjectC.Tests
             yield return Until(() => startup.IsCompleted);
             StringAssert.Contains("listening", startup.Result);
             _first = new GameObject("Yakou client one", typeof(MultiplayerDebugScreen));
+            var app = _first.AddComponent<ClientApp>();
+            typeof(ClientApp).GetProperty("Environment").GetSetMethod(true)
+                .Invoke(app, new object[] { ServerEnvironment.Local });
+            // This test drives reconnection explicitly without front-end scene navigation.
+            app.enabled = false;
             _second = new GameObject("Yakou client two", typeof(MultiplayerDebugScreen));
             var a = _first.GetComponent<MultiplayerDebugScreen>();
             var b = _second.GetComponent<MultiplayerDebugScreen>();
@@ -88,7 +102,22 @@ namespace ProjectC.Tests
             yield return Until(() => !b.Yakou.Busy);
             Assert.AreEqual("Rejected", b.Yakou.Error);
             Assert.AreEqual(0, b.Yakou.Sequence);
-            yield return Send(a, new JObject { ["Type"] = "StartTurn" });
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab");
+            Assert.IsNotNull(prefab);
+            _battle = Object.Instantiate(prefab);
+            yield return null;
+            var yakou = _battle.GetComponent<YakouBattlePresenter>();
+            var screen = _battle.GetComponent<BattlePresenter>();
+            Assert.IsNotNull(yakou);
+            Assert.IsFalse(screen.enabled);
+            Assert.IsTrue(yakou.Bind("YourHandImage", out CardZoneView hand));
+            Assert.AreEqual(5, hand.Widgets.Count);
+            Assert.IsTrue(yakou.Bind("OpponentHandImage", out CardZoneView hidden));
+            Assert.AreEqual(5, hidden.Widgets.Count);
+            Assert.IsTrue(hidden.Widgets.TrueForAll(widget => widget.Hidden && widget.Card == null));
+            screen.EndTurn.onClick.Invoke();
+            ActionButton("턴 시작").onClick.Invoke();
+            yield return Until(() => a.Yakou.Sequence == 1 && !a.Yakou.Busy);
             var choices = (JArray)a.Yakou.State["Players"][0]["SummonChoices"];
             JToken normal = null;
             foreach (var choice in choices)
@@ -101,9 +130,18 @@ namespace ProjectC.Tests
             }
             Assert.IsNotNull(normal);
             int card = (int)normal["CardId"];
-            yield return Send(a, new JObject { ["Type"] = "Summon", ["CardId"] = card,
-                ["Method"] = "Normal", ["Materials"] = new JArray(), ["Slot"] = 0 });
+            hand.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
+            ActionButton("소환: Normal").onClick.Invoke();
+            ActionButton("필드 슬롯 1").onClick.Invoke();
+            yield return Until(() => a.Yakou.Sequence == 2 && !a.Yakou.Busy);
             Assert.AreEqual(card, (int)a.Yakou.State["Players"][0]["FieldSlots"][0]["Id"]);
+            Assert.IsTrue(yakou.Bind("OwnFieldImage", out CardZoneView field));
+            Assert.AreEqual(card, field.Widgets[0].Card.Id);
+            Assert.IsTrue(field.Widgets[0].Card.Yakou);
+            Assert.AreEqual((int)a.Yakou.State["Players"][0]["FieldSlots"][0]["AttackCounter"],
+                field.Widgets[0].Card.YakouCountdown);
+            Assert.AreEqual(CardLibrary.LoadYakouResources().Find(field.Widgets[0].Card.DefinitionId).Name,
+                CardPresentation.Name(field.Widgets[0].Card));
             a.DisconnectNetwork();
             Assert.IsFalse(a.Yakou.Bound);
             a.ReconnectNetwork();
@@ -131,6 +169,20 @@ namespace ProjectC.Tests
             yield return Until(() => a.Yakou.MatchId == null && b.Yakou.MatchId == null);
         }
 
+        private Button ActionButton(string text)
+        {
+            foreach (var button in _battle.GetComponentsInChildren<Button>(true))
+            {
+                var label = button.GetComponentInChildren<TMP_Text>();
+                if (button.gameObject.activeInHierarchy && label != null && label.text == text)
+                {
+                    return button;
+                }
+            }
+            Assert.Fail("Missing battle action: " + text);
+            return null;
+        }
+
         private static IEnumerator Send(MultiplayerDebugScreen client, JObject command)
         {
             long sequence = client.Yakou.Sequence;
@@ -139,12 +191,12 @@ namespace ProjectC.Tests
             Assert.AreEqual(sequence + 1, client.Yakou.Sequence, client.Yakou.Error);
         }
 
-        private static IEnumerator Until(Func<bool> condition)
+        private static IEnumerator Until(Func<bool> condition, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
         {
             float deadline = Time.realtimeSinceStartup + TimeoutSeconds;
             while (!condition())
             {
-                Assert.Less(Time.realtimeSinceStartup, deadline, "Yakou network condition timed out");
+                Assert.Less(Time.realtimeSinceStartup, deadline, "Yakou network condition timed out at line " + line);
                 yield return null;
             }
         }

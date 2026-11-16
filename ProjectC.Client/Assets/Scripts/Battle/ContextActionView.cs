@@ -12,6 +12,38 @@ namespace ProjectC.Client
         public Button ActionPrefab;
         readonly List<Button> buttons = new List<Button>();
 
+        public void ShowChoices(Vector3 position, IReadOnlyList<KeyValuePair<string, Action>> choices)
+        {
+            if (!this.Bind("ActionContentImage", out RectTransform content) || ActionPrefab == null)
+            {
+                throw new InvalidOperationException("Context actions require ActionContentImage and ActionPrefab.");
+            }
+            foreach (var button in buttons)
+            {
+                button.gameObject.SetActive(false);
+                button.onClick.RemoveAllListeners();
+            }
+            for (int index = 0; index < choices.Count; ++index)
+            {
+                if (index == buttons.Count)
+                {
+                    buttons.Add(Instantiate(ActionPrefab, content));
+                }
+                var choice = choices[index];
+                var button = buttons[index];
+                button.gameObject.SetActive(true);
+                button.GetComponentInChildren<TMP_Text>().text = choice.Key;
+                button.onClick.AddListener(() => choice.Value());
+            }
+            gameObject.SetActive(choices.Count > 0);
+            if (choices.Count > 0)
+            {
+                ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+                    choices.Count * 48 + 20);
+                PopupPosition.Place((RectTransform)transform, position);
+            }
+        }
+
         public void Show(CardWidget widget, Action<ActivationView> activate)
         {
             this.Bind("ActionContentImage", out RectTransform content);

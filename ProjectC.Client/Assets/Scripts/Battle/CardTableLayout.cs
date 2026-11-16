@@ -17,6 +17,8 @@ namespace ProjectC.Client
         public BattleVisualSettings Settings;
         [SerializeField, Min(0)] private float _fieldSpacing = FieldSpacing;
         private List<CardWidget> _cards;
+        private IReadOnlyList<int> _slotIndices;
+        private int _slotCount;
         private readonly Dictionary<CardWidget, Motion> _motions = new Dictionary<CardWidget, Motion>();
         private readonly List<CardWidget> _retired = new List<CardWidget>();
         public float Spacing { get; private set; }
@@ -28,7 +30,7 @@ namespace ProjectC.Client
         {
             get
             {
-                int count = _cards?.Count ?? 0;
+                int count = _slotIndices != null ? _slotCount : _cards?.Count ?? 0;
                 if (OpponentHand)
                 {
                     return 1;
@@ -66,6 +68,20 @@ namespace ProjectC.Client
         public void Arrange(List<CardWidget> widgets)
         {
             _cards = widgets;
+            _slotIndices = null;
+            _slotCount = 0;
+            Apply(false);
+        }
+
+        public void ArrangeSlots(List<CardWidget> widgets, IReadOnlyList<int> slotIndices, int slotCount)
+        {
+            if (slotIndices == null || slotIndices.Count != widgets.Count || slotCount < 1)
+            {
+                throw new System.ArgumentException("Field slot positions must match the rendered cards.");
+            }
+            _cards = widgets;
+            _slotIndices = slotIndices;
+            _slotCount = slotCount;
             Apply(false);
         }
 
@@ -150,7 +166,9 @@ namespace ProjectC.Client
                 var rect = (RectTransform)card.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
                 rect.sizeDelta = CardSize;
-                GetSlot(i, count, out var target, out var rotation);
+                int positionIndex = _slotIndices != null ? _slotIndices[i] : i;
+                int positionCount = _slotIndices != null ? _slotCount : count;
+                GetSlot(positionIndex, positionCount, out var target, out var rotation);
                 if (Hand && (card.IsHovered || (!Compact && card.IsSelected)))
                 {
                     target.y = FocusLift;
@@ -159,7 +177,7 @@ namespace ProjectC.Client
                 }
                 if (snap)
                 {
-                    Place(card, i, count);
+                    Place(card, positionIndex, positionCount);
                     continue;
                 }
                 if (!_motions.TryGetValue(card, out var motion))

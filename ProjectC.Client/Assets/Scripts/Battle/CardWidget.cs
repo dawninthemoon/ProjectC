@@ -169,14 +169,16 @@ namespace ProjectC.Client
             }
             if (_cost != null)
             {
-                var costs = visible ? CardPresentation.Library.Find(card.DefinitionId)?.ActivationYokaiCosts : null;
+                var costs = visible ? CardPresentation.LibraryFor(card).Find(card.DefinitionId)?.ActivationYokaiCosts : null;
                 bool catalogMatches = ClientApp.Instance == null || string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem);
-                bool showCost = hand && catalogMatches && costs != null && costs.Length > 0;
-                _cost.transform.parent.gameObject.SetActive(showCost);
-                _cost.text = showCost ? string.Join("/", costs) : "";
+                bool showCountdown = visible && card.Yakou && !hand && card.YakouCountdown >= 0;
+                bool showCost = hand && !card.Yakou && catalogMatches && costs != null && costs.Length > 0;
+                _cost.transform.parent.gameObject.SetActive(showCost || showCountdown);
+                _cost.text = showCountdown ? card.YakouCountdown.ToString() : showCost ? string.Join("/", costs) : "";
             }
             // Hidden cards never resolve an artwork resource from a definition ID.
-            CardArtProvider.Apply(ArtworkImage, visible ? card.DefinitionId : 0);
+            // Yakou IDs overlap the legacy catalog and have no authored art mapping.
+            CardArtProvider.Apply(ArtworkImage, visible && !card.Yakou ? card.DefinitionId : 0);
             if (ArtworkImage is AspectFillImage aspectFill)
             {
                 if (visible && !hand && _fieldCropProfile != null)

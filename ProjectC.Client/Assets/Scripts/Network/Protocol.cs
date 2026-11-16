@@ -21,6 +21,8 @@ namespace ProjectC.Client
     [Serializable]
     public class CardView
     {
+        [NonSerialized] public bool Yakou;
+        [NonSerialized] public int YakouCountdown = -1;
         public int Id,
             DefinitionId,
             Attack,
