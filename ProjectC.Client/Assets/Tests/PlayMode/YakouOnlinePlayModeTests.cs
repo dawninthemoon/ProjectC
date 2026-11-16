@@ -27,6 +27,7 @@ namespace ProjectC.Tests
         private GameObject _second;
         private GameObject _battle;
         private GameObject _opponentBattle;
+        private string _fixtureDirectory;
 
         [TearDown]
         public void Cleanup()
@@ -55,6 +56,10 @@ namespace ProjectC.Tests
                 }
                 _server.Dispose();
             }
+            if (_fixtureDirectory != null && Directory.Exists(_fixtureDirectory))
+            {
+                Directory.Delete(_fixtureDirectory, true);
+            }
         }
 
         [UnityTest]
@@ -74,7 +79,28 @@ namespace ProjectC.Tests
             listener.Start();
             int port = ((IPEndPoint)listener.LocalEndpoint).Port;
             listener.Stop();
-            _server = Process.Start(new ProcessStartInfo(executable, "--port " + port + " --yakou-prototype on")
+            string sourceData = Path.GetFullPath(Path.Combine(Application.dataPath, "../../ProjectC.Server/Data"));
+            _fixtureDirectory = Path.Combine(Application.temporaryCachePath, "YakouResponse-" + Guid.NewGuid().ToString("N"));
+            foreach (string source in Directory.GetFiles(sourceData, "*", SearchOption.AllDirectories))
+            {
+                string destination = Path.Combine(_fixtureDirectory, source.Substring(sourceData.Length + 1));
+                Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                File.Copy(source, destination);
+            }
+            string deckPath = Path.Combine(_fixtureDirectory, "YakouPrototype", "Decks.json");
+            var decks = JObject.Parse(File.ReadAllText(deckPath));
+            var cards = ((JArray)decks["Decks"][0]["Cards"]).Values<int>().ToList();
+            foreach (int id in new[] { 2001, 2002, 2011, 2010, 2010 })
+            {
+                Assert.IsTrue(cards.Remove(id));
+            }
+            Assert.IsTrue(cards.Remove(3012));
+            cards.Insert(0, 3012);
+            cards.InsertRange(0, new[] { 2001, 2002, 3016, 2011, 3018 });
+            decks["Decks"][0]["Cards"] = new JArray(cards);
+            File.WriteAllText(deckPath, decks.ToString());
+            _server = Process.Start(new ProcessStartInfo(executable,
+                "--port " + port + " --yakou-prototype on --data \"" + _fixtureDirectory + "\"")
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -152,6 +178,7 @@ namespace ProjectC.Tests
             ActionButton("소환: Normal").onClick.Invoke();
             ActionButton("필드 슬롯 1").onClick.Invoke();
             yield return Until(() => a.Yakou.Sequence == 2 && !a.Yakou.Busy);
+            yield return Until(() => screen.Effects.ActiveSummons == 0);
             Assert.AreEqual(card, (int)a.Yakou.State["Players"][0]["FieldSlots"][0]["Id"]);
             Assert.IsTrue(yakou.Bind("OwnFieldImage", out CardZoneView field));
             Assert.AreEqual(card, field.Widgets[0].Card.Id);
@@ -177,6 +204,7 @@ namespace ProjectC.Tests
             ActionButton("소환: Normal", _opponentBattle).onClick.Invoke();
             ActionButton("필드 슬롯 1", _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && (int?)b.Yakou.State["Players"][1]["FieldSlots"][0]?["Id"] == blocker);
+            yield return Until(() => opponentScreen.Effects.ActiveSummons == 0);
             yield return Send(b, new JObject { ["Type"] = "BeginRaid" });
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             for (int turns = 0; (string)a.Yakou.State["Phase"] != "AssignBlockers" && turns < 8; ++turns)
@@ -192,24 +220,110 @@ namespace ProjectC.Tests
             Assert.IsTrue(opponentUi.Bind("OwnFieldImage", out CardZoneView opponentOwnField));
             opponentEnemyField.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
             opponentOwnField.Widgets.Find(widget => widget.Card.Id == blocker).OnPointerClick(null);
+            yield return null;
+            Assert.IsTrue(opponentUi.GetComponentsInChildren<DefenseBezierGraphic>(true)
+                .Any(line => line.gameObject.activeInHierarchy && !line.raycastTarget));
             opponentScreen.EndTurn.onClick.Invoke();
             ActionButton("방어 배정 확정", _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "RaidResponse");
             Assert.AreEqual(blocker, (int)b.Yakou.State["Attacks"][0]["BlockerId"]);
+            int shield = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 3016)["Id"];
+            opponentHand.Widgets.Find(widget => widget.Card.Id == shield).OnPointerClick(null);
+            ActionButton("피해 감소 응전", _opponentBattle).onClick.Invoke();
+            opponentOwnField.Widgets.Find(widget => widget.Card.Id == blocker).OnPointerClick(null);
             opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton("습격 응전 패스", _opponentBattle).onClick.Invoke();
-            yield return Until(() => !b.Yakou.Busy && (int)b.Yakou.State["PriorityPlayerId"] == 1);
+            ActionButton("응전 제출", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 1);
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             long beforePass = a.Yakou.Sequence;
             screen.EndTurn.onClick.Invoke();
             ActionButton("습격 응전 패스").onClick.Invoke();
             yield return Until(() => !a.Yakou.Busy && a.Yakou.Sequence == beforePass + 1);
             yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
+            int tactic = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 2011)["Id"];
+            int cost = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 3018)["Id"];
+            opponentHand.Widgets.Find(widget => widget.Card.Id == tactic).OnPointerClick(null);
+            ActionButton("습격 전술 응전", _opponentBattle).onClick.Invoke();
+            opponentEnemyField.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("응전 비용 선택 0/1", _opponentBattle).onClick.Invoke();
+            opponentHand.Widgets.Find(widget => widget.Card.Id == cost).OnPointerClick(null);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("응전 제출", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 2);
+            StringAssert.Contains(CardLibrary.LoadYakouResources().Find(2011).Name, opponentScreen.PhaseLabel.text);
+            Assert.IsTrue(opponentUi.GetComponentInChildren<BattleLogView>(true).Entries
+                .Any(entry => entry.Text(2).Contains("응전 추가")));
+            yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
+            beforePass = a.Yakou.Sequence;
+            screen.EndTurn.onClick.Invoke();
+            ActionButton("습격 응전 패스").onClick.Invoke();
+            yield return Until(() => !a.Yakou.Busy && a.Yakou.Sequence == beforePass + 1);
+            yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("습격 응전 패스", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (int)b.Yakou.State["PriorityPlayerId"] == 0);
             opponentScreen.EndTurn.onClick.Invoke();
             ActionButton("습격 해결", _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "TurnStart");
             Assert.AreEqual("TurnStart", (string)b.Yakou.State["Phase"]);
             Assert.AreEqual(2, (int)b.Yakou.State["ActivePlayerId"]);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("턴 시작", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "Main");
+            var secondCards = (JArray)b.Yakou.State["Players"][1]["Hand"];
+            int map = (int)secondCards.First(item => (int)item["DefinitionId"] == 3012)["Id"];
+            int discard = (int)secondCards.First(item => (int)item["DefinitionId"] != 3012 &&
+                (int)item["DefinitionId"] != 2002)["Id"];
+            opponentHand.Widgets.Find(widget => widget.Card.Id == map).OnPointerClick(null);
+            ActionButton("주문 비용 선택", _opponentBattle).onClick.Invoke();
+            opponentHand.Widgets.Find(widget => widget.Card.Id == discard).OnPointerClick(null);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("선택 확정", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["PendingSelection"]?["Operation"] == "LookAndChoose");
+            Assert.AreEqual(3, ((JArray)b.Yakou.State["PendingSelection"]["CandidateCards"]).Count);
+            yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
+            Assert.IsNull(a.Yakou.State["PendingSelection"]);
+            b.DisconnectNetwork();
+            b.ReconnectNetwork();
+            yield return Until(() => b.Yakou.Bound && (string)b.Yakou.State?["PendingSelection"]?["Operation"] == "LookAndChoose");
+            var revealed = b.Yakou.State["PendingSelection"]["CandidateCards"][0];
+            string revealedName = CardLibrary.LoadYakouResources().Find((int)revealed["DefinitionId"]).Name;
+            int revealedId = (int)revealed["Id"];
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("선택: " + revealedName, _opponentBattle).onClick.Invoke();
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("선택한 효과 대상 확정", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && b.Yakou.State["PendingSelection"] == null);
+            Assert.IsTrue(((JArray)b.Yakou.State["Players"][1]["Hand"]).Any(item => (int)item["Id"] == revealedId));
+            int necromancer = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 2002)["Id"];
+            opponentHand.Widgets.Find(widget => widget.Card.Id == necromancer).OnPointerClick(null);
+            ActionButton("소환: Necromancy", _opponentBattle).onClick.Invoke();
+            var summon = ((JArray)b.Yakou.State["Players"][1]["SummonChoices"])
+                .First(item => (int)item["CardId"] == necromancer && (string)item["Method"] == "Necromancy");
+            int material = (int)summon["Candidates"][0];
+            Assert.IsTrue(opponentUi.Bind("YourGraveyardImage", out CardZoneView opponentGrave));
+            opponentGrave.Widgets.Find(widget => widget.Card.Id == material).OnPointerClick(null);
+            b.DisconnectNetwork();
+            b.ReconnectNetwork();
+            yield return Until(() => b.Yakou.Bound && b.Yakou.State != null);
+            opponentHand.Widgets.Find(widget => widget.Card.Id == necromancer).OnPointerClick(null);
+            ActionButton("소환: Necromancy", _opponentBattle).onClick.Invoke();
+            opponentGrave.Widgets.Find(widget => widget.Card.Id == material).OnPointerClick(null);
+            int slot = (int)summon["AvailableSlots"][0];
+            ActionButton("필드 슬롯 " + (slot + 1), _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && b.Yakou.State["PendingSelection"] != null);
+            int target = (int)b.Yakou.State["PendingSelection"]["Candidates"][0];
+            opponentGrave.Widgets.Find(widget => widget.Card.Id == target).OnPointerClick(null);
+            b.DisconnectNetwork();
+            b.ReconnectNetwork();
+            yield return Until(() => b.Yakou.Bound && b.Yakou.State?["PendingSelection"] != null);
+            Assert.IsNull(a.Yakou.State["PendingSelection"]);
+            opponentGrave.Widgets.Find(widget => widget.Card.Id == target).OnPointerClick(null);
+            opponentScreen.EndTurn.onClick.Invoke();
+            ActionButton("선택한 효과 대상 확정", _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && b.Yakou.State["PendingSelection"] == null);
+            Assert.IsTrue(((JArray)b.Yakou.State["Players"][1]["Hand"]).Any(item => (int)item["Id"] == target));
             b.Yakou.Leave();
             yield return Until(() => a.Yakou.MatchId == null && b.Yakou.MatchId == null);
         }

@@ -118,6 +118,11 @@ namespace ProjectC.Client
 
         public void Place(CardWidget card, int index, int count)
         {
+            if (_slotIndices != null && index >= 0 && index < _slotIndices.Count)
+            {
+                index = _slotIndices[index];
+                count = _slotCount;
+            }
             var rect = (RectTransform)card.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
             rect.sizeDelta = CardSize;
@@ -177,7 +182,7 @@ namespace ProjectC.Client
                 }
                 if (snap)
                 {
-                    Place(card, positionIndex, positionCount);
+                    Place(card, i, count);
                     continue;
                 }
                 if (!_motions.TryGetValue(card, out var motion))

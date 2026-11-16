@@ -34,6 +34,23 @@ namespace ProjectC.Client
         private ModalBlocker.Lease _modal;
         private Color _previousTint;
         private bool _bound;
+        private Func<int> _yakouSeat;
+
+        public void InitializeYakou(BattlePresenter presenter, Func<int> seat)
+        {
+            _presenter = presenter;
+            _yakouSeat = seat ?? throw new ArgumentNullException(nameof(seat));
+            BindReferences();
+        }
+
+        public void SetYakouTurn(int turn)
+        {
+            if (_yakouSeat == null)
+            {
+                throw new InvalidOperationException("Yakou log is not initialized.");
+            }
+            _turn = turn;
+        }
 
         public void Initialize(BattlePresenter presenter)
         {
@@ -223,10 +240,10 @@ namespace ProjectC.Client
             {
                 if (entry.Turn != previousTurn)
                 {
-                    Row(index++).Render(this, entry, _presenter.Client.PlayerId, true);
+                    Row(index++).Render(this, entry, _yakouSeat != null ? _yakouSeat() : _presenter.Client.PlayerId, true);
                     previousTurn = entry.Turn;
                 }
-                Row(index++).Render(this, entry, _presenter.Client.PlayerId);
+                Row(index++).Render(this, entry, _yakouSeat != null ? _yakouSeat() : _presenter.Client.PlayerId);
             }
             for (int i = index; i < _rows.Count; i++)
             {
@@ -274,6 +291,18 @@ namespace ProjectC.Client
                 Close();
                 return;
             }
+            if (_yakouSeat != null)
+            {
+                IsOpen = true;
+                History.SetActive(true);
+                _group.alpha = 1;
+                _group.blocksRaycasts = _group.interactable = true;
+                _unreadCount = 0;
+                _unread.text = "";
+                Rebuild();
+                RestoreScroll(true, Vector2.zero);
+                return;
+            }
             if (!_presenter.Client.Input.CanExecute(GameplayInputAction.ToggleBattleLog))
             {
                 return;
@@ -302,6 +331,13 @@ namespace ProjectC.Client
                 return;
             }
             IsOpen = false;
+            if (_yakouSeat != null)
+            {
+                _group.alpha = 0;
+                _group.blocksRaycasts = _group.interactable = false;
+                History.SetActive(false);
+                return;
+            }
             _modal?.Dispose();
             _modal = null;
             _scope?.Dispose();
@@ -328,11 +364,11 @@ namespace ProjectC.Client
                 Rebuild();
                 RestoreScroll(false, position);
             }
-            if (IsOpen && _presenter.Client.Input.HasSelection)
+            if (_yakouSeat == null && IsOpen && _presenter.Client.Input.HasSelection)
             {
                 Close();
             }
-            if (Time.unscaledTime > _feedbackUntil)
+            if (_yakouSeat == null && Time.unscaledTime > _feedbackUntil)
             {
                 Feedback.text = "";
             }

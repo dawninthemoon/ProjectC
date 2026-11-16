@@ -19,6 +19,7 @@ namespace ProjectC.Client
         private CardDetailView _detail;
         private ContextActionView _actions;
         private BattlePresenter _screen;
+        private BattleLogView _log;
         private TMP_Text _feedback;
         private TMP_Text _ownDeckCount, _enemyDeckCount, _ownGraveCount, _enemyGraveCount, _ownExileCount, _enemyExileCount;
         private JObject _state;
@@ -27,9 +28,18 @@ namespace ProjectC.Client
         private readonly Dictionary<int, int> _blockers = new Dictionary<int, int>();
         private int _selected, _attacker;
         private string _responseType, _responseSelection;
+        private JObject _responseOption;
         private int _responseCard, _responseTarget, _responseReplacement;
+        private int _pendingTarget;
         private readonly HashSet<int> _responseCosts = new HashSet<int>();
+        private RectTransform _lineRoot;
+        private readonly Dictionary<int, DefenseBezierGraphic> _defenseLines = new Dictionary<int, DefenseBezierGraphic>();
         private long _sequence = -1;
+        private long _loggedSequence = -1;
+        private JObject _previousPublicState;
+        private readonly HashSet<int> _fieldEntries = new HashSet<int>();
+        private readonly HashSet<int> _fieldChanges = new HashSet<int>();
+        private const float DefaultFieldEntryDuration = .66f;
 
         private void Awake()
         {
@@ -38,7 +48,9 @@ namespace ProjectC.Client
             var legacyLog = GetComponentInChildren<BattleLogView>(true);
             if (legacyLog != null)
             {
-                legacyLog.enabled = false;
+                _log = legacyLog;
+                _log.InitializeYakou(_screen, () => _session.Seat);
+                _log.enabled = true;
             }
             if (!this.Bind("YourHandImage", out _hand) || !this.Bind("OwnFieldImage", out _ownField)
                 || !this.Bind("OpponentFieldImage", out _enemyField) || !this.Bind("OpponentHandImage", out _enemyHand)
@@ -54,8 +66,19 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Yakou battle requires the existing battle card, player and action views.");
             }
             _actions.gameObject.SetActive(false);
+            _screen.Effects?.ResetFeedback();
+            var lineLayer = new GameObject("YakouDefenseLines", typeof(RectTransform));
+            _lineRoot = (RectTransform)lineLayer.transform;
+            _lineRoot.SetParent(transform, false);
+            _lineRoot.anchorMin = Vector2.zero;
+            _lineRoot.anchorMax = Vector2.one;
+            _lineRoot.offsetMin = _lineRoot.offsetMax = Vector2.zero;
             _detail.Show(null);
             _screen.EndTurn.onClick.AddListener(PrimaryActions);
+            if (_screen.LogToggle != null && _log != null)
+            {
+                _screen.LogToggle.onClick.AddListener(_log.Toggle);
+            }
             if (this.Bind("OwnExileBrowseButton", out Button ownExile))
             {
                 ownExile.onClick.AddListener(() => ShowExile(true, ownExile.transform.position));
@@ -85,6 +108,44 @@ namespace ProjectC.Client
             if (_session != null)
             {
                 _session.Changed -= Refresh;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            foreach (var line in _defenseLines.Values)
+            {
+                line.gameObject.SetActive(false);
+            }
+            if (_state == null || (_state["Attacks"] is not JArray attacks))
+            {
+                return;
+            }
+            foreach (var attack in attacks)
+            {
+                int attacker = (int)attack["AttackerId"];
+                int blocker = _blockers.TryGetValue(attacker, out int draft) ? draft : (int)attack["BlockerId"];
+                var attacking = _ownField.Widgets.Concat(_enemyField.Widgets).FirstOrDefault(widget => widget.Card?.Id == attacker);
+                var defending = _ownField.Widgets.Concat(_enemyField.Widgets).FirstOrDefault(widget => widget.Card?.Id == blocker);
+                if (attacking == null || defending == null)
+                {
+                    continue;
+                }
+                if (!_defenseLines.TryGetValue(attacker, out var line))
+                {
+                    var root = new GameObject("YakouDefenseLink", typeof(RectTransform), typeof(CanvasRenderer), typeof(DefenseBezierGraphic));
+                    var rect = (RectTransform)root.transform;
+                    rect.SetParent(_lineRoot, false);
+                    rect.anchorMin = Vector2.zero;
+                    rect.anchorMax = Vector2.one;
+                    rect.offsetMin = rect.offsetMax = Vector2.zero;
+                    line = root.GetComponent<DefenseBezierGraphic>();
+                    line.raycastTarget = false;
+                    line.color = new Color(1, .76f, .3f, 1);
+                    _defenseLines.Add(attacker, line);
+                }
+                line.gameObject.SetActive(true);
+                line.SetEndpoints(attacking.WorldCenter, defending.WorldCenter);
             }
         }
 
@@ -127,16 +188,44 @@ namespace ProjectC.Client
                 _blockers.Clear();
                 _attacker = 0;
                 _responseType = null;
+                _responseOption = null;
                 _responseSelection = null;
                 _responseCosts.Clear();
+                _pendingTarget = 0;
                 _actions.gameObject.SetActive(false);
             }
             _state = _session.State;
             _feedback.text = _session.Error ?? "";
             if (_state == null)
             {
+                _previousPublicState = null;
+                _loggedSequence = -1;
+                _summonChoice = null;
+                _materials.Clear();
+                _responseType = null;
+                _responseOption = null;
+                _responseSelection = null;
+                _responseCosts.Clear();
+                _pendingTarget = 0;
+                _actions.gameObject.SetActive(false);
+                foreach (var zone in new[] { _hand, _ownField, _enemyField, _enemyHand, _ownGrave, _enemyGrave })
+                {
+                    zone.Render(null, 0, false, 0, false, null, null, null);
+                }
+                _detail.Show(null);
+                _feedback.text = _session.Error ?? "서버 스냅샷을 기다리는 중입니다.";
                 _screen.EndTurn.interactable = false;
                 return;
+            }
+            if (_log != null && _session.Sequence != _loggedSequence)
+            {
+                _log.SetYakouTurn((int)_state["TurnNumber"]);
+                if (_previousPublicState != null)
+                {
+                    LogPublicChanges(_previousPublicState, _state);
+                }
+                _previousPublicState = (JObject)_state.DeepClone();
+                _loggedSequence = _session.Sequence;
             }
             var players = (JArray)_state["Players"];
             var own = players.First(player => (int)player["PlayerId"] == _session.Seat);
@@ -149,6 +238,7 @@ namespace ProjectC.Client
             _enemyHand.Render(null, (int)enemy["HandCount"], true, 0, false, null, null, null);
             _ownGrave.Render(Cards(own["Graveyard"]), 0, false, _selected, false, ClickCard, Hover, Unhover);
             _enemyGrave.Render(Cards(enemy["Graveyard"]), 0, false, _selected, false, ClickCard, Hover, Unhover);
+            PresentFieldChanges();
             _ownPlayer.Render(new PlayerView { Life = (int)own["Life"] }, true, false);
             _enemyPlayer.Render(new PlayerView { Life = (int)enemy["Life"] }, false, false);
             _ownDeckCount.text = (string)own["DeckCount"];
@@ -160,6 +250,12 @@ namespace ProjectC.Client
             _screen.TurnLabel.text = ((int)_state["TurnNumber"]).ToString();
             _screen.PhaseLabel.text = (string)_state["Phase"] + " | Active " + (string)_state["ActivePlayerId"]
                 + " | Priority " + (string)_state["PriorityPlayerId"] + " | Ki " + (string)own["Ki"] + "/" + (string)enemy["Ki"];
+            var stack = _state["ResponseStack"] as JArray;
+            if (stack != null && stack.Count > 0)
+            {
+                _screen.PhaseLabel.text += " | 해결순: " + string.Join(" → ", stack.Reverse().Select(link =>
+                    CardPresentation.Name(Card(link["Card"]))));
+            }
             _screen.EndTurn.interactable = _session.Bound && !_session.Busy;
             _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = "Yakou 행동";
             bool finished = (string)_state["Phase"] == "Finished";
@@ -184,9 +280,88 @@ namespace ProjectC.Client
             {
                 _feedback.text = "효과 대상을 선택하세요.";
             }
+            UpdateHints();
         }
 
         private void Hover(CardWidget widget) => _detail.Show(widget.Card);
+
+        private void LogPublicChanges(JObject before, JObject after)
+        {
+            if ((string)before["Phase"] != (string)after["Phase"] ||
+                (int)before["ActivePlayerId"] != (int)after["ActivePlayerId"])
+            {
+                _log.Add("단계: " + (string)after["Phase"] + " · 행동 플레이어 " + (string)after["ActivePlayerId"]);
+                if ((int)before["ActivePlayerId"] != (int)after["ActivePlayerId"])
+                {
+                    _screen.Effects?.Turn((int)after["ActivePlayerId"] == _session.Seat, (int)after["TurnNumber"]);
+                }
+            }
+            var oldPlayers = (JArray)before["Players"];
+            foreach (var player in (JArray)after["Players"])
+            {
+                int id = (int)player["PlayerId"];
+                var old = oldPlayers.First(item => (int)item["PlayerId"] == id);
+                if ((int)old["Life"] != (int)player["Life"])
+                {
+                    _log.Add("플레이어 " + id + " 생명력: " + (string)old["Life"] + " → " + (string)player["Life"]);
+                }
+                var oldField = Cards(old["FieldSlots"]).ToDictionary(card => card.Id);
+                var newField = Cards(player["FieldSlots"]).ToDictionary(card => card.Id);
+                foreach (var card in newField.Values)
+                {
+                    if (!oldField.TryGetValue(card.Id, out var previous))
+                    {
+                        _log.Add(CardPresentation.Name(card) + " 필드에 등장");
+                        _fieldEntries.Add(card.Id);
+                    }
+                    else if (previous.Hp != card.Hp || previous.Attack != card.Attack)
+                    {
+                        _log.Add(CardPresentation.Name(card) + " 공격력 " + previous.Attack + " → " + card.Attack
+                            + ", 체력 " + previous.Hp + " → " + card.Hp);
+                        _fieldChanges.Add(card.Id);
+                    }
+                }
+                foreach (var card in oldField.Values.Where(card => !newField.ContainsKey(card.Id)))
+                {
+                    _log.Add(CardPresentation.Name(card) + " 필드에서 이동");
+                }
+            }
+            var oldStack = before["ResponseStack"] as JArray ?? new JArray();
+            var newStack = after["ResponseStack"] as JArray ?? new JArray();
+            if (newStack.Count > oldStack.Count)
+            {
+                foreach (var link in newStack.Skip(oldStack.Count))
+                {
+                    _log.Add("응전 추가: " + CardPresentation.Name(Card(link["Card"])));
+                }
+            }
+            else if (oldStack.Count > 0 && newStack.Count == 0)
+            {
+                _log.Add("응전 창 해결");
+            }
+        }
+
+        private void PresentFieldChanges()
+        {
+            foreach (var zone in new[] { _ownField, _enemyField })
+            {
+                foreach (var widget in zone.Widgets)
+                {
+                    int id = widget.Card?.Id ?? 0;
+                    if (_fieldEntries.Contains(id) && _screen.Effects != null)
+                    {
+                        _screen.Effects.Summon(zone, widget,
+                            _screen.Effects.Settings?.SummonDuration ?? DefaultFieldEntryDuration);
+                    }
+                    else if (_fieldChanges.Contains(id))
+                    {
+                        widget.Pulse();
+                    }
+                }
+            }
+            _fieldEntries.Clear();
+            _fieldChanges.Clear();
+        }
 
         private void ShowExile(bool own, Vector3 position)
         {
@@ -199,7 +374,7 @@ namespace ProjectC.Client
             foreach (var entry in (JArray)player["Exile"])
             {
                 var card = Card(entry);
-                options.Add(Option(CardPresentation.Name(card), () => _detail.Show(card)));
+                options.Add(Option(CardPresentation.Name(card), () => SelectCard(card, position)));
             }
             _actions.ShowChoices(position, options);
         }
@@ -220,13 +395,18 @@ namespace ProjectC.Client
 
         private void ClickCard(CardWidget widget)
         {
+            SelectCard(widget.Card, widget.WorldCenter);
+        }
+
+        private void SelectCard(CardView card, Vector3 position)
+        {
             if (!_session.Bound || _session.Busy || _state == null)
             {
                 return;
             }
-            int id = widget.Card.Id;
+            int id = card.Id;
             _selected = id;
-            _detail.Show(widget.Card);
+            _detail.Show(card);
             foreach (var zone in new[] { _hand, _ownField, _enemyField, _ownGrave, _enemyGrave })
             {
                 foreach (var visible in zone.Widgets)
@@ -240,19 +420,27 @@ namespace ProjectC.Client
             {
                 if (((JArray)pending["Candidates"]).Values<int>().Contains(id))
                 {
-                    Send("ChooseEffect", new JObject { ["TargetId"] = id });
+                    _pendingTarget = id;
+                    _actions.gameObject.SetActive(false);
+                    _feedback.text = "대상을 선택했습니다. 행동 버튼에서 확정하거나 다시 선택하세요.";
+                    UpdateHints();
                 }
                 return;
             }
             if (_responseType != null && _responseSelection != null)
             {
+                string candidateField = _responseSelection == "cost" ? "CostCandidates"
+                    : _responseSelection == "replacement" ? "ReplacementCandidates" : "TargetCandidates";
+                if (_responseOption != null && !((_responseOption[candidateField] as JArray) ?? new JArray()).Values<int>().Contains(id))
+                {
+                    return;
+                }
                 if (_responseSelection == "cost")
                 {
                     if (!_responseCosts.Add(id))
                     {
                         _responseCosts.Remove(id);
                     }
-                    widget.SetSelected(_responseCosts.Contains(id));
                 }
                 else if (_responseSelection == "target")
                 {
@@ -263,6 +451,7 @@ namespace ProjectC.Client
                     _responseReplacement = id;
                 }
                 _feedback.text = "응전 선택을 마치면 행동 버튼에서 제출하세요.";
+                UpdateHints();
                 return;
             }
             if (_summonChoice != null)
@@ -273,8 +462,8 @@ namespace ProjectC.Client
                     {
                         _materials.Remove(id);
                     }
-                    widget.SetSelected(_materials.Contains(id));
-                    ShowSummonProgress(widget.WorldCenter);
+                    UpdateHints();
+                    ShowSummonProgress(position);
                 }
                 return;
             }
@@ -304,31 +493,60 @@ namespace ProjectC.Client
                     {
                         _summonChoice = choice;
                         _materials.Clear();
-                        ShowSummonProgress(widget.WorldCenter);
+                        ShowSummonProgress(position);
+                        UpdateHints();
                     }));
                 }
             }
-            if (widget.Card.CardType == 1 && (own["Hand"] as JArray).Any(card => (int)card["Id"] == id))
+            if (card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id))
             {
-                options.Add(Option("주문 사용", () => Send("ActivateMainSpell", new JObject { ["CardId"] = id })));
-                options.Add(Option("주문 응전 시작", () => Send("BeginSpellResponse", new JObject { ["CardId"] = id, ["TargetId"] = 0 })));
-                options.Add(Option("대상을 선택해 주문 응전 시작", () => BeginResponse("BeginSpellResponse", id)));
-                options.Add(Option("습격 방어 응전 준비", () => BeginResponse("RespondWithRaidShield", id)));
-                options.Add(Option("습격 전술 응전 준비", () => BeginResponse("RespondWithRaidTactic", id)));
-                options.Add(Option("주문 무효 응전 준비", () => BeginResponse("RespondWithNegation", id)));
+                var paid = (own["PaidSpellOptions"] as JArray ?? new JArray())
+                    .FirstOrDefault(item => (int)item["CardId"] == id) as JObject;
+                if (paid != null)
+                {
+                    options.Add(Option("주문 비용 선택", () =>
+                    {
+                        BeginResponse("ActivateMainSpell", id);
+                        _responseOption = new JObject
+                        {
+                            ["CostCandidates"] = paid["CostCandidates"].DeepClone(),
+                            ["CostCount"] = (int)paid["CostCount"],
+                            ["TargetCandidates"] = new JArray(),
+                            ["ReplacementCandidates"] = new JArray(),
+                        };
+                        SelectResponsePart("cost");
+                        _feedback.text = "이 주문의 유료 발동에는 응전 창이 아직 지원되지 않습니다. 비용을 선택하세요.";
+                    }));
+                }
+                else
+                {
+                    options.Add(Option("주문 응전 시작", () => Send("BeginSpellResponse", new JObject { ["CardId"] = id, ["TargetId"] = 0 })));
+                    options.Add(Option("대상을 선택해 주문 응전 시작", () => BeginResponse("BeginSpellResponse", id)));
+                }
+                foreach (var response in _state["ResponseOptions"] as JArray ?? new JArray())
+                {
+                    if ((int)response["CardId"] == id)
+                    {
+                        var offered = (JObject)response;
+                        string type = (string)offered["Type"];
+                        string label = type == "RespondWithRaidShield" ? "피해 감소 응전"
+                            : type == "RespondWithRaidTactic" ? "습격 전술 응전" : "주문 무효 응전";
+                        options.Add(Option(label, () => BeginOfferedResponse(offered)));
+                    }
+                }
             }
             if (OwnFieldContains(id))
             {
-                var definition = CardPresentation.LibraryFor(widget.Card).Find(widget.Card.DefinitionId);
+                var definition = CardPresentation.LibraryFor(card).Find(card.DefinitionId);
                 foreach (int form in definition?.AllowedManifestations ?? Array.Empty<int>())
                 {
                     int selectedForm = form;
-                    options.Add(Option("현현: " + CardPresentation.LibraryFor(widget.Card).Find(form)?.Name,
+                    options.Add(Option("현현: " + CardPresentation.LibraryFor(card).Find(form)?.Name,
                         () => Send("Manifest", new JObject { ["CardId"] = id, ["DefinitionId"] = selectedForm })));
                 }
                 options.Add(Option("습격 연기", () => Send("Postpone", new JObject { ["CardId"] = id })));
             }
-            _actions.ShowChoices(widget.WorldCenter, options);
+            _actions.ShowChoices(position, options);
         }
 
         private bool OwnFieldContains(int id)
@@ -372,10 +590,21 @@ namespace ProjectC.Client
             var options = new List<KeyValuePair<string, Action>>();
             if (_responseType != null)
             {
-                options.Add(Option("응전 대상 선택", () => SelectResponsePart("target")));
-                options.Add(Option("대체 방어자 선택", () => SelectResponsePart("replacement")));
-                options.Add(Option("응전 비용 선택", () => SelectResponsePart("cost")));
-                options.Add(Option("응전 제출", SubmitResponse));
+                if (_responseOption == null || ((JArray)_responseOption["TargetCandidates"]).Count > 0)
+                {
+                    options.Add(Option("응전 대상 선택", () => SelectResponsePart("target")));
+                }
+                if (_responseOption == null || ((JArray)_responseOption["ReplacementCandidates"]).Count > 0)
+                {
+                    options.Add(Option("대체 방어자 선택", () => SelectResponsePart("replacement")));
+                }
+                if (_responseOption == null || (int)_responseOption["CostCount"] > 0)
+                {
+                    string required = _responseOption != null ? ((int)_responseOption["CostCount"]).ToString() : "?";
+                    options.Add(Option("응전 비용 선택 " + _responseCosts.Count + "/" + required, () => SelectResponsePart("cost")));
+                }
+                options.Add(Option(_responseType == "ActivateMainSpell" || _responseType == "Redraw"
+                    ? "선택 확정" : "응전 제출", SubmitResponse));
                 options.Add(Option("응전 선택 취소", () =>
                 {
                     _responseType = null;
@@ -418,11 +647,21 @@ namespace ProjectC.Client
             var pending = _state["PendingSelection"] as JObject;
             if (pending != null && (string)pending["Status"] == "Ready")
             {
+                if (_pendingTarget != 0)
+                {
+                    options.Add(Option("선택한 효과 대상 확정", () => Send("ChooseEffect", new JObject { ["TargetId"] = _pendingTarget })));
+                    options.Add(Option("효과 대상 다시 선택", () =>
+                    {
+                        _pendingTarget = 0;
+                        _actions.gameObject.SetActive(false);
+                        UpdateHints();
+                    }));
+                }
                 foreach (var card in pending["CandidateCards"] as JArray ?? new JArray())
                 {
                     var visible = Card(card);
                     options.Add(Option("선택: " + CardPresentation.Name(visible),
-                        () => Send("ChooseEffect", new JObject { ["TargetId"] = visible.Id })));
+                        () => SelectCard(visible, _screen.EndTurn.transform.position)));
                 }
                 if ((int?)pending["MinCount"] == 0)
                 {
@@ -439,6 +678,7 @@ namespace ProjectC.Client
         private void BeginResponse(string type, int card)
         {
             _responseType = type;
+            _responseOption = null;
             _responseCard = card;
             _responseTarget = 0;
             _responseReplacement = 0;
@@ -448,10 +688,58 @@ namespace ProjectC.Client
             _feedback.text = "대상을 선택하거나 행동 버튼에서 비용과 응전을 선택하세요.";
         }
 
+        private void BeginOfferedResponse(JObject offered)
+        {
+            BeginResponse((string)offered["Type"], (int)offered["CardId"]);
+            _responseOption = (JObject)offered.DeepClone();
+            _responseSelection = ((JArray)offered["TargetCandidates"]).Count > 0 ? "target" : "cost";
+            UpdateHints();
+        }
+
+        private void UpdateHints()
+        {
+            if (_state == null)
+            {
+                return;
+            }
+            JArray candidates = null;
+            var pending = _state["PendingSelection"] as JObject;
+            if (pending != null && (string)pending["Status"] == "Ready")
+            {
+                candidates = pending["Candidates"] as JArray;
+            }
+            else if (_summonChoice != null)
+            {
+                candidates = _summonChoice["Candidates"] as JArray;
+            }
+            else if (_responseOption != null && _responseSelection != null)
+            {
+                string field = _responseSelection == "cost" ? "CostCandidates"
+                    : _responseSelection == "replacement" ? "ReplacementCandidates" : "TargetCandidates";
+                candidates = _responseOption[field] as JArray;
+            }
+            var valid = new HashSet<int>((candidates ?? new JArray()).Values<int>());
+            var responseCards = new HashSet<int>((_state["ResponseOptions"] as JArray ?? new JArray())
+                .Select(option => (int)option["CardId"]));
+            foreach (var zone in new[] { _hand, _ownField, _enemyField, _ownGrave, _enemyGrave })
+            {
+                foreach (var widget in zone.Widgets)
+                {
+                    int id = widget.Card?.Id ?? 0;
+                    bool chosen = id == _pendingTarget || _materials.Contains(id) || _responseCosts.Contains(id)
+                        || (_responseOption != null && (id == _responseTarget || id == _responseReplacement));
+                    widget.SetSelected(chosen);
+                    widget.SetHint(candidates == null ? (responseCards.Contains(id) ? TargetHint.Available : TargetHint.None)
+                        : chosen ? TargetHint.Focused : valid.Contains(id) ? TargetHint.Available : TargetHint.Unavailable);
+                }
+            }
+        }
+
         private void SelectResponsePart(string part)
         {
             _responseSelection = part;
             _actions.gameObject.SetActive(false);
+            UpdateHints();
         }
 
         private void SubmitResponse()
@@ -477,7 +765,7 @@ namespace ProjectC.Client
             {
                 fields["ReplacementBlocker"] = _responseReplacement;
             }
-            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation")
+            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" || _responseType == "ActivateMainSpell")
             {
                 fields["Costs"] = new JArray(_responseCosts);
             }
