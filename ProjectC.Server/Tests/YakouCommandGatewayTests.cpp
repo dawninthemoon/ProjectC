@@ -130,7 +130,7 @@ int main()
              {"Materials", Json::array()}, {"Slot", 0}});
         Check(pending.at("Accepted") == true &&
               choices.Match().PendingEffects().size() == 1 &&
-              pending.at("Snapshot").contains("PendingEffect"),
+              pending.at("Snapshot").contains("PendingSelection"),
               "Targeted summon effect must remain pending for owner choice");
         auto choiceHash = choices.Match().ServerStateHash();
         auto wrong = choices.Execute(2, {{"Type", "ChooseEffect"}, {"TargetId", id}});
