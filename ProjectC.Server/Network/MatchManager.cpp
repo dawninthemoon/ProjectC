@@ -49,6 +49,13 @@ MatchManager::MatchManager(ServerConfig config) : config(std::move(config))
         throw std::runtime_error("Website matchmaking requires a versioned 30-card/3-copy catalog; "
                                  "configure PROJECTC_DATA_DIRECTORY or --data");
     }
+    if (this->config.EnableYakouPrototype)
+    {
+        if (website)
+            throw std::runtime_error("Yakou prototype must never run with website/ranked mode");
+        yakou = std::make_unique<YakouTransportHub>(this->config.DataDirectory,
+                                                     this->config.MaxMatches);
+    }
     if (this->config.TurnDurationSeconds < MinimumPositiveTimeoutSeconds ||
         this->config.MulliganTimeoutSeconds < MinimumPositiveTimeoutSeconds ||
         this->config.MulliganTimeoutSeconds > MaximumMulliganTimeoutSeconds)
@@ -130,6 +137,15 @@ void MatchManager::Receive(std::shared_ptr<ClientSession> const& client, std::st
             throw std::runtime_error("ProtocolVersion");
         }
         auto type = String(input, "Type");
+        if (type.starts_with("Yakou"))
+        {
+            if (!yakou)
+                throw std::runtime_error("Yakou prototype is disabled");
+            yakou->Receive(client, input, request, type);
+            return;
+        }
+        if (!client->YakouMatchId.empty())
+            throw std::runtime_error("Already in Yakou prototype match");
         auto reject = [&](std::string const& reason)
         {
             auto error = Envelope(type == "SubmitCommand" ? "CommandRejected" : "ServerError",
@@ -472,6 +488,7 @@ void MatchManager::TryMatchmaking()
 void MatchManager::Disconnect(std::shared_ptr<ClientSession> const& client)
 {
     client->Connected = false;
+    if (yakou) yakou->Disconnect(client);
     client->ApiPending = false;
     ++client->ApiGeneration;
     std::erase_if(matchmakingQueue,
@@ -492,6 +509,9 @@ void MatchManager::Disconnect(std::shared_ptr<ClientSession> const& client)
 void MatchManager::Cleanup(Clock::time_point now)
 {
     PollWebsite();
+    if (yakou)
+        yakou->Cleanup(now, std::chrono::seconds(config.WaitingTimeoutSeconds),
+                       std::chrono::seconds(config.PlayingTimeoutSeconds));
     for (auto it = matches.begin(); it != matches.end();)
     {
         auto& match = *it->second;
@@ -681,6 +701,7 @@ void MatchManager::PollWebsite()
 }
 void MatchManager::Shutdown()
 {
+    if (yakou) yakou->Shutdown();
     for (auto& [id, match] : matches)
     {
         match->Close("ServerShutdown");
