@@ -296,6 +296,7 @@ namespace ProjectC.Client
             Network = GetComponent<MultiplayerDebugScreen>();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             gameObject.AddComponent<DeveloperAccountPanel>();
+            gameObject.AddComponent<YakouPrototypeScreen>();
 #endif
             _connectionSettings = _connectionSettings != null ? _connectionSettings
                 : Resources.Load<ServerConnectionSettings>("Network/ServerConnectionSettings");

@@ -41,6 +41,7 @@ namespace ProjectC.Client
         public event Action ViewInvalidated;
         public event Action<RemainingDeckEntry[]> OwnDeckContentsReceived;
         public event Action<string> OwnDeckReadFailed;
+        public YakouSessionClient Yakou { get; private set; }
         private string _ownDeckReadRequest;
         string commandRequestId;
         long acceptedSequence = -1;
@@ -437,6 +438,19 @@ namespace ProjectC.Client
         void Awake()
         {
             Application.runInBackground = true;
+            ResetYakou();
+        }
+
+        private void ResetYakou()
+        {
+            Yakou = new YakouSessionClient(json =>
+            {
+                if (!Connected)
+                {
+                    throw new InvalidOperationException("서버에 연결되지 않았습니다.");
+                }
+                _ = transport.SendAsync(json);
+            });
         }
 
         void Note(string text)
@@ -488,6 +502,7 @@ namespace ProjectC.Client
 
         internal void DisconnectNetwork()
         {
+            Yakou.Disconnected();
             var previous = transport;
             transport = null;
             _deckCatalogReceived = false;
@@ -510,6 +525,7 @@ namespace ProjectC.Client
         {
             ++_accountConnectionGeneration;
             DisconnectNetwork();
+            ResetYakou();
             // Abandon the old transport's queued messages and account-bound reconnect token.
             // Ordinary disconnect/reconnect still uses the existing SessionToken flow.
             transport = null;
@@ -673,6 +689,10 @@ namespace ProjectC.Client
             serverCatalogVersion = "";
             personalDeckSupported = false;
             transport?.Dispose();
+            if (boundAddress != address)
+            {
+                ResetYakou();
+            }
             if (boundAddress != address || string.IsNullOrEmpty(token))
             {
                 ClearMatch();
@@ -902,6 +922,10 @@ namespace ProjectC.Client
                 {
                     connecting = false;
                     Send(Request("ListDecks"));
+                    if (!string.IsNullOrEmpty(Yakou.MatchId) && !Yakou.Bound)
+                    {
+                        Yakou.Resume();
+                    }
                     if (WebsiteMode && string.IsNullOrEmpty(token))
                     {
                         _authenticateRequestId = Guid.NewGuid().ToString("N");
@@ -921,6 +945,7 @@ namespace ProjectC.Client
                 }
                 if (notice == "Disconnected")
                 {
+                    Yakou.Disconnected();
                     PendingChoice = null;
                     Input.Reset();
                     if (WebsiteMode && State?.Finished == true)
@@ -956,6 +981,11 @@ namespace ProjectC.Client
                 }
                 if (notice.StartsWith("Send failed"))
                 {
+                    if (Yakou.Busy || Yakou.Bound)
+                    {
+                        DisconnectNetwork();
+                        break;
+                    }
                     if (Matchmaking == MatchmakingState.Queuing)
                     {
                         DisconnectNetwork();
@@ -966,6 +996,10 @@ namespace ProjectC.Client
                     commandRequestId = null;
                     CommandFinished?.Invoke(false, notice);
                 }
+            }
+            if (transport == null)
+            {
+                return;
             }
             while (transport.Messages.TryDequeue(out var json))
             {
@@ -995,6 +1029,18 @@ namespace ProjectC.Client
                 throw new InvalidOperationException(
                     "Server/client protocol mismatch; rebuild both"
                 );
+            }
+            if ((message.Type != null && message.Type.StartsWith("Yakou", StringComparison.Ordinal))
+                || message.Type == "ServerError")
+            {
+                if (Yakou.ApplyMessage(Newtonsoft.Json.Linq.JObject.Parse(json)))
+                {
+                    if (message.Type == "YakouResumed" && Yakou.Bound && Yakou.HasPendingCommand)
+                    {
+                        Yakou.RetryPending();
+                    }
+                    return;
+                }
             }
             if (message.Type == "OwnDeckContents"
                 || (message.Type == "ServerError" && _ownDeckReadRequest != null && message.RequestId == _ownDeckReadRequest))
