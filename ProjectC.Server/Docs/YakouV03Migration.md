@@ -651,3 +651,86 @@ not the fully automatic AP/NAP priority scheduler; multiple choice
 prompts, nested response speed, deferred trigger registration, and
 online reconnect/resume still require later implementation.
 No Unity source/scenes/prefabs, card JSON or Google Sheets were changed.
+
+## Isolated authoritative command gateway (server transport boundary)
+
+`YakouCommandGateway` is a new **opt-in C++ server component** for the
+new Yakou rule interpreter. It is compiled into `ProjectCNetwork` but
+is **not routed from** `MatchManager::Receive` or the production
+`MatchSession`. Consequently this change does not enable online Yakou
+matchmaking or change the legacy GameCore protocol.
+
+The hosting server supplies `authenticatedPlayer` from its own trusted
+connection/seat binding; no `Player` field is accepted in client-originated
+commands. A strictly allowlisted `Type` selects one of the supported
+prototype actions: StartTurn, Summon, ActivateMainSpell, ChooseEffect,
+Manifest, Postpone, Redraw, BeginRaid, AssignBlockers,
+RespondWithRaidShield, RespondWithRaidTactic, PassRaidResponse, ResolveRaid,
+BeginSpellResponse, RespondWithNegation, and PassSpellResponse.
+Instance identifiers, payment lists, blocker assignments and slots are
+parsed as bounded integers or bounded arrays. A caller **must** identify
+a verified seat before invoking the gateway.
+
+Each command runs against a fresh candidate match copy. Successful commands
+commit the new state and return the authenticated player's
+`ViewerSnapshot`; rejected commands discard the copy and return the
+unchanged authenticated viewer projection with the generic
+`Reason: "Rejected"` (not raw exception messages). Client-authored
+scheduler budgets are not allowed; the existing 64-trigger server limit
+is used by integrated summon/spell/choice/manifest operations. Viewer
+snapshots retain hidden-hand and target-selection filtering.
+
+A dedicated `YakouCommandGatewayTests` CTest suite covers forged
+player fields, attempts to act on the opponent's hand, malformed input,
+invalid slots, unexpected fields, atomic rollback, automatic summon and
+spell effects, authenticated snapshots, and choice ownership. This
+isolation test does **not** establish a real network session.
+
+**Still required before online enablement:** add explicit opt-in Yakou
+lobby/session creation, verified seat-to-connection bindings,
+request/response envelopes and stable request IDs, reconnection,
+time limits, secure replay archive, protocol compatibility, and
+two-client WebSocket integration tests. Keep `RuntimeReady=false`
+until authored effects and full game flow are supported. No Unity,
+card JSON, sheet or legacy battle logic was modified.
+
+## Two-seat opt-in Yakou session, retries, and reconnect (same PR)
+
+A separate `YakouSession` now owns the new `YakouCommandGateway`
+and two **server-bound** seats. The transport host must authenticate the
+connection and invoke `Bind(trustedSeat, connectionKey)` itself; a packet
+may not self-assign a seat. Connection keys are opaque server-local handles,
+not bearer authentication or publicly exchanged resume tokens.
+`Unbind` revokes access for that connection, while rebinding the
+previously authenticated seat replaces its earlier handle. There is
+still **no public Yakou WebSocket route**.
+
+Each verified connection can call `Dispatch(connectionKey, requestId,
+command)`. Per-seat request IDs are ASCII-validated and capped at 64 bytes;
+the bounded 4096-entry per-seat cache stores accepted **and rejected**
+responses. Retrying the *same command* with the *same request ID*
+returns the original response and never reexecutes a command, including
+after an authenticated seat reconnects. Reusing a request ID with
+different payload is explicitly rejected. A cached response may reflect
+the original time of execution; callers should fetch a fresh
+`Snapshot` after reconnect if subsequent state changes matter.
+When full, the request cache fails closed instead of silently evicting
+entries that could be replayed. A successful command increments a
+monotonically increasing session sequence; failed requests do not.
+
+Private server audit entries record the authenticated seat, request ID,
+acceptance and before/after canonical match hashes. **Never** send those
+audit records, hashes, raw command payloads, or hidden hands to clients.
+Only the seat-projected viewer snapshot is returned from the gateway.
+Dedicated `YakouSessionTests` exercise two seats, wrong-turn commands,
+duplicate retries, request ID conflicts, atomic failed commands, old
+connection revocation and same-seat reconnect without duplicate actions.
+Existing legacy GameCore matchmaking, ranking, session timeout and
+replay archive are unchanged.
+
+**Production gates remaining:** the online host still needs an actual
+opt-in Yakou matchmaking/lobby protocol, transport identity verification
+and resume tokens, lifecycle timers, wire envelopes, message
+size/rate protections, two-real-client WebSocket tests, and complete
+runtime card effect support. This class alone does not make
+`RuntimeReady` true.
