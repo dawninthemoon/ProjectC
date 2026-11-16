@@ -256,8 +256,12 @@ namespace ProjectC.Tests
             ActionButton("응전 제출", _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 2);
             StringAssert.Contains(CardLibrary.LoadYakouResources().Find(2011).Name, opponentScreen.PhaseLabel.text);
-            Assert.IsTrue(opponentUi.GetComponentInChildren<BattleLogView>(true).Entries
-                .Any(entry => entry.Text(2).Contains("응전 추가")));
+            var battleLog = opponentUi.GetComponentInChildren<BattleLogView>(true);
+            Assert.IsTrue(battleLog.Entries.Any(entry => entry.Text(2).Contains("응전 추가")));
+            opponentScreen.LogToggle.onClick.Invoke();
+            Assert.IsTrue(battleLog.IsOpen);
+            opponentScreen.LogToggle.onClick.Invoke();
+            Assert.IsFalse(battleLog.IsOpen);
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             beforePass = a.Yakou.Sequence;
             screen.EndTurn.onClick.Invoke();
