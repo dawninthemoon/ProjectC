@@ -1,6 +1,7 @@
 #pragma once
 #include "MatchSession.hpp"
 #include "WebsiteApi.hpp"
+#include "YakouTransportHub.hpp"
 #include <deque>
 namespace ProjectC::Network
 {
@@ -8,6 +9,7 @@ struct ServerConfig
 {
     unsigned short Port = 7777;
     std::size_t MaxMatches = 64;
+    bool EnableYakouPrototype = false; // Developer-only, never implicitly enabled.
     std::size_t MaxReplays = 128;
     int WaitingTimeoutSeconds = 900;
     int PlayingTimeoutSeconds = 1800;
@@ -60,6 +62,7 @@ class MatchManager
     std::deque<ReplayRecord> replays;
     std::uint64_t nextMatch = 0;
     std::unique_ptr<WebsiteApi> website;
+    std::unique_ptr<YakouTransportHub> yakou;
     struct PendingApi
     {
         std::weak_ptr<ClientSession> Client;
