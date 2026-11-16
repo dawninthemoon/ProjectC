@@ -610,3 +610,44 @@ or client-side prompt handling is implied. Existing explicit manual
 `ResolvePendingEffect` calls remain supported; integrating automatic
 progression at safe authoritative action boundaries is next. Unity scripts,
 scenes, prefabs, cards JSON and Sheets are unchanged.
+
+## Transactional action boundaries for automatic trigger resolution
+
+Building on the explicitly invoked `ResolveAutomaticTriggers` scheduler,
+the opt-in server prototype now provides four authoritative convenience
+operations that execute the original command and its deterministic trigger
+prefix in **one transaction**:
+
+- `SummonAndRunAutomaticTriggers`: resolve automatic summon and paid-cost
+  triggers after the validated normal/devour/necromancy/discard summon.
+- `ActivateMainSpellAndRunAutomaticTriggers`: resolve a free main spell's
+  queued `OnResolve` effect when no player choice is needed. It intentionally
+  retains the existing **non-response** prototype spell limitation.
+- `ResolveSelectedEffectAndRunAutomaticTriggers`: after a player provides
+  the server-authorized target for one pending effect, resume any automatic
+  queue prefix without choosing later targets.
+- `ManifestAndRunAutomaticTriggers`: continue deterministic triggered
+  effects after a validated manifestation.
+
+Each API first copies the match, calls the existing validation/mutation
+method and the bounded queue runner on that copy, then commits once both
+steps succeed. If the action itself or a subsequent automatic trigger
+fails, **the entire originating action is rejected**, including any
+hand/card-zone moves, effect usage, private deck order or journal changes.
+A player-selected trigger is left at the queue head, unchanged, for the
+authorized controller. Existing manual action APIs remain unchanged.
+The server-private replay command enum exposes all four combined forms
+and records a budget with each command.
+
+The new tests cover summon + automatic Mill, free spell + automatic Mill,
+a discard-triggered Mill before user-targeted healing, unauthorized
+selection, invalid budgets, all-or-nothing rollback on an impossible
+authored auto trigger, and deterministic replay of accepted/rejected
+combined commands. Test-only card catalog copies are never persisted.
+
+**Not yet complete:** The live MatchSession and public WebSocket transport
+do not call these functions. This is an opt-in orchestration boundary,
+not the fully automatic AP/NAP priority scheduler; multiple choice
+prompts, nested response speed, deferred trigger registration, and
+online reconnect/resume still require later implementation.
+No Unity source/scenes/prefabs, card JSON or Google Sheets were changed.
