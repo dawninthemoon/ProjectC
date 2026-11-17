@@ -1039,6 +1039,10 @@ namespace ProjectC.Client
                     {
                         Yakou.RetryPending();
                     }
+                    else if (message.Type == "YakouResumed" && Yakou.Bound)
+                    {
+                        Yakou.RequestSnapshot();
+                    }
                     return;
                 }
             }

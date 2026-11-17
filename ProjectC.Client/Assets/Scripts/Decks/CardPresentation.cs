@@ -7,25 +7,29 @@ namespace ProjectC.Client
     public static class CardPresentation
     {
         static CardLibrary _fallback;
+        static CardLibrary _yakou;
         public static CardLibrary Library => ClientApp.Instance?.Library ?? (_fallback ??= CardLibrary.LoadResources());
+        public static CardLibrary LibraryFor(CardView card) => card != null && card.Yakou
+            ? (_yakou ??= CardLibrary.LoadYakouResources()) : Library;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
         {
             _fallback = null;
+            _yakou = null;
         }
 
         public static string Name(CardView card, string fallback = "") => card == null
-            ? fallback : Library.Find(card.DefinitionId)?.Name ?? card.Name ?? fallback;
+            ? fallback : LibraryFor(card).Find(card.DefinitionId)?.Name ?? card.Name ?? fallback;
 
         public static FormattedCardText Description(CardView card)
         {
-            if (ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem))
+            if (!card.Yakou && ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem))
             {
                 // A mismatched local balance file must never supply guessed rule numbers.
                 return new FormattedCardText(new[] { new TextSegment(card.RulesText ?? "") });
             }
-            return Library.Find(card.DefinitionId)?.DescriptionText
+            return LibraryFor(card).Find(card.DefinitionId)?.DescriptionText
                 ?? new FormattedCardText(new[] { new TextSegment(card.RulesText ?? "") });
         }
 
@@ -36,9 +40,10 @@ namespace ProjectC.Client
 
         public static string Manifestations(CardView card)
         {
-            var definition = Library.Find(card.DefinitionId);
+            var library = LibraryFor(card);
+            var definition = library.Find(card.DefinitionId);
             return definition == null ? card.ManifestationText ?? ""
-                : string.Join("\n", definition.AllowedManifestations.Select(id => Library.Find(id)?.Name ?? "#" + id));
+                : string.Join("\n", definition.AllowedManifestations.Select(id => library.Find(id)?.Name ?? "#" + id));
         }
     }
 }

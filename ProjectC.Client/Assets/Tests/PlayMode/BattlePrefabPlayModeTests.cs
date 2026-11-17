@@ -172,7 +172,8 @@ namespace ProjectC.Tests
                                 ToZone = 1,
                                 TargetPlayerId = 2,
                             },
-                            new EventView { Type = 11, TargetCardId = 4 },
+                            new EventView { Type = 4, FromZone = 1, ToZone = 2, TargetPlayerId = 1, TargetCardId = 1 },
+                            new EventView { Type = 11, TargetPlayerId = 1, TargetCardId = 1 },
                             new EventView { Type = 13, SourceCardId = 4 },
                         },
                     }
@@ -185,7 +186,10 @@ namespace ProjectC.Tests
             Assert.AreEqual("HIDDEN", ui.Effects.DrawLabel.text);
             Assert.IsFalse(ui.Effects.TurnGroup.blocksRaycasts);
             yield return new WaitForSecondsRealtime(3);
-            Assert.AreEqual(2, ui.Effects.PopupsPresented);
+            // Summons use the field-entry animation; only the effect event
+            // produces a text popup. Verify both feedback paths independently.
+            Assert.AreEqual(1, ui.Effects.SummonsPresented);
+            Assert.AreEqual(1, ui.Effects.PopupsPresented);
             ui.Effects.ResetFeedback();
             for (int i = 0; i < 80; ++i)
                 ui.Log.Add("Log entry " + i);

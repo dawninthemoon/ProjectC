@@ -138,16 +138,15 @@ public:
         int player, int handInstance, std::string const& method,
         std::vector<int> const& materialIds, int slot, int maxEffects = 64);
     [[nodiscard]] int ActivateMainSpellAndRunAutomaticTriggers(
-        int player, int handInstance, int maxEffects = 64);
+        int player, int handInstance, int maxEffects = 64, std::vector<int> const& costs = {});
     [[nodiscard]] int ResolveSelectedEffectAndRunAutomaticTriggers(
         int player, int selectedTarget = 0, int maxEffects = 64);
     [[nodiscard]] int ManifestAndRunAutomaticTriggers(
         int player, int fieldInstance, int manifestationDefinition,
         int maxEffects = 64);
-    // Prototype-only: activates a no-cost main-phase spell whose authored
-    // OnResolve effect is supported by the current manual effect resolver.
-    // Actual spell response/negation windows are not wired yet.
-    void ActivateMainSpell(int player, int handInstance);
+    // Prototype-only: supports no-cost authored effects and the map's
+    // discard-one cost. Paid spells do not yet enter the response window.
+    void ActivateMainSpell(int player, int handInstance, std::vector<int> const& costs = {});
     // Opt-in response-aware spell path; supported counterspell: 3020 only.
     void BeginSpellResponse(int player, int handInstance, int targetInstance = 0);
     void RespondWithNegation(int player, int handInstance, std::vector<int> const& discarded);
@@ -173,7 +172,7 @@ public:
     void ResolveRaid(int defendingPlayer);
 
 private:
-    void ActivateMainSpellImpl(int player, int handInstance);
+    void ActivateMainSpellImpl(int player, int handInstance, std::vector<int> const& costs);
     void BeginSpellResponseImpl(int player, int handInstance, int targetInstance);
     void RespondWithNegationImpl(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponseImpl(int player);

@@ -13,6 +13,7 @@ namespace ProjectC::Network
 {
 namespace
 {
+constexpr int MaximumRaidResponseLinks = 8;
 void Check(bool valid, std::string const& message)
 {
     if (!valid) throw std::invalid_argument(message);
@@ -275,6 +276,22 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 }
             }
             visiblePlayer["SummonChoices"] = std::move(summonChoices);
+            Json paidSpells = Json::array();
+            if (phase_ == YakouPhase::Main && player.Id == ActivePlayer() && pendingEffects_.empty())
+            {
+                for (int instance : player.Hand)
+                {
+                    if (OriginalId(instance) != 3012) continue;
+                    Json candidates = Json::array();
+                    for (int cost : player.Hand)
+                    {
+                        if (cost != instance) candidates.push_back(cost);
+                    }
+                    paidSpells.push_back({{"CardId", instance}, {"CostCount", 1},
+                                          {"CostCandidates", std::move(candidates)}});
+                }
+            }
+            visiblePlayer["PaidSpellOptions"] = std::move(paidSpells);
             visiblePlayer["NormalSummonsUsed"] = player.NormalSummons;
             visiblePlayer["ManifestationsUsed"] = player.Manifestations;
             visiblePlayer["RedrawsUsed"] = player.Redraws;
@@ -301,6 +318,79 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
     {
         result["RaidResponseDepth"] = response_.StackSize();
     }
+    if (phase_ == YakouPhase::RaidResponse || phase_ == YakouPhase::SpellResponse)
+    {
+        Json stack = Json::array();
+        for (auto const& link : response_.ServerState().Stack)
+        {
+            // Activated response cards have already moved to a public graveyard.
+            // Targets can include private deck choices and are never projected.
+            stack.push_back({{"Controller", link.Controller}, {"Card", visibleCard(link.SourceInstance)}});
+        }
+        result["ResponseStack"] = std::move(stack);
+        Json options = Json::array();
+        if (response_.IsOpen() && response_.PriorityPlayer() == viewer && viewer != ActivePlayer())
+        {
+            for (int instance : Player(viewer).Hand)
+            {
+                int const definition = OriginalId(instance);
+                char const* type = nullptr;
+                if (phase_ == YakouPhase::RaidResponse && response_.StackSize() < MaximumRaidResponseLinks)
+                {
+                    type = definition == 3016 ? "RespondWithRaidShield"
+                        : (definition == 2011 || definition == 3018 || definition == 3019)
+                            ? "RespondWithRaidTactic" : nullptr;
+                }
+                else if (phase_ == YakouPhase::SpellResponse && response_.StackSize() == 1 && definition == 3020)
+                {
+                    type = "RespondWithNegation";
+                }
+                if (type != nullptr)
+                {
+                    Json targets = Json::array();
+                    Json replacements = Json::array();
+                    Json costs = Json::array();
+                    if (definition == 3016 || definition == 3018)
+                    {
+                        for (auto const& unit : Player(viewer).Field)
+                        {
+                            if (unit && unit->Hp() > 0)
+                            {
+                                (definition == 3016 ? targets : replacements).push_back(unit->InstanceId);
+                            }
+                        }
+                    }
+                    if (definition == 2011 || definition == 3018 || definition == 3019)
+                    {
+                        for (auto const& attack : attacks_)
+                        {
+                            targets.push_back(attack.Card);
+                        }
+                    }
+                    if (definition == 2011 || definition == 3018 || definition == 3020)
+                    {
+                        for (int cost : Player(viewer).Hand)
+                        {
+                            if (cost != instance) costs.push_back(cost);
+                        }
+                    }
+                    else if (definition == 3019)
+                    {
+                        costs = Player(viewer).Graveyard;
+                    }
+                    int const count = definition == 3020 || definition == 3019 ? 2
+                        : definition == 2011 || definition == 3018 ? 1 : 0;
+                    // Candidates are filtered for presentation; the command still
+                    // validates target combinations, costs and usage limits.
+                    options.push_back({{"CardId", instance}, {"Type", type},
+                                       {"TargetCandidates", std::move(targets)},
+                                       {"ReplacementCandidates", std::move(replacements)},
+                                       {"CostCandidates", std::move(costs)}, {"CostCount", count}});
+                }
+            }
+        }
+        result["ResponseOptions"] = std::move(options);
+    }
     // The pending queue can include a hidden hand card or deck-top choice.
     // Never expose its source, candidate IDs or target requirements to the
     // opposing viewer. The controlling player may request the first choice.
@@ -319,6 +409,17 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
             choice["MinCount"] = requested.MinCount;
             choice["MaxCount"] = requested.MaxCount;
             choice["Candidates"] = requested.Candidates;
+            // Only the choice owner may see the definitions of cards revealed
+            // from a hidden zone. Never include these in the other projection.
+            if (requested.SourceZone == "FriendlyDeckTop")
+            {
+                Json cards = Json::array();
+                for (int instance : requested.Candidates)
+                {
+                    cards.push_back(visibleCard(instance));
+                }
+                choice["CandidateCards"] = std::move(cards);
+            }
         }
         catch (std::invalid_argument const&)
         {
@@ -833,10 +934,10 @@ int YakouMatch::SummonAndRunAutomaticTriggers(
 }
 
 int YakouMatch::ActivateMainSpellAndRunAutomaticTriggers(
-    int player, int handInstance, int maxEffects)
+    int player, int handInstance, int maxEffects, std::vector<int> const& costs)
 {
     YakouMatch next = *this;
-    next.ActivateMainSpell(player, handInstance);
+    next.ActivateMainSpell(player, handInstance, costs);
     int const processed = next.ResolveAutomaticTriggers(maxEffects);
     *this = std::move(next);
     return processed;
@@ -862,14 +963,14 @@ int YakouMatch::ManifestAndRunAutomaticTriggers(
     return processed;
 }
 
-void YakouMatch::ActivateMainSpell(int player, int handInstance)
+void YakouMatch::ActivateMainSpell(int player, int handInstance, std::vector<int> const& costs)
 {
     YakouMatch next = *this;
-    next.ActivateMainSpellImpl(player, handInstance);
+    next.ActivateMainSpellImpl(player, handInstance, costs);
     *this = std::move(next);
 }
 
-void YakouMatch::ActivateMainSpellImpl(int player, int handInstance)
+void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector<int> const& costs)
 {
     RequireMain(player);
     Check(pendingEffects_.empty(), "Resolve pending Yakou effects before casting a spell");
@@ -881,9 +982,19 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance)
     Check(definition.contains("SummonCostJson") &&
               definition.at("SummonCostJson").is_object() &&
               definition.at("SummonCostJson").contains("Activation") &&
-              definition.at("SummonCostJson").at("Activation").is_object() &&
-              definition.at("SummonCostJson").at("Activation").empty(),
-          "Paid spell costs are not yet supported by this activation API");
+              definition.at("SummonCostJson").at("Activation").is_object(),
+          "Spell activation cost is missing");
+    auto const& activation = definition.at("SummonCostJson").at("Activation");
+    if (activation.empty())
+    {
+        Check(costs.empty(), "This spell does not accept a cost");
+    }
+    else
+    {
+        Check(definitionId == 3012 && activation.size() == 1 && activation.contains("Discard") &&
+                  activation.at("Discard") == 1 && costs.size() == 1 && costs[0] != handInstance &&
+                  Contains(owner.Hand, costs[0]), "Unsupported or invalid spell activation cost");
+    }
     auto const& effects = definition.at("Effects");
     Check(effects.is_array() && effects.size() == 1,
           "Only one supported spell effect may be activated");
@@ -894,6 +1005,14 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance)
               effect.at("Actions").size() == 1,
           "Unsupported main-phase spell effect");
     CheckSupportedAction(effect.at("Actions")[0]);
+
+    for (int discarded : costs)
+    {
+        Remove(owner.Hand, discarded);
+        owner.Graveyard.push_back(discarded);
+        Enqueue(player, discarded, OriginalId(discarded), "OnDiscarded");
+    }
+    Check(pendingEffects_.empty(), "Unimplemented discarded-cost triggers");
 
     // Move the authored spell into its public graveyard, then queue precisely
     // its OnResolve operation. The outer candidate copy commits only if
@@ -923,7 +1042,7 @@ void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int target
 {
     // Reuse all authored spell and cost checks; do not expose the provisional
     // effect to the normal resolver before the priority window closes.
-    ActivateMainSpellImpl(player, handInstance);
+    ActivateMainSpellImpl(player, handInstance, {});
     auto const choice = PendingEffectChoices(player);
     if (choice.MaxCount == 0)
     {
@@ -1512,7 +1631,7 @@ void YakouMatch::RespondWithRaidShieldImpl(int player, int handInstance, int fri
               response_.PriorityPlayer() == player &&
               player == 3 - ActivePlayer(),
           "Only the defending player with priority may activate a raid shield");
-    Check(response_.StackSize() < 8,
+    Check(response_.StackSize() < MaximumRaidResponseLinks,
           "Maximum of eight defensive raid responses per window");
     auto& owner = MutablePlayer(player);
     Check(Contains(owner.Hand, handInstance), "Raid response must be in owner's hand");
@@ -1570,7 +1689,7 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
 {
     Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
           response_.PriorityPlayer() == player && player == 3 - ActivePlayer() &&
-          response_.StackSize() < 8, "No legal raid tactic priority");
+          response_.StackSize() < MaximumRaidResponseLinks, "No legal raid tactic priority");
     auto& owner = MutablePlayer(player);
     Check(Contains(owner.Hand, spell), "Tactic must be in controller's hand");
     auto const card = CardDefinition(OriginalId(spell));
@@ -1681,7 +1800,7 @@ void YakouMatch::PassRaidResponseImpl(int player)
         // preceding link; any illegal intermediate result rolls back the
         // entire closing pass and leaves the live response window open.
         auto const links = response_.TakeResolution();
-        Check(links.size() <= 8, "Unsupported raid chain length");
+        Check(links.size() <= static_cast<std::size_t>(MaximumRaidResponseLinks), "Unsupported raid chain length");
         for (auto const& link : links)
         {
             Check(link.Controller == 3 - ActivePlayer() &&

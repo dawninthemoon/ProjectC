@@ -130,6 +130,11 @@ namespace ProjectC.Client
             GUILayout.Label("Room: " + _session.MatchId + "  |  Seat: " + _session.Seat
                 + "  |  Sequence: " + _session.Sequence + "  |  " + (_session.Bound ? "connected" : "disconnected"));
             GUILayout.BeginHorizontal();
+            if (_session.Bound && _session.State != null && GUILayout.Button("Enter BattleScene"))
+            {
+                RestoreCanvases();
+                ClientApp.Instance.Navigate("BattleScene");
+            }
             if (!_session.Bound && !_session.Busy && GUILayout.Button("Forget disconnected room"))
             {
                 Try(_session.ForgetDisconnectedRoom);

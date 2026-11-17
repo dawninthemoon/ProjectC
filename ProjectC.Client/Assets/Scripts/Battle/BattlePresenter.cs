@@ -42,6 +42,7 @@ namespace ProjectC.Client
         private bool _resultWasVisible;
         private string _hudLanguage;
         private BattleTurnHudView _turnHud;
+        private bool _yakouMode;
 
         public void SetHandExpanded(bool expanded)
         {
@@ -169,6 +170,18 @@ namespace ProjectC.Client
 
         void Awake()
         {
+            if (ClientApp.Instance?.Network?.Yakou?.MatchId != null)
+            {
+                _yakouMode = true;
+                var legacyInput = GetComponent<BattleInteractionController>();
+                if (legacyInput != null)
+                {
+                    legacyInput.enabled = false;
+                }
+                gameObject.AddComponent<YakouBattlePresenter>();
+                enabled = false;
+                return;
+            }
             BattleText.StyleValue(TurnLabel);
             BattleText.StyleHud(PhaseLabel);
             BattleText.StyleHeading(EndTurn.GetComponentInChildren<TMP_Text>(), true);
@@ -313,7 +326,7 @@ namespace ProjectC.Client
 
         private void OnDisable()
         {
-            if (Effects != null && Detail != null)
+            if (!_yakouMode && Effects != null && Detail != null)
             {
                 Invalidate();
             }

@@ -17,6 +17,7 @@ namespace ProjectC.Client
         private string _bindingRequest;
         private string _bindingType;
         private string _bindingMatch;
+        private JObject _resumeEnvelope;
 
         public string MatchId { get; private set; }
         public int Seat { get; private set; }
@@ -72,10 +73,13 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("No disconnected Yakou session to resume.");
             }
-            var request = Request("YakouResume");
-            request["MatchId"] = MatchId;
-            request["ResumeToken"] = _resumeToken;
-            SendBinding(request, "YakouResumed");
+            if (_resumeEnvelope == null)
+            {
+                _resumeEnvelope = Request("YakouResume");
+                _resumeEnvelope["MatchId"] = MatchId;
+                _resumeEnvelope["ResumeToken"] = _resumeToken;
+            }
+            SendBinding(_resumeEnvelope, "YakouResumed");
         }
 
         private void SendBinding(JObject request, string responseType)
@@ -123,6 +127,7 @@ namespace ProjectC.Client
             Sequence = -1;
             State = null;
             _resumeToken = null;
+            _resumeEnvelope = null;
             _pendingRequest = null;
             _pendingEnvelope = null;
             _acceptedSequence = -1;
@@ -230,6 +235,7 @@ namespace ProjectC.Client
                 MatchId = match;
                 Seat = seat;
                 _resumeToken = token;
+                _resumeEnvelope = null;
                 Bound = true;
                 _bindingRequest = null;
                 _bindingType = null;
@@ -241,6 +247,7 @@ namespace ProjectC.Client
                 Error = (string)payload["Reason"] ?? "Rejected";
                 if ((string)message["RequestId"] == _bindingRequest && _bindingRequest != null)
                 {
+                    _resumeEnvelope = null;
                     _bindingRequest = null;
                     _bindingType = null;
                     _bindingMatch = null;
@@ -301,6 +308,7 @@ namespace ProjectC.Client
                 {
                     MatchId = null;
                     _resumeToken = null;
+                    _resumeEnvelope = null;
                     _pendingRequest = null;
                     _pendingEnvelope = null;
                     _acceptedSequence = -1;

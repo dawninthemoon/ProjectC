@@ -43,6 +43,23 @@ int main()
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
         auto gateway = NewGateway(proto);
+        {
+            YakouCommandGateway paid(proto, 1,
+                {OrderedDeck(proto, {3012, 2001}), OrderedDeck(proto, {2001})});
+            auto const hand = paid.Match().Player(1).Hand;
+            Check(paid.Execute(1, {{"Type", "StartTurn"}}).at("Accepted").get<bool>(), "Paid-spell fixture must start");
+            auto const before = paid.Match().ServerStateHash();
+            auto const invalid = paid.Execute(1, {{"Type", "ActivateMainSpell"}, {"CardId", hand[0]},
+                                                   {"Costs", Json::array({hand[0]})}});
+            Check(!invalid.at("Accepted").get<bool>() && paid.Match().ServerStateHash() == before,
+                  "A spell cannot discard itself and failed payment must roll back");
+            auto const success = paid.Execute(1, {{"Type", "ActivateMainSpell"}, {"CardId", hand[0]},
+                                                   {"Costs", Json::array({hand[1]})}});
+            Check(success.at("Accepted").get<bool>() &&
+                      success.at("Snapshot").at("PendingSelection").at("CandidateCards").size() == 3 &&
+                      !paid.Snapshot(2).contains("PendingSelection"),
+                  "Paid spell must expose deck candidates only to its controller");
+        }
         auto first = gateway.Snapshot(1);
         auto second = gateway.Snapshot(2);
         Check(first.at("Players").at(0).at("Hand").size() == 5 &&

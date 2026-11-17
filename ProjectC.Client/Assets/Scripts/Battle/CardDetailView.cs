@@ -60,14 +60,15 @@ namespace ProjectC.Client
                 _shownDefinitionId = card.DefinitionId;
             }
             Title.text = CardPresentation.Name(card);
-            CardArtProvider.Apply(_artwork, card.DefinitionId);
+            CardArtProvider.Apply(_artwork, card.Yakou ? 0 : card.DefinitionId);
             if (_artPlaceholder != null)
             {
                 _artPlaceholder.gameObject.SetActive(_artwork.sprite == null);
             }
             _type.text = BattleText.Get(card.CardType == 1 ? "ui.card.spell" : "ui.card.monster");
-            string costs = ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem)
-                ? "" : CardPresentation.Costs(CardPresentation.Library.Find(card.DefinitionId));
+            var library = CardPresentation.LibraryFor(card);
+            string costs = card.Yakou || (ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem))
+                ? "" : CardPresentation.Costs(library.Find(card.DefinitionId));
             if (!string.IsNullOrEmpty(costs))
             {
                 _type.text += " / " + costs;
@@ -77,7 +78,7 @@ namespace ProjectC.Client
                 card.CardType == 1
                     ? ""
                     : BattleText.Get("ui.card.stats", card.Attack, card.Hp, card.MaxHp);
-            KeywordLinkView.Render(Rules, CardPresentation.Description(card), CardPresentation.Library.Localization,
+            KeywordLinkView.Render(Rules, CardPresentation.Description(card), library.Localization,
                 keyword =>
                 {
                     _keyword = keyword;

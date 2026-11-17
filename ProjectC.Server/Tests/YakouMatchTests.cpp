@@ -815,7 +815,19 @@ int main()
                       choice.Candidates == std::vector<int>({deck[0], deck[1], deck[2]}),
                   "Only the authorized top three cards must be offered");
             Reject([&] { (void)match.PendingEffectChoices(2); });
-            auto const enemyProjection = match.ViewerSnapshot(2).dump();
+            auto const ownerSelection = match.ViewerSnapshot(1).at("PendingSelection");
+            Check(ownerSelection.at("CandidateCards").size() == choice.Candidates.size(),
+                  "The choice owner must receive visible definitions for the revealed cards");
+            for (std::size_t i = 0; i < choice.Candidates.size(); ++i)
+            {
+                Check(ownerSelection.at("CandidateCards")[i].at("Id") == choice.Candidates[i] &&
+                          ownerSelection.at("CandidateCards")[i].at("DefinitionId").get<int>() > 0,
+                      "Each revealed candidate must have its own definition");
+            }
+            auto const enemySnapshot = match.ViewerSnapshot(2);
+            Check(!enemySnapshot.contains("PendingSelection"),
+                  "The opposing viewer must not receive private selection cards");
+            auto const enemyProjection = enemySnapshot.dump();
             for (int hidden : choice.Candidates)
             {
                 Check(enemyProjection.find("\"Id\":" + std::to_string(hidden)) == std::string::npos,
@@ -1025,6 +1037,50 @@ int main()
                   "Main spell replay must preserve deterministic acceptance and rejection");
         }
         {
+            // The authored map pays one other hand card before revealing the
+            // top three only to its controller. Invalid costs roll back.
+            auto match = Make(proto, {3012, 2001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            auto const initial = match.ServerStateHash();
+            Reject([&] { match.ActivateMainSpell(1, hand[0]); });
+            Reject([&] { match.ActivateMainSpell(1, hand[0], {hand[0]}); });
+            Reject([&] { match.ActivateMainSpell(1, hand[0], {hand[1], hand[2]}); });
+            Check(match.ServerStateHash() == initial, "Invalid map costs must not mutate state");
+            auto const offered = match.ViewerSnapshot(1).at("Players")[0].at("PaidSpellOptions");
+            auto const opponentView = match.ViewerSnapshot(2);
+            Check(offered.size() == 1 && offered[0].at("CardId") == hand[0] &&
+                      !opponentView.at("Players")[0].contains("PaidSpellOptions"),
+                  "Only the owner may see map cost candidates");
+            (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, hand[0], 64, {hand[1]});
+            auto const selection = match.ViewerSnapshot(1).at("PendingSelection");
+            Check(selection.at("CandidateCards").size() == 3 &&
+                      !match.ViewerSnapshot(2).contains("PendingSelection") &&
+                      match.Player(1).Graveyard.size() == 2,
+                  "Paid map must reveal only its authorized top cards");
+            int const selected = selection.at("Candidates")[1].get<int>();
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, selected);
+            Check(match.Player(1).Hand.back() == selected && match.PendingEffects().empty(),
+                  "Selected map card must reach the owner's hand");
+
+            std::array<std::vector<int>, 2> const decks{Deck(proto, {3012, 2001}), Deck(proto, {})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers;
+            cast.Player = 1;
+            cast.CardId = hand[0];
+            cast.Cards = {hand[1]};
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = selected;
+            auto const replay = ReplayYakou(proto, 1, decks, {start, cast, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Paid map activation and choice must replay deterministically");
+        }
+        {
             // A free main-phase spell waits for both players to pass before
             // resolving. The wrong priority must not mutate any private state.
             auto match = Make(proto, {2009, 2009}, {3020, 2001, 2002, 3001, 2004});
@@ -1035,6 +1091,12 @@ int main()
             auto const costTwo = match.Player(2).Hand[2];
             auto const deckSize = match.Player(1).Deck.size();
             match.BeginSpellResponse(1, spell);
+            auto const counterOptions = match.ViewerSnapshot(2).at("ResponseOptions");
+            Check(counterOptions.size() == 1 && counterOptions[0].at("CardId") == counter &&
+                      counterOptions[0].at("CostCount") == 2 &&
+                      counterOptions[0].at("CostCandidates").size() == 4 &&
+                      match.ViewerSnapshot(1).at("ResponseOptions").empty(),
+                  "Only the priority holder receives private counterspell choices");
             Check(match.Phase() == YakouPhase::SpellResponse &&
                       match.PriorityPlayer() == 2 &&
                       match.PendingEffects().empty() &&
@@ -1049,6 +1111,12 @@ int main()
             Check(match.ServerStateHash() == beforeSpoof,
                   "Unauthorized priority or invalid discard cost must be atomic");
             match.RespondWithNegation(2, counter, {costOne, costTwo});
+            auto const publicStack = match.ViewerSnapshot(1).at("ResponseStack");
+            Check(publicStack.size() == 2 && publicStack[0].at("Card").at("Id") == spell &&
+                      publicStack[1].at("Card").at("Id") == counter &&
+                      !publicStack[0].contains("Targets") && !publicStack[1].contains("Targets") &&
+                      publicStack == match.ViewerSnapshot(2).at("ResponseStack"),
+                  "Both viewers see only public response sources in activation order");
             Check(match.Player(2).Graveyard.size() == 3 &&
                       match.PriorityPlayer() == 1 &&
                       match.Player(1).Deck.size() == deckSize,
@@ -1407,6 +1475,9 @@ int main()
                 const int attackDebuff = hand[0]; // 2011
                 const int shield = hand[1];       // 3016
                 const int discard = hand[2];      // 3018
+                auto const options = match.ViewerSnapshot(2).at("ResponseOptions");
+                Check(options.size() == 3 && match.ViewerSnapshot(1).at("ResponseOptions").empty(),
+                      "Only the defender receives supported response options");
                 match.RespondWithRaidShield(2, shield, blocker);
                 Check(match.PriorityPlayer() == 1 && match.Phase() == YakouPhase::RaidResponse &&
                       match.ViewerSnapshot(1).at("RaidResponseDepth") == 1 &&
