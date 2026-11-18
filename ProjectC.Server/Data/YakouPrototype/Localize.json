@@ -281,7 +281,9 @@
   },
   {
     "lmk": "keyword_Graveyard_name",
-    "korean": "묘지"
+    "korean": "묘지",
+    "english": "Graveyard",
+    "japanese": "墓地"
   },
   {
     "lmk": "keyword_Graveyard_desc",
@@ -289,7 +291,9 @@
   },
   {
     "lmk": "keyword_Necromancy_name",
-    "korean": "강령"
+    "korean": "강령",
+    "english": "Necromancy",
+    "japanese": "降霊"
   },
   {
     "lmk": "keyword_Necromancy_desc",
@@ -305,7 +309,9 @@
   },
   {
     "lmk": "keyword_Countdown_name",
-    "korean": "공격 카운터"
+    "korean": "공격 카운터",
+    "english": "Attack Countdown",
+    "japanese": "攻撃カウンター"
   },
   {
     "lmk": "keyword_Countdown_desc",
@@ -313,7 +319,9 @@
   },
   {
     "lmk": "keyword_Discard_name",
-    "korean": "폐기"
+    "korean": "폐기",
+    "english": "Discard",
+    "japanese": "廃棄"
   },
   {
     "lmk": "keyword_Discard_desc",
@@ -321,7 +329,9 @@
   },
   {
     "lmk": "keyword_NormalSummon_name",
-    "korean": "일반 소환"
+    "korean": "일반 소환",
+    "english": "Normal Summon",
+    "japanese": "通常召喚"
   },
   {
     "lmk": "keyword_NormalSummon_desc",
@@ -329,7 +339,9 @@
   },
   {
     "lmk": "keyword_Exile_name",
-    "korean": "제외"
+    "korean": "제외",
+    "english": "Exile",
+    "japanese": "除外"
   },
   {
     "lmk": "keyword_Exile_desc",
@@ -337,7 +349,9 @@
   },
   {
     "lmk": "keyword_Block_name",
-    "korean": "방어"
+    "korean": "방어",
+    "english": "Block",
+    "japanese": "防御"
   },
   {
     "lmk": "keyword_Block_desc",
@@ -345,7 +359,9 @@
   },
   {
     "lmk": "keyword_Raid_name",
-    "korean": "습격"
+    "korean": "습격",
+    "english": "Raid",
+    "japanese": "襲撃"
   },
   {
     "lmk": "keyword_Raid_desc",
@@ -353,7 +369,9 @@
   },
   {
     "lmk": "keyword_Devour_name",
-    "korean": "포식"
+    "korean": "포식",
+    "english": "Devour",
+    "japanese": "捕食"
   },
   {
     "lmk": "keyword_Devour_desc",
@@ -369,7 +387,9 @@
   },
   {
     "lmk": "keyword_Response_name",
-    "korean": "응전"
+    "korean": "응전",
+    "english": "Response",
+    "japanese": "応戦"
   },
   {
     "lmk": "keyword_Response_desc",
@@ -377,7 +397,9 @@
   },
   {
     "lmk": "keyword_Manifestation_name",
-    "korean": "현현"
+    "korean": "현현",
+    "english": "Manifestation",
+    "japanese": "顕現"
   },
   {
     "lmk": "keyword_Manifestation_desc",
@@ -401,10 +423,804 @@
   },
   {
     "lmk": "keyword_Spell_name",
-    "korean": "주문"
+    "korean": "주문",
+    "english": "Spell",
+    "japanese": "呪文"
   },
   {
     "lmk": "keyword_Spell_desc",
     "korean": "패에서 사용하여 효과를 발동하는 카드 유형."
+  },
+  {
+    "lmk": "ui.yakou.phase.turn_start",
+    "korean": "턴 시작 대기",
+    "english": "Awaiting Turn Start",
+    "japanese": "ターン開始待ち"
+  },
+  {
+    "lmk": "ui.yakou.phase.main",
+    "korean": "메인",
+    "english": "Main",
+    "japanese": "メイン"
+  },
+  {
+    "lmk": "ui.yakou.phase.assign_blockers",
+    "korean": "방어자 배정",
+    "english": "Assign Blockers",
+    "japanese": "防御役の割り当て"
+  },
+  {
+    "lmk": "ui.yakou.phase.raid_response",
+    "korean": "습격 응전",
+    "english": "Raid Response",
+    "japanese": "襲撃への応戦"
+  },
+  {
+    "lmk": "ui.yakou.phase.spell_response",
+    "korean": "주문 응전",
+    "english": "Spell Response",
+    "japanese": "呪文への応戦"
+  },
+  {
+    "lmk": "ui.yakou.phase.finished",
+    "korean": "대전 종료",
+    "english": "Match Finished",
+    "japanese": "対戦終了"
+  },
+  {
+    "lmk": "ui.yakou.hud.status",
+    "korean": "{0} · 행동: {1} · 응전 우선권: {2} · 요력 {3}/{4}",
+    "english": "{0} · Acting: {1} · Response priority: {2} · Ki {3}/{4}",
+    "japanese": "{0}・行動: {1}・応戦優先権: {2}・妖力 {3}/{4}"
+  },
+  {
+    "lmk": "ui.yakou.player.none",
+    "korean": "없음",
+    "english": "None",
+    "japanese": "なし"
+  },
+  {
+    "lmk": "ui.yakou.response.order",
+    "korean": "응전 해결 순서: {0}",
+    "english": "Response resolution order: {0}",
+    "japanese": "応戦の解決順: {0}"
+  },
+  {
+    "lmk": "ui.yakou.action.menu",
+    "korean": "행동 선택",
+    "english": "Choose Action",
+    "japanese": "行動を選択"
+  },
+  {
+    "lmk": "ui.yakou.status.wait_snapshot",
+    "korean": "서버 상태를 기다리는 중입니다.",
+    "english": "Waiting for server state.",
+    "japanese": "サーバーの状態を待っています。"
+  },
+  {
+    "lmk": "ui.yakou.status.unsupported_effect",
+    "korean": "이 카드 효과는 현재 서버에서 처리할 수 없습니다.",
+    "english": "The server cannot resolve this card effect yet.",
+    "japanese": "このカードの効果は現在サーバーで処理できません。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.target_selected",
+    "korean": "대상을 선택했습니다. 행동 메뉴에서 확정하거나 다시 선택하세요.",
+    "english": "Target selected. Confirm or choose again from the action menu.",
+    "japanese": "対象を選択しました。行動メニューで確定するか、選び直してください。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.response_ready",
+    "korean": "응전 선택을 마치면 행동 메뉴에서 제출하세요.",
+    "english": "When ready, play the response from the action menu.",
+    "japanese": "選択後、行動メニューから応戦を使用してください。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.choose_blocker",
+    "korean": "방어에 사용할 아군 몬스터를 선택하세요.",
+    "english": "Choose an allied monster to block.",
+    "japanese": "防御に使う味方モンスターを選んでください。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.blockers_count",
+    "korean": "방어 배정 {0}개. 행동 메뉴에서 확정하세요.",
+    "english": "{0} blocker assignments. Confirm from the action menu.",
+    "japanese": "防御の割り当て {0} 件。行動メニューで確定してください。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.paid_spell_no_response",
+    "korean": "이 주문의 비용을 선택하세요. 현재 유료 주문에는 응전 창이 열리지 않습니다.",
+    "english": "Choose this spell’s cost. Paid spells currently do not open a response window.",
+    "japanese": "この呪文のコストを選んでください。現在、有料呪文では応戦ウィンドウは開きません。"
+  },
+  {
+    "lmk": "ui.yakou.feedback.summon_cost",
+    "korean": "소환 비용 {0}/{1}장 선택",
+    "english": "Summon cost: {0}/{1} cards selected",
+    "japanese": "召喚コスト: {0}/{1}枚選択"
+  },
+  {
+    "lmk": "ui.yakou.feedback.begin_response",
+    "korean": "대상이나 비용을 선택한 뒤 행동 메뉴에서 제출하세요.",
+    "english": "Choose targets or costs, then play the response from the action menu.",
+    "japanese": "対象またはコストを選び、行動メニューから応戦を使用してください。"
+  },
+  {
+    "lmk": "ui.yakou.action.summon",
+    "korean": "{0} 소환",
+    "english": "Summon with {0}",
+    "japanese": "{0}で召喚"
+  },
+  {
+    "lmk": "ui.yakou.action.paid_spell_cost",
+    "korean": "주문 비용 선택",
+    "english": "Choose Spell Cost",
+    "japanese": "呪文のコストを選ぶ"
+  },
+  {
+    "lmk": "ui.yakou.action.cast_spell",
+    "korean": "주문 사용",
+    "english": "Cast Spell",
+    "japanese": "呪文を使用"
+  },
+  {
+    "lmk": "ui.yakou.action.cast_spell_target",
+    "korean": "대상을 선택해 주문 사용",
+    "english": "Choose Target and Cast",
+    "japanese": "対象を選んで呪文を使用"
+  },
+  {
+    "lmk": "ui.yakou.action.response_shield",
+    "korean": "피해 감소 응전",
+    "english": "Prevent Damage",
+    "japanese": "ダメージ軽減で応戦"
+  },
+  {
+    "lmk": "ui.yakou.action.response_tactic",
+    "korean": "습격 전술 응전",
+    "english": "Raid Tactic Response",
+    "japanese": "襲撃戦術で応戦"
+  },
+  {
+    "lmk": "ui.yakou.action.response_negate",
+    "korean": "주문 무효 응전",
+    "english": "Negate Spell",
+    "japanese": "呪文を無効にする応戦"
+  },
+  {
+    "lmk": "ui.yakou.action.manifest",
+    "korean": "{0}로 현현",
+    "english": "Manifest as {0}",
+    "japanese": "{0}に顕現"
+  },
+  {
+    "lmk": "ui.yakou.action.postpone",
+    "korean": "이 몬스터의 습격 연기",
+    "english": "Postpone This Monster’s Raid",
+    "japanese": "このモンスターの襲撃を延期"
+  },
+  {
+    "lmk": "ui.yakou.action.field_slot",
+    "korean": "필드 슬롯 {0}",
+    "english": "Field Slot {0}",
+    "japanese": "フィールド枠 {0}"
+  },
+  {
+    "lmk": "ui.yakou.action.response_target",
+    "korean": "응전 대상 선택",
+    "english": "Choose Response Target",
+    "japanese": "応戦の対象を選ぶ"
+  },
+  {
+    "lmk": "ui.yakou.action.replacement_blocker",
+    "korean": "대체 방어자 선택",
+    "english": "Choose Replacement Blocker",
+    "japanese": "交代する防御役を選ぶ"
+  },
+  {
+    "lmk": "ui.yakou.action.response_cost",
+    "korean": "응전 비용 {0}/{1}장 선택",
+    "english": "Response cost: {0}/{1} cards",
+    "japanese": "応戦コスト: {0}/{1}枚選択"
+  },
+  {
+    "lmk": "ui.yakou.action.play_response",
+    "korean": "응전 사용",
+    "english": "Play Response",
+    "japanese": "応戦を使用"
+  },
+  {
+    "lmk": "ui.yakou.action.start_turn",
+    "korean": "턴 시작",
+    "english": "Start Turn",
+    "japanese": "ターン開始"
+  },
+  {
+    "lmk": "ui.yakou.action.begin_raid",
+    "korean": "습격 단계로 진행",
+    "english": "Proceed to Raid",
+    "japanese": "襲撃段階へ進む"
+  },
+  {
+    "lmk": "ui.yakou.action.redraw",
+    "korean": "교체할 손패 선택",
+    "english": "Choose Cards to Redraw",
+    "japanese": "引き直す手札を選ぶ"
+  },
+  {
+    "lmk": "ui.yakou.action.confirm_blockers",
+    "korean": "방어 배정 확정",
+    "english": "Confirm Blockers",
+    "japanese": "防御の割り当てを確定"
+  },
+  {
+    "lmk": "ui.yakou.action.pass_raid_response",
+    "korean": "습격 응전 패스",
+    "english": "Pass Raid Response",
+    "japanese": "襲撃への応戦をパス"
+  },
+  {
+    "lmk": "ui.yakou.action.resolve_raid",
+    "korean": "습격 해결",
+    "english": "Resolve Raid",
+    "japanese": "襲撃を解決"
+  },
+  {
+    "lmk": "ui.yakou.action.pass_spell_response",
+    "korean": "주문 응전 패스",
+    "english": "Pass Spell Response",
+    "japanese": "呪文への応戦をパス"
+  },
+  {
+    "lmk": "ui.yakou.action.reselect_effect",
+    "korean": "효과 대상 다시 선택",
+    "english": "Choose Another Target",
+    "japanese": "効果の対象を選び直す"
+  },
+  {
+    "lmk": "ui.yakou.action.choose_candidate",
+    "korean": "{0} 선택",
+    "english": "Choose {0}",
+    "japanese": "{0}を選ぶ"
+  },
+  {
+    "lmk": "ui.yakou.action.decline_optional_effect",
+    "korean": "효과를 사용하지 않음",
+    "english": "Decline Optional Effect",
+    "japanese": "任意効果を使用しない"
+  },
+  {
+    "lmk": "ui.yakou.action.leave_room",
+    "korean": "방 나가기",
+    "english": "Leave Room",
+    "japanese": "部屋を退出"
+  },
+  {
+    "lmk": "ui.yakou.action.leave_and_close_room",
+    "korean": "방 닫고 나가기",
+    "english": "Close Room and Leave",
+    "japanese": "部屋を閉じて退出"
+  },
+  {
+    "lmk": "ui.yakou.status.command_pending",
+    "korean": "서버 응답을 기다리는 중입니다.",
+    "english": "Waiting for server response.",
+    "japanese": "サーバーの応答を待っています。"
+  },
+  {
+    "lmk": "ui.yakou.status.binding_lost",
+    "korean": "연결이 끊겼습니다. 방 상태를 확인한 뒤 재접속하세요.",
+    "english": "Connection lost. Check the room state and reconnect.",
+    "japanese": "接続が切れました。部屋の状態を確認して再接続してください。"
+  },
+  {
+    "lmk": "ui.yakou.error.unknown_command",
+    "korean": "지원하지 않는 요청입니다.",
+    "english": "Unsupported request.",
+    "japanese": "対応していないリクエストです。"
+  },
+  {
+    "lmk": "ui.yakou.error.already_joined",
+    "korean": "이미 다른 대전이나 방에 참가 중입니다.",
+    "english": "You are already in a match or room.",
+    "japanese": "すでに別の対戦または部屋に参加しています。"
+  },
+  {
+    "lmk": "ui.yakou.error.match_limit",
+    "korean": "지금은 새 방을 만들 수 없습니다.",
+    "english": "Cannot create another room right now.",
+    "japanese": "現在、新しい部屋を作成できません。"
+  },
+  {
+    "lmk": "ui.yakou.error.match_not_found",
+    "korean": "방을 찾을 수 없습니다.",
+    "english": "Room not found.",
+    "japanese": "部屋が見つかりません。"
+  },
+  {
+    "lmk": "ui.yakou.error.match_full",
+    "korean": "방이 가득 찼습니다.",
+    "english": "Room is full.",
+    "japanese": "部屋は満員です。"
+  },
+  {
+    "lmk": "ui.yakou.error.invalid_resume_token",
+    "korean": "재접속 정보가 유효하지 않습니다.",
+    "english": "Reconnect credentials are invalid.",
+    "japanese": "再接続情報が無効です。"
+  },
+  {
+    "lmk": "ui.yakou.error.not_joined",
+    "korean": "이 방에 참가한 상태가 아닙니다.",
+    "english": "You are not in this room.",
+    "japanese": "この部屋には参加していません。"
+  },
+  {
+    "lmk": "ui.yakou.error.waiting_for_opponent",
+    "korean": "상대 플레이어를 기다리고 있습니다.",
+    "english": "Waiting for the other player.",
+    "japanese": "相手プレイヤーを待っています。"
+  },
+  {
+    "lmk": "ui.yakou.error.duplicate_request",
+    "korean": "같은 요청 ID가 다른 내용에 사용되었습니다.",
+    "english": "This request ID was reused with different content.",
+    "japanese": "同じリクエストIDが別の内容に使用されました。"
+  },
+  {
+    "lmk": "ui.yakou.error.request_cache_full",
+    "korean": "이 방에서 더 이상 요청을 처리할 수 없습니다.",
+    "english": "This room cannot process more requests.",
+    "japanese": "この部屋ではこれ以上リクエストを処理できません。"
+  },
+  {
+    "lmk": "ui.yakou.error.player_left",
+    "korean": "플레이어가 방을 나가 대전이 종료되었습니다.",
+    "english": "A player left, so the match ended.",
+    "japanese": "プレイヤーが退出したため対戦は終了しました。"
+  },
+  {
+    "lmk": "ui.yakou.error.expired",
+    "korean": "방이 만료되었습니다.",
+    "english": "The room expired.",
+    "japanese": "部屋の有効期限が切れました。"
+  },
+  {
+    "lmk": "ui.yakou.error.server_shutdown",
+    "korean": "서버가 종료되어 방이 닫혔습니다.",
+    "english": "The server closed the room.",
+    "japanese": "サーバーが終了したため部屋が閉じられました。"
+  },
+  {
+    "lmk": "ui.yakou.error.reconnected",
+    "korean": "다른 연결에서 이 방에 재접속했습니다.",
+    "english": "This room was resumed from another connection.",
+    "japanese": "別の接続からこの部屋に再接続しました。"
+  },
+  {
+    "lmk": "ui.yakou.error.generic",
+    "korean": "요청을 처리할 수 없습니다. 다시 시도하거나 상태를 새로고침하세요.",
+    "english": "Could not process the request. Retry or refresh the state.",
+    "japanese": "リクエストを処理できません。再試行するか状態を更新してください。"
+  },
+  {
+    "lmk": "ui.yakou.log.phase",
+    "korean": "단계: {0} · 행동: {1}",
+    "english": "Phase: {0} · Acting: {1}",
+    "japanese": "段階: {0}・行動: {1}"
+  },
+  {
+    "lmk": "ui.yakou.log.life",
+    "korean": "{0} 생명력 {1} → {2}",
+    "english": "{0} Life {1} → {2}",
+    "japanese": "{0}のライフ {1} → {2}"
+  },
+  {
+    "lmk": "ui.yakou.log.field_enter",
+    "korean": "{0} 필드에 등장",
+    "english": "{0} entered the field",
+    "japanese": "{0}がフィールドに登場"
+  },
+  {
+    "lmk": "ui.yakou.log.stats",
+    "korean": "{0} 공격력 {1} → {2}, 체력 {3} → {4}",
+    "english": "{0}: Attack {1} → {2}, Health {3} → {4}",
+    "japanese": "{0}: 攻撃力 {1} → {2}、体力 {3} → {4}"
+  },
+  {
+    "lmk": "ui.yakou.log.field_leave",
+    "korean": "{0} 필드에서 이동",
+    "english": "{0} left the field",
+    "japanese": "{0}がフィールドから移動"
+  },
+  {
+    "lmk": "ui.yakou.log.response_added",
+    "korean": "응전 추가: {0}",
+    "english": "Response added: {0}",
+    "japanese": "応戦を追加: {0}"
+  },
+  {
+    "lmk": "ui.yakou.log.response_resolved",
+    "korean": "응전 창 해결",
+    "english": "Response window resolved",
+    "japanese": "応戦ウィンドウを解決"
+  },
+  {
+    "lmk": "ui.yakou.dev.entry",
+    "korean": "Yakou 시제품",
+    "english": "Yakou Prototype",
+    "japanese": "Yakou プロトタイプ"
+  },
+  {
+    "lmk": "ui.yakou.dev.finish_existing_match",
+    "korean": "기존 대전이나 매칭을 먼저 종료하세요.",
+    "english": "Finish the current match or matchmaking first.",
+    "japanese": "進行中の対戦またはマッチングを先に終了してください。"
+  },
+  {
+    "lmk": "ui.yakou.dev.intro",
+    "korean": "Yakou 시제품 · 개발 서버 전용 · 서버 판정",
+    "english": "Yakou Prototype · Developer Server Only · Server Authoritative",
+    "japanese": "Yakou プロトタイプ・開発サーバー専用・サーバー判定"
+  },
+  {
+    "lmk": "ui.yakou.dev.fixed_decks",
+    "korean": "고정 시제품 덱을 사용합니다. 방 ID는 따로 공유하세요. 재접속 토큰은 메모리에만 보관됩니다.",
+    "english": "Fixed prototype decks. Share the room ID privately. Resume tokens stay in memory.",
+    "japanese": "固定プロトタイプデッキを使用します。部屋IDは個別に共有してください。再接続トークンはメモリにのみ保存されます。"
+  },
+  {
+    "lmk": "ui.yakou.dev.back_lobby",
+    "korean": "로비로 돌아가기",
+    "english": "Back to Lobby",
+    "japanese": "ロビーに戻る"
+  },
+  {
+    "lmk": "ui.yakou.dev.create_room",
+    "korean": "방 만들기",
+    "english": "Create Room",
+    "japanese": "部屋を作成"
+  },
+  {
+    "lmk": "ui.yakou.dev.join_room",
+    "korean": "방 참가",
+    "english": "Join Room",
+    "japanese": "部屋に参加"
+  },
+  {
+    "lmk": "ui.yakou.dev.room_id",
+    "korean": "방 ID",
+    "english": "Room ID",
+    "japanese": "部屋ID"
+  },
+  {
+    "lmk": "ui.yakou.dev.room_status",
+    "korean": "방 {0} · 좌석 {1} · 순번 {2} · {3}",
+    "english": "Room {0} · Seat {1} · Sequence {2} · {3}",
+    "japanese": "部屋 {0}・席 {1}・連番 {2}・{3}"
+  },
+  {
+    "lmk": "ui.yakou.dev.connected",
+    "korean": "연결됨",
+    "english": "Connected",
+    "japanese": "接続済み"
+  },
+  {
+    "lmk": "ui.yakou.dev.disconnected",
+    "korean": "연결 끊김",
+    "english": "Disconnected",
+    "japanese": "切断済み"
+  },
+  {
+    "lmk": "ui.yakou.dev.enter_battle",
+    "korean": "전투 화면으로",
+    "english": "Enter BattleScene",
+    "japanese": "対戦画面へ"
+  },
+  {
+    "lmk": "ui.yakou.dev.forget_room",
+    "korean": "끊긴 방 정보 지우기",
+    "english": "Forget Disconnected Room",
+    "japanese": "切断した部屋の情報を消去"
+  },
+  {
+    "lmk": "ui.yakou.dev.resume_room",
+    "korean": "방 재접속",
+    "english": "Resume Room",
+    "japanese": "部屋に再接続"
+  },
+  {
+    "lmk": "ui.yakou.dev.copy_room_id",
+    "korean": "방 ID 복사",
+    "english": "Copy Room ID",
+    "japanese": "部屋IDをコピー"
+  },
+  {
+    "lmk": "ui.yakou.dev.refresh_snapshot",
+    "korean": "상태 다시 받기",
+    "english": "Refresh State",
+    "japanese": "状態を再取得"
+  },
+  {
+    "lmk": "ui.yakou.dev.turn_status",
+    "korean": "{0}턴 · 단계 {1} · 행동 {2} · 우선권 {3} · 승자 {4}",
+    "english": "Turn {0} · Phase {1} · Acting {2} · Priority {3} · Winner {4}",
+    "japanese": "{0}ターン・段階 {1}・行動 {2}・優先権 {3}・勝者 {4}"
+  },
+  {
+    "lmk": "ui.yakou.dev.raid_status",
+    "korean": "습격: 공격자 {0} · 슬롯 {1} · 방어자 {2}",
+    "english": "Raid: Attacker {0} · Slot {1} · Blocker {2}",
+    "japanese": "襲撃: 攻撃役 {0}・枠 {1}・防御役 {2}"
+  },
+  {
+    "lmk": "ui.yakou.dev.select_attacker",
+    "korean": "공격자 선택",
+    "english": "Select Attacker",
+    "japanese": "攻撃役を選択"
+  },
+  {
+    "lmk": "ui.yakou.dev.player_status",
+    "korean": "플레이어 {0} · 생명력 {1} · 요력 {2} · 덱 {3} · 손패 {4}",
+    "english": "Player {0} · Life {1} · Ki {2} · Deck {3} · Hand {4}",
+    "japanese": "プレイヤー {0}・ライフ {1}・妖力 {2}・デッキ {3}・手札 {4}"
+  },
+  {
+    "lmk": "ui.yakou.dev.zone_choices",
+    "korean": "{0} (카드·대상·비용 선택)",
+    "english": "{0} (choose card, target or cost)",
+    "japanese": "{0}（カード・対象・コストを選択）"
+  },
+  {
+    "lmk": "ui.yakou.dev.empty_slot",
+    "korean": "슬롯 {0}: 비어 있음",
+    "english": "Slot {0}: Empty",
+    "japanese": "枠 {0}: 空き"
+  },
+  {
+    "lmk": "ui.yakou.dev.card_stats",
+    "korean": "{0} [{1}] · 공격력 {2} · 체력 {3}{4}",
+    "english": "{0} [{1}] · ATK {2} · HP {3}{4}",
+    "japanese": "{0} [{1}]・攻撃力 {2}・体力 {3}{4}"
+  },
+  {
+    "lmk": "ui.yakou.dev.countdown",
+    "korean": " · 공격 카운터 {0}",
+    "english": " · Countdown {0}",
+    "japanese": "・攻撃カウンター {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.source",
+    "korean": "사용 카드",
+    "english": "Source Card",
+    "japanese": "使用カード"
+  },
+  {
+    "lmk": "ui.yakou.dev.target",
+    "korean": "대상",
+    "english": "Target",
+    "japanese": "対象"
+  },
+  {
+    "lmk": "ui.yakou.dev.cost",
+    "korean": "비용",
+    "english": "Cost",
+    "japanese": "コスト"
+  },
+  {
+    "lmk": "ui.yakou.dev.selected_cost",
+    "korean": "비용 선택됨",
+    "english": "Cost Selected",
+    "japanese": "コスト選択済み"
+  },
+  {
+    "lmk": "ui.yakou.dev.manifest_form",
+    "korean": "현현 형태: {0}",
+    "english": "Manifest Form: {0}",
+    "japanese": "顕現形態: {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.effect_selection",
+    "korean": "효과 선택: {0} / {1}",
+    "english": "Effect Choice: {0} / {1}",
+    "japanese": "効果選択: {0} / {1}"
+  },
+  {
+    "lmk": "ui.yakou.dev.selection_ready",
+    "korean": "선택 가능",
+    "english": "Ready",
+    "japanese": "選択可能"
+  },
+  {
+    "lmk": "ui.yakou.dev.selection_unavailable",
+    "korean": "선택 불가",
+    "english": "Unavailable",
+    "japanese": "選択不可"
+  },
+  {
+    "lmk": "ui.yakou.dev.operation.look_and_choose",
+    "korean": "덱 위 카드 확인 후 선택",
+    "english": "Look at Deck Top and Choose",
+    "japanese": "デッキの上を確認して選択"
+  },
+  {
+    "lmk": "ui.yakou.dev.operation.salvage",
+    "korean": "묘지에서 가져오기",
+    "english": "Return from Graveyard",
+    "japanese": "墓地から手札に加える"
+  },
+  {
+    "lmk": "ui.yakou.dev.operation.modify_countdown",
+    "korean": "공격 카운터 조정",
+    "english": "Adjust Attack Countdown",
+    "japanese": "攻撃カウンターを調整"
+  },
+  {
+    "lmk": "ui.yakou.dev.operation.heal_damage",
+    "korean": "누적 피해 회복",
+    "english": "Heal Accumulated Damage",
+    "japanese": "蓄積ダメージを回復"
+  },
+  {
+    "lmk": "ui.yakou.dev.choose_effect_target",
+    "korean": "효과 대상 {0} 선택",
+    "english": "Choose Effect Target {0}",
+    "japanese": "効果の対象 {0} を選択"
+  },
+  {
+    "lmk": "ui.yakou.dev.retry_request",
+    "korean": "같은 요청 다시 보내기",
+    "english": "Retry Same Request",
+    "japanese": "同じリクエストを再送"
+  },
+  {
+    "lmk": "ui.yakou.dev.id_hint",
+    "korean": "위에서 카드를 선택하거나 아래에 인스턴스 ID를 입력하세요. 서버가 행동을 검증합니다.",
+    "english": "Select cards above or enter instance IDs below. The server validates every action.",
+    "japanese": "上でカードを選ぶか、下にインスタンスIDを入力してください。行動はサーバーが検証します。"
+  },
+  {
+    "lmk": "ui.yakou.dev.selected_costs",
+    "korean": "선택한 비용: {0}",
+    "english": "Selected Costs: {0}",
+    "japanese": "選択したコスト: {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.summon_choice",
+    "korean": "소환 {0} / {1} / {2}장 선택 / {3}에서 / 슬롯 {4}",
+    "english": "Summon {0} / {1} / choose {2} from {3} / slots {4}",
+    "japanese": "召喚 {0} / {1} / {3}から{2}枚選択 / 枠 {4}"
+  },
+  {
+    "lmk": "ui.yakou.dev.add_blocker",
+    "korean": "방어 배정 추가·변경",
+    "english": "Add or Replace Blocker",
+    "japanese": "防御の割り当てを追加・変更"
+  },
+  {
+    "lmk": "ui.yakou.dev.assignments",
+    "korean": "방어 배정: {0}",
+    "english": "Blocker Assignments: {0}",
+    "japanese": "防御の割り当て: {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.assign_blockers",
+    "korean": "방어자 배정 (비워 두면 방어 없음)",
+    "english": "Assign Blockers (empty means no blockers)",
+    "japanese": "防御役を割り当てる（空欄なら防御なし）"
+  },
+  {
+    "lmk": "ui.yakou.dev.numeric_id_error",
+    "korean": "0 이상의 숫자 ID를 입력하세요.",
+    "english": "Enter a non-negative numeric ID.",
+    "japanese": "0以上の数値IDを入力してください。"
+  },
+  {
+    "lmk": "ui.yakou.dev.source_card",
+    "korean": "사용 카드 ID",
+    "english": "Source Card ID",
+    "japanese": "使用カードID"
+  },
+  {
+    "lmk": "ui.yakou.dev.target_attacker",
+    "korean": "대상 / 공격자 ID",
+    "english": "Target / Attacker ID",
+    "japanese": "対象 / 攻撃役ID"
+  },
+  {
+    "lmk": "ui.yakou.dev.replacement_blocker",
+    "korean": "대체 방어자 ID (없으면 0)",
+    "english": "Replacement Blocker ID (0 if none)",
+    "japanese": "交代する防御役ID（なければ0）"
+  },
+  {
+    "lmk": "ui.yakou.dev.manifest_definition",
+    "korean": "현현 정의 ID",
+    "english": "Manifest Definition ID",
+    "japanese": "顕現先の定義ID"
+  },
+  {
+    "lmk": "ui.yakou.dev.summon_slot",
+    "korean": "소환 슬롯 0–4",
+    "english": "Summon Slot 0–4",
+    "japanese": "召喚枠 0–4"
+  },
+  {
+    "lmk": "ui.yakou.dev.attacker_id",
+    "korean": "배정할 공격자 ID",
+    "english": "Attacker ID to Assign",
+    "japanese": "割り当てる攻撃役ID"
+  },
+  {
+    "lmk": "ui.yakou.dev.blocker_id",
+    "korean": "배정할 방어자 ID",
+    "english": "Blocker ID to Assign",
+    "japanese": "割り当てる防御役ID"
+  },
+  {
+    "lmk": "ui.yakou.dev.client_error",
+    "korean": "클라이언트 오류: {0}",
+    "english": "Client Error: {0}",
+    "japanese": "クライアントエラー: {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.server_error",
+    "korean": "서버 거부: {0}",
+    "english": "Server Rejection: {0}",
+    "japanese": "サーバーによる拒否: {0}"
+  },
+  {
+    "lmk": "ui.yakou.dev.activate_main_spell",
+    "korean": "메인 주문 사용",
+    "english": "Cast Main Phase Spell",
+    "japanese": "メイン段階の呪文を使用"
+  },
+  {
+    "lmk": "ui.yakou.dev.open_spell_response",
+    "korean": "주문 응전 창 열기",
+    "english": "Open Spell Response Window",
+    "japanese": "呪文への応戦ウィンドウを開く"
+  },
+  {
+    "lmk": "ui.yakou.dev.manifest_selected",
+    "korean": "선택한 형태로 현현",
+    "english": "Manifest into Selected Form",
+    "japanese": "選択した形態に顕現"
+  },
+  {
+    "lmk": "ui.yakou.dev.redraw_selected",
+    "korean": "선택한 손패 교체",
+    "english": "Redraw Selected Cards",
+    "japanese": "選択した手札を引き直す"
+  },
+  {
+    "lmk": "ui.yakou.dev.zone.friendly_hand",
+    "korean": "내 손패",
+    "english": "Your Hand",
+    "japanese": "自分の手札"
+  },
+  {
+    "lmk": "ui.yakou.dev.zone.friendly_field",
+    "korean": "내 필드",
+    "english": "Your Field",
+    "japanese": "自分のフィールド"
+  },
+  {
+    "lmk": "ui.yakou.dev.zone.friendly_graveyard",
+    "korean": "내 묘지",
+    "english": "Your Graveyard",
+    "japanese": "自分の墓地"
+  },
+  {
+    "lmk": "ui.yakou.action.return_lobby",
+    "korean": "로비로 돌아가기",
+    "english": "Return to Lobby",
+    "japanese": "ロビーに戻る"
+  },
+  {
+    "lmk": "ui.yakou.dev.reconnecting_connection_scene",
+    "korean": "연결이 끊겼습니다. 연결 화면에서 재접속 중입니다.",
+    "english": "Disconnected. Reconnecting through ConnectionScene.",
+    "japanese": "切断されました。接続画面から再接続しています。"
   }
 ]
