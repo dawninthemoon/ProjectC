@@ -8,12 +8,14 @@ namespace ProjectC.Client
     public static class CardArtProvider
     {
         private static readonly Dictionary<int, Sprite> Artworks = new Dictionary<int, Sprite>();
+        private static readonly Dictionary<int, Sprite> YakouArtworks = new Dictionary<int, Sprite>();
         private static Sprite _yakouFallback;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset()
         {
             Artworks.Clear();
+            YakouArtworks.Clear();
             _yakouFallback = null;
         }
 
@@ -37,11 +39,14 @@ namespace ProjectC.Client
             artwork.color = artwork.sprite != null ? Color.white : new Color(.09f, .12f, .14f);
         }
 
-        // Yakou definition IDs overlap the GameCore catalog. Use a neutral face
-        // until an explicitly namespaced Yakou illustration exists.
+        // IDs overlap GameCore, so Yakou resolves only its own copied artwork.
         public static void ApplyYakou(Image artwork, int definitionId)
         {
-            var authored = Resources.Load<Sprite>($"YakouCardSprite/CardSprite_{definitionId}");
+            if (!YakouArtworks.TryGetValue(definitionId, out var authored))
+            {
+                authored = Resources.Load<Sprite>($"YakouCardSprite/CardSprite_{definitionId}");
+                YakouArtworks.Add(definitionId, authored);
+            }
             artwork.sprite = authored != null ? authored : YakouFallback();
             artwork.color = Color.white;
         }
