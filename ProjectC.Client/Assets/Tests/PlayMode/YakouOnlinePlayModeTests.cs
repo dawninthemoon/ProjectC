@@ -12,7 +12,9 @@ using ProjectC.Client;
 using Game.Utils;
 using TMPro;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -28,6 +30,93 @@ namespace ProjectC.Tests
         private GameObject _battle;
         private GameObject _opponentBattle;
         private string _fixtureDirectory;
+
+        [Test]
+        public void AllYakouCardSpritesAreImportedAndGameCoreSpritesRemainAvailable()
+        {
+            var imageObject = new GameObject("Card art resource check", typeof(Image));
+            try
+            {
+                var artwork = imageObject.GetComponent<Image>();
+                var definitions = CardLibrary.LoadYakouResources().Cards.ToArray();
+                Assert.AreEqual(34, definitions.Length);
+                foreach (var definition in definitions)
+                {
+                    var sprite = Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + definition.Id);
+                    Assert.IsNotNull(sprite, "Yakou sprite " + definition.Id);
+                    CardArtProvider.ApplyYakou(artwork, definition.Id);
+                    Assert.AreSame(sprite, artwork.sprite, "Yakou art path " + definition.Id);
+                }
+                var gameCore = Resources.Load<Sprite>("CardSprite/CardSprite_1001");
+                Assert.IsNotNull(gameCore);
+                CardArtProvider.Apply(artwork, 1001);
+                Assert.AreSame(gameCore, artwork.sprite);
+                var cardPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleCard.prefab");
+                Assert.IsNotNull(cardPrefab);
+                var gameCoreObject = Object.Instantiate(cardPrefab);
+                try
+                {
+                    var widget = gameCoreObject.GetComponent<CardWidget>();
+                    Assert.IsNotNull(widget);
+                    widget.Bind(new CardView { Id = 1, DefinitionId = 1001, Attack = 2, Hp = 3, MaxHp = 3 },
+                        false, false, false, true);
+                    Assert.AreSame(gameCore, widget.ArtworkImage.sprite);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(gameCoreObject);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(imageObject);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ExistingGameCoreArtworkRendersInBattleScene()
+        {
+            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/Scenes/BattleScene.unity",
+                new LoadSceneParameters(LoadSceneMode.Additive));
+            var scene = SceneManager.GetSceneByPath("Assets/Scenes/BattleScene.unity");
+            Assert.IsTrue(scene.IsValid());
+            var screen = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<BattlePresenter>(true)).FirstOrDefault();
+            Assert.IsNotNull(screen);
+            Assert.IsNull(screen.GetComponent<YakouBattlePresenter>());
+            var client = screen.Client;
+            client.ApplyMessage("{\"Type\":\"MatchCreated\",\"ProtocolVersion\":2,\"MatchId\":\"art-regression\",\"PlayerId\":1,\"GameNumber\":1}");
+            var card = new CardView { Id = 1, DefinitionId = 1001, Attack = 2, Hp = 3, MaxHp = 3 };
+            client.ApplyMessage(JsonUtility.ToJson(new SnapshotMessage
+            {
+                Type = "StateSnapshot", ProtocolVersion = 2, MatchId = "art-regression", GameNumber = 1,
+                SequenceNumber = 1,
+                Payload = new StateView
+                {
+                    Started = true, TurnStarted = true, ActivePlayerId = 1, TurnNumber = 1,
+                    FieldLimit = 5, Players = new[]
+                    {
+                        new PlayerView { PlayerId = 1, Life = 20, HandCount = 1, Hand = new[] { card },
+                            Field = new[] { new CardView { Id = 2, DefinitionId = 1001, Attack = 2, Hp = 3, MaxHp = 3 } },
+                            Graveyard = Array.Empty<CardView>() },
+                        new PlayerView { PlayerId = 2, Life = 20, HandCount = 1,
+                            Hand = Array.Empty<CardView>(), Field = Array.Empty<CardView>(),
+                            Graveyard = Array.Empty<CardView>() },
+                    },
+                },
+            }));
+            yield return null;
+            yield return null;
+            var gameCoreSprite = Resources.Load<Sprite>("CardSprite/CardSprite_1001");
+            Assert.AreSame(gameCoreSprite, screen.Hand.Widgets[0].ArtworkImage.sprite);
+            Assert.AreSame(gameCoreSprite, screen.OwnField.Widgets[0].ArtworkImage.sprite);
+            Assert.IsTrue(screen.EnemyHand.Widgets[0].Hidden);
+            screen.Detail.Show(card);
+            Assert.IsTrue(screen.Detail.Bind("ArtworkImage", out AspectFillImage detailArt));
+            Assert.AreSame(gameCoreSprite, detailArt.sprite);
+            yield return Capture("07-gamecore-authored-battle-scene");
+            yield return SceneManager.UnloadSceneAsync(scene);
+        }
 
         [Test]
         public void YakouStatusAndActionsUseTheSelectedLanguage()
@@ -178,9 +267,12 @@ namespace ProjectC.Tests
             Assert.IsFalse(screen.enabled);
             Assert.IsTrue(yakou.Bind("YourHandImage", out CardZoneView hand));
             Assert.AreEqual(5, hand.Widgets.Count);
+            Assert.IsTrue(hand.Widgets.All(widget => widget.ArtworkImage.sprite ==
+                Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + widget.Card.DefinitionId)));
             Assert.IsTrue(yakou.Bind("OpponentHandImage", out CardZoneView hidden));
             Assert.AreEqual(5, hidden.Widgets.Count);
             Assert.IsTrue(hidden.Widgets.TrueForAll(widget => widget.Hidden && widget.Card == null));
+            Assert.IsTrue(hidden.Widgets.TrueForAll(widget => !widget.ArtworkImage.gameObject.activeSelf));
             yield return Capture("01-private-hands");
             var networkProperty = typeof(ClientApp).GetProperty("Network").GetSetMethod(true);
             networkProperty.Invoke(app, new object[] { b });
@@ -209,7 +301,12 @@ namespace ProjectC.Tests
             }
             Assert.IsNotNull(normal);
             int card = (int)normal["CardId"];
-            hand.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
+            var selectedCard = hand.Widgets.Find(widget => widget.Card.Id == card);
+            selectedCard.OnPointerClick(null);
+            Assert.IsTrue(yakou.Bind("CardInspectorImage", out CardDetailView detail));
+            Assert.IsTrue(detail.Bind("ArtworkImage", out AspectFillImage detailArtwork));
+            Assert.AreSame(Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + selectedCard.Card.DefinitionId),
+                detailArtwork.sprite);
             ActionButton(YakouUiText.Get("ui.yakou.action.summon", YakouUiText.Method("Normal"))).onClick.Invoke();
             ActionButton(YakouUiText.Get("ui.yakou.action.field_slot", 1)).onClick.Invoke();
             yield return Until(() => a.Yakou.Sequence == 2 && !a.Yakou.Busy);
@@ -222,7 +319,8 @@ namespace ProjectC.Tests
                 field.Widgets[0].Card.YakouCountdown);
             Assert.AreEqual(CardLibrary.LoadYakouResources().Find(field.Widgets[0].Card.DefinitionId).Name,
                 CardPresentation.Name(field.Widgets[0].Card));
-            Assert.IsNotNull(field.Widgets[0].ArtworkImage.sprite);
+            Assert.AreSame(Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + field.Widgets[0].Card.DefinitionId),
+                field.Widgets[0].ArtworkImage.sprite);
             Assert.IsTrue(field.Widgets[0].Title.gameObject.activeInHierarchy);
             Assert.IsTrue(yakou.Bind("RejectionReasonText", out TMP_Text battleStatus));
             Assert.AreEqual(YakouUiText.Phase("Main"), screen.PhaseLabel.text);
@@ -409,6 +507,35 @@ namespace ProjectC.Tests
             ActionButton(YakouUiText.Get("ui_battle_confirm_selection"), _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && b.Yakou.State["PendingSelection"] == null);
             Assert.IsTrue(((JArray)b.Yakou.State["Players"][1]["Hand"]).Any(item => (int)item["Id"] == target));
+            _battle.SetActive(false);
+            _opponentBattle.SetActive(false);
+            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/Scenes/BattleScene.unity",
+                new LoadSceneParameters(LoadSceneMode.Additive));
+            var battleScene = SceneManager.GetSceneByPath("Assets/Scenes/BattleScene.unity");
+            Assert.IsTrue(battleScene.IsValid());
+            var sceneBattle = battleScene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<BattlePresenter>(true)).FirstOrDefault();
+            Assert.IsNotNull(sceneBattle);
+            var sceneYakou = sceneBattle.GetComponent<YakouBattlePresenter>();
+            Assert.IsNotNull(sceneYakou);
+            Assert.IsFalse(sceneBattle.enabled);
+            yield return null;
+            Assert.IsTrue(sceneYakou.Bind("YourHandImage", out CardZoneView sceneHand));
+            Assert.IsTrue(sceneHand.Widgets.All(widget => widget.ArtworkImage.sprite ==
+                Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + widget.Card.DefinitionId)));
+            Assert.IsTrue(sceneYakou.Bind("OpponentHandImage", out CardZoneView sceneEnemyHand));
+            Assert.IsTrue(sceneEnemyHand.Widgets.TrueForAll(widget => widget.Hidden && widget.Card == null));
+            Assert.IsTrue(sceneYakou.Bind("OwnFieldImage", out CardZoneView sceneField));
+            var sceneCard = sceneField.Widgets.FirstOrDefault();
+            if (sceneCard != null)
+            {
+                sceneCard.OnPointerClick(null);
+                Assert.IsTrue(sceneYakou.Bind("CardInspectorImage", out CardDetailView sceneDetail));
+                Assert.IsTrue(sceneDetail.Bind("ArtworkImage", out AspectFillImage sceneDetailArt));
+                Assert.AreSame(sceneCard.ArtworkImage.sprite, sceneDetailArt.sprite);
+            }
+            yield return Capture("06-authored-battle-scene");
+            yield return SceneManager.UnloadSceneAsync(battleScene);
             b.Yakou.Leave();
             yield return Until(() => a.Yakou.MatchId == null && b.Yakou.MatchId == null);
         }
