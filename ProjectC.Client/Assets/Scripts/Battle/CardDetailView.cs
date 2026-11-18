@@ -60,7 +60,14 @@ namespace ProjectC.Client
                 _shownDefinitionId = card.DefinitionId;
             }
             Title.text = CardPresentation.Name(card);
-            CardArtProvider.Apply(_artwork, card.Yakou ? 0 : card.DefinitionId);
+            if (card.Yakou)
+            {
+                CardArtProvider.ApplyYakou(_artwork, card.DefinitionId);
+            }
+            else
+            {
+                CardArtProvider.Apply(_artwork, card.DefinitionId);
+            }
             if (_artPlaceholder != null)
             {
                 _artPlaceholder.gameObject.SetActive(_artwork.sprite == null);

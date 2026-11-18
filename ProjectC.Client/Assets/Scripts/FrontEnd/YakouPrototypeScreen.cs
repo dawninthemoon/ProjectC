@@ -43,11 +43,11 @@ namespace ProjectC.Client
             }
             if (!_open)
             {
-                if (GUI.Button(new Rect(Margin, Margin, 220, LineHeight), "Yakou prototype"))
+                if (GUI.Button(new Rect(Margin, Margin, 220, LineHeight), YakouUiText.Get("ui.yakou.dev.entry")))
                 {
                     if (!string.IsNullOrEmpty(app.Network.CurrentMatch) || app.Network.Busy)
                     {
-                        app.ShowPopup("기존 대전 또는 매칭을 먼저 종료하세요.");
+                        app.ShowPopup(YakouUiText.Get("ui.yakou.dev.finish_existing_match"));
                         return;
                     }
                     _session = app.Network.Yakou;
@@ -59,7 +59,7 @@ namespace ProjectC.Client
                     }
                     catch (Exception error)
                     {
-                        app.ShowPopup(error.Message);
+                        app.ShowPopup(YakouUiText.Error(error.Message));
                     }
                 }
                 return;
@@ -72,30 +72,31 @@ namespace ProjectC.Client
             {
                 HideCanvases();
             }
+            _library.Localization.Language = CardPresentation.Library.Localization.Language;
             GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
             GUILayout.BeginArea(new Rect(Margin, Margin, Screen.width - Margin * 2, Screen.height - Margin * 2));
             _scroll = GUILayout.BeginScrollView(_scroll);
-            GUILayout.Label("YAKOU PROTOTYPE  |  Developer server only  |  Server-authoritative");
-            GUILayout.Label("Fixed prototype decks. Share the room ID privately. Resume tokens stay in memory.");
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.intro"));
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.fixed_decks"));
             if (string.IsNullOrEmpty(_session.MatchId) && !_session.Busy
-                && GUILayout.Button("Back to lobby", GUILayout.Height(LineHeight)))
+                && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.back_lobby"), GUILayout.Height(LineHeight)))
             {
                 _open = false;
                 RestoreCanvases();
             }
             if (!app.Network.ConnectionReady)
             {
-                GUILayout.Label("Disconnected: reconnecting through ConnectionScene.");
+                GUILayout.Label(YakouUiText.Get("ui.yakou.dev.reconnecting_connection_scene"));
             }
             else if (string.IsNullOrEmpty(_session.MatchId))
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Create room", GUILayout.Height(LineHeight)))
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.create_room"), GUILayout.Height(LineHeight)))
                 {
                     Try(() => _session.Create());
                 }
                 _room = GUILayout.TextField(_room, 64, GUILayout.Height(LineHeight));
-                if (GUILayout.Button("Join room", GUILayout.Height(LineHeight)))
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.join_room"), GUILayout.Height(LineHeight)))
                 {
                     Try(() => _session.Join(_room.Trim()));
                 }
@@ -107,11 +108,11 @@ namespace ProjectC.Client
             }
             if (!string.IsNullOrEmpty(_error))
             {
-                GUILayout.Label("Client: " + _error);
+                GUILayout.Label(YakouUiText.Get("ui.yakou.dev.client_error", YakouUiText.Error(_error)));
             }
             if (!string.IsNullOrEmpty(_session.Error))
             {
-                GUILayout.Label("Server: " + _session.Error);
+                GUILayout.Label(YakouUiText.Get("ui.yakou.dev.server_error", YakouUiText.Error(_session.Error)));
             }
             GUILayout.EndScrollView();
             GUILayout.EndArea();
@@ -127,31 +128,31 @@ namespace ProjectC.Client
                 _costs.Clear();
                 _blockers.Clear();
             }
-            GUILayout.Label("Room: " + _session.MatchId + "  |  Seat: " + _session.Seat
-                + "  |  Sequence: " + _session.Sequence + "  |  " + (_session.Bound ? "connected" : "disconnected"));
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.room_status", _session.MatchId, _session.Seat,
+                _session.Sequence, YakouUiText.Get(_session.Bound ? "ui.yakou.dev.connected" : "ui.yakou.dev.disconnected")));
             GUILayout.BeginHorizontal();
-            if (_session.Bound && _session.State != null && GUILayout.Button("Enter BattleScene"))
+            if (_session.Bound && _session.State != null && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.enter_battle")))
             {
                 RestoreCanvases();
                 ClientApp.Instance.Navigate("BattleScene");
             }
-            if (!_session.Bound && !_session.Busy && GUILayout.Button("Forget disconnected room"))
+            if (!_session.Bound && !_session.Busy && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.forget_room")))
             {
                 Try(_session.ForgetDisconnectedRoom);
             }
-            if (!_session.Bound && !_session.Busy && GUILayout.Button("Resume room"))
+            if (!_session.Bound && !_session.Busy && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.resume_room")))
             {
                 Try(_session.Resume);
             }
-            if (GUILayout.Button("Copy room ID"))
+            if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.copy_room_id")))
             {
                 GUIUtility.systemCopyBuffer = _session.MatchId;
             }
-            if (_session.Bound && GUILayout.Button("Refresh snapshot"))
+            if (_session.Bound && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.refresh_snapshot")))
             {
                 Try(_session.RequestSnapshot);
             }
-            if (_session.Bound && GUILayout.Button("Leave and close room"))
+            if (_session.Bound && GUILayout.Button(YakouUiText.Get("ui.yakou.action.leave_and_close_room")))
             {
                 Try(_session.Leave);
             }
@@ -159,7 +160,7 @@ namespace ProjectC.Client
             var state = _session.State;
             if (state == null)
             {
-                GUILayout.Label("Waiting for server snapshot.");
+                GUILayout.Label(YakouUiText.Get("ui.yakou.status.wait_snapshot"));
                 return;
             }
             if (_renderedSequence != _session.Sequence)
@@ -168,9 +169,11 @@ namespace ProjectC.Client
                 _costs.Clear();
                 _blockers.Clear();
             }
-            GUILayout.Label("Turn " + (string)state["TurnNumber"] + "  |  Phase " + (string)state["Phase"]
-                + "  |  Active " + (string)state["ActivePlayerId"] + "  |  Priority " + (string)state["PriorityPlayerId"]
-                + "  |  Winner " + (string)state["WinnerPlayerId"]);
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.turn_status", (int)state["TurnNumber"],
+                YakouUiText.Phase((string)state["Phase"]),
+                YakouUiText.Player((int)state["ActivePlayerId"], _session.Seat),
+                YakouUiText.Player((int)state["PriorityPlayerId"], _session.Seat),
+                YakouUiText.Player((int)state["WinnerPlayerId"], _session.Seat)));
             foreach (var player in (JArray)state["Players"])
             {
                 DrawPlayer(player);
@@ -179,9 +182,8 @@ namespace ProjectC.Client
             {
                 int attacker = (int)attack["AttackerId"];
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Raid: attacker " + attacker + " / slot " + (string)attack["Slot"]
-                    + " / blocker " + (string)attack["BlockerId"]);
-                if (GUILayout.Button("Select attacker"))
+                GUILayout.Label(YakouUiText.Get("ui.yakou.dev.raid_status", attacker, (int)attack["Slot"], (int)attack["BlockerId"]));
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.select_attacker")))
                 {
                     _attacker = attacker.ToString();
                     _target = attacker.ToString();
@@ -195,12 +197,12 @@ namespace ProjectC.Client
         private void DrawPlayer(JToken player)
         {
             int id = (int)player["PlayerId"];
-            GUILayout.Label("PLAYER " + id + "  Life " + (string)player["Life"] + "  Ki " + (string)player["Ki"]
-                + "  Deck " + (string)player["DeckCount"] + "  Hand " + (string)player["HandCount"]);
-            DrawCards("Hand", player["Hand"] as JArray);
-            DrawCards("Field slots", player["FieldSlots"] as JArray);
-            DrawCards("Graveyard", player["Graveyard"] as JArray);
-            DrawCards("Exile", player["Exile"] as JArray);
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.player_status", YakouUiText.Player(id, _session.Seat),
+                (int)player["Life"], (int)player["Ki"], (int)player["DeckCount"], (int)player["HandCount"]));
+            DrawCards("ui_battle_hand", player["Hand"] as JArray);
+            DrawCards("ui_battle_field", player["FieldSlots"] as JArray);
+            DrawCards("ui_battle_graveyard", player["Graveyard"] as JArray);
+            DrawCards("ui_battle_exile", player["Exile"] as JArray);
         }
 
         private void DrawCards(string title, JArray cards)
@@ -209,37 +211,40 @@ namespace ProjectC.Client
             {
                 return;
             }
-            GUILayout.Label(title + " (choose source, target or cost):");
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.zone_choices", YakouUiText.Get(title)));
             for (int index = 0; index < cards.Count; ++index)
             {
                 var card = cards[index];
                 if (card.Type == JTokenType.Null)
                 {
-                    if (title == "Field slots")
+                    if (title == "ui_battle_field")
                     {
-                        GUILayout.Label("Slot " + index + ": empty");
+                        GUILayout.Label(YakouUiText.Get("ui.yakou.dev.empty_slot", index + 1));
                     }
                     continue;
                 }
                 int id = (int)card["Id"];
                 int definition = (int)card["DefinitionId"];
                 var info = _library.Find(definition);
-                string prefix = title == "Field slots" ? "Slot " + index + " " : "";
+                string prefix = title == "ui_battle_field"
+                    ? YakouUiText.Get("ui.yakou.action.field_slot", index + 1) + " · " : "";
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(prefix + (info?.Name ?? ("#" + definition)) + " [" + id + "] ATK "
-                    + (string)card["Attack"] + " HP " + (string)card["Hp"]
-                    + (card["AttackCounter"] != null ? " countdown " + (string)card["AttackCounter"] : ""), GUILayout.MinWidth(240));
-                if (GUILayout.Button("Source"))
+                string countdown = card["AttackCounter"] != null
+                    ? YakouUiText.Get("ui.yakou.dev.countdown", (int)card["AttackCounter"]) : "";
+                GUILayout.Label(prefix + YakouUiText.Get("ui.yakou.dev.card_stats", info?.Name ?? ("#" + definition),
+                    id, (int?)card["Attack"] ?? 0, (int?)card["Hp"] ?? 0, countdown), GUILayout.MinWidth(240));
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.source")))
                 {
                     _card = id.ToString();
                 }
-                if (GUILayout.Button("Target"))
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.target")))
                 {
                     _target = id.ToString();
                     _blocker = id.ToString();
                     _replacement = id.ToString();
                 }
-                if (GUILayout.Button(_costs.Contains(id) ? "Cost ✓" : "Cost"))
+                if (GUILayout.Button(YakouUiText.Get(_costs.Contains(id)
+                    ? "ui.yakou.dev.selected_cost" : "ui.yakou.dev.cost")))
                 {
                     if (!_costs.Add(id))
                     {
@@ -252,7 +257,8 @@ namespace ProjectC.Client
                     GUILayout.Label(info.Description);
                     foreach (int form in info.AllowedManifestations)
                     {
-                        if (GUILayout.Button("Select manifestation " + (_library.Find(form)?.Name ?? form.ToString()) + " (" + form + ")"))
+                        if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.manifest_form",
+                            _library.Find(form)?.Name ?? form.ToString())))
                         {
                             _definition = form.ToString();
                         }
@@ -267,20 +273,22 @@ namespace ProjectC.Client
             {
                 return;
             }
-            GUILayout.Label("Effect selection: " + (string)selection["Status"] + " / " + (string)selection["Operation"]);
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.effect_selection",
+                YakouUiText.SelectionStatus((string)selection["Status"]),
+                YakouUiText.SelectionOperation((string)selection["Operation"])));
             if ((string)selection["Status"] != "Ready")
             {
-                GUILayout.Label("This server effect cannot currently be selected or resolved.");
+                GUILayout.Label(YakouUiText.Get("ui.yakou.status.unsupported_effect"));
                 return;
             }
-            if ((int?)selection["MinCount"] == 0 && GUILayout.Button("Skip optional effect"))
+            if ((int?)selection["MinCount"] == 0 && GUILayout.Button(YakouUiText.Get("ui.yakou.action.decline_optional_effect")))
             {
                 Try(() => Send("ChooseEffect", new JObject { ["TargetId"] = 0 }));
             }
             foreach (var candidate in (JArray)selection["Candidates"])
             {
                 int id = (int)candidate;
-                if (GUILayout.Button("Choose effect target " + id))
+                if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.choose_effect_target", id)))
                 {
                     Try(() => Send("ChooseEffect", new JObject { ["TargetId"] = id }));
                 }
@@ -291,59 +299,63 @@ namespace ProjectC.Client
         {
             if (_session.Busy)
             {
-                GUILayout.Label("Waiting for command result and server snapshot.");
-                if (_session.HasPendingCommand && GUILayout.Button("Retry same request"))
+                GUILayout.Label(YakouUiText.Get("ui.yakou.status.command_pending"));
+                if (_session.HasPendingCommand && GUILayout.Button(YakouUiText.Get("ui.yakou.dev.retry_request")))
                 {
                     Try(_session.RetryPending);
                 }
                 return;
             }
-            GUILayout.Label("Select cards above, or enter instance IDs below. The server validates every action.");
-            _card = Field("Source card", _card);
-            _target = Field("Target / attacker", _target);
-            _replacement = Field("Replacement blocker (0 if none)", _replacement);
-            _definition = Field("Manifest definition ID", _definition);
-            _slot = Field("Summon slot 0–4", _slot);
-            GUILayout.Label("Selected costs: " + string.Join(", ", _costs.OrderBy(value => value)));
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.id_hint"));
+            _card = Field(YakouUiText.Get("ui.yakou.dev.source_card"), _card);
+            _target = Field(YakouUiText.Get("ui.yakou.dev.target_attacker"), _target);
+            _replacement = Field(YakouUiText.Get("ui.yakou.dev.replacement_blocker"), _replacement);
+            _definition = Field(YakouUiText.Get("ui.yakou.dev.manifest_definition"), _definition);
+            _slot = Field(YakouUiText.Get("ui.yakou.dev.summon_slot"), _slot);
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.selected_costs", string.Join(", ", _costs.OrderBy(value => value))));
             var own = ((JArray)state["Players"]).FirstOrDefault(player => (int)player["PlayerId"] == _session.Seat);
             foreach (var choice in own?["SummonChoices"] as JArray ?? new JArray())
             {
                 int card = (int)choice["CardId"];
                 string method = (string)choice["Method"];
-                string label = "Summon " + card + " / " + method + " / choose " + (string)choice["RequiredCount"]
-                    + " from " + choice["SourceZone"] + " " + choice["Candidates"].ToString(Newtonsoft.Json.Formatting.None)
-                    + " / slots " + choice["AvailableSlots"].ToString(Newtonsoft.Json.Formatting.None);
+                int required = (int)choice["RequiredCount"];
+                string label = required == 0
+                    ? YakouUiText.Get("ui.yakou.action.summon", YakouUiText.Method(method)) + " #" + card
+                    : YakouUiText.Get("ui.yakou.dev.summon_choice", card, YakouUiText.Method(method),
+                        required, YakouUiText.SourceZone((string)choice["SourceZone"]),
+                        choice["AvailableSlots"].ToString(Newtonsoft.Json.Formatting.None));
                 if (GUILayout.Button(label))
                 {
                     Try(() => Send("Summon", new JObject { ["CardId"] = card, ["Method"] = method,
                         ["Materials"] = CostArray(), ["Slot"] = Number(_slot) }));
                 }
             }
-            ActionButton("Start turn", "StartTurn");
-            ActionButton("Begin raid", "BeginRaid");
-            _attacker = Field("Attacker ID to assign", _attacker);
-            _blocker = Field("Blocker ID to assign", _blocker);
-            if (GUILayout.Button("Add / replace blocker assignment"))
+            ActionButton(YakouUiText.Get("ui.yakou.action.start_turn"), "StartTurn");
+            ActionButton(YakouUiText.Get("ui.yakou.action.begin_raid"), "BeginRaid");
+            _attacker = Field(YakouUiText.Get("ui.yakou.dev.attacker_id"), _attacker);
+            _blocker = Field(YakouUiText.Get("ui.yakou.dev.blocker_id"), _blocker);
+            if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.add_blocker")))
             {
                 Try(() => _blockers[Number(_attacker)] = Number(_blocker));
             }
-            GUILayout.Label("Assignments: " + string.Join(", ", _blockers.Select(pair => pair.Key + " → " + pair.Value)));
-            if (GUILayout.Button("Assign blockers (empty allows unblocked raid)"))
+            GUILayout.Label(YakouUiText.Get("ui.yakou.dev.assignments",
+                string.Join(", ", _blockers.Select(pair => pair.Key + " → " + pair.Value))));
+            if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.assign_blockers")))
             {
                 var assignments = new JArray(_blockers.Select(pair => new JObject { ["Attacker"] = pair.Key, ["Blocker"] = pair.Value }));
                 Try(() => Send("AssignBlockers", new JObject { ["Blockers"] = assignments }));
             }
-            ActionButton("Pass raid response", "PassRaidResponse");
-            ActionButton("Resolve raid", "ResolveRaid");
-            ActionButton("Pass spell response", "PassSpellResponse");
-            Button("Activate main spell", () => Send("ActivateMainSpell", new JObject { ["CardId"] = Number(_card) }));
-            Button("Open spell response", () => Send("BeginSpellResponse", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
-            Button("Respond with negation", () => Send("RespondWithNegation", new JObject { ["CardId"] = Number(_card), ["Costs"] = CostArray() }));
-            Button("Raid shield", () => Send("RespondWithRaidShield", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
-            Button("Raid tactic", () => Send("RespondWithRaidTactic", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target), ["ReplacementBlocker"] = Number(_replacement), ["Costs"] = CostArray() }));
-            Button("Manifest", () => Send("Manifest", new JObject { ["CardId"] = Number(_card), ["DefinitionId"] = Number(_definition) }));
-            Button("Postpone", () => Send("Postpone", new JObject { ["CardId"] = Number(_card) }));
-            Button("Redraw selected costs", () => Send("Redraw", new JObject { ["Cards"] = CostArray() }));
+            ActionButton(YakouUiText.Get("ui.yakou.action.pass_raid_response"), "PassRaidResponse");
+            ActionButton(YakouUiText.Get("ui.yakou.action.resolve_raid"), "ResolveRaid");
+            ActionButton(YakouUiText.Get("ui.yakou.action.pass_spell_response"), "PassSpellResponse");
+            Button(YakouUiText.Get("ui.yakou.dev.activate_main_spell"), () => Send("ActivateMainSpell", new JObject { ["CardId"] = Number(_card) }));
+            Button(YakouUiText.Get("ui.yakou.dev.open_spell_response"), () => Send("BeginSpellResponse", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
+            Button(YakouUiText.Get("ui.yakou.action.response_negate"), () => Send("RespondWithNegation", new JObject { ["CardId"] = Number(_card), ["Costs"] = CostArray() }));
+            Button(YakouUiText.Get("ui.yakou.action.response_shield"), () => Send("RespondWithRaidShield", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
+            Button(YakouUiText.Get("ui.yakou.action.response_tactic"), () => Send("RespondWithRaidTactic", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target), ["ReplacementBlocker"] = Number(_replacement), ["Costs"] = CostArray() }));
+            Button(YakouUiText.Get("ui.yakou.dev.manifest_selected"), () => Send("Manifest", new JObject { ["CardId"] = Number(_card), ["DefinitionId"] = Number(_definition) }));
+            Button(YakouUiText.Get("ui.yakou.action.postpone"), () => Send("Postpone", new JObject { ["CardId"] = Number(_card) }));
+            Button(YakouUiText.Get("ui.yakou.dev.redraw_selected"), () => Send("Redraw", new JObject { ["Cards"] = CostArray() }));
         }
 
         private static string Field(string label, string value)
@@ -359,7 +371,7 @@ namespace ProjectC.Client
         {
             if (!int.TryParse(value, out int result) || result < 0)
             {
-                throw new ArgumentException("Enter a non-negative numeric ID.");
+                throw new ArgumentException("InvalidNumericId");
             }
             return result;
         }
@@ -387,7 +399,7 @@ namespace ProjectC.Client
             }
             catch (Exception error)
             {
-                _error = error.Message;
+                _error = error.Message == "InvalidNumericId" ? "InvalidNumericId" : error.Message;
             }
         }
         private void HideCanvases()

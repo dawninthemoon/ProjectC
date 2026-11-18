@@ -9,8 +9,17 @@ namespace ProjectC.Client
         static CardLibrary _fallback;
         static CardLibrary _yakou;
         public static CardLibrary Library => ClientApp.Instance?.Library ?? (_fallback ??= CardLibrary.LoadResources());
+        public static CardLibrary YakouLibrary
+        {
+            get
+            {
+                var library = _yakou ??= CardLibrary.LoadYakouResources();
+                library.Localization.Language = Library.Localization.Language;
+                return library;
+            }
+        }
         public static CardLibrary LibraryFor(CardView card) => card != null && card.Yakou
-            ? (_yakou ??= CardLibrary.LoadYakouResources()) : Library;
+            ? YakouLibrary : Library;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
