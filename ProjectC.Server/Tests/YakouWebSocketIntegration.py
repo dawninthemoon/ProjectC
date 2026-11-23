@@ -170,13 +170,30 @@ def run_deck_selection(port):
             assert right["State"]["Players"][0]["Hand"] == []
             assert "DeckId" not in left["State"]["Players"][1]
             assert "DeckId" not in right["State"]["Players"][0]
+            state = left["State"]
+            for step in range(128):
+                if state["Phase"] == "Finished":
+                    break
+                assert state["Phase"] in ("TurnStart", "Main")
+                seat = state["ActivePlayerId"]
+                acting = a if seat == 1 else b
+                action = "StartTurn" if state["Phase"] == "TurnStart" else "BeginRaid"
+                result = command(acting, match, f"deck-game-{step}", {"Type": action})
+                assert result["Payload"]["Accepted"] is True
+                left = expect(a, "YakouSnapshot")["Payload"]
+                right = expect(b, "YakouSnapshot")["Payload"]
+                assert left["Sequence"] == right["Sequence"]
+                assert left["State"]["Players"][1]["Hand"] == []
+                assert right["State"]["Players"][0]["Hand"] == []
+                state = left["State"]
+            assert state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
             b.send("YakouLeave", MatchId=match)
             expect(a, "YakouClosed")
             expect(b, "YakouClosed")
         finally:
             a.close()
             b.close()
-    print("Real Yakou websocket: six Alpha 01 deck pairings and private snapshots passed")
+    print("Real Yakou websocket: six Alpha 01 deck pairings, private snapshots and deck-out matches passed")
 
 
 if __name__ == "__main__":
