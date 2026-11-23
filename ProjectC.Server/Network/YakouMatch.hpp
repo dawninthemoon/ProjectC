@@ -67,6 +67,7 @@ struct YakouPendingEffect
     std::string Trigger;
     // Immutable event context; the source may have left the field already.
     int RelatedCard = 0;
+    std::vector<int> PaidCostCards;
 };
 
 // Server-derived selection metadata. Candidates are instance IDs, never client-authored.
@@ -128,6 +129,7 @@ public:
     // Unsupported operations throw without changing match state or the queue.
     [[nodiscard]] YakouEffectChoice PendingEffectChoices(int player) const;
     void ResolvePendingEffect(int player, int selectedTarget = 0);
+    void ResolvePendingEffect(int player, std::vector<int> const& selectedTargets);
     // Drain a bounded prefix of deterministic triggers; stop on the first
     // controller-selected target, never silently choose on a player's behalf.
     // The entire batch is transactional. Server-private prototype API.
@@ -141,6 +143,8 @@ public:
         int player, int handInstance, int maxEffects = 64, std::vector<int> const& costs = {});
     [[nodiscard]] int ResolveSelectedEffectAndRunAutomaticTriggers(
         int player, int selectedTarget = 0, int maxEffects = 64);
+    [[nodiscard]] int ResolveSelectedEffectsAndRunAutomaticTriggers(
+        int player, std::vector<int> const& selectedTargets, int maxEffects = 64);
     [[nodiscard]] int ManifestAndRunAutomaticTriggers(
         int player, int fieldInstance, int manifestationDefinition,
         int maxEffects = 64);
@@ -197,7 +201,7 @@ private:
     void RequireMain(int player) const;
     void TurnOver();
     void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
-                 int relatedCard = 0);
+                 int relatedCard = 0, std::vector<int> paidCostCards = {});
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 

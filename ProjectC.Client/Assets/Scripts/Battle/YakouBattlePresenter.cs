@@ -36,6 +36,7 @@ namespace ProjectC.Client
         private JObject _responseOption;
         private int _responseCard, _responseTarget, _responseReplacement;
         private int _pendingTarget;
+        private readonly HashSet<int> _pendingTargets = new HashSet<int>();
         private readonly HashSet<int> _responseCosts = new HashSet<int>();
         private RectTransform _lineRoot;
         private readonly Dictionary<int, DefenseBezierGraphic> _defenseLines = new Dictionary<int, DefenseBezierGraphic>();
@@ -233,6 +234,7 @@ namespace ProjectC.Client
                 _responseSelection = null;
                 _responseCosts.Clear();
                 _pendingTarget = 0;
+                _pendingTargets.Clear();
                 _feedbackMessage = null;
                 _actions.gameObject.SetActive(false);
             }
@@ -248,6 +250,7 @@ namespace ProjectC.Client
                 _responseSelection = null;
                 _responseCosts.Clear();
                 _pendingTarget = 0;
+                _pendingTargets.Clear();
                 _actions.gameObject.SetActive(false);
                 foreach (var zone in new[] { _hand, _ownField, _enemyField, _enemyHand, _ownGrave, _enemyGrave })
                 {
@@ -492,7 +495,21 @@ namespace ProjectC.Client
             {
                 if (((JArray)pending["Candidates"]).Values<int>().Contains(id))
                 {
-                    _pendingTarget = id;
+                    if ((int?)pending["MaxCount"] > 1)
+                    {
+                        if (!_pendingTargets.Add(id))
+                        {
+                            _pendingTargets.Remove(id);
+                        }
+                        if (_pendingTargets.Count > (int)pending["MaxCount"])
+                        {
+                            _pendingTargets.Remove(id);
+                        }
+                    }
+                    else
+                    {
+                        _pendingTarget = id;
+                    }
                     _actions.gameObject.SetActive(false);
                     ShowFeedback(YakouUiText.Get("ui.yakou.feedback.target_selected"));
                     UpdateHints();
@@ -734,12 +751,18 @@ namespace ProjectC.Client
             var pending = _state["PendingSelection"] as JObject;
             if (pending != null && (string)pending["Status"] == "Ready")
             {
-                if (_pendingTarget != 0)
+                bool multiple = (int?)pending["MaxCount"] > 1;
+                bool ready = multiple ? _pendingTargets.Count >= (int)pending["MinCount"] &&
+                    _pendingTargets.Count <= (int)pending["MaxCount"] : _pendingTarget != 0;
+                if (ready)
                 {
-                    options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"), () => Send("ChooseEffect", new JObject { ["TargetId"] = _pendingTarget })));
+                    options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"), () => Send("ChooseEffect",
+                        multiple ? new JObject { ["TargetIds"] = new JArray(_pendingTargets.OrderBy(id => id)) }
+                                 : new JObject { ["TargetId"] = _pendingTarget })));
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.reselect_effect"), () =>
                     {
                         _pendingTarget = 0;
+                        _pendingTargets.Clear();
                         _actions.gameObject.SetActive(false);
                         UpdateHints();
                     }));
@@ -813,7 +836,8 @@ namespace ProjectC.Client
                 foreach (var widget in zone.Widgets)
                 {
                     int id = widget.Card?.Id ?? 0;
-                    bool chosen = id == _pendingTarget || _materials.Contains(id) || _responseCosts.Contains(id)
+                    bool chosen = id == _pendingTarget || _pendingTargets.Contains(id) ||
+                        _materials.Contains(id) || _responseCosts.Contains(id)
                         || (_responseOption != null && (id == _responseTarget || id == _responseReplacement));
                     widget.SetSelected(chosen);
                     widget.SetHint(candidates == null ? (responseCards.Contains(id) ? TargetHint.Available : TargetHint.None)

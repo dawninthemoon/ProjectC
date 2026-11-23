@@ -27,8 +27,12 @@ int main()
     {
         auto const data = std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype";
         auto prototype = YakouPrototype::Load(data);
-        Check(prototype.Cards["Cards"].size() == 34, "Expected 34 prototype definitions");
-        Check(prototype.Decks["Decks"][0]["Cards"].size() == 30, "Expected 30 deck copies");
+        Check(prototype.Cards["Cards"].size() == 55, "Expected 55 Alpha 01 definitions");
+        Check(prototype.Decks["Decks"].size() == 4, "Expected four Alpha 01 decks");
+        for (auto const& deck : prototype.Decks["Decks"])
+        {
+            Check(deck["Cards"].size() == 30, "Expected 30 deck copies");
+        }
         Check(!prototype.Localize.empty() && !prototype.Config.empty(),
               "Expected prototype text/config");
         Check(!prototype.RuntimeReady && !prototype.UnsupportedRuntimeEffects.empty(),

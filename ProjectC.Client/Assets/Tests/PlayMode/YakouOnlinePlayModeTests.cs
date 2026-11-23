@@ -39,7 +39,7 @@ namespace ProjectC.Tests
             {
                 var artwork = imageObject.GetComponent<Image>();
                 var definitions = CardLibrary.LoadYakouResources().Cards.ToArray();
-                Assert.AreEqual(34, definitions.Length);
+                Assert.AreEqual(55, definitions.Length);
                 foreach (var definition in definitions)
                 {
                     var sprite = Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + definition.Id);
@@ -183,6 +183,80 @@ namespace ProjectC.Tests
             {
                 Directory.Delete(_fixtureDirectory, true);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator DifferentAlphaDecksRenderOnlyTheirOwnCards()
+        {
+            string executable = null;
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; ++i)
+            {
+                if (args[i] == "-projectcServerPath")
+                {
+                    executable = args[i + 1];
+                }
+            }
+            Assert.IsTrue(File.Exists(executable), "Pass -projectcServerPath");
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            string data = Path.GetFullPath(Path.Combine(Application.dataPath, "../../ProjectC.Server/Data"));
+            _server = Process.Start(new ProcessStartInfo(executable,
+                "--port " + port + " --yakou-prototype on --data \"" + data + "\"")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+            });
+            var startup = _server.StandardOutput.ReadLineAsync();
+            yield return Until(() => startup.IsCompleted);
+            StringAssert.Contains("listening", startup.Result);
+            _first = new GameObject("Alpha raid client", typeof(MultiplayerDebugScreen));
+            var app = _first.AddComponent<ClientApp>();
+            typeof(ClientApp).GetProperty("Environment").GetSetMethod(true)
+                .Invoke(app, new object[] { ServerEnvironment.Local });
+            app.enabled = false;
+            _second = new GameObject("Alpha guard client", typeof(MultiplayerDebugScreen));
+            var a = _first.GetComponent<MultiplayerDebugScreen>();
+            var b = _second.GetComponent<MultiplayerDebugScreen>();
+            string address = "ws://127.0.0.1:" + port;
+            a.ConnectTo(address);
+            b.ConnectTo(address);
+            yield return Until(() => a.ConnectionReady && b.ConnectionReady);
+            a.Yakou.Create("YakouAlphaRaid");
+            yield return Until(() => a.Yakou.State != null);
+            b.Yakou.Join(a.Yakou.MatchId, "YakouAlphaGuard");
+            yield return Until(() => b.Yakou.State != null);
+            Assert.AreEqual("YakouAlphaRaid", a.Yakou.SelectedDeckId);
+            Assert.AreEqual("YakouAlphaGuard", b.Yakou.SelectedDeckId);
+            Assert.AreEqual(5, ((JArray)a.Yakou.State["Players"][0]["Hand"]).Count);
+            Assert.AreEqual(0, ((JArray)a.Yakou.State["Players"][1]["Hand"]).Count);
+            Assert.AreEqual(0, ((JArray)b.Yakou.State["Players"][0]["Hand"]).Count);
+            Assert.AreEqual(5, ((JArray)b.Yakou.State["Players"][1]["Hand"]).Count);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab");
+            Assert.IsNotNull(prefab);
+            _battle = Object.Instantiate(prefab);
+            yield return null;
+            Assert.IsTrue(_battle.GetComponent<YakouBattlePresenter>().Bind("YourHandImage", out CardZoneView raidHand));
+            Assert.IsTrue(_battle.GetComponent<YakouBattlePresenter>().Bind("OpponentHandImage", out CardZoneView raidHidden));
+            Assert.IsTrue(raidHand.Widgets.All(widget => widget.ArtworkImage.sprite ==
+                Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + widget.Card.DefinitionId)));
+            Assert.IsTrue(raidHidden.Widgets.All(widget => widget.Hidden && widget.Card == null));
+            raidHand.Widgets[0].OnPointerClick(null);
+            yield return Capture("08-alpha-raid-hand-inspector");
+            typeof(ClientApp).GetProperty("Network").GetSetMethod(true).Invoke(app, new object[] { b });
+            _battle.SetActive(false);
+            _opponentBattle = Object.Instantiate(prefab);
+            yield return null;
+            Assert.IsTrue(_opponentBattle.GetComponent<YakouBattlePresenter>().Bind("YourHandImage", out CardZoneView guardHand));
+            Assert.IsTrue(_opponentBattle.GetComponent<YakouBattlePresenter>().Bind("OpponentHandImage", out CardZoneView guardHidden));
+            Assert.IsTrue(guardHand.Widgets.All(widget => widget.ArtworkImage.sprite ==
+                Resources.Load<Sprite>("YakouCardSprite/CardSprite_" + widget.Card.DefinitionId)));
+            Assert.IsTrue(guardHidden.Widgets.All(widget => widget.Hidden && widget.Card == null));
+            guardHand.Widgets[0].OnPointerClick(null);
+            yield return Capture("09-alpha-guard-hand-inspector");
         }
 
         [UnityTest]

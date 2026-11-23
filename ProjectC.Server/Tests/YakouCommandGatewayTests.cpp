@@ -28,6 +28,19 @@ std::vector<int> OrderedDeck(YakouPrototype const& proto, std::vector<int> openi
     opening.insert(opening.end(), deck.begin(), deck.end());
     return opening;
 }
+std::vector<int> OrderedSampleDeck(YakouPrototype const& proto, std::size_t index,
+                                   std::vector<int> opening)
+{
+    auto deck = proto.Decks.at("Decks").at(index).at("Cards").get<std::vector<int>>();
+    for (int id : opening)
+    {
+        auto it = std::find(deck.begin(), deck.end(), id);
+        Check(it != deck.end(), "Required sample card is missing");
+        deck.erase(it);
+    }
+    opening.insert(opening.end(), deck.begin(), deck.end());
+    return opening;
+}
 
 YakouCommandGateway NewGateway(YakouPrototype const& proto)
 {
@@ -42,6 +55,46 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        {
+            YakouCommandGateway alpha(proto, 1,
+                {OrderedSampleDeck(proto, 2, {4008, 4012, 4009, 4013}),
+                 OrderedSampleDeck(proto, 0, {})});
+            int const first = alpha.Match().Player(1).Hand[0];
+            int const spell = alpha.Match().Player(1).Hand[1];
+            int const second = alpha.Match().Player(1).Hand[2];
+            int const cost = alpha.Match().Player(1).Hand[3];
+            auto run = [&](int seat, Json command) {
+                Check(alpha.Execute(seat, command).at("Accepted") == true,
+                      "Expected Alpha 01 wire command to succeed");
+            };
+            run(1, {{"Type", "StartTurn"}});
+            run(1, {{"Type", "Summon"}, {"CardId", first}, {"Method", "Normal"},
+                    {"Materials", Json::array()}, {"Slot", 0}});
+            run(1, {{"Type", "BeginRaid"}});
+            run(2, {{"Type", "StartTurn"}});
+            run(2, {{"Type", "BeginRaid"}});
+            run(1, {{"Type", "StartTurn"}});
+            run(1, {{"Type", "Summon"}, {"CardId", second}, {"Method", "Normal"},
+                    {"Materials", Json::array()}, {"Slot", 1}});
+            run(1, {{"Type", "ActivateMainSpell"}, {"CardId", spell},
+                    {"Costs", Json::array({cost})}});
+            auto const before = alpha.Match().ServerStateHash();
+            auto rejected = alpha.Execute(1, {{"Type", "ChooseEffect"},
+                {"TargetIds", Json::array({first, first})}});
+            Check(rejected.at("Accepted") == false &&
+                      alpha.Match().ServerStateHash() == before,
+                  "Duplicate multi-target wire command must reject atomically");
+            rejected = alpha.Execute(2, {{"Type", "ChooseEffect"},
+                {"TargetIds", Json::array({first, second})}});
+            Check(rejected.at("Accepted") == false &&
+                      alpha.Match().ServerStateHash() == before,
+                  "Opponent cannot submit private multi-target choice");
+            run(1, {{"Type", "ChooseEffect"},
+                    {"TargetIds", Json::array({first, second})}});
+            Check(alpha.Match().Player(1).Field[0]->Countdown == 0 &&
+                      alpha.Match().Player(1).Field[1]->Countdown == 0,
+                  "Two-target wire choice must update both selected units");
+        }
         auto gateway = NewGateway(proto);
         {
             YakouCommandGateway paid(proto, 1,

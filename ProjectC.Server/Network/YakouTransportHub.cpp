@@ -13,6 +13,8 @@ namespace
 {
 constexpr auto ResumeRetryWindow = std::chrono::seconds(30);
 constexpr std::size_t ResumeRetryRequestIdLength = 32;
+constexpr std::size_t MaximumYakouDeckIdLength = 64;
+constexpr char DefaultYakouDeckId[] = "HyakkiSampleV02";
 bool IsResumeRetryId(std::string const& id)
 {
     return id.size() == ResumeRetryRequestIdLength &&
@@ -21,12 +23,31 @@ bool IsResumeRetryId(std::string const& id)
                return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
            });
 }
-std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog)
+Json const* FindDeck(YakouPrototype const& catalog, std::string const& id)
 {
-    auto const cards = catalog.Decks.at("Decks").at(0).at("Cards").get<std::vector<int>>();
-    if (cards.size() != 30)
-        throw std::runtime_error("Yakou prototype requires authored 30-card decks");
-    return {cards, cards};
+    for (auto const& deck : catalog.Decks.at("Decks"))
+    {
+        if (deck.at("Id") == id)
+        {
+            return &deck;
+        }
+    }
+    return nullptr;
+}
+std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog,
+                                      std::array<std::string, 2> const& ids)
+{
+    std::array<std::vector<int>, 2> result;
+    for (int seat = 0; seat < 2; ++seat)
+    {
+        auto const* deck = FindDeck(catalog, ids[seat]);
+        if (deck == nullptr)
+        {
+            throw std::invalid_argument("Unknown Yakou deck ID");
+        }
+        result[seat] = deck->at("Cards").get<std::vector<int>>();
+    }
+    return result;
 }
 bool IsYakouType(std::string const& name)
 {
@@ -49,7 +70,7 @@ YakouTransportHub::YakouTransportHub(std::string const& dataDirectory,
     : catalog_(YakouPrototype::Load(std::filesystem::path(dataDirectory) / "YakouPrototype")),
       maxRooms_(maxRooms)
 {
-    (void)Decks(catalog_);
+    (void)Decks(catalog_, {DefaultYakouDeckId, DefaultYakouDeckId});
 }
 
 void YakouTransportHub::SnapshotBoth(std::string const& id, Room const& room,
@@ -60,7 +81,8 @@ void YakouTransportHub::SnapshotBoth(std::string const& id, Room const& room,
         auto client = room.Clients[seat - 1].lock();
         if (client && client->Connected && client->YakouMatchId == id)
             Reply(client, "YakouSnapshot", requestId, id,
-                  {{"Seat", seat}, {"Sequence", room.Session->Sequence()},
+                  {{"Seat", seat}, {"DeckId", room.DeckIds[seat - 1]},
+                   {"Sequence", room.Session->Sequence()},
                    {"State", room.Session->Snapshot(client->YakouConnectionKey)}});
     }
 }
@@ -99,7 +121,7 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
     }
     if (type == "YakouCreate")
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId"});
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "DeckId"});
         if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
             client->ApiPending)
         {
@@ -111,9 +133,17 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
             reject("MatchLimit");
             return;
         }
+        std::string const deckId = input.contains("DeckId")
+            ? String(input, "DeckId", MaximumYakouDeckIdLength) : DefaultYakouDeckId;
+        if (FindDeck(catalog_, deckId) == nullptr)
+        {
+            reject("InvalidDeckId");
+            return;
+        }
         std::string const id = "Y" + Token().substr(0, 24);
         Room room;
-        room.Session = std::make_unique<YakouSession>(catalog_, 1, Decks(catalog_));
+        room.DeckIds = {deckId, DefaultYakouDeckId};
+        room.Session = std::make_unique<YakouSession>(catalog_, 1, Decks(catalog_, room.DeckIds));
         room.Tokens[0] = Token();
         client->YakouMatchId = id;
         client->YakouConnectionKey = Token();
@@ -122,13 +152,14 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         auto [it, inserted] = rooms_.emplace(id, std::move(room));
         if (!inserted) throw std::runtime_error("Duplicate Yakou room ID");
         Reply(client, "YakouCreated", requestId, id,
-              {{"Seat", 1}, {"ResumeToken", it->second.Tokens[0]}});
+              {{"Seat", 1}, {"DeckId", deckId},
+               {"ResumeToken", it->second.Tokens[0]}});
         SnapshotBoth(id, it->second);
         return;
     }
     if (type == "YakouJoin")
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId"});
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "DeckId"});
         if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
             client->ApiPending)
         {
@@ -140,6 +171,21 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         if (found == rooms_.end()) { reject("MatchNotFound"); return; }
         auto& room = found->second;
         if (room.Joined) { reject("MatchFull"); return; }
+        std::string const deckId = input.contains("DeckId")
+            ? String(input, "DeckId", MaximumYakouDeckIdLength) : DefaultYakouDeckId;
+        if (FindDeck(catalog_, deckId) == nullptr)
+        {
+            reject("InvalidDeckId");
+            return;
+        }
+        room.DeckIds[1] = deckId;
+        // Before the second seat joins, gameplay commands are rejected. Rebuild
+        // the unopened match with both authoritative decks, then restore seat 1.
+        room.Session = std::make_unique<YakouSession>(catalog_, 1, Decks(catalog_, room.DeckIds));
+        if (auto first = room.Clients[0].lock(); first && !first->YakouConnectionKey.empty())
+        {
+            room.Session->Bind(1, first->YakouConnectionKey);
+        }
         room.Tokens[1] = Token();
         client->YakouMatchId = id;
         client->YakouConnectionKey = Token();
@@ -148,7 +194,8 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         room.Joined = true;
         room.LastActivity = Clock::now();
         Reply(client, "YakouJoined", requestId, id,
-              {{"Seat", 2}, {"ResumeToken", room.Tokens[1]}});
+              {{"Seat", 2}, {"DeckId", deckId},
+               {"ResumeToken", room.Tokens[1]}});
         SnapshotBoth(id, room);
         return;
     }
@@ -211,7 +258,8 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         }
         room.LastActivity = Clock::now();
         Reply(client, "YakouResumed", requestId, id,
-              {{"Seat", seat}, {"ResumeToken", room.Tokens[seat - 1]}});
+              {{"Seat", seat}, {"DeckId", room.DeckIds[seat - 1]},
+               {"ResumeToken", room.Tokens[seat - 1]}});
         SnapshotBoth(id, room);
         return;
     }

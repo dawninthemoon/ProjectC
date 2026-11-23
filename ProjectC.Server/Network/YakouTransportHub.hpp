@@ -29,6 +29,7 @@ private:
         std::unique_ptr<YakouSession> Session;
         std::array<std::weak_ptr<ClientSession>, 2> Clients;
         std::array<std::string, 2> Tokens;
+        std::array<std::string, 2> DeckIds;
         std::array<std::string, 2> PreviousTokens;
         std::array<std::string, 2> ResumeRequests;
         std::array<Clock::time_point, 2> ResumeRetryUntil;

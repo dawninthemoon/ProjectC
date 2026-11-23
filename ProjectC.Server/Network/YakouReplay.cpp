@@ -64,8 +64,16 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
             command.Player, command.CardId, command.MaxEffects, command.Cards);
         break;
     case YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers:
-        (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(
-            command.Player, command.TargetId, command.MaxEffects);
+        if (command.Cards.empty())
+        {
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(
+                command.Player, command.TargetId, command.MaxEffects);
+        }
+        else
+        {
+            (void)match.ResolveSelectedEffectsAndRunAutomaticTriggers(
+                command.Player, command.Cards, command.MaxEffects);
+        }
         break;
     case YakouReplayOperation::ManifestAndRunAutomaticTriggers:
         (void)match.ManifestAndRunAutomaticTriggers(

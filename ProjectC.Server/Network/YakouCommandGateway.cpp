@@ -74,8 +74,19 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "ChooseEffect")
     {
-        Fields(request, {"Type", "TargetId"});
-        (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(seat, Id(request, "TargetId"));
+        Fields(request, {"Type", "TargetId", "TargetIds"});
+        if (request.contains("TargetIds"))
+        {
+            if (request.contains("TargetId"))
+            {
+                throw std::invalid_argument("ChooseEffect accepts one target representation");
+            }
+            (void)match.ResolveSelectedEffectsAndRunAutomaticTriggers(seat, Ids(request, "TargetIds"));
+        }
+        else
+        {
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(seat, Id(request, "TargetId"));
+        }
     }
     else if (type == "Manifest")
     {
