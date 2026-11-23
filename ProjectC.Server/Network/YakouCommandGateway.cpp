@@ -74,8 +74,17 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "ChooseEffect")
     {
-        Fields(request, {"Type", "TargetId", "TargetIds"});
-        if (request.contains("TargetIds"))
+        Fields(request, {"Type", "TargetId", "TargetIds", "Slot"});
+        if (request.contains("Slot"))
+        {
+            if (request.contains("TargetIds") || !request.contains("TargetId"))
+            {
+                throw std::invalid_argument("Special summon needs one selected target");
+            }
+            (void)match.ResolveSelectedEffectsAndRunAutomaticTriggers(
+                seat, {Id(request, "TargetId")}, Id(request, "Slot"), AutomaticTriggerBudget);
+        }
+        else if (request.contains("TargetIds"))
         {
             if (request.contains("TargetId"))
             {

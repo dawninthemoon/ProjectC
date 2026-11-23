@@ -88,6 +88,7 @@ struct YakouEffectChoice
     int MinCount = 0;
     int MaxCount = 0;
     std::vector<int> Candidates;
+    std::vector<int> AvailableSlots;
 };
 
 class YakouMatch
@@ -130,6 +131,7 @@ public:
     [[nodiscard]] YakouEffectChoice PendingEffectChoices(int player) const;
     void ResolvePendingEffect(int player, int selectedTarget = 0);
     void ResolvePendingEffect(int player, std::vector<int> const& selectedTargets);
+    void ResolvePendingEffect(int player, std::vector<int> const& selectedTargets, int slot);
     // Drain a bounded prefix of deterministic triggers; stop on the first
     // controller-selected target, never silently choose on a player's behalf.
     // The entire batch is transactional. Server-private prototype API.
@@ -145,6 +147,8 @@ public:
         int player, int selectedTarget = 0, int maxEffects = 64);
     [[nodiscard]] int ResolveSelectedEffectsAndRunAutomaticTriggers(
         int player, std::vector<int> const& selectedTargets, int maxEffects = 64);
+    [[nodiscard]] int ResolveSelectedEffectsAndRunAutomaticTriggers(
+        int player, std::vector<int> const& selectedTargets, int slot, int maxEffects);
     [[nodiscard]] int ManifestAndRunAutomaticTriggers(
         int player, int fieldInstance, int manifestationDefinition,
         int maxEffects = 64);

@@ -112,6 +112,18 @@ void CheckSupportedAction(Json const& action)
                                            "RequiredArchetype", "Optional", "Condition", "ExcludePaidCostCards"}) &&
             (!action.contains("ExcludePaidCostCards") || action.at("ExcludePaidCostCards") == true);
     }
+    else if (operation == "SpecialSummon")
+    {
+        supported = HasOnlyFields(action, {"Operation", "From", "To", "Count", "CardType",
+                                           "RequiredArchetype", "MaxPrintedAttack", "ExcludePaidCostCards"}) &&
+            action.value("From", std::string()) == "FriendlyGraveyard" &&
+            action.value("To", std::string()) == "FriendlyField" &&
+            action.value("Count", 0) == 1 &&
+            action.value("CardType", std::string()) == "Monster" &&
+            action.value("RequiredArchetype", std::string()) == "HyakkiYagyo" &&
+            action.value("MaxPrintedAttack", -1) == 2 &&
+            action.value("ExcludePaidCostCards", false);
+    }
     else if (operation == "LookAndChoose")
     {
         supported = HasOnlyFields(action, {"Operation", "From", "LookCount", "ChooseCount", "ChosenDestination", "RestDestination"});
@@ -311,7 +323,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 for (int instance : player.Hand)
                 {
                     int const definitionId = OriginalId(instance);
-                    if (definitionId != 3012 && definitionId != 3013 && definitionId != 4006 &&
+                    if (definitionId != 2010 && definitionId != 3012 && definitionId != 3013 && definitionId != 4006 &&
                         definitionId != 4012 && definitionId != 4013)
                     {
                         continue;
@@ -477,6 +489,10 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
             choice["MinCount"] = requested.MinCount;
             choice["MaxCount"] = requested.MaxCount;
             choice["Candidates"] = requested.Candidates;
+            if (!requested.AvailableSlots.empty())
+            {
+                choice["AvailableSlots"] = requested.AvailableSlots;
+            }
             // Only the choice owner may see the definitions of cards revealed
             // from a hidden zone. Never include these in the other projection.
             if (requested.SourceZone == "FriendlyDeckTop")
@@ -779,6 +795,34 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
             choice.Candidates.push_back(instance);
         }
     }
+    else if (choice.Operation == "SpecialSummon")
+    {
+        choice.SourceZone = "FriendlyGraveyard";
+        for (int instance : owner.Graveyard)
+        {
+            if (action.value("ExcludePaidCostCards", false) &&
+                Contains(queued.PaidCostCards, instance))
+            {
+                continue;
+            }
+            int const definitionId = OriginalId(instance);
+            auto const candidate = CardDefinition(definitionId);
+            if (candidate.at("Type") == action.at("CardType") &&
+                candidate.at("Attack").get<int>() <= action.at("MaxPrintedAttack").get<int>() &&
+                HasArchetype(definitionId, action.at("RequiredArchetype").get<std::string>()))
+            {
+                choice.Candidates.push_back(instance);
+            }
+        }
+        for (int slot = 0; slot < static_cast<int>(owner.Field.size()); ++slot)
+        {
+            if (!owner.Field[slot])
+            {
+                choice.AvailableSlots.push_back(slot);
+            }
+        }
+        Check(!choice.AvailableSlots.empty(), "No open slot for authored special summon");
+    }
     else
     {
         Check(choice.Operation == "ModifyCountdown" || choice.Operation == "SetCountdown" ||
@@ -819,6 +863,11 @@ void YakouMatch::ResolvePendingEffect(int player, int selectedTarget)
 
 void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& selectedTargets)
 {
+    ResolvePendingEffect(player, selectedTargets, -1);
+}
+
+void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& selectedTargets, int slot)
+{
     Check(player == 1 || player == 2, "Unknown effect controller");
     Check(!pendingEffects_.empty(), "No queued Yakou effect");
     auto const queued = pendingEffects_.front();
@@ -848,6 +897,8 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
         action.value("Target", std::string()) == "DistinctFriendlyMonsters";
     Check(distinct || selectedTargets.size() <= 1, "Effect accepts only one target");
     int const selectedTarget = selectedTargets.empty() ? 0 : selectedTargets.front();
+    Check(operation == "SpecialSummon" || slot == -1,
+          "Only a special summon may choose a field slot");
 
     auto const usage = std::make_tuple(turn_, player, card.at("NameKey").get<std::string>(), queued.EffectId);
     int const limit = definition->value("PerTurnLimit", 0);
@@ -944,6 +995,34 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
             owner.Hand.push_back(selectedTarget);
             next.journal_.push_back("EffectSalvage:" + std::to_string(selectedTarget));
         }
+    }
+    else if (operation == "SpecialSummon")
+    {
+        Check(selectedTarget > 0 && Contains(owner.Graveyard, selectedTarget) &&
+                  slot >= 0 && slot < static_cast<int>(owner.Field.size()) &&
+                  !owner.Field[slot],
+              "Special summon needs an authorized graveyard monster and empty slot");
+        Check(!action.value("ExcludePaidCostCards", false) ||
+                  !Contains(queued.PaidCostCards, selectedTarget),
+              "Paid cost card cannot be special summoned");
+        int const definitionId = next.OriginalId(selectedTarget);
+        auto const summoned = next.CardDefinition(definitionId);
+        Check(summoned.at("Type") == action.at("CardType") &&
+                  summoned.at("Attack").get<int>() <= action.at("MaxPrintedAttack").get<int>() &&
+                  next.HasArchetype(definitionId, action.at("RequiredArchetype").get<std::string>()),
+              "Special summon target does not satisfy the authored filter");
+        int const maxBlocks = PrintedMaxBlocks(summoned);
+        Remove(owner.Graveyard, selectedTarget);
+        owner.Field[slot] = YakouUnit{.InstanceId = selectedTarget,
+                                     .DefinitionId = definitionId,
+                                     .BaseAttack = summoned.at("Attack").get<int>(),
+                                     .BaseMaxHp = summoned.at("MaxHp").get<int>(),
+                                     .Countdown = summoned.at("AttackInterval").get<int>(),
+                                     .BaseMaxBlocks = maxBlocks,
+                                     .MaxBlocks = maxBlocks};
+        next.Enqueue(player, selectedTarget, definitionId, "OnSummoned");
+        next.journal_.push_back("EffectSpecialSummon:" + std::to_string(selectedTarget) +
+                                ":" + std::to_string(slot));
     }
     else
     {
@@ -1100,8 +1179,14 @@ int YakouMatch::ResolveSelectedEffectAndRunAutomaticTriggers(
 int YakouMatch::ResolveSelectedEffectsAndRunAutomaticTriggers(
     int player, std::vector<int> const& selectedTargets, int maxEffects)
 {
+    return ResolveSelectedEffectsAndRunAutomaticTriggers(player, selectedTargets, -1, maxEffects);
+}
+
+int YakouMatch::ResolveSelectedEffectsAndRunAutomaticTriggers(
+    int player, std::vector<int> const& selectedTargets, int slot, int maxEffects)
+{
     YakouMatch next = *this;
-    next.ResolvePendingEffect(player, selectedTargets);
+    next.ResolvePendingEffect(player, selectedTargets, slot);
     int const processed = next.ResolveAutomaticTriggers(maxEffects);
     *this = std::move(next);
     return processed;

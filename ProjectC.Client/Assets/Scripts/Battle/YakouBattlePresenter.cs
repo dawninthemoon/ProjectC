@@ -756,9 +756,26 @@ namespace ProjectC.Client
                     _pendingTargets.Count <= (int)pending["MaxCount"] : _pendingTarget != 0;
                 if (ready)
                 {
-                    options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"), () => Send("ChooseEffect",
-                        multiple ? new JObject { ["TargetIds"] = new JArray(_pendingTargets.OrderBy(id => id)) }
-                                 : new JObject { ["TargetId"] = _pendingTarget })));
+                    var slots = pending["AvailableSlots"] as JArray;
+                    if (slots != null && slots.Count > 0)
+                    {
+                        foreach (int slot in slots.Values<int>())
+                        {
+                            int selectedSlot = slot;
+                            options.Add(Option(YakouUiText.Get("ui.yakou.action.field_slot", slot + 1),
+                                () => Send("ChooseEffect", new JObject
+                                {
+                                    ["TargetId"] = _pendingTarget,
+                                    ["Slot"] = selectedSlot,
+                                })));
+                        }
+                    }
+                    else
+                    {
+                        options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"), () => Send("ChooseEffect",
+                            multiple ? new JObject { ["TargetIds"] = new JArray(_pendingTargets.OrderBy(id => id)) }
+                                     : new JObject { ["TargetId"] = _pendingTarget })));
+                    }
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.reselect_effect"), () =>
                     {
                         _pendingTarget = 0;

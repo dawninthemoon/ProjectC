@@ -141,7 +141,7 @@ def run(port):
 
 def run_deck_selection(port):
     source = Path(__file__).resolve().parents[1] / "Data" / "YakouPrototype" / "Decks.json"
-    decks = {deck["Id"]: deck["Cards"] for deck in json.loads(source.read_text())["Decks"]}
+    decks = {deck["Id"]: deck["Cards"] for deck in json.loads(source.read_text(encoding="utf-8"))["Decks"]}
     grave, raid, guard = "YakouAlphaGrave", "YakouAlphaRaid", "YakouAlphaGuard"
     combinations = [(grave, raid), (grave, guard), (raid, guard),
                     (grave, grave), (raid, raid), (guard, guard)]

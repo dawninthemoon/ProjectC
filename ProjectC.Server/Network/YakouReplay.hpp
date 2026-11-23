@@ -44,6 +44,7 @@ struct YakouReplayCommand
     int TargetId = 0;
     int DefinitionId = 0;
     int Slot = 0;
+    int EffectSlot = -1;
     std::string Method;
     std::vector<int> Cards;
     std::vector<std::pair<int, int>> Blockers;
