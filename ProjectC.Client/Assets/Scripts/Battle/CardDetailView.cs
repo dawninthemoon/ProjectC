@@ -15,6 +15,8 @@ namespace ProjectC.Client
         private AspectFillImage _artwork;
         private TMP_Text _type;
         private TMP_Text _artPlaceholder;
+        private TMP_Text _attackBadge, _healthBadge;
+        private GameObject _statsGroup;
         private RectTransform _viewport, _content;
         private ScrollRect _scroll;
         bool bound;
@@ -34,6 +36,13 @@ namespace ProjectC.Client
                     throw new System.InvalidOperationException("Card inspector requires artwork, placeholder and type.");
                 }
                 this.Bind("ArtPlaceholderText", out _artPlaceholder);
+                if (!this.Bind("InspectorStats", out RectTransform statsGroup)
+                    || !statsGroup.Bind("AttackBadgeText", out _attackBadge)
+                    || !statsGroup.Bind("HealthBadgeText", out _healthBadge))
+                {
+                    throw new System.InvalidOperationException("Card inspector requires attack and health badges.");
+                }
+                _statsGroup = statsGroup.gameObject;
                 this.Bind("DetailViewportImage", out _viewport);
                 this.Bind("DetailContentImage", out _content);
                 if ((_viewport == null) != (_content == null))
@@ -42,7 +51,8 @@ namespace ProjectC.Client
                 }
                 _scroll = _viewport != null ? _viewport.GetComponent<ScrollRect>() : null;
                 BattleText.StyleHeading(Title);
-                BattleText.StyleValue(Stats);
+                BattleText.StyleValue(_attackBadge);
+                BattleText.StyleValue(_healthBadge);
                 BattleText.StyleBody(Rules);
                 BattleText.StyleBody(Forms);
                 BattleText.StyleHud(_type);
@@ -53,7 +63,8 @@ namespace ProjectC.Client
             {
                 return;
             }
-            if (_shownCardId != card.Id || _shownDefinitionId != card.DefinitionId)
+            bool cardChanged = _shownCardId != card.Id || _shownDefinitionId != card.DefinitionId;
+            if (cardChanged)
             {
                 _keyword = null;
                 _shownCardId = card.Id;
@@ -80,11 +91,13 @@ namespace ProjectC.Client
             {
                 _type.text += " / " + costs;
             }
-            Stats.gameObject.SetActive(card.CardType != 1);
-            Stats.text =
-                card.CardType == 1
-                    ? ""
-                    : BattleText.Get("ui.card.stats", card.Attack, card.Hp, card.MaxHp);
+            Stats.gameObject.SetActive(false);
+            _statsGroup.SetActive(card.CardType != 1);
+            if (card.CardType != 1)
+            {
+                _attackBadge.text = card.Attack.ToString();
+                _healthBadge.text = card.Hp.ToString();
+            }
             KeywordLinkView.Render(Rules, CardPresentation.Description(card), library.Localization,
                 keyword =>
                 {
@@ -92,11 +105,19 @@ namespace ProjectC.Client
                     Forms.text = keyword.Name + "\n" + keyword.Description;
                     Forms.gameObject.SetActive(true);
                     RefreshHeight();
+                    if (_scroll != null)
+                    {
+                        _scroll.verticalNormalizedPosition = 0;
+                    }
                 });
             Forms.text = _keyword == null ? CardPresentation.Manifestations(card)
                 : _keyword.Name + "\n" + _keyword.Description;
             Forms.gameObject.SetActive(!string.IsNullOrWhiteSpace(Forms.text));
             RefreshHeight();
+            if (cardChanged && _scroll != null)
+            {
+                _scroll.verticalNormalizedPosition = 1;
+            }
         }
 
         private void RefreshHeight()
@@ -105,20 +126,7 @@ namespace ProjectC.Client
             {
                 return;
             }
-            const float contentTop = 323f;
-            const float bottomPadding = 16f;
-            const float minimumViewport = 80f;
-            const float maximumViewport = 141f;
             LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
-            float preferred = LayoutUtility.GetPreferredHeight(_content);
-            float height = Mathf.Clamp(preferred, minimumViewport, maximumViewport);
-            _viewport.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
-            ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
-                contentTop + height + bottomPadding);
-            if (_scroll != null)
-            {
-                _scroll.verticalNormalizedPosition = 1;
-            }
         }
 
         public void OnPointerClick(PointerEventData eventData)

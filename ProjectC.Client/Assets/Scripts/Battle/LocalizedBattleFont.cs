@@ -11,10 +11,16 @@ namespace ProjectC.Client
         [SerializeField] private BattleFontRole _role = BattleFontRole.Hud;
         [SerializeField] private bool _useAuthoredColor;
         [SerializeField] private Color _authoredColor = Color.white;
+        [SerializeField] private bool _useKoreanGlyphFallback;
         private TMP_Text _label;
         private string _language;
         private static BattleFontPalette _defaultPalette;
         public BattleFontRole Role => _role;
+        public bool UseKoreanGlyphFallback
+        {
+            get => _useKoreanGlyphFallback;
+            set => _useKoreanGlyphFallback = value;
+        }
 
         public static void SetRole(TMP_Text label, BattleFontRole role)
         {
@@ -54,7 +60,7 @@ namespace ProjectC.Client
         private void LateUpdate()
         {
             string language = CardPresentation.Library.Localization.Language;
-            if (_language != language)
+            if (_language != EffectiveLanguage(language))
             {
                 Apply(language);
             }
@@ -70,7 +76,8 @@ namespace ProjectC.Client
                 return;
             }
             _label = _label != null ? _label : GetComponent<TMP_Text>();
-            var font = _palette.Resolve(_role, language);
+            string effectiveLanguage = EffectiveLanguage(language);
+            var font = _palette.Resolve(_role, effectiveLanguage);
             if (font == null)
             {
                 Debug.LogError("Battle font palette is missing font for " + _role + ".", this);
@@ -87,7 +94,26 @@ namespace ProjectC.Client
             // The supplied files already contain their intended medium/semibold/bold weight.
             _label.fontStyle &= ~FontStyles.Bold;
             _label.UpdateMeshPadding();
-            _language = language;
+            _language = effectiveLanguage;
+        }
+
+        private string EffectiveLanguage(string language)
+        {
+            if (!_useKoreanGlyphFallback || language != "japanese")
+            {
+                return language;
+            }
+            // Some catalog entries only have Korean copy; keep their glyphs readable in the inspector.
+            string content = (_label != null ? _label : GetComponent<TMP_Text>()).text;
+            foreach (char character in content)
+            {
+                if ((character >= '\uAC00' && character <= '\uD7A3')
+                    || (character >= '\u3130' && character <= '\u318F'))
+                {
+                    return "korean";
+                }
+            }
+            return language;
         }
     }
 }
