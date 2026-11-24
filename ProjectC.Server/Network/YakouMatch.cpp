@@ -14,6 +14,7 @@ namespace ProjectC::Network
 namespace
 {
 constexpr int MaximumRaidResponseLinks = 8;
+constexpr int MaximumSpellResponseLinks = 8;
 void Check(bool valid, std::string const& message)
 {
     if (!valid) throw std::invalid_argument(message);
@@ -396,7 +397,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
         }
         result["ResponseStack"] = std::move(stack);
         Json options = Json::array();
-        if (response_.IsOpen() && response_.PriorityPlayer() == viewer && viewer != ActivePlayer())
+        if (response_.IsOpen() && response_.PriorityPlayer() == viewer &&
+            (phase_ == YakouPhase::SpellResponse || viewer != ActivePlayer()))
         {
             for (int instance : Player(viewer).Hand)
             {
@@ -409,7 +411,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                            definition == 4017)
                             ? "RespondWithRaidTactic" : nullptr;
                 }
-                else if (phase_ == YakouPhase::SpellResponse && response_.StackSize() == 1 &&
+                else if (phase_ == YakouPhase::SpellResponse &&
+                         response_.StackSize() < MaximumSpellResponseLinks &&
                          (definition == 3020 || definition == 4020))
                 {
                     type = "RespondWithNegation";
@@ -1350,10 +1353,11 @@ void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
     Check(phase_ == YakouPhase::SpellResponse &&
               response_.IsOpen() && response_.PriorityPlayer() == player,
           "No spell response priority");
-    Check(player != ActivePlayer() && (player == 1 || player == 2),
-          "Only the opponent may negate this opening spell");
-    Check(response_.StackSize() == 1,
-          "This prototype supports one counterspell per response chain");
+    Check((player == 1 || player == 2) &&
+              response_.ServerState().Stack.back().Controller != player,
+          "Only the opposing priority holder may negate the top spell");
+    Check(response_.StackSize() < MaximumSpellResponseLinks,
+          "Spell response chain limit reached");
     auto& owner = MutablePlayer(player);
     Check(Contains(owner.Hand, handInstance), "Counterspell is not in owner's hand");
     auto const card = CardDefinition(OriginalId(handInstance));
@@ -1393,8 +1397,8 @@ void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
               "Invalid counterspell cost card");
     }
 
-    // The chain's first link is the spell being answered. Its identity is
-    // server-derived; incoming clients never supply the target spell ID.
+    // The top link is the spell being answered. Its identity is server-derived;
+    // incoming clients never supply the target spell ID.
     for (int cardId : discarded)
     {
         if (definitionId == 4020)
@@ -1433,19 +1437,23 @@ void YakouMatch::PassSpellResponseImpl(int player)
     journal_.push_back("SpellResponsePass:" + std::to_string(player));
     if (!closed) return;
     auto const resolution = response_.TakeResolution(); // LIFO: counter before original.
-    Check(!resolution.empty() && resolution.size() <= 2,
+    Check(!resolution.empty() && resolution.size() <= MaximumSpellResponseLinks,
           "Unsupported resolved spell chain length");
     bool negated = false;
-    for (auto const& link : resolution)
+    for (std::size_t index = 0; index < resolution.size(); ++index)
     {
-        if (link.Controller != ActivePlayer())
+        auto const& link = resolution[index];
+        if (index + 1 < resolution.size())
         {
-            Check(resolution.size() == 2 && !negated &&
-                      link.Controller == 3 - ActivePlayer(),
+            Check(link.Trigger == "OnResolve" && link.EffectId > 0 &&
+                      link.Controller == 3 - resolution[index + 1].Controller,
                   "Unexpected chain counterspell");
-            negated = true;
-            journal_.push_back("SpellNegated:" +
-                               std::to_string(resolution.back().SourceInstance));
+            if (!negated)
+            {
+                journal_.push_back("SpellNegated:" +
+                                   std::to_string(resolution[index + 1].SourceInstance));
+            }
+            negated = !negated;
             continue;
         }
         Check(link.Trigger == "OnResolve" &&

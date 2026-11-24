@@ -1752,6 +1752,37 @@ int main()
                   "Negated spell must still consume its card-name per-turn allowance");
         }
         {
+            // A counterspell can itself be countered. Resolution is LIFO:
+            // the second counter cancels the first, then the original mills.
+            auto match = Make(proto,
+                {2009, 3020, 2001, 2002, 3001},
+                {3020, 2001, 2002, 3001, 2004});
+            match.StartTurn(1);
+            auto const first = match.Player(1).Hand;
+            auto const second = match.Player(2).Hand;
+            auto const deckBefore = match.Player(1).Deck.size();
+            match.BeginSpellResponse(1, first[0]);
+            match.RespondWithNegation(2, second[0], {second[1], second[2]});
+            Check(match.PriorityPlayer() == 1 &&
+                      match.ViewerSnapshot(1).at("ResponseOptions").size() == 1,
+                  "Opening player must receive counter-counter priority");
+            auto const beforeInvalid = match.ServerStateHash();
+            Reject([&] { match.RespondWithNegation(2, second[0], {second[3], second[4]}); });
+            Check(match.ServerStateHash() == beforeInvalid,
+                  "Wrong-priority nested response must roll back");
+            match.RespondWithNegation(1, first[1], {first[2], first[3]});
+            Check(match.ViewerSnapshot(1).at("ResponseStack").size() == 3 &&
+                      match.PriorityPlayer() == 2,
+                  "Two counters must remain public in activation order");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.PendingEffects().empty() &&
+                      match.Player(1).Deck.size() == deckBefore - 2 &&
+                      match.Player(1).Graveyard.size() >= 4,
+                  "Counter-counter must restore original spell effect after both passes");
+        }
+        {
             // With no response, the server resolves the original spell after
             // the required two passes, and only then applies its effect.
             auto match = Make(proto, {2009}, {3020, 2001, 2002});
