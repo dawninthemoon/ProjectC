@@ -79,10 +79,10 @@ namespace ProjectC.Client
             _feedback.enableAutoSizing = true;
             _feedback.fontSizeMin = 14;
             _feedback.fontSizeMax = 19;
-            // The authored feedback anchor sits on the hand row. Yakou uses two
-            // status lines, so place it in the open lane between field and hand.
-            _feedback.rectTransform.anchoredPosition = new Vector2(650, -674);
-            _feedback.rectTransform.sizeDelta = new Vector2(700, 66);
+            // The field can occupy five slots; keep the two Yakou status lines
+            // below the inspector and left of the first field slot.
+            _feedback.rectTransform.anchoredPosition = new Vector2(150, -530);
+            _feedback.rectTransform.sizeDelta = new Vector2(330, 145);
             _screen.PhaseLabel.enableAutoSizing = true;
             _screen.PhaseLabel.fontSizeMin = 13;
             _screen.PhaseLabel.fontSizeMax = 26;
