@@ -171,14 +171,34 @@ def run_deck_selection(port):
             assert "DeckId" not in left["State"]["Players"][1]
             assert "DeckId" not in right["State"]["Players"][0]
             state = left["State"]
-            for step in range(128):
+            summoned = False
+            for step in range(256):
                 if state["Phase"] == "Finished":
                     break
-                assert state["Phase"] in ("TurnStart", "Main")
-                seat = state["ActivePlayerId"]
+                phase = state["Phase"]
+                active = state["ActivePlayerId"]
+                if phase == "TurnStart":
+                    seat, payload = active, {"Type": "StartTurn"}
+                elif phase == "Main" and active == 1 and not summoned:
+                    chosen_definition = 3004 if first == guard else decks[first][0]
+                    card = next(card for card in state["Players"][0]["Hand"]
+                                if card["DefinitionId"] == chosen_definition)
+                    seat = 1
+                    payload = {"Type": "Summon", "CardId": card["Id"],
+                               "Method": "Normal", "Materials": [], "Slot": 0}
+                    summoned = True
+                elif phase == "Main":
+                    seat, payload = active, {"Type": "BeginRaid"}
+                elif phase == "AssignBlockers":
+                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": []}
+                elif phase == "RaidResponse":
+                    priority = state["PriorityPlayerId"]
+                    seat = priority if priority else 3 - active
+                    payload = {"Type": "PassRaidResponse" if priority else "ResolveRaid"}
+                else:
+                    raise AssertionError(f"Unexpected phase during Alpha duel: {phase}")
                 acting = a if seat == 1 else b
-                action = "StartTurn" if state["Phase"] == "TurnStart" else "BeginRaid"
-                result = command(acting, match, f"deck-game-{step}", {"Type": action})
+                result = command(acting, match, f"deck-game-{step}", payload)
                 assert result["Payload"]["Accepted"] is True
                 left = expect(a, "YakouSnapshot")["Payload"]
                 right = expect(b, "YakouSnapshot")["Payload"]
@@ -186,14 +206,14 @@ def run_deck_selection(port):
                 assert left["State"]["Players"][1]["Hand"] == []
                 assert right["State"]["Players"][0]["Hand"] == []
                 state = left["State"]
-            assert state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
+            assert summoned and state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
             b.send("YakouLeave", MatchId=match)
             expect(a, "YakouClosed")
             expect(b, "YakouClosed")
         finally:
             a.close()
             b.close()
-    print("Real Yakou websocket: six Alpha 01 deck pairings, private snapshots and deck-out matches passed")
+    print("Real Yakou websocket: six Alpha 01 deck pairings, private snapshots and summoned matches to victory passed")
 
 
 if __name__ == "__main__":
