@@ -1781,6 +1781,31 @@ int main()
                       match.Player(1).Deck.size() == deckBefore - 2 &&
                       match.Player(1).Graveyard.size() >= 4,
                   "Counter-counter must restore original spell effect after both passes");
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009, 3020, 2001, 2002, 3001}),
+                Deck(proto, {3020, 2001, 2002, 3001, 2004})};
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            auto start = command(YakouReplayOperation::StartTurn, 1);
+            auto cast = command(YakouReplayOperation::BeginSpellResponse, 1);
+            cast.CardId = first[0];
+            auto counter = command(YakouReplayOperation::RespondWithNegation, 2);
+            counter.CardId = second[0];
+            counter.Cards = {second[1], second[2]};
+            auto counterCounter = command(YakouReplayOperation::RespondWithNegation, 1);
+            counterCounter.CardId = first[1];
+            counterCounter.Cards = {first[2], first[3]};
+            auto passTwo = command(YakouReplayOperation::PassSpellResponse, 2);
+            auto passOne = command(YakouReplayOperation::PassSpellResponse, 1);
+            auto const replay = ReplayYakou(proto, 1, decks,
+                {start, cast, counter, counterCounter, passTwo, passOne});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Nested counterspell sequence must replay deterministically");
         }
         {
             // With no response, the server resolves the original spell after
