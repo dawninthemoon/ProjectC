@@ -114,6 +114,13 @@ void CheckSupportedAction(Json const& action)
             action.value("Duration", std::string()) == "NextDamageEvent" &&
             action.value("Amount", 0) == 2 && action.value("Minimum", -1) == 0;
     }
+    else if (operation == "IgnoreOneManifestCondition")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "Duration", "KiCostUnaffected"}) &&
+            action.value("Target", std::string()) == "FriendlyPlayer" &&
+            action.value("Duration", std::string()) == "ThisTurn" &&
+            action.value("KiCostUnaffected", false);
+    }
     else if (operation == "Salvage")
     {
         supported = HasOnlyFields(action, {"Operation", "From", "To", "Count", "CardType",
@@ -336,7 +343,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 for (int instance : player.Hand)
                 {
                     int const definitionId = OriginalId(instance);
-                    if (definitionId != 2010 && definitionId != 2012 && definitionId != 3012 && definitionId != 3013 && definitionId != 4006 &&
+                    if (definitionId != 2010 && definitionId != 2012 && definitionId != 3012 && definitionId != 3013 && definitionId != 3015 && definitionId != 4006 &&
                         definitionId != 4012 && definitionId != 4013)
                     {
                         continue;
@@ -374,6 +381,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
             visiblePlayer["PaidSpellOptions"] = std::move(paidSpells);
             visiblePlayer["NormalSummonsUsed"] = player.NormalSummons;
             visiblePlayer["ManifestationsUsed"] = player.Manifestations;
+            visiblePlayer["ManifestConditionWaivers"] = manifestConditionWaivers_[player.Id - 1];
             visiblePlayer["RedrawsUsed"] = player.Redraws;
         }
         players.push_back(std::move(visiblePlayer));
@@ -621,6 +629,10 @@ Json YakouMatch::ServerCanonicalState() const
         }
         state["NextDamageShields"] = std::move(shields);
     }
+    if (manifestConditionWaivers_[0] != 0 || manifestConditionWaivers_[1] != 0)
+    {
+        state["ManifestConditionWaivers"] = manifestConditionWaivers_;
+    }
     if (!raidAttackModifiers_.empty())
     {
         Json modifiers = Json::array();
@@ -777,6 +789,10 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
               "Unsupported mill shape");
         Check(owner.Deck.size() >= static_cast<std::size_t>(action.at("Count").get<int>()),
               "Insufficient cards for authored mill");
+        return choice;
+    }
+    if (choice.Operation == "IgnoreOneManifestCondition")
+    {
         return choice;
     }
     if (choice.Operation == "LookAndChoose")
@@ -941,7 +957,15 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
     YakouMatch next = *this;
     auto& owner = next.MutablePlayer(player);
     bool declined = false;
-    if (operation == "Mill")
+    if (operation == "IgnoreOneManifestCondition")
+    {
+        Check(selectedTarget == 0, "Manifest condition waiver has no card target");
+        Check(next.manifestConditionWaivers_[player - 1] < std::numeric_limits<int>::max(),
+              "Too many manifest condition waivers");
+        ++next.manifestConditionWaivers_[player - 1];
+        next.journal_.push_back("ManifestConditionWaiver:" + std::to_string(player));
+    }
+    else if (operation == "Mill")
     {
         Check(action.at("From") == "FriendlyDeck" &&
                   action.at("To") == "Graveyard", "Unsupported mill zones");
@@ -1789,17 +1813,28 @@ void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDe
     auto const ki = data.at("Ki").get<int>();
     Check(ki == 2 && owner.Ki >= ki, "Insufficient Ki");
     auto const& conditions = data.at("Condition");
+    Check(conditions.is_object() &&
+              HasOnlyFields(conditions, {"WasDevourSummoned", "FriendlyGraveyardArchetypeCountAtLeast",
+                                         "Archetype", "ArchetypeMonsterTotalAcrossZones"}),
+          "Unsupported manifestation condition");
+    int unmetConditions = 0;
     if (conditions.contains("WasDevourSummoned"))
-        Check(unit.WasDevourSummoned == conditions.at("WasDevourSummoned").get<bool>(),
-              "Devour condition not met");
+    {
+        if (unit.WasDevourSummoned != conditions.at("WasDevourSummoned").get<bool>())
+        {
+            ++unmetConditions;
+        }
+    }
     if (conditions.contains("FriendlyGraveyardArchetypeCountAtLeast"))
     {
         auto const archetype = conditions.at("Archetype").get<std::string>();
         int tally = 0;
         for (int instance : owner.Graveyard)
             if (HasArchetype(OriginalId(instance), archetype)) ++tally;
-        Check(tally >= conditions.at("FriendlyGraveyardArchetypeCountAtLeast").get<int>(),
-              "Graveyard condition not met");
+        if (tally < conditions.at("FriendlyGraveyardArchetypeCountAtLeast").get<int>())
+        {
+            ++unmetConditions;
+        }
     }
     if (conditions.contains("ArchetypeMonsterTotalAcrossZones"))
     {
@@ -1815,7 +1850,18 @@ void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDe
                     HasArchetype(OriginalId(instance), archetype)) ++tally;
             }
         }
-        Check(tally >= requirement.at("AtLeast").get<int>(), "Zone condition not met");
+        if (tally < requirement.at("AtLeast").get<int>())
+        {
+            ++unmetConditions;
+        }
+    }
+    Check(unmetConditions == 0 ||
+              (unmetConditions == 1 && manifestConditionWaivers_[player - 1] > 0),
+          "Manifest conditions not met");
+    if (unmetConditions == 1)
+    {
+        --manifestConditionWaivers_[player - 1];
+        journal_.push_back("ManifestConditionIgnored:" + std::to_string(fieldInstance));
     }
     owner.Ki -= ki;
     ++owner.Manifestations;
@@ -2512,6 +2558,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 
 void YakouMatch::TurnOver()
 {
+    manifestConditionWaivers_[players_[active_].Id - 1] = 0;
     raidAttackModifiers_.clear();
     raidShields_.clear();
     attacks_.clear();

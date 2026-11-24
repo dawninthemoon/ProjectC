@@ -1694,6 +1694,79 @@ int main()
                   "Negated paid spell keeps its cost but creates no private choice");
         }
         {
+            // Card 3015 waives one failed manifestation condition this turn,
+            // but its discard cost and the manifestation's Ki still apply.
+            auto waiverProto = proto;
+            for (auto& id : waiverProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3015;
+                    break;
+                }
+            }
+            for (auto& card : waiverProto.Cards["Cards"])
+            {
+                if (card["Id"] == 2101)
+                {
+                    card["SummonCostJson"]["Manifestation"]["Condition"]
+                        ["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 5;
+                }
+            }
+            auto match = Make(waiverProto, {2001, 2003, 3015, 2002, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[1], "Necromancy",
+                                                       {match.Player(1).Graveyard[0],
+                                                        match.Player(1).Graveyard[1]}, 1);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            auto const beforeMissingCondition = match.ServerStateHash();
+            Reject([&] { match.Manifest(1, hand[1], 2101); });
+            Check(match.ServerStateHash() == beforeMissingCondition,
+                  "Unpaid 3015 waiver cannot skip a manifest condition");
+            match.BeginSpellResponse(1, hand[2], 0, {hand[3], hand[4]});
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.ViewerSnapshot(1).at("Players")[0]
+                      .at("ManifestConditionWaivers") == 1,
+                  "3015 must grant exactly one condition waiver");
+            auto satisfied = match;
+            for (auto& card : waiverProto.Cards["Cards"])
+            {
+                if (card["Id"] == 2101)
+                {
+                    auto& conditions = card["SummonCostJson"]["Manifestation"]["Condition"];
+                    conditions["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 3;
+                    satisfied.Manifest(1, hand[1], 2101);
+                    Check(satisfied.ViewerSnapshot(1).at("Players")[0]
+                              .at("ManifestConditionWaivers") == 1,
+                          "Satisfied manifest conditions must not consume 3015");
+                    conditions["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 5;
+                    conditions["WasDevourSummoned"] = true;
+                    auto const twoFailures = match.ServerStateHash();
+                    Reject([&] { match.Manifest(1, hand[1], 2101); });
+                    Check(match.ServerStateHash() == twoFailures &&
+                              match.ViewerSnapshot(1).at("Players")[0]
+                                  .at("ManifestConditionWaivers") == 1,
+                          "One 3015 waiver cannot ignore two failed conditions");
+                    conditions.erase("WasDevourSummoned");
+                    break;
+                }
+            }
+            int const kiBefore = match.Player(1).Ki;
+            match.Manifest(1, hand[1], 2101);
+            Check(match.Player(1).Field[1]->DefinitionId == 2101 &&
+                      match.Player(1).Ki == kiBefore - 2 &&
+                      match.ViewerSnapshot(1).at("Players")[0]
+                          .at("ManifestConditionWaivers") == 0,
+                  "3015 must consume the waiver and preserve printed Ki cost");
+        }
+        {
             // Card 2012 persists through turns and consumes its shield only
             // when the chosen monster actually receives positive damage.
             auto shieldProto = proto;
