@@ -1802,6 +1802,34 @@ int main()
             Check(match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
                       .at("NextDamageShield") == 2,
                   "2012 shield must be visible on its public field target");
+            std::array<std::vector<int>, 2> const shieldDecks{
+                Deck(shieldProto, {2001, 2012}), Deck(shieldProto, {3004})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = protectedUnit;
+            summon.Method = "Normal";
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            cast.Cards = {cost};
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            YakouReplayCommand select;
+            select.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            select.Player = 1;
+            select.TargetId = protectedUnit;
+            auto const replay = ReplayYakou(shieldProto, 1, shieldDecks,
+                {start, summon, cast, passTwo, passOne, select});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2012 private selection and persistent shield must replay exactly");
             int const blocker = match.Player(2).Hand[0];
             int protectedRaids = 0;
             bool blockerSummoned = false;
