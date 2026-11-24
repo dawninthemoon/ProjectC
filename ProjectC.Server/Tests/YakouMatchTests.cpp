@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <tuple>
 #include <vector>
 
 using namespace ProjectC::Network;
@@ -74,6 +75,296 @@ int main()
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
         {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 1, {2001, 4002, 4003, 4005, 4006, 4001, 4001}),
+                SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const miller = match.Player(1).Hand[0];
+            int const mender = match.Player(1).Hand[1];
+            int const paid = match.Player(1).Hand[2];
+            (void)match.SummonAndRunAutomaticTriggers(1, miller, "Normal", {}, 0);
+            Check(match.Player(1).Graveyard.size() == 2,
+                  "Authored mill must establish two graveyard archetype cards");
+            (void)match.SummonAndRunAutomaticTriggers(1, mender, "Discard", {paid}, 1);
+            Check(match.PendingEffects().size() == 1 &&
+                      match.PendingEffectChoices(1).Candidates.size() == 2,
+                  "Post-cost third archetype card must enable optional salvage while excluding paid card");
+            int const recovered = match.PendingEffectChoices(1).Candidates[0];
+            auto const before = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, paid); });
+            Check(match.ServerStateHash() == before,
+                  "A discarded cost cannot be recovered by the same effect");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, recovered);
+            Check(match.PendingEffects().empty() &&
+                      std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), recovered) !=
+                          match.Player(1).Hand.end(),
+                  "Valid selected monster must return to its owner's hand");
+
+            YakouMatch insufficient(proto, 1,
+                {SampleDeck(proto, 1, {4002, 4003}), SampleDeck(proto, 0, {})});
+            insufficient.StartTurn(1);
+            int const source = insufficient.Player(1).Hand[0];
+            int const cost = insufficient.Player(1).Hand[1];
+            (void)insufficient.SummonAndRunAutomaticTriggers(1, source, "Discard", {cost}, 0);
+            Check(insufficient.PendingEffects().empty(),
+                  "Conditional salvage must not queue below the post-cost graveyard threshold");
+        }
+        {
+            YakouMatch discarded(proto, 1,
+                {SampleDeck(proto, 1, {4003, 2001}), SampleDeck(proto, 0, {})});
+            discarded.StartTurn(1);
+            int const source = discarded.Player(1).Hand[0];
+            int const cost = discarded.Player(1).Hand[1];
+            auto const deckSize = discarded.Player(1).Deck.size();
+            (void)discarded.SummonAndRunAutomaticTriggers(1, source, "Discard", {cost}, 0);
+            Check(discarded.Player(1).Field[0] &&
+                      discarded.Player(1).Deck.size() == deckSize - 1 &&
+                      discarded.Player(1).Graveyard.size() == 2 &&
+                      discarded.PendingEffects().empty(),
+                  "Discard-summoned spirit must pay one hand card and automatically mill one");
+
+            YakouMatch necromantic(proto, 1,
+                {SampleDeck(proto, 1, {2001, 4005}), SampleDeck(proto, 0, {})});
+            necromantic.StartTurn(1);
+            int const miller = necromantic.Player(1).Hand[0];
+            int const summoned = necromantic.Player(1).Hand[1];
+            (void)necromantic.SummonAndRunAutomaticTriggers(1, miller, "Normal", {}, 0);
+            auto const materials = necromantic.Player(1).Graveyard;
+            Check(materials.size() == 2, "Necromancy fixture needs two milled cards");
+            auto const beforeSummonDeck = necromantic.Player(1).Deck.size();
+            (void)necromantic.SummonAndRunAutomaticTriggers(1, summoned,
+                "Necromancy", materials, 1);
+            Check(necromantic.Player(1).Field[1] &&
+                      necromantic.Player(1).Exile.size() == 2 &&
+                      necromantic.Player(1).Graveyard.size() == 1 &&
+                      necromantic.Player(1).Deck.size() == beforeSummonDeck - 1 &&
+                      necromantic.PendingEffects().empty(),
+                  "Necromancy-summoned pursuer must exile two costs and automatically mill one");
+        }
+        {
+            auto match = YakouMatch(proto, 1,
+                {SampleDeck(proto, 1, {2001, 4006, 4003, 4005, 4007, 2002, 2001}),
+                 SampleDeck(proto, 0, {})});
+            match.StartTurn(1);
+            int const miller = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, miller, "Normal", {}, 0);
+            auto const grave = match.Player(1).Graveyard;
+            Check(grave.size() == 2, "Necromancy salvage fixture needs two grave monsters");
+            (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, spell, 64, {grave[0]});
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.Candidates.size() == 1 && choice.Candidates[0] == grave[1],
+                  "Necromancy salvage must exclude the paid card from its choices");
+            auto const before = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, grave[0]); });
+            Check(match.ServerStateHash() == before,
+                  "Exiled payment cannot be salvaged by spoofed target");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, grave[1]);
+            Check(match.PendingEffects().empty() &&
+                      std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), grave[1]) !=
+                          match.Player(1).Hand.end(),
+                  "Necromancy salvage must recover the remaining eligible monster");
+
+            auto insufficient = YakouMatch(proto, 1,
+                {SampleDeck(proto, 1, {4001, 4006, 4003, 4005, 4007, 2001}),
+                 SampleDeck(proto, 0, {})});
+            insufficient.StartTurn(1);
+            (void)insufficient.SummonAndRunAutomaticTriggers(
+                1, insufficient.Player(1).Hand[0], "Normal", {}, 0);
+            int const onlyMaterial = insufficient.Player(1).Graveyard[0];
+            int const failedSpell = insufficient.Player(1).Hand[0];
+            auto const unchanged = insufficient.ServerStateHash();
+            Reject([&] { (void)insufficient.ActivateMainSpellAndRunAutomaticTriggers(
+                1, failedSpell, 64, {onlyMaterial}); });
+            Check(insufficient.ServerStateHash() == unchanged,
+                  "No eligible post-payment monster must reject without spending necromancy cost");
+        }
+        {
+            auto fixture = proto;
+            auto& guardCards = fixture.Decks["Decks"][3]["Cards"];
+            auto replaced = std::find(guardCards.begin(), guardCards.end(), Json(3002));
+            Check(replaced != guardCards.end(), "Missing guard fixture replacement card");
+            *replaced = 3011;
+            YakouMatch match(fixture, 1,
+                {SampleDeck(fixture, 3, {4008, 4021, 3014, 3011}),
+                 SampleDeck(fixture, 0, {})});
+            match.StartTurn(1);
+            int const monster = match.Player(1).Hand[0];
+            int const collector = match.Player(1).Hand[1];
+            int const healingSpell = match.Player(1).Hand[2];
+            int const countdownSpell = match.Player(1).Hand[3];
+            (void)match.SummonAndRunAutomaticTriggers(1, monster, "Normal", {}, 0);
+            (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, healingSpell);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, monster);
+            (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, countdownSpell);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, monster);
+            Check(match.Player(1).Graveyard.size() == 2,
+                  "Two prior spell resolutions must satisfy authored spell-count condition");
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            (void)match.SummonAndRunAutomaticTriggers(1, collector, "Normal", {}, 1);
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.MinCount == 0 && choice.Candidates.size() == 2 &&
+                      match.ViewerSnapshot(2).contains("PendingSelection") == false,
+                  "Spell collector must offer only own graveyard spells after threshold");
+            int const selected = choice.Candidates[0];
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, selected);
+            Check(std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), selected) !=
+                      match.Player(1).Hand.end(),
+                  "Selected spell must move from graveyard into its owner's hand");
+        }
+        {
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 2, {4008, 4013, 4009, 3016, 3007}),
+                 SampleDeck(proto, 0, {})});
+            match.StartTurn(1);
+            int const monster = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            int const cost = match.Player(1).Hand[3];
+            (void)match.SummonAndRunAutomaticTriggers(1, monster, "Normal", {}, 0);
+            auto const before = match.ServerStateHash();
+            Reject([&] { (void)match.ActivateMainSpellAndRunAutomaticTriggers(
+                1, spell, 64, {monster}); });
+            Check(match.ServerStateHash() == before,
+                  "Paid countdown spell must reject a cost outside the owner's hand");
+            (void)match.ActivateMainSpellAndRunAutomaticTriggers(1, spell, 64, {cost});
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 31); });
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, monster);
+            Check(match.Player(1).Field[0]->Countdown == 0,
+                  "Authored minus-two countdown must stop at zero");
+            match.BeginRaid(1);
+            Check(match.Phase() == YakouPhase::AssignBlockers &&
+                      match.Attacks().size() == 1 && match.Attacks()[0].Card == monster,
+                  "A freshly summoned monster may raid when server countdown reaches zero");
+        }
+        {
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 3, {4008, 4015}),
+                 SampleDeck(proto, 2, {4009})});
+            match.StartTurn(1);
+            int const patient = match.Player(1).Hand[0];
+            int const healer = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, patient, "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            int const attacker = match.Player(2).Hand[0];
+            (void)match.SummonAndRunAutomaticTriggers(2, attacker, "Normal", {}, 0);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.AssignBlockers(1, {{attacker, patient}});
+            match.PassRaidResponse(1);
+            match.PassRaidResponse(2);
+            match.ResolveRaid(1);
+            Check(match.Player(1).Field[0] && match.Player(1).Field[0]->Damage == 2,
+                  "Healing fixture must preserve accumulated combat damage");
+            match.StartTurn(1);
+            (void)match.SummonAndRunAutomaticTriggers(1, healer, "Normal", {}, 1);
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.MinCount == 0 && choice.Candidates.size() == 1 &&
+                      choice.Candidates[0] == patient,
+                  "Healer must offer only a friendly monster with accumulated damage");
+            auto const before = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, healer); });
+            Check(match.ServerStateHash() == before,
+                  "Undamaged target must reject without consuming the healing effect");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, patient);
+            Check(match.Player(1).Field[0]->Damage == 0 && match.PendingEffects().empty(),
+                  "Selected monster must heal exactly the available two damage");
+        }
+        {
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 2, {4008, 4010, 4014, 3005, 3007}),
+                 SampleDeck(proto, 0, {})});
+            match.StartTurn(1);
+            int const first = match.Player(1).Hand[0];
+            int const drummer = match.Player(1).Hand[1];
+            int const runner = match.Player(1).Hand[2];
+            int const cost = match.Player(1).Hand[3];
+            (void)match.SummonAndRunAutomaticTriggers(1, first, "Normal", {}, 0);
+            (void)match.SummonAndRunAutomaticTriggers(1, runner, "Discard", {cost}, 1);
+            Check(match.Player(1).Field[1]->Countdown == 1 &&
+                      match.Player(1).Field[0]->Countdown == 2,
+                  "Discard-summoned runner must shorten only its own countdown");
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            (void)match.SummonAndRunAutomaticTriggers(1, drummer, "Normal", {}, 2);
+            auto const choice = match.PendingEffectChoices(1);
+            Check(choice.MinCount == 0 && choice.Candidates.size() == 2 &&
+                      std::find(choice.Candidates.begin(), choice.Candidates.end(), drummer) ==
+                          choice.Candidates.end(),
+                  "Drummer must offer other friendly monsters and allow decline");
+            auto const before = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, drummer); });
+            Check(match.ServerStateHash() == before,
+                  "Drummer cannot target itself");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, first);
+            Check(match.Player(1).Field[0]->Countdown == 0 &&
+                      match.Player(1).Field[1]->Countdown == 0,
+                  "Other-monster countdown reduction must allow same-turn raid at zero");
+            match.BeginRaid(1);
+            Check(match.Attacks().size() == 2,
+                  "Both server-ready monsters must join the declared raid");
+        }
+        for (auto const& [deckIndex, materialDefinition, devourDefinition] :
+             std::vector<std::tuple<std::size_t, int, int>>{{1, 4001, 4004}, {2, 4008, 4011}})
+        {
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, deckIndex, {materialDefinition, devourDefinition}),
+                 SampleDeck(proto, 0, {})});
+            match.StartTurn(1);
+            int const material = match.Player(1).Hand[0];
+            int const devour = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, material, "Normal", {}, 0);
+            int const inheritedAttack = match.Player(1).Field[0]->Attack();
+            int const inheritedHp = match.Player(1).Field[0]->MaxHp();
+            (void)match.SummonAndRunAutomaticTriggers(1, devour, "Devour", {material}, 0);
+            auto const& unit = *match.Player(1).Field[0];
+            auto const definition = std::find_if(proto.Cards["Cards"].begin(),
+                proto.Cards["Cards"].end(), [&](Json const& card) {
+                    return card.at("Id") == devourDefinition;
+                });
+            Check(definition != proto.Cards["Cards"].end() &&
+                      unit.InstanceId == devour && unit.WasDevourSummoned &&
+                      unit.Attack() == definition->at("Attack").get<int>() + inheritedAttack &&
+                      unit.MaxHp() == definition->at("MaxHp").get<int>() + inheritedHp &&
+                      unit.Countdown == definition->at("AttackInterval").get<int>() - 1 &&
+                      std::find(match.Player(1).Graveyard.begin(), match.Player(1).Graveyard.end(), material) !=
+                          match.Player(1).Graveyard.end(),
+                  "Authored devour must inherit printed stats before self countdown reduction");
+        }
+        {
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 2, {4008}), SampleDeck(proto, 3, {4016})});
+            match.StartTurn(1);
+            int const attacker = match.Player(1).Hand[0];
+            (void)match.SummonAndRunAutomaticTriggers(1, attacker, "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            int const blocker = match.Player(2).Hand[0];
+            (void)match.SummonAndRunAutomaticTriggers(2, blocker, "Normal", {}, 0);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            match.BeginRaid(1);
+            match.AssignBlockers(2, {{attacker, blocker}});
+            match.PassRaidResponse(2);
+            match.PassRaidResponse(1);
+            match.ResolveRaid(2);
+            Check(match.Player(2).Field[0] && match.Player(2).Field[0]->Damage == 1,
+                  "Stone-wall blocker must reduce three incoming combat damage by two");
+        }
+        {
             auto match = YakouMatch(proto, 1,
                 {SampleDeck(proto, 0, {2001}), SampleDeck(proto, 3, {4008, 4018})});
             match.StartTurn(1);
@@ -91,6 +382,16 @@ int main()
             match.BeginRaid(2);
             match.StartTurn(1);
             match.BeginRaid(1);
+            auto unblocked = match;
+            unblocked.AssignBlockers(2, {});
+            auto const unblockedOptions = unblocked.ViewerSnapshot(2).at("ResponseOptions");
+            Check(std::none_of(unblockedOptions.begin(), unblockedOptions.end(),
+                               [&](Json const& option) { return option.at("CardId") == response; }),
+                  "All-blocker response must not be offered without a friendly blocker");
+            auto const unblockedHash = unblocked.ServerStateHash();
+            Reject([&] { unblocked.RespondWithRaidShield(2, response, 0); });
+            Check(unblocked.ServerStateHash() == unblockedHash,
+                  "No-blocker response must reject without consuming its card");
             match.AssignBlockers(2, {{attacker, defender}});
             auto const offered = match.ViewerSnapshot(2).at("ResponseOptions");
             Check(std::any_of(offered.begin(), offered.end(), [&](Json const& option) {

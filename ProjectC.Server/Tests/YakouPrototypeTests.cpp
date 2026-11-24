@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
+#include <map>
+#include <set>
 #include <stdexcept>
 
 using namespace ProjectC::Network;
@@ -29,9 +31,50 @@ int main()
         auto prototype = YakouPrototype::Load(data);
         Check(prototype.Cards["Cards"].size() == 55, "Expected 55 Alpha 01 definitions");
         Check(prototype.Decks["Decks"].size() == 4, "Expected four Alpha 01 decks");
+        std::set<int> definitionIds;
+        for (auto const& card : prototype.Cards["Cards"])
+        {
+            Check(definitionIds.insert(card.at("Id").get<int>()).second,
+                  "Duplicate Alpha 01 definition ID");
+            Check(card.at("CatalogVersion") == "yakou-2026-11-23-alpha01-v1",
+                  "Mixed Alpha 01 card versions");
+        }
+        for (int id = 4001; id <= 4021; ++id)
+        {
+            Check(definitionIds.contains(id), "Missing authored Alpha 01 card ID");
+        }
+        std::set<std::string> localizedKeys;
+        for (auto const& row : prototype.Localize)
+        {
+            auto const key = row.at("lmk").get<std::string>();
+            localizedKeys.insert(key);
+            if (key.starts_with("ui.yakou.deck.") || key.starts_with("card_40"))
+            {
+                Check(!row.at("korean").get<std::string>().empty() &&
+                          !row.at("english").get<std::string>().empty() &&
+                          !row.at("japanese").get<std::string>().empty(),
+                      "Incomplete Alpha 01 localization");
+            }
+        }
+        for (int id = 4001; id <= 4021; ++id)
+        {
+            Check(localizedKeys.contains("card_" + std::to_string(id) + "_name") &&
+                      localizedKeys.contains("card_" + std::to_string(id) + "_desc"),
+                  "Missing new card localization key");
+        }
+        Check(std::count_if(localizedKeys.begin(), localizedKeys.end(),
+                  [](std::string const& key) { return key.starts_with("ui.yakou.deck."); }) == 13,
+              "Expected thirteen localized deck selection keys");
         for (auto const& deck : prototype.Decks["Decks"])
         {
             Check(deck["Cards"].size() == 30, "Expected 30 deck copies");
+            std::map<int, int> copies;
+            for (auto const& id : deck["Cards"])
+            {
+                int const definitionId = id.get<int>();
+                Check(definitionIds.contains(definitionId) && ++copies[definitionId] <= 3,
+                      "Invalid Alpha 01 deck card or copy count");
+            }
         }
         Check(!prototype.Localize.empty() && !prototype.Config.empty(),
               "Expected prototype text/config");
