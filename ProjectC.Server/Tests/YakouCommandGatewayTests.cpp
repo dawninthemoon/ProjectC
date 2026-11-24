@@ -1,4 +1,5 @@
 #include "YakouCommandGateway.hpp"
+#include "YakouReplay.hpp"
 #include "CardCatalog.hpp"
 
 #include <algorithm>
@@ -28,6 +29,19 @@ std::vector<int> OrderedDeck(YakouPrototype const& proto, std::vector<int> openi
     opening.insert(opening.end(), deck.begin(), deck.end());
     return opening;
 }
+std::vector<int> OrderedSampleDeck(YakouPrototype const& proto, std::size_t index,
+                                   std::vector<int> opening)
+{
+    auto deck = proto.Decks.at("Decks").at(index).at("Cards").get<std::vector<int>>();
+    for (int id : opening)
+    {
+        auto it = std::find(deck.begin(), deck.end(), id);
+        Check(it != deck.end(), "Required sample card is missing");
+        deck.erase(it);
+    }
+    opening.insert(opening.end(), deck.begin(), deck.end());
+    return opening;
+}
 
 YakouCommandGateway NewGateway(YakouPrototype const& proto)
 {
@@ -42,6 +56,114 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        {
+            YakouCommandGateway alpha(proto, 1,
+                {OrderedSampleDeck(proto, 2, {4008, 4012, 4009, 4013}),
+                 OrderedSampleDeck(proto, 0, {})});
+            int const first = alpha.Match().Player(1).Hand[0];
+            int const spell = alpha.Match().Player(1).Hand[1];
+            int const second = alpha.Match().Player(1).Hand[2];
+            int const cost = alpha.Match().Player(1).Hand[3];
+            auto run = [&](int seat, Json command) {
+                Check(alpha.Execute(seat, command).at("Accepted") == true,
+                      "Expected Alpha 01 wire command to succeed");
+            };
+            run(1, {{"Type", "StartTurn"}});
+            run(1, {{"Type", "Summon"}, {"CardId", first}, {"Method", "Normal"},
+                    {"Materials", Json::array()}, {"Slot", 0}});
+            run(1, {{"Type", "BeginRaid"}});
+            run(2, {{"Type", "StartTurn"}});
+            run(2, {{"Type", "BeginRaid"}});
+            run(1, {{"Type", "StartTurn"}});
+            run(1, {{"Type", "Summon"}, {"CardId", second}, {"Method", "Normal"},
+                    {"Materials", Json::array()}, {"Slot", 1}});
+            run(1, {{"Type", "ActivateMainSpell"}, {"CardId", spell},
+                    {"Costs", Json::array({cost})}});
+            auto const before = alpha.Match().ServerStateHash();
+            auto rejected = alpha.Execute(1, {{"Type", "ChooseEffect"},
+                {"TargetIds", Json::array({first, first})}});
+            Check(rejected.at("Accepted") == false &&
+                      alpha.Match().ServerStateHash() == before,
+                  "Duplicate multi-target wire command must reject atomically");
+            rejected = alpha.Execute(2, {{"Type", "ChooseEffect"},
+                {"TargetIds", Json::array({first, second})}});
+            Check(rejected.at("Accepted") == false &&
+                      alpha.Match().ServerStateHash() == before,
+                  "Opponent cannot submit private multi-target choice");
+            run(1, {{"Type", "ChooseEffect"},
+                    {"TargetIds", Json::array({first, second})}});
+            Check(alpha.Match().Player(1).Field[0]->Countdown == 0 &&
+                      alpha.Match().Player(1).Field[1]->Countdown == 0,
+                  "Two-target wire choice must update both selected units");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                OrderedDeck(proto, {2001, 2010, 2002, 2003, 2009,
+                                    3001, 3007, 2001, 2002}),
+                OrderedDeck(proto, {})};
+            YakouCommandGateway rebirth(proto, 1, decks);
+            auto const opening = rebirth.Match().Player(1).Hand;
+            Check(rebirth.Execute(1, {{"Type", "StartTurn"}}).at("Accepted") == true,
+                  "Special summon fixture must start");
+            Check(rebirth.Execute(1, {{"Type", "Summon"}, {"CardId", opening[0]},
+                {"Method", "Normal"}, {"Materials", Json::array()}, {"Slot", 0}}).at("Accepted") == true,
+                  "Mill monster must supply authored special summon costs");
+            Check(rebirth.Execute(1, {{"Type", "ActivateMainSpell"},
+                {"CardId", opening[4]}}).at("Accepted") == true,
+                  "Mill spell must supply a separate eligible summon target");
+            auto const grave = rebirth.Match().Player(1).Graveyard;
+            Check(grave.size() >= 5, "Fixture graveyard must contain target and cost materials");
+            auto cast = rebirth.Execute(1, {{"Type", "ActivateMainSpell"},
+                {"CardId", opening[1]}, {"Costs", Json::array({grave[0], grave[1]})}});
+            Check(cast.at("Accepted") == true &&
+                      cast.at("Snapshot").at("PendingSelection").at("Operation") == "SpecialSummon" &&
+                      cast.at("Snapshot").at("PendingSelection").at("AvailableSlots").size() == 4,
+                  "Special summon must offer server-authorized grave targets and open slots");
+            int const target = grave[4];
+            auto const before = rebirth.Match().ServerStateHash();
+            auto rejected = rebirth.Execute(1, {{"Type", "ChooseEffect"},
+                {"TargetId", target}, {"Slot", 0}});
+            Check(rejected.at("Accepted") == false &&
+                      rebirth.Match().ServerStateHash() == before,
+                  "Occupied special summon slot must reject without changing state");
+            rejected = rebirth.Execute(2, {{"Type", "ChooseEffect"},
+                {"TargetId", target}, {"Slot", 1}});
+            Check(rejected.at("Accepted") == false &&
+                      rebirth.Match().ServerStateHash() == before,
+                  "Opponent cannot choose a private graveyard target");
+            auto chosen = rebirth.Execute(1, {{"Type", "ChooseEffect"},
+                {"TargetId", target}, {"Slot", 1}});
+            Check(chosen.at("Accepted") == true &&
+                      rebirth.Match().Player(1).Field[1] &&
+                      rebirth.Match().Player(1).Field[1]->InstanceId == target,
+                  "Selected monster must move from graveyard to the chosen field slot");
+            auto command = [](YakouReplayOperation operation) {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = 1;
+                return value;
+            };
+            std::vector<YakouReplayCommand> commands;
+            commands.push_back(command(YakouReplayOperation::StartTurn));
+            auto summon = command(YakouReplayOperation::SummonAndRunAutomaticTriggers);
+            summon.CardId = opening[0];
+            summon.Method = "Normal";
+            commands.push_back(summon);
+            auto mill = command(YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers);
+            mill.CardId = opening[4];
+            commands.push_back(mill);
+            auto castCommand = command(YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers);
+            castCommand.CardId = opening[1];
+            castCommand.Cards = {grave[0], grave[1]};
+            commands.push_back(castCommand);
+            auto choose = command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers);
+            choose.TargetId = target;
+            choose.EffectSlot = 1;
+            commands.push_back(choose);
+            Check(ReplayYakou(proto, 1, decks, commands).FinalState.ServerStateHash() ==
+                      rebirth.Match().ServerStateHash(),
+                  "Special summon and selected slot must replay deterministically");
+        }
         auto gateway = NewGateway(proto);
         {
             YakouCommandGateway paid(proto, 1,

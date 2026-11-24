@@ -1,5 +1,7 @@
 """Opt-in Yakou prototype: real two-client RFC6455 transport integration."""
 import os
+import json
+from pathlib import Path
 import socket
 import subprocess
 import sys
@@ -137,6 +139,83 @@ def run(port):
             peer.close()
 
 
+def run_deck_selection(port):
+    source = Path(__file__).resolve().parents[1] / "Data" / "YakouPrototype" / "Decks.json"
+    decks = {deck["Id"]: deck["Cards"] for deck in json.loads(source.read_text(encoding="utf-8"))["Decks"]}
+    grave, raid, guard = "YakouAlphaGrave", "YakouAlphaRaid", "YakouAlphaGuard"
+    combinations = [(grave, raid), (grave, guard), (raid, guard),
+                    (grave, grave), (raid, raid), (guard, guard)]
+    for first, second in combinations:
+        a, b = Peer(port), Peer(port)
+        try:
+            a.send("YakouCreate", DeckId="unknown-deck")
+            assert expect(a, "YakouRejected")["Payload"]["Reason"] == "InvalidDeckId"
+            a.send("YakouCreate", DeckId=first)
+            created = expect(a, "YakouCreated")
+            match = created["MatchId"]
+            assert created["Payload"]["DeckId"] == first
+            initial = expect(a, "YakouSnapshot")["Payload"]
+            assert initial["DeckId"] == first
+            b.send("YakouJoin", MatchId=match, DeckId="unknown-deck")
+            assert expect(b, "YakouRejected")["Payload"]["Reason"] == "InvalidDeckId"
+            b.send("YakouJoin", MatchId=match, DeckId=second)
+            joined = expect(b, "YakouJoined")
+            assert joined["Payload"]["DeckId"] == second
+            left = expect(a, "YakouSnapshot")["Payload"]
+            right = expect(b, "YakouSnapshot")["Payload"]
+            assert left["DeckId"] == first and right["DeckId"] == second
+            assert [card["DefinitionId"] for card in left["State"]["Players"][0]["Hand"]] == decks[first][:5]
+            assert [card["DefinitionId"] for card in right["State"]["Players"][1]["Hand"]] == decks[second][:5]
+            assert left["State"]["Players"][1]["Hand"] == []
+            assert right["State"]["Players"][0]["Hand"] == []
+            assert "DeckId" not in left["State"]["Players"][1]
+            assert "DeckId" not in right["State"]["Players"][0]
+            state = left["State"]
+            summoned = False
+            for step in range(256):
+                if state["Phase"] == "Finished":
+                    break
+                phase = state["Phase"]
+                active = state["ActivePlayerId"]
+                if phase == "TurnStart":
+                    seat, payload = active, {"Type": "StartTurn"}
+                elif phase == "Main" and active == 1 and not summoned:
+                    chosen_definition = 3004 if first == guard else decks[first][0]
+                    card = next(card for card in state["Players"][0]["Hand"]
+                                if card["DefinitionId"] == chosen_definition)
+                    seat = 1
+                    payload = {"Type": "Summon", "CardId": card["Id"],
+                               "Method": "Normal", "Materials": [], "Slot": 0}
+                    summoned = True
+                elif phase == "Main":
+                    seat, payload = active, {"Type": "BeginRaid"}
+                elif phase == "AssignBlockers":
+                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": []}
+                elif phase == "RaidResponse":
+                    priority = state["PriorityPlayerId"]
+                    seat = priority if priority else 3 - active
+                    payload = {"Type": "PassRaidResponse" if priority else "ResolveRaid"}
+                else:
+                    raise AssertionError(f"Unexpected phase during Alpha duel: {phase}")
+                acting = a if seat == 1 else b
+                result = command(acting, match, f"deck-game-{step}", payload)
+                assert result["Payload"]["Accepted"] is True
+                left = expect(a, "YakouSnapshot")["Payload"]
+                right = expect(b, "YakouSnapshot")["Payload"]
+                assert left["Sequence"] == right["Sequence"]
+                assert left["State"]["Players"][1]["Hand"] == []
+                assert right["State"]["Players"][0]["Hand"] == []
+                state = left["State"]
+            assert summoned and state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
+            b.send("YakouLeave", MatchId=match)
+            expect(a, "YakouClosed")
+            expect(b, "YakouClosed")
+        finally:
+            a.close()
+            b.close()
+    print("Real Yakou websocket: six Alpha 01 deck pairings, private snapshots and summoned matches to victory passed")
+
+
 if __name__ == "__main__":
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
@@ -150,6 +229,7 @@ if __name__ == "__main__":
         line = proc.stdout.readline()
         assert "listening" in line, line
         tokens = run(port)
+        run_deck_selection(port)
     finally:
         proc.terminate()
         try:

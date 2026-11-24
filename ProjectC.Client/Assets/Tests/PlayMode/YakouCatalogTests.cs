@@ -22,8 +22,8 @@ namespace ProjectC.Tests
             var legacy = CardLibrary.LoadResources();
             var legacyName = legacy.Find(2001).Name;
             var yakou = CardLibrary.LoadYakouResources();
-            Assert.AreEqual("yakou-2026-11-12-prototype-v02", yakou.CatalogVersion);
-            Assert.AreEqual(34, yakou.Cards.Count());
+            Assert.AreEqual("yakou-2026-11-23-alpha01-v1", yakou.CatalogVersion);
+            Assert.AreEqual(55, yakou.Cards.Count());
             Assert.AreEqual("Spell", legacy.Find(2001).Type);
             Assert.AreEqual("Monster", yakou.Find(2001).Type);
             Assert.AreEqual("등불동자", yakou.Find(2001).Name);
@@ -34,6 +34,7 @@ namespace ProjectC.Tests
                 yakou.Localization.GetText("ui.choice.confirm"), "Shared UI strings remain available");
             yakou.Localization.Language = "japanese";
             Assert.AreEqual("등불동자", yakou.Find(2001).Name, "Missing authored translations fall back to Korean");
+            Assert.AreEqual("墓守", yakou.Find(4001).Name, "New cards use their authored Japanese text");
             Assert.AreEqual("korean", legacy.Localization.Language, "Profile languages do not mutate each other");
             foreach (var card in yakou.Cards)
             {
@@ -55,9 +56,14 @@ namespace ProjectC.Tests
                 Assert.IsNotNull(DeckValidator.CannotAdd(new PersonalDeck(), yakou, id));
             }
             var decks = CardLibrary.Samples(Resource("CardData/YakouPrototypeDecks"), yakou);
-            Assert.AreEqual(1, decks.Count);
+            Assert.AreEqual(4, decks.Count);
             Assert.AreEqual("HyakkiSampleV02", decks[0].DeckId);
-            Assert.IsTrue(DeckValidator.Validate(decks[0], yakou).CanPlay);
+            CollectionAssert.AreEquivalent(new[] { "HyakkiSampleV02", "YakouAlphaGrave",
+                "YakouAlphaRaid", "YakouAlphaGuard" }, decks.Select(deck => deck.DeckId));
+            foreach (var deck in decks)
+            {
+                Assert.IsTrue(DeckValidator.Validate(deck, yakou).CanPlay, deck.DeckId);
+            }
             Assert.Throws<FormatException>(() => CardLibrary.Load(Resource("CardData/YakouPrototypeCards"),
                 LocalizationService.Load(Resource("CardData/YakouPrototypeLocalize"))),
                 "The legacy loading path must not silently accept a new rules profile");

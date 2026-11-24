@@ -1222,5 +1222,335 @@
     "korean": "연결이 끊겼습니다. 연결 화면에서 재접속 중입니다.",
     "english": "Disconnected. Reconnecting through ConnectionScene.",
     "japanese": "切断されました。接続画面から再接続しています。"
+  },
+  {
+    "lmk": "card_4001_name",
+    "korean": "묘비 지킴이",
+    "english": "Grave Keeper",
+    "japanese": "墓守"
+  },
+  {
+    "lmk": "card_4001_desc",
+    "korean": "{소환:@Summon} 시 자신의 덱 위 카드 1장을 {묘지:@Graveyard}로 보낸다. 카드명 기준 턴당 1회.",
+    "english": "On {summon:@Summon}, send the top card of your deck to your {Graveyard:@Graveyard}. Once per turn per card name.",
+    "japanese": "{召喚:@Summon}時、自分のデッキの上からカード1枚を{墓地:@Graveyard}へ送る。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4002_name",
+    "korean": "혼백 수선공",
+    "english": "Soul Mender",
+    "japanese": "魂の繕い手"
+  },
+  {
+    "lmk": "card_4002_desc",
+    "korean": "{폐기:@Discard} 1로 소환 가능. 소환 시 자신의 {묘지:@Graveyard}에 '{백귀야행:@HyakkiYagyo}' 카드가 3장 이상 있다면, 소환 비용으로 폐기한 카드를 제외한 묘지의 몬스터 1장을 선택해 패로 가져올 수 있다. 카드명 기준 턴당 1회.",
+    "english": "May be summoned by {Discard:@Discard} 1. On summon, if your {Graveyard:@Graveyard} has at least 3 {Hyakki Yagyo:@HyakkiYagyo} cards, you may return 1 monster there to your hand, excluding the card discarded for this summon. Once per turn per card name.",
+    "japanese": "{廃棄:@Discard}1で召喚可能。召喚時、自分の{墓地:@Graveyard}に{百鬼夜行:@HyakkiYagyo}カードが3枚以上あるなら、召喚コストで廃棄したカードを除き、墓地のモンスター1枚を選んで手札に戻せる。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4003_name",
+    "korean": "흩어진 원혼",
+    "english": "Scattered Wraith",
+    "japanese": "散りゆく怨霊"
+  },
+  {
+    "lmk": "card_4003_desc",
+    "korean": "{폐기:@Discard} 1로 소환 가능. 소환 시 자신의 덱 위 카드 1장을 {묘지:@Graveyard}로 보낸다. 카드명 기준 턴당 1회.",
+    "english": "May be summoned by {Discard:@Discard} 1. On summon, send the top card of your deck to your {Graveyard:@Graveyard}. Once per turn per card name.",
+    "japanese": "{廃棄:@Discard}1で召喚可能。召喚時、自分のデッキの上からカード1枚を{墓地:@Graveyard}へ送る。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4004_name",
+    "korean": "무덤 포식귀",
+    "english": "Grave Devourer",
+    "japanese": "墓喰い鬼"
+  },
+  {
+    "lmk": "card_4004_desc",
+    "korean": "{포식:@Devour} 1로 소환 가능. 포식 소환 시 자신의 {공격 카운터:@Countdown}를 1 감소시킨다. 포식 능력치 계승 규칙을 적용한다.",
+    "english": "May be summoned by {Devour:@Devour} 1. On Devour summon, reduce its {attack countdown:@Countdown} by 1. Apply Devour stat inheritance.",
+    "japanese": "{捕食:@Devour}1で召喚可能。捕食召喚時、自身の{攻撃カウンター:@Countdown}を1減らす。捕食による能力値継承を適用する。"
+  },
+  {
+    "lmk": "card_4005_name",
+    "korean": "저승의 추격자",
+    "english": "Nether Pursuer",
+    "japanese": "冥界の追跡者"
+  },
+  {
+    "lmk": "card_4005_desc",
+    "korean": "{강령:@Necromancy} 2로 소환 가능. 소환 시 자신의 덱 위 카드 1장을 {묘지:@Graveyard}로 보낸다. 카드명 기준 턴당 1회.",
+    "english": "May be summoned by {Necromancy:@Necromancy} 2. On summon, send the top card of your deck to your {Graveyard:@Graveyard}. Once per turn per card name.",
+    "japanese": "{降霊:@Necromancy}2で召喚可能。召喚時、デッキの上からカード1枚を{墓地:@Graveyard}へ送る。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4006_name",
+    "korean": "망혼의 계약",
+    "english": "Pact of Lost Souls",
+    "japanese": "亡魂の契約"
+  },
+  {
+    "lmk": "card_4006_desc",
+    "korean": "{강령:@Necromancy} 1. 비용으로 {제외:@Exile}한 카드를 제외하고 자신의 {묘지:@Graveyard}에서 몬스터 1장을 선택해 패로 가져온다. 카드명 기준 턴당 1회.",
+    "english": "{Necromancy:@Necromancy} 1. Return 1 monster from your {Graveyard:@Graveyard} to your hand, excluding the card banished for this cost. Once per turn per card name.",
+    "japanese": "{降霊:@Necromancy}1。コストとして{除外:@Exile}したカードを除き、自分の{墓地:@Graveyard}からモンスター1枚を選んで手札に戻す。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4007_name",
+    "korean": "혼불의 길",
+    "english": "Wisp Trail",
+    "japanese": "魂火の道"
+  },
+  {
+    "lmk": "card_4007_desc",
+    "korean": "자신의 덱 위 카드 1장을 {묘지:@Graveyard}로 보낸 뒤, 아군 몬스터 1장의 {공격 카운터:@Countdown}를 1 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "Send the top card of your deck to your {Graveyard:@Graveyard}, then reduce the {attack countdown:@Countdown} of 1 allied monster by 1. Once per turn per card name.",
+    "japanese": "デッキの上からカード1枚を{墓地:@Graveyard}へ送り、味方モンスター1体の{攻撃カウンター:@Countdown}を1減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4008_name",
+    "korean": "외눈 낭인",
+    "english": "One-Eyed Ronin",
+    "japanese": "隻眼の浪人"
+  },
+  {
+    "lmk": "card_4008_desc",
+    "korean": "효과 없음.",
+    "english": "No effect.",
+    "japanese": "効果なし。"
+  },
+  {
+    "lmk": "card_4009_name",
+    "korean": "산길의 척후",
+    "english": "Mountain Scout",
+    "japanese": "山道の斥候"
+  },
+  {
+    "lmk": "card_4009_desc",
+    "korean": "효과 없음.",
+    "english": "No effect.",
+    "japanese": "効果なし。"
+  },
+  {
+    "lmk": "card_4010_name",
+    "korean": "출진의 북잡이",
+    "english": "War Drummer",
+    "japanese": "出陣の太鼓打ち"
+  },
+  {
+    "lmk": "card_4010_desc",
+    "korean": "소환 시 다른 아군 몬스터 1장의 {공격 카운터:@Countdown}를 1 감소시킬 수 있다. 카드명 기준 턴당 1회.",
+    "english": "On summon, you may reduce another allied monster's {attack countdown:@Countdown} by 1. Once per turn per card name.",
+    "japanese": "召喚時、他の味方モンスター1体の{攻撃カウンター:@Countdown}を1減らせる。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4011_name",
+    "korean": "붉은 뿔 오니",
+    "english": "Red-Horned Oni",
+    "japanese": "赤角の鬼"
+  },
+  {
+    "lmk": "card_4011_desc",
+    "korean": "{포식:@Devour} 1로 소환 가능. 포식 소환 시 자신의 {공격 카운터:@Countdown}를 1 감소시킨다. 포식 능력치 계승 규칙을 적용한다.",
+    "english": "May be summoned by {Devour:@Devour} 1. On Devour summon, reduce its {attack countdown:@Countdown} by 1. Apply Devour stat inheritance.",
+    "japanese": "{捕食:@Devour}1で召喚可能。捕食召喚時、自身の{攻撃カウンター:@Countdown}を1減らす。捕食による能力値継承を適用する。"
+  },
+  {
+    "lmk": "card_4012_name",
+    "korean": "야습의 신호",
+    "english": "Night Raid Signal",
+    "japanese": "夜襲の合図"
+  },
+  {
+    "lmk": "card_4012_desc",
+    "korean": "{폐기:@Discard} 1. 서로 다른 아군 몬스터 1~2장을 선택해 각각의 {공격 카운터:@Countdown}를 1 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "{Discard:@Discard} 1. Choose 1 or 2 distinct allied monsters; reduce each one's {attack countdown:@Countdown} by 1. Once per turn per card name.",
+    "japanese": "{廃棄:@Discard}1。異なる味方モンスター1～2体を選び、それぞれの{攻撃カウンター:@Countdown}を1減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4013_name",
+    "korean": "전장의 휘장",
+    "english": "Battlefield Banner",
+    "japanese": "戦場の旗印"
+  },
+  {
+    "lmk": "card_4013_desc",
+    "korean": "{폐기:@Discard} 1. 아군 몬스터 1장의 {공격 카운터:@Countdown}를 2 감소시킨다. 0 미만으로는 내려가지 않는다. 카드명 기준 턴당 1회.",
+    "english": "{Discard:@Discard} 1. Reduce an allied monster's {attack countdown:@Countdown} by 2 (minimum 0). Once per turn per card name.",
+    "japanese": "{廃棄:@Discard}1。味方モンスター1体の{攻撃カウンター:@Countdown}を2減らす（下限0）。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4014_name",
+    "korean": "달리는 그림자",
+    "english": "Fleet Shadow",
+    "japanese": "駆ける影"
+  },
+  {
+    "lmk": "card_4014_desc",
+    "korean": "{폐기:@Discard} 1로 소환 가능. 소환 시 자신의 {공격 카운터:@Countdown}를 1 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "May be summoned by {Discard:@Discard} 1. On summon, reduce its {attack countdown:@Countdown} by 1. Once per turn per card name.",
+    "japanese": "{廃棄:@Discard}1で召喚可能。召喚時、自身の{攻撃カウンター:@Countdown}を1減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4015_name",
+    "korean": "결계 수습승",
+    "english": "Novice Ward Monk",
+    "japanese": "結界の見習い僧"
+  },
+  {
+    "lmk": "card_4015_desc",
+    "korean": "소환 시 아군 몬스터 1장의 누적 피해를 최대 2 회복할 수 있다. 카드명 기준 턴당 1회.",
+    "english": "On summon, you may heal up to 2 accumulated damage from an allied monster. Once per turn per card name.",
+    "japanese": "召喚時、味方モンスター1体の蓄積ダメージを最大2回復できる。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4016_name",
+    "korean": "돌담귀",
+    "english": "Stonewall Oni",
+    "japanese": "石垣鬼"
+  },
+  {
+    "lmk": "card_4016_desc",
+    "korean": "{방어:@Block}자로 배정되면 이번 전투에서 자신이 받을 피해를 2 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "When assigned as a {blocker:@Block}, reduce damage it receives in that combat by 2. Once per turn per card name.",
+    "japanese": "{防御:@Block}役に指定されたとき、その戦闘で自身が受けるダメージを2減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4017_name",
+    "korean": "바꿔치기 부적",
+    "english": "Substitution Talisman",
+    "japanese": "身代わりの護符"
+  },
+  {
+    "lmk": "card_4017_desc",
+    "korean": "{응전:@Response}·{폐기:@Discard} 2. 방어 중인 습격 1개의 방어자를 다른 적법한 아군 몬스터로 바꾼다. 새 방어자가 이번 습격에서 처음 받는 피해를 2 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "{Response:@Response}, {Discard:@Discard} 2. Replace the blocker of a blocked raid with another eligible allied monster. Reduce the first damage that replacement takes in this raid by 2. Once per turn per card name.",
+    "japanese": "{応戦:@Response}・{廃棄:@Discard}2。防御中の襲撃1つの防御役を、別の適法な味方モンスターに変更する。新たな防御役がこの襲撃で最初に受けるダメージを2減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4018_name",
+    "korean": "안개의 장막",
+    "english": "Veil of Mist",
+    "japanese": "霧の帳"
+  },
+  {
+    "lmk": "card_4018_desc",
+    "korean": "{응전:@Response}. 이번 습격에서 방어자로 배정된 아군 몬스터들은 각각 처음 받는 피해를 1 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "{Response:@Response}. Each allied blocker assigned in this raid takes 1 less damage from its first damage event. Once per turn per card name.",
+    "japanese": "{応戦:@Response}。この襲撃で防御役に指定された味方モンスターは、それぞれ最初に受けるダメージを1減らす。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4019_name",
+    "korean": "거울의 호법",
+    "english": "Mirror Guardian",
+    "japanese": "鏡の護法"
+  },
+  {
+    "lmk": "card_4019_desc",
+    "korean": "{강령:@Necromancy} 1로 소환 가능. {방어:@Block}자로 배정되면 자신이 방어하는 적 습격 몬스터의 공격력을 이번 전투 동안 1 감소시킨다. 카드명 기준 턴당 1회.",
+    "english": "May be summoned by {Necromancy:@Necromancy} 1. When assigned as a {blocker:@Block}, reduce the attacking enemy monster's attack by 1 for that combat. Once per turn per card name.",
+    "japanese": "{降霊:@Necromancy}1で召喚可能。{防御:@Block}役に指定されたとき、自身が防御する敵の襲撃モンスターの攻撃力をその戦闘中1下げる。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4020_name",
+    "korean": "봉쇄의 먹",
+    "english": "Sealing Ink",
+    "japanese": "封じの墨"
+  },
+  {
+    "lmk": "card_4020_desc",
+    "korean": "{응전:@Response}·{강령:@Necromancy} 2. 대응 중인 상대 {주문:@Spell}의 효과를 무효화한다. 카드명 기준 턴당 1회.",
+    "english": "{Response:@Response}, {Necromancy:@Necromancy} 2. Negate the effect of the enemy {Spell:@Spell} being responded to. Once per turn per card name.",
+    "japanese": "{応戦:@Response}・{降霊:@Necromancy}2。応戦対象の相手の{呪文:@Spell}の効果を無効にする。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "card_4021_name",
+    "korean": "부적 회수자",
+    "english": "Talisman Retriever",
+    "japanese": "護符拾い"
+  },
+  {
+    "lmk": "card_4021_desc",
+    "korean": "소환 시 자신의 {묘지:@Graveyard}에 주문 카드가 2장 이상 있다면, 그중 주문 1장을 선택해 패로 가져올 수 있다. 카드명 기준 턴당 1회.",
+    "english": "On summon, if your {Graveyard:@Graveyard} contains at least 2 spells, you may return 1 of them to your hand. Once per turn per card name.",
+    "japanese": "召喚時、自分の{墓地:@Graveyard}に呪文カードが2枚以上あるなら、その中から呪文1枚を選んで手札に戻せる。同名カードは1ターンに1回。"
+  },
+  {
+    "lmk": "ui.yakou.deck.title",
+    "korean": "덱 선택",
+    "english": "Choose a Deck",
+    "japanese": "デッキ選択"
+  },
+  {
+    "lmk": "ui.yakou.deck.confirm",
+    "korean": "이 덱으로 대전",
+    "english": "Play with This Deck",
+    "japanese": "このデッキで対戦"
+  },
+  {
+    "lmk": "ui.yakou.deck.selected",
+    "korean": "선택한 덱: {0}",
+    "english": "Selected deck: {0}",
+    "japanese": "選択中のデッキ：{0}"
+  },
+  {
+    "lmk": "ui.yakou.deck.invalid",
+    "korean": "사용할 수 없는 덱입니다.",
+    "english": "This deck is unavailable.",
+    "japanese": "このデッキは使用できません。"
+  },
+  {
+    "lmk": "ui.yakou.deck.locked",
+    "korean": "대전 중에는 덱을 변경할 수 없습니다.",
+    "english": "You cannot change decks during a match.",
+    "japanese": "対戦中はデッキを変更できません。"
+  },
+  {
+    "lmk": "ui.yakou.deck.grave.name",
+    "korean": "망혼의 행렬",
+    "english": "Procession of Lost Souls",
+    "japanese": "亡魂の行列"
+  },
+  {
+    "lmk": "ui.yakou.deck.grave.desc",
+    "korean": "묘지를 채우고 강령·회수로 자원을 순환하는 운영형 덱.",
+    "english": "A value deck that fills the graveyard and cycles resources through Necromancy and recovery.",
+    "japanese": "墓地を肥やし、降霊と回収で資源を循環させる運用型デッキ。"
+  },
+  {
+    "lmk": "ui.yakou.deck.raid.name",
+    "korean": "붉은 야습",
+    "english": "Crimson Night Raid",
+    "japanese": "紅の夜襲"
+  },
+  {
+    "lmk": "ui.yakou.deck.raid.desc",
+    "korean": "공격 카운터를 조절해 습격 타이밍을 만드는 압박형 덱.",
+    "english": "An aggressive deck that controls attack countdowns to create raid opportunities.",
+    "japanese": "攻撃カウンターを調整して襲撃の機会を作る攻撃型デッキ。"
+  },
+  {
+    "lmk": "ui.yakou.deck.guard.name",
+    "korean": "봉인의 밤",
+    "english": "Night of Seals",
+    "japanese": "封印の夜"
+  },
+  {
+    "lmk": "ui.yakou.deck.guard.desc",
+    "korean": "방어 배정·피해 감소·주문 응전으로 버티는 제어형 덱.",
+    "english": "A control deck using blockers, damage reduction, and spell responses.",
+    "japanese": "防御配置、ダメージ軽減、呪文への応戦で粘る制御型デッキ。"
+  },
+  {
+    "lmk": "ui.yakou.deck.wait_opponent",
+    "korean": "상대의 덱 선택을 기다리는 중입니다.",
+    "english": "Waiting for the opponent to choose a deck.",
+    "japanese": "相手のデッキ選択を待っています。"
+  },
+  {
+    "lmk": "ui.yakou.deck.choose_before_join",
+    "korean": "방에 참가하기 전에 덱을 선택하세요.",
+    "english": "Choose a deck before joining a room.",
+    "japanese": "ルームに参加する前にデッキを選んでください。"
   }
 ]

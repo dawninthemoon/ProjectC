@@ -20,6 +20,7 @@ namespace ProjectC.Client
         private JObject _resumeEnvelope;
 
         public string MatchId { get; private set; }
+        public string SelectedDeckId { get; private set; }
         public int Seat { get; private set; }
         public long Sequence { get; private set; } = -1;
         public JObject State { get; private set; }
@@ -49,13 +50,18 @@ namespace ProjectC.Client
             };
         }
 
-        public void Create()
+        public void Create(string deckId = null)
         {
             RequireUnbound();
-            SendBinding(Request("YakouCreate"), "YakouCreated");
+            var request = Request("YakouCreate");
+            if (!string.IsNullOrEmpty(deckId))
+            {
+                request["DeckId"] = deckId;
+            }
+            SendBinding(request, "YakouCreated");
         }
 
-        public void Join(string matchId)
+        public void Join(string matchId, string deckId = null)
         {
             RequireUnbound();
             if (string.IsNullOrWhiteSpace(matchId))
@@ -64,6 +70,10 @@ namespace ProjectC.Client
             }
             var request = Request("YakouJoin");
             request["MatchId"] = matchId;
+            if (!string.IsNullOrEmpty(deckId))
+            {
+                request["DeckId"] = deckId;
+            }
             SendBinding(request, "YakouJoined");
         }
 
@@ -123,6 +133,7 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Leave the active room first.");
             }
             MatchId = null;
+            SelectedDeckId = null;
             Seat = 0;
             Sequence = -1;
             State = null;
@@ -233,6 +244,7 @@ namespace ProjectC.Client
                     throw new FormatException("Invalid Yakou session binding.");
                 }
                 MatchId = match;
+                SelectedDeckId = (string)payload["DeckId"] ?? "HyakkiSampleV02";
                 Seat = seat;
                 _resumeToken = token;
                 _resumeEnvelope = null;
@@ -307,6 +319,7 @@ namespace ProjectC.Client
                 if (type == "YakouClosed")
                 {
                     MatchId = null;
+                    SelectedDeckId = null;
                     _resumeToken = null;
                     _resumeEnvelope = null;
                     _pendingRequest = null;

@@ -28,6 +28,9 @@ namespace ProjectC.Client
         private string _error = "";
         private Vector2 _scroll;
         private CardLibrary _library;
+        private readonly List<(string Id, string NameKey, string DescriptionKey)> _deckChoices =
+            new List<(string Id, string NameKey, string DescriptionKey)>();
+        private string _selectedDeckId;
         private YakouSessionClient _session;
         private long _renderedSequence = -1;
         private string _renderedMatch;
@@ -54,6 +57,7 @@ namespace ProjectC.Client
                     try
                     {
                         _library = CardLibrary.LoadYakouResources();
+                        LoadDeckChoices();
                         _open = true;
                         HideCanvases();
                     }
@@ -90,15 +94,24 @@ namespace ProjectC.Client
             }
             else if (string.IsNullOrEmpty(_session.MatchId))
             {
+                DrawDeckChoices();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.create_room"), GUILayout.Height(LineHeight)))
                 {
-                    Try(() => _session.Create());
+                    Try(() =>
+                    {
+                        RequireDeckChoice();
+                        _session.Create(_selectedDeckId);
+                    });
                 }
                 _room = GUILayout.TextField(_room, 64, GUILayout.Height(LineHeight));
                 if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.join_room"), GUILayout.Height(LineHeight)))
                 {
-                    Try(() => _session.Join(_room.Trim()));
+                    Try(() =>
+                    {
+                        RequireDeckChoice();
+                        _session.Join(_room.Trim(), _selectedDeckId);
+                    });
                 }
                 GUILayout.EndHorizontal();
             }
@@ -120,6 +133,11 @@ namespace ProjectC.Client
 
         private void DrawMatch()
         {
+            var selected = _deckChoices.FirstOrDefault(deck => deck.Id == _session.SelectedDeckId);
+            if (!string.IsNullOrEmpty(selected.NameKey))
+            {
+                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", YakouUiText.Get(selected.NameKey)));
+            }
             if (_renderedMatch != _session.MatchId)
             {
                 _renderedMatch = _session.MatchId;
@@ -192,6 +210,69 @@ namespace ProjectC.Client
             }
             DrawSelection(state["PendingSelection"] as JObject);
             DrawControls(state);
+        }
+
+        private void LoadDeckChoices()
+        {
+            var resource = Resources.Load<TextAsset>("CardData/YakouPrototypeDecks");
+            if (resource == null)
+            {
+                throw new InvalidOperationException("Yakou deck resource is missing.");
+            }
+            var catalog = JObject.Parse(resource.text);
+            if ((string)catalog["CatalogVersion"] != _library.CatalogVersion)
+            {
+                throw new InvalidOperationException("Yakou deck and card versions differ.");
+            }
+            _deckChoices.Clear();
+            foreach (JObject deck in (JArray)catalog["Decks"])
+            {
+                string nameKey = (string)deck["NameKey"];
+                if (string.IsNullOrEmpty(nameKey))
+                {
+                    continue;
+                }
+                string id = (string)deck["Id"];
+                string descriptionKey = nameKey.Replace(".name", ".desc");
+                if (!_library.Localization.ContainsKey(nameKey)
+                    || !_library.Localization.ContainsKey(descriptionKey))
+                {
+                    throw new InvalidOperationException("Yakou deck localization is missing: " + id);
+                }
+                _deckChoices.Add((id, nameKey, descriptionKey));
+            }
+            if (_deckChoices.Count != 3)
+            {
+                throw new InvalidOperationException("Yakou Alpha 01 requires three selectable decks.");
+            }
+        }
+
+        private void DrawDeckChoices()
+        {
+            GUILayout.Label(YakouUiText.Get("ui.yakou.deck.title"));
+            foreach (var deck in _deckChoices)
+            {
+                GUILayout.BeginVertical("box");
+                if (GUILayout.Button(YakouUiText.Get(deck.NameKey), GUILayout.Height(LineHeight)))
+                {
+                    _selectedDeckId = deck.Id;
+                }
+                GUILayout.Label(YakouUiText.Get(deck.DescriptionKey));
+                GUILayout.EndVertical();
+            }
+            if (!string.IsNullOrEmpty(_selectedDeckId))
+            {
+                var selected = _deckChoices.First(deck => deck.Id == _selectedDeckId);
+                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", YakouUiText.Get(selected.NameKey)));
+            }
+        }
+
+        private void RequireDeckChoice()
+        {
+            if (string.IsNullOrEmpty(_selectedDeckId))
+            {
+                throw new InvalidOperationException(YakouUiText.Get("ui.yakou.deck.choose_before_join"));
+            }
         }
 
         private void DrawPlayer(JToken player)
