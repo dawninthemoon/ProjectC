@@ -156,7 +156,8 @@ public:
     // discard-one cost. Paid spells do not yet enter the response window.
     void ActivateMainSpell(int player, int handInstance, std::vector<int> const& costs = {});
     // Opt-in response-aware spell path; supported counterspell: 3020 only.
-    void BeginSpellResponse(int player, int handInstance, int targetInstance = 0);
+    void BeginSpellResponse(int player, int handInstance, int targetInstance = 0,
+                            std::vector<int> const& costs = {});
     void RespondWithNegation(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponse(int player);
     void StartTurn(int player);
@@ -181,7 +182,8 @@ public:
 
 private:
     void ActivateMainSpellImpl(int player, int handInstance, std::vector<int> const& costs);
-    void BeginSpellResponseImpl(int player, int handInstance, int targetInstance);
+    void BeginSpellResponseImpl(int player, int handInstance, int targetInstance,
+                                std::vector<int> const& costs);
     void RespondWithNegationImpl(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponseImpl(int player);
     void StartTurnImpl(int player);

@@ -79,6 +79,10 @@ int main()
                     {"Materials", Json::array()}, {"Slot", 1}});
             run(1, {{"Type", "ActivateMainSpell"}, {"CardId", spell},
                     {"Costs", Json::array({cost})}});
+            Check(alpha.Match().Phase() == YakouPhase::SpellResponse,
+                  "Paid spell must give the opponent response priority");
+            run(2, {{"Type", "PassSpellResponse"}});
+            run(1, {{"Type", "PassSpellResponse"}});
             auto const before = alpha.Match().ServerStateHash();
             auto rejected = alpha.Execute(1, {{"Type", "ChooseEffect"},
                 {"TargetIds", Json::array({first, first})}});
@@ -111,13 +115,21 @@ int main()
             Check(rebirth.Execute(1, {{"Type", "ActivateMainSpell"},
                 {"CardId", opening[4]}}).at("Accepted") == true,
                   "Mill spell must supply a separate eligible summon target");
+            Check(rebirth.Execute(2, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                      rebirth.Execute(1, {{"Type", "PassSpellResponse"}}).at("Accepted") == true,
+                  "Mill spell must resolve after opponent and owner pass");
             auto const grave = rebirth.Match().Player(1).Graveyard;
             Check(grave.size() >= 5, "Fixture graveyard must contain target and cost materials");
             auto cast = rebirth.Execute(1, {{"Type", "ActivateMainSpell"},
                 {"CardId", opening[1]}, {"Costs", Json::array({grave[0], grave[1]})}});
-            Check(cast.at("Accepted") == true &&
-                      cast.at("Snapshot").at("PendingSelection").at("Operation") == "SpecialSummon" &&
-                      cast.at("Snapshot").at("PendingSelection").at("AvailableSlots").size() == 4,
+            Check(cast.at("Accepted") == true && cast.at("Snapshot").at("Phase") == "SpellResponse",
+                  "Paid special summon must open a response window");
+            Check(rebirth.Execute(2, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                      rebirth.Execute(1, {{"Type", "PassSpellResponse"}}).at("Accepted") == true,
+                  "Special summon selection must wait for both passes");
+            cast = rebirth.Snapshot(1);
+            Check(cast.at("PendingSelection").at("Operation") == "SpecialSummon" &&
+                      cast.at("PendingSelection").at("AvailableSlots").size() == 4,
                   "Special summon must offer server-authorized grave targets and open slots");
             int const target = grave[4];
             auto const before = rebirth.Match().ServerStateHash();
@@ -149,13 +161,19 @@ int main()
             summon.CardId = opening[0];
             summon.Method = "Normal";
             commands.push_back(summon);
-            auto mill = command(YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers);
+            auto mill = command(YakouReplayOperation::BeginSpellResponse);
             mill.CardId = opening[4];
             commands.push_back(mill);
-            auto castCommand = command(YakouReplayOperation::ActivateMainSpellAndRunAutomaticTriggers);
+            auto passOpponent = command(YakouReplayOperation::PassSpellResponse);
+            passOpponent.Player = 2;
+            commands.push_back(passOpponent);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse));
+            auto castCommand = command(YakouReplayOperation::BeginSpellResponse);
             castCommand.CardId = opening[1];
             castCommand.Cards = {grave[0], grave[1]};
             commands.push_back(castCommand);
+            commands.push_back(passOpponent);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse));
             auto choose = command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers);
             choose.TargetId = target;
             choose.EffectSlot = 1;
@@ -178,9 +196,14 @@ int main()
             auto const success = paid.Execute(1, {{"Type", "ActivateMainSpell"}, {"CardId", hand[0]},
                                                    {"Costs", Json::array({hand[1]})}});
             Check(success.at("Accepted").get<bool>() &&
-                      success.at("Snapshot").at("PendingSelection").at("CandidateCards").size() == 3 &&
+                      success.at("Snapshot").at("Phase") == "SpellResponse" &&
                       !paid.Snapshot(2).contains("PendingSelection"),
-                  "Paid spell must expose deck candidates only to its controller");
+                  "Paid spell must wait for response before private deck choice");
+            Check(paid.Execute(2, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                      paid.Execute(1, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                      paid.Snapshot(1).at("PendingSelection").at("CandidateCards").size() == 3 &&
+                      !paid.Snapshot(2).contains("PendingSelection"),
+                  "Paid spell must expose deck candidates only after both passes");
         }
         auto first = gateway.Snapshot(1);
         auto second = gateway.Snapshot(2);
@@ -244,9 +267,14 @@ int main()
         auto const deckBeforeSpell = gateway.Match().Player(1).Deck.size();
         auto spell = gateway.Execute(1, {{"Type", "ActivateMainSpell"}, {"CardId", firstHand[2]}});
         Check(spell.at("Accepted").get<bool>() &&
-              gateway.Match().Player(1).Deck.size() == deckBeforeSpell - 2 &&
-              gateway.Match().PendingEffects().empty(),
-              "Main spell gateway must apply its automatic OnResolve effect");
+                  gateway.Match().Phase() == YakouPhase::SpellResponse &&
+                  gateway.Match().Player(1).Deck.size() == deckBeforeSpell,
+              "Main spell gateway must open opponent priority");
+        Check(gateway.Execute(2, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                  gateway.Execute(1, {{"Type", "PassSpellResponse"}}).at("Accepted") == true &&
+                  gateway.Match().Player(1).Deck.size() == deckBeforeSpell - 2 &&
+                  gateway.Match().PendingEffects().empty(),
+              "Main spell effect must resolve after both passes");
 
         auto const other = gateway.Snapshot(2);
         Check(other.at("Players").at(0).at("Hand").empty() &&
