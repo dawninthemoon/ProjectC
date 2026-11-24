@@ -141,6 +141,17 @@ void Apply(YakouMatch& match, int seat, Json const& request)
         Fields(request, {"Type"});
         match.PassRaidResponse(seat);
     }
+    else if (type == "RespondWithPiercing")
+    {
+        Fields(request, {"Type", "CardId", "CostId"});
+        match.RespondWithPiercing(seat, Id(request, "CardId"), Id(request, "CostId"));
+    }
+    else if (type == "RespondWithEffectProtection")
+    {
+        Fields(request, {"Type", "CardId", "TargetId", "CostId"});
+        match.RespondWithEffectProtection(seat, Id(request, "CardId"),
+                                          Id(request, "TargetId"), Id(request, "CostId"));
+    }
     else if (type == "ResolveRaid")
     {
         Fields(request, {"Type"});

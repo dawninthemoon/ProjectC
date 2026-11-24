@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -171,6 +172,9 @@ public:
     // Two authorized consecutive passes close the raid preparation window.
     // Card response activation is deliberately unavailable until effect execution exists.
     void PassRaidResponse(int player);
+    void RespondWithPiercing(int player, int raider, int graveyardCost);
+    void RespondWithEffectProtection(int player, int spell, int target, int graveyardCost);
+    [[nodiscard]] int FilterEffectDamage(int target, int amount) const;
     // Defensive response spell 3016: owner-only target, first damage this raid.
     void RespondWithRaidShield(int player, int handInstance, int friendlyUnit);
     // Authored raid tactics 2011/3018/3019; selected attacker and optional
@@ -195,6 +199,8 @@ private:
     void BeginRaidImpl(int player);
     void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
     void PassRaidResponseImpl(int player);
+    void RespondWithPiercingImpl(int player, int raider, int graveyardCost);
+    void RespondWithEffectProtectionImpl(int player, int spell, int target, int graveyardCost);
     void RespondWithRaidShieldImpl(int player, int handInstance, int friendlyUnit);
     void RespondWithRaidTacticImpl(int player, int handInstance,
                                    int raidingUnit, int newBlocker,
@@ -229,6 +235,10 @@ private:
     std::array<int, 2> manifestConditionWaivers_{};
     // Signed temporary attack modifiers indexed by attacking instance.
     std::map<int, int> raidAttackModifiers_;
+    std::set<int> piercingRaiders_;
+    std::set<int> chainTargetedByEnemySpell_;
+    std::map<int, int> chainEffectDamageReduction_;
+    std::set<int> chainEffectDamagePrevention_;
     std::vector<YakouPendingEffect> pendingEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;

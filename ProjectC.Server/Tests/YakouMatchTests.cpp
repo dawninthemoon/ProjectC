@@ -1694,6 +1694,442 @@ int main()
                   "Negated paid spell keeps its cost but creates no private choice");
         }
         {
+            // The enemy spell's accepted target event activates 3009 before
+            // resolution. Card 3017 may then protect that exact own target.
+            auto targetedProto = proto;
+            for (auto& id : targetedProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3009;
+                }
+                else if (id == 3020)
+                {
+                    id = 3017;
+                }
+            }
+            auto match = Make(targetedProto, {2001, 3009, 3017}, {2011, 2002});
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> replayCommands;
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const own = match.Player(1).Hand;
+            auto const enemy = match.Player(2).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, own[0], "Normal", {}, 0);
+            auto firstSummon = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            firstSummon.CardId = own[0];
+            firstSummon.Method = "Normal";
+            replayCommands.push_back(firstSummon);
+            match.BeginRaid(1);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            match.BeginRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 2));
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            match.Summon(1, own[1], "Normal", {}, 1);
+            auto secondSummon = command(YakouReplayOperation::Summon, 1);
+            secondSummon.CardId = own[1];
+            secondSummon.Method = "Normal";
+            secondSummon.Slot = 1;
+            replayCommands.push_back(secondSummon);
+            bool targetingWindow = false;
+            for (int step = 0; step < 20 && !targetingWindow; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    replayCommands.push_back(command(YakouReplayOperation::StartTurn, active));
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                    replayCommands.push_back(command(YakouReplayOperation::BeginRaid, active));
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    targetingWindow = active == 1 &&
+                        std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == own[1]; });
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, {});
+                    replayCommands.push_back(command(YakouReplayOperation::AssignBlockers, defending));
+                    if (!targetingWindow)
+                    {
+                        match.PassRaidResponse(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, defending));
+                        match.PassRaidResponse(active);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, active));
+                        match.ResolveRaid(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, defending));
+                    }
+                }
+            }
+            Check(targetingWindow, "3009 must be a raid target for enemy tactic");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { match.RespondWithRaidTactic(2, enemy[0], 0, 0, {enemy[1]}); });
+            Check(match.ServerStateHash() == beforeBadTarget &&
+                      match.FilterEffectDamage(own[1], 3) == 3,
+                  "Rejected target designation cannot trigger 3009");
+            match.RespondWithRaidTactic(2, enemy[0], own[1], 0, {enemy[1]});
+            auto targetSpell = command(YakouReplayOperation::RespondWithRaidTactic, 2);
+            targetSpell.CardId = enemy[0];
+            targetSpell.TargetId = own[1];
+            targetSpell.Cards = {enemy[1]};
+            replayCommands.push_back(targetSpell);
+            Check(match.FilterEffectDamage(own[1], 3) == 2 &&
+                      match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[1]
+                          .at("EffectDamageReductionThisChain") == 1 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "EnemySpellTargetConfirmed:" + std::to_string(own[1])) !=
+                          match.Journal().end(),
+                  "3009 must reduce effect damage at accepted target declaration");
+            int const graveCost = match.Player(1).Graveyard[0];
+            auto const beforeBadProtection = match.ServerStateHash();
+            Reject([&] { match.RespondWithEffectProtection(1, own[2], own[0], graveCost); });
+            Check(match.ServerStateHash() == beforeBadProtection,
+                  "3017 must reject an own monster not targeted by the enemy spell");
+            match.RespondWithEffectProtection(1, own[2], own[1], graveCost);
+            auto protect = command(YakouReplayOperation::RespondWithEffectProtection, 1);
+            protect.CardId = own[2];
+            protect.TargetId = own[1];
+            protect.Cards = {graveCost};
+            replayCommands.push_back(protect);
+            Check(match.Player(1).Exile.back() == graveCost &&
+                      match.PriorityPlayer() == 2,
+                  "3017 must pay one graveyard card and pass priority");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            match.PassRaidResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
+            Check(match.FilterEffectDamage(own[1], 3) == 0,
+                  "3017 complete effect-damage prevention must override 3009 reduction");
+            match.ResolveRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
+            Check(match.FilterEffectDamage(own[1], 3) == 3 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "EnemySpellTargetConfirmed:" + std::to_string(own[1])) !=
+                          match.Journal().end(),
+                  "Chain protection must expire while confirmed target event remains in journal");
+            std::array<std::vector<int>, 2> const replayDecks{
+                Deck(targetedProto, {2001, 3009, 3017}),
+                Deck(targetedProto, {2011, 2002})};
+            auto const replay = ReplayYakou(targetedProto, 1, replayDecks, replayCommands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3009 target declaration and 3017 protection must replay exactly");
+        }
+        {
+            // Card 2101 needs an explicit HyakkiYagyo graveyard payment in
+            // raid priority. Only lethal post-reduction damage can pierce.
+            auto piercingProto = proto;
+            for (auto& id : piercingProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3016;
+                }
+                else if (id == 3020)
+                {
+                    id = 4018;
+                }
+            }
+            auto match = Make(piercingProto, {2001, 2009, 2003}, {2002, 3016, 4018});
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> replayCommands;
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            auto summonFirst = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summonFirst.CardId = hand[0];
+            summonFirst.Method = "Normal";
+            replayCommands.push_back(summonFirst);
+            match.BeginSpellResponse(1, hand[1]);
+            auto mill = command(YakouReplayOperation::BeginSpellResponse, 1);
+            mill.CardId = hand[1];
+            replayCommands.push_back(mill);
+            match.PassSpellResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassSpellResponse, 2));
+            match.PassSpellResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassSpellResponse, 1));
+            match.BeginRaid(1);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            int const blocker = match.Player(2).Hand[0];
+            match.Summon(2, blocker, "Normal", {}, 0);
+            auto summonBlocker = command(YakouReplayOperation::Summon, 2);
+            summonBlocker.CardId = blocker;
+            summonBlocker.Method = "Normal";
+            replayCommands.push_back(summonBlocker);
+            match.BeginRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 2));
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const grave = match.Player(1).Graveyard;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[2], "Necromancy",
+                                                       {grave[0], grave[1]}, 1);
+            auto summonNecro = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summonNecro.CardId = hand[2];
+            summonNecro.Method = "Necromancy";
+            summonNecro.Cards = {grave[0], grave[1]};
+            summonNecro.Slot = 1;
+            replayCommands.push_back(summonNecro);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers, 1));
+            auto const beforeManifest = match;
+            match.Manifest(1, hand[2], 2101);
+            auto manifest = command(YakouReplayOperation::Manifest, 1);
+            manifest.CardId = hand[2];
+            manifest.DefinitionId = 2101;
+            replayCommands.push_back(manifest);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers, 1));
+            int const raider = hand[2];
+            auto damagedFixture = beforeManifest;
+            bool assigned = false;
+            for (int step = 0; step < 24 && !assigned; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    replayCommands.push_back(command(YakouReplayOperation::StartTurn, active));
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                    replayCommands.push_back(command(YakouReplayOperation::BeginRaid, active));
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    bool const hasRaider = active == 1 &&
+                        std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == raider; });
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, hasRaider
+                        ? std::vector<std::pair<int, int>>{{raider, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    auto assignment = command(YakouReplayOperation::AssignBlockers, defending);
+                    if (hasRaider)
+                    {
+                        assignment.Blockers = {{raider, blocker}};
+                    }
+                    replayCommands.push_back(assignment);
+                    if (hasRaider)
+                    {
+                        assigned = true;
+                    }
+                    else
+                    {
+                        match.PassRaidResponse(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, defending));
+                        match.PassRaidResponse(active);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, active));
+                        match.ResolveRaid(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, defending));
+                    }
+                }
+            }
+            Check(assigned, "2101 must reach a blocked raid");
+            auto const prepared = match;
+            auto noCost = prepared;
+            int const noCostLife = noCost.Player(2).Life;
+            noCost.PassRaidResponse(2);
+            noCost.PassRaidResponse(1);
+            noCost.ResolveRaid(2);
+            Check(noCost.Player(2).Life == noCostLife - 1 &&
+                      std::find_if(noCost.Journal().begin(), noCost.Journal().end(),
+                          [](std::string const& line)
+                          { return line.starts_with("PiercingDamage:"); }) == noCost.Journal().end(),
+                  "Unpaid 2101 must not pierce a destroyed blocker");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            auto const beforeInvalidCost = match.ServerStateHash();
+            Reject([&] { match.RespondWithPiercing(1, raider, blocker); });
+            Check(match.ServerStateHash() == beforeInvalidCost,
+                  "Invalid 2101 cost must not change chain or zones");
+            int const cost = match.Player(1).Graveyard[0];
+            int const lifeBefore = match.Player(2).Life;
+            match.RespondWithPiercing(1, raider, cost);
+            auto payPiercing = command(YakouReplayOperation::RespondWithPiercing, 1);
+            payPiercing.CardId = raider;
+            payPiercing.Cards = {cost};
+            replayCommands.push_back(payPiercing);
+            Check(match.Player(1).Exile.back() == cost && match.PriorityPlayer() == 2,
+                  "2101 must exile its cost and pass priority");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            match.PassRaidResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
+            match.ResolveRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
+            Check(match.Player(2).Life == lifeBefore - 2 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "PiercingDamage:1") != match.Journal().end() &&
+                      !match.Player(2).Field[0],
+                  "4 attack against 3 HP must pierce one; another unblocked raid deals one");
+            std::array<std::vector<int>, 2> const replayDecks{
+                Deck(piercingProto, {2001, 2009, 2003}),
+                Deck(piercingProto, {2002, 3016, 4018})};
+            auto const replay = ReplayYakou(piercingProto, 1, replayDecks, replayCommands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2101 cost, response priority, combat and piercing must replay exactly");
+
+            auto reduced = prepared;
+            int const shield = reduced.Player(2).Hand[0];
+            reduced.RespondWithRaidShield(2, shield, blocker);
+            reduced.RespondWithPiercing(1, raider, cost);
+            reduced.PassRaidResponse(2);
+            reduced.PassRaidResponse(1);
+            int const reducedLife = reduced.Player(2).Life;
+            reduced.ResolveRaid(2);
+            Check(reduced.Player(2).Field[0] &&
+                      reduced.Player(2).Life == reducedLife - 1 &&
+                      std::find(reduced.Journal().begin(), reduced.Journal().end(),
+                                "PiercingDamage:1") == reduced.Journal().end(),
+                  "Shielded blocker survives; only the other unblocked raid damages hero");
+
+            auto stacked = prepared;
+            int const firstShield = stacked.Player(2).Hand[0];
+            int const secondShield = stacked.Player(2).Hand[1];
+            stacked.RespondWithRaidShield(2, firstShield, blocker);
+            stacked.RespondWithPiercing(1, raider, cost);
+            stacked.RespondWithRaidShield(2, secondShield, 0);
+            stacked.PassRaidResponse(1);
+            stacked.PassRaidResponse(2);
+            int const stackedLife = stacked.Player(2).Life;
+            stacked.ResolveRaid(2);
+            Check(stacked.Player(2).Field[0] &&
+                      stacked.Player(2).Field[0]->Damage == 1 &&
+                      stacked.Player(2).Life == stackedLife - 1,
+                  "Two legal shields must add once before piercing is calculated");
+
+            bool earlierRaid = false;
+            for (int step = 0; step < 16 && !earlierRaid; ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    earlierRaid = active == 1 &&
+                        std::any_of(damagedFixture.Attacks().begin(), damagedFixture.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == hand[0]; });
+                    if (!earlierRaid)
+                    {
+                        int const defending = 3 - active;
+                        damagedFixture.AssignBlockers(defending, {});
+                        damagedFixture.PassRaidResponse(defending);
+                        damagedFixture.PassRaidResponse(active);
+                        damagedFixture.ResolveRaid(defending);
+                    }
+                }
+            }
+            Check(earlierRaid, "Earlier raider must reach blocker before 2101 manifests");
+            damagedFixture.AssignBlockers(2, {{hand[0], blocker}});
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.PassRaidResponse(1);
+            damagedFixture.ResolveRaid(2);
+            Check(damagedFixture.Player(2).Field[0] &&
+                      damagedFixture.Player(2).Field[0]->Hp() == 2,
+                  "Earlier combat must wound the blocker once");
+            for (int step = 0; step < 12 &&
+                !(damagedFixture.ActivePlayer() == 1 &&
+                  damagedFixture.Phase() == YakouPhase::Main); ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main && active != 1)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    int const defending = 3 - active;
+                    damagedFixture.AssignBlockers(defending, {});
+                    damagedFixture.PassRaidResponse(defending);
+                    damagedFixture.PassRaidResponse(active);
+                    damagedFixture.ResolveRaid(defending);
+                }
+            }
+            Check(damagedFixture.ActivePlayer() == 1 &&
+                      damagedFixture.Phase() == YakouPhase::Main,
+                  "Wounded-blocker fixture must return to manifest controller");
+            damagedFixture.Manifest(1, raider, 2101);
+            (void)damagedFixture.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            bool damagedRaid = false;
+            for (int step = 0; step < 24 && !damagedRaid; ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    bool const hasRaider = active == 1 &&
+                        std::any_of(damagedFixture.Attacks().begin(), damagedFixture.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == raider; });
+                    int const defending = 3 - active;
+                    damagedFixture.AssignBlockers(defending, hasRaider
+                        ? std::vector<std::pair<int, int>>{{raider, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    if (hasRaider)
+                    {
+                        damagedRaid = true;
+                    }
+                    else
+                    {
+                        damagedFixture.PassRaidResponse(defending);
+                        damagedFixture.PassRaidResponse(active);
+                        damagedFixture.ResolveRaid(defending);
+                    }
+                }
+            }
+            Check(damagedRaid && damagedFixture.Player(2).Field[0] &&
+                      damagedFixture.Player(2).Field[0]->Hp() == 2,
+                  "Prior combat must leave blocker with two remaining HP");
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.RespondWithPiercing(1, raider,
+                                               damagedFixture.Player(1).Graveyard[0]);
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.PassRaidResponse(1);
+            int const damagedLife = damagedFixture.Player(2).Life;
+            damagedFixture.ResolveRaid(2);
+            Check(damagedFixture.Player(2).Life == damagedLife - 2 &&
+                      std::find(damagedFixture.Journal().begin(), damagedFixture.Journal().end(),
+                                "PiercingDamage:2") != damagedFixture.Journal().end(),
+                  "4 attack against a wounded 2-HP blocker must pierce two");
+        }
+        {
             // Card 3015 waives one failed manifestation condition this turn,
             // but its discard cost and the manifestation's Ki still apply.
             auto waiverProto = proto;

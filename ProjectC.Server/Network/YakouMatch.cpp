@@ -242,6 +242,19 @@ YakouPlayer const& YakouMatch::Player(int id) const
     Check(id == 1 || id == 2, "Unknown player");
     return players_[id - 1];
 }
+
+int YakouMatch::FilterEffectDamage(int target, int amount) const
+{
+    Check(amount >= 0, "Effect damage cannot be negative");
+    if (chainEffectDamagePrevention_.contains(target))
+    {
+        return 0;
+    }
+    auto const found = chainEffectDamageReduction_.find(target);
+    return found == chainEffectDamageReduction_.end()
+        ? amount : static_cast<int>(std::max<std::int64_t>(0,
+              static_cast<std::int64_t>(amount) - found->second));
+}
 Json YakouMatch::ViewerSnapshot(int viewer) const
 {
     Check(viewer == 1 || viewer == 2, "Unknown snapshot viewer");
@@ -298,6 +311,19 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 shield != nextDamageShields_.end())
             {
                 field.back()["NextDamageShield"] = shield->second;
+            }
+            if (piercingRaiders_.contains(unit.InstanceId))
+            {
+                field.back()["PiercingThisRaid"] = true;
+            }
+            if (auto const reduction = chainEffectDamageReduction_.find(unit.InstanceId);
+                reduction != chainEffectDamageReduction_.end())
+            {
+                field.back()["EffectDamageReductionThisChain"] = reduction->second;
+            }
+            if (chainEffectDamagePrevention_.contains(unit.InstanceId))
+            {
+                field.back()["PreventEffectDamageThisChain"] = true;
             }
         }
         Json visiblePlayer = {{"PlayerId", player.Id}, {"Life", player.Life}, {"Ki", player.Ki},
@@ -417,14 +443,20 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
         }
         result["ResponseStack"] = std::move(stack);
         Json options = Json::array();
-        if (response_.IsOpen() && response_.PriorityPlayer() == viewer &&
-            (phase_ == YakouPhase::SpellResponse || viewer != ActivePlayer()))
+        if (response_.IsOpen() && response_.PriorityPlayer() == viewer)
         {
             for (int instance : Player(viewer).Hand)
             {
                 int const definition = OriginalId(instance);
                 char const* type = nullptr;
-                if (phase_ == YakouPhase::RaidResponse && response_.StackSize() < MaximumRaidResponseLinks)
+                if (phase_ == YakouPhase::RaidResponse && viewer == ActivePlayer() &&
+                    definition == 3017 && !chainTargetedByEnemySpell_.empty() &&
+                    response_.StackSize() < MaximumRaidResponseLinks)
+                {
+                    type = "RespondWithEffectProtection";
+                }
+                else if (phase_ == YakouPhase::RaidResponse && viewer != ActivePlayer() &&
+                    response_.StackSize() < MaximumRaidResponseLinks)
                 {
                     type = (definition == 3016 || definition == 4018) ? "RespondWithRaidShield"
                         : (definition == 2011 || definition == 3018 || definition == 3019 ||
@@ -468,6 +500,16 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                             targets.push_back(attack.Card);
                         }
                     }
+                    if (definition == 3017)
+                    {
+                        for (int target : chainTargetedByEnemySpell_)
+                        {
+                            if (FindUnit(Player(viewer), target) != nullptr)
+                            {
+                                targets.push_back(target);
+                            }
+                        }
+                    }
                     if (definition == 2011 || definition == 3018 || definition == 3020 ||
                         definition == 4017)
                     {
@@ -476,19 +518,58 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                             if (cost != instance) costs.push_back(cost);
                         }
                     }
-                    else if (definition == 3019 || definition == 4020)
+                    else if (definition == 3019 || definition == 3017 || definition == 4020)
                     {
                         costs = Player(viewer).Graveyard;
                     }
                     int const count = definition == 3020 || definition == 3019 ||
                         definition == 4020 || definition == 4017 ? 2
-                        : definition == 2011 || definition == 3018 ? 1 : 0;
+                        : definition == 2011 || definition == 3018 || definition == 3017 ? 1 : 0;
+                    if (costs.size() < static_cast<std::size_t>(count) ||
+                        (definition == 3017 && targets.empty()))
+                    {
+                        continue;
+                    }
                     // Candidates are filtered for presentation; the command still
                     // validates target combinations, costs and usage limits.
                     options.push_back({{"CardId", instance}, {"Type", type},
                                        {"TargetCandidates", std::move(targets)},
                                        {"ReplacementCandidates", std::move(replacements)},
                                        {"CostCandidates", std::move(costs)}, {"CostCount", count}});
+                }
+            }
+            if (phase_ == YakouPhase::RaidResponse && viewer == ActivePlayer() &&
+                response_.StackSize() < MaximumRaidResponseLinks)
+            {
+                for (auto const& attack : attacks_)
+                {
+                    auto const* unit = FindUnit(Player(viewer), attack.Card);
+                    if (unit == nullptr || unit->DefinitionId != 2101 ||
+                        piercingRaiders_.contains(attack.Card))
+                    {
+                        continue;
+                    }
+                    auto const stacked = response_.ServerState().Stack;
+                    if (std::any_of(stacked.begin(), stacked.end(), [&](YakouChainLink const& link)
+                        { return link.SourceInstance == attack.Card && link.Trigger == "OnRaid"; }))
+                    {
+                        continue;
+                    }
+                    Json costs = Json::array();
+                    for (int candidate : Player(viewer).Graveyard)
+                    {
+                        if (HasArchetype(OriginalId(candidate), "HyakkiYagyo"))
+                        {
+                            costs.push_back(candidate);
+                        }
+                    }
+                    if (!costs.empty())
+                    {
+                        options.push_back({{"CardId", attack.Card}, {"Type", "RespondWithPiercing"},
+                                           {"TargetCandidates", Json::array()},
+                                           {"ReplacementCandidates", Json::array()},
+                                           {"CostCandidates", std::move(costs)}, {"CostCount", 1}});
+                    }
                 }
             }
         }
@@ -639,6 +720,22 @@ Json YakouMatch::ServerCanonicalState() const
         for (auto const& [instance, delta] : raidAttackModifiers_)
             modifiers.push_back(Json::array({instance, delta}));
         state["RaidAttackModifiers"] = std::move(modifiers);
+    }
+    if (!piercingRaiders_.empty())
+    {
+        state["PiercingRaiders"] = piercingRaiders_;
+    }
+    if (!chainTargetedByEnemySpell_.empty())
+    {
+        state["ChainTargetedByEnemySpell"] = chainTargetedByEnemySpell_;
+    }
+    if (!chainEffectDamageReduction_.empty())
+    {
+        state["ChainEffectDamageReduction"] = chainEffectDamageReduction_;
+    }
+    if (!chainEffectDamagePrevention_.empty())
+    {
+        state["ChainEffectDamagePrevention"] = chainEffectDamagePrevention_;
     }
     return state;
 }
@@ -2181,7 +2278,130 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
               (id == 3018 || id == 4017) ? std::vector<int>{raider, replacement}
                                          : std::vector<int>{raider}});
     ++effectUses_[usage];
+    if (id == 2011 || id == 3019)
+    {
+        chainTargetedByEnemySpell_.insert(raider);
+        journal_.push_back("EnemySpellTargetConfirmed:" + std::to_string(raider));
+        auto const* target = FindUnit(Player(ActivePlayer()), raider);
+        if (target != nullptr && target->DefinitionId == 3009)
+        {
+            auto const targetCard = CardDefinition(3009);
+            auto const& trigger = targetCard.at("Effects")[0];
+            auto const& reduction = trigger.at("Actions")[0];
+            Check(trigger.at("Trigger") == "OnTargetedByEnemySpell" &&
+                      HasOnlyFields(reduction,
+                          {"Operation", "Target", "Amount", "Duration", "DamageType"}) &&
+                      reduction.at("Operation") == "ReduceDamage" &&
+                      reduction.at("Target") == "Self" &&
+                      reduction.at("Duration") == "CurrentChain" &&
+                      reduction.at("DamageType") == "Effect" &&
+                      reduction.at("Amount") == 1,
+                  "Unsupported 3009 targeting trigger");
+            int& amount = chainEffectDamageReduction_[raider];
+            Check(amount < std::numeric_limits<int>::max(),
+                  "Chain effect damage reduction overflow");
+            ++amount;
+            journal_.push_back("EffectDamageReductionGranted:" +
+                               std::to_string(raider));
+        }
+    }
     journal_.push_back("RaidTacticActivated:" + std::to_string(spell));
+}
+
+void YakouMatch::RespondWithPiercing(int player, int raider, int graveyardCost)
+{
+    YakouMatch next = *this;
+    next.RespondWithPiercingImpl(player, raider, graveyardCost);
+    *this = std::move(next);
+}
+
+void YakouMatch::RespondWithEffectProtection(int player, int spell,
+                                             int target, int graveyardCost)
+{
+    YakouMatch next = *this;
+    next.RespondWithEffectProtectionImpl(player, spell, target, graveyardCost);
+    *this = std::move(next);
+}
+
+void YakouMatch::RespondWithEffectProtectionImpl(int player, int spell,
+                                                 int target, int graveyardCost)
+{
+    Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
+              response_.PriorityPlayer() == player && player == ActivePlayer() &&
+              response_.StackSize() < MaximumRaidResponseLinks,
+          "No effect-protection response priority");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Hand, spell) && OriginalId(spell) == 3017 &&
+              chainTargetedByEnemySpell_.contains(target) &&
+              FindUnit(owner, target) != nullptr,
+          "3017 needs an own monster confirmed as an enemy spell target");
+    auto const card = CardDefinition(3017);
+    auto const& effect = card.at("Effects")[0];
+    auto const& action = effect.at("Actions")[0];
+    Check(card.at("SummonCostJson").at("Activation") == Json{{"Necromancy", 1}} &&
+              effect.at("Trigger") == "OnResolve" &&
+              HasOnlyFields(action, {"Operation", "Target", "Duration"}) &&
+              action.at("Operation") == "PreventEffectDamage" &&
+              action.at("Target") == "FriendlyMonsterTargetedBySpell" &&
+              action.at("Duration") == "CurrentChain",
+          "Unsupported 3017 protection definition");
+    auto const usage = std::make_tuple(turn_, player,
+        card.at("NameKey").get<std::string>(), effect.at("Id").get<int>());
+    Check(effect.value("PerTurnLimit", 0) == 1 &&
+              effect.value("LimitScope", std::string()) == "CardName" &&
+              effectUses_[usage] < 1,
+          "3017 card-name response limit reached");
+    Check(Contains(owner.Graveyard, graveyardCost),
+          "3017 needs one own graveyard cost card");
+    Remove(owner.Graveyard, graveyardCost);
+    owner.Exile.push_back(graveyardCost);
+    Enqueue(player, graveyardCost, OriginalId(graveyardCost),
+            "OnBanishedForNecromancyCost");
+    Check(pendingEffects_.empty(), "Unimplemented 3017 cost trigger");
+    Remove(owner.Hand, spell);
+    owner.Graveyard.push_back(spell);
+    response_.Respond(player, YakouChainLink{player, spell,
+        effect.at("Id").get<int>(), "OnResolve", {target}});
+    ++effectUses_[usage];
+    journal_.push_back("EffectProtectionActivated:" + std::to_string(target));
+}
+
+void YakouMatch::RespondWithPiercingImpl(int player, int raider, int graveyardCost)
+{
+    Check(phase_ == YakouPhase::RaidResponse && response_.IsOpen() &&
+              response_.PriorityPlayer() == player && player == ActivePlayer() &&
+              response_.StackSize() < MaximumRaidResponseLinks,
+          "No piercing response priority");
+    Check(std::any_of(attacks_.begin(), attacks_.end(), [&](YakouAttack const& attack)
+          { return attack.Card == raider; }) &&
+          FindUnit(Player(player), raider) != nullptr &&
+          FindUnit(Player(player), raider)->DefinitionId == 2101 &&
+          !piercingRaiders_.contains(raider),
+          "Piercing source must be a raiding 2101");
+    auto const stacked = response_.ServerState().Stack;
+    Check(std::none_of(stacked.begin(), stacked.end(), [&](YakouChainLink const& link)
+          { return link.SourceInstance == raider && link.Trigger == "OnRaid"; }),
+          "Piercing already activated for this raid");
+    auto const card = CardDefinition(2101);
+    auto const& effect = card.at("Effects")[1];
+    auto const& action = effect.at("Actions")[0];
+    Check(effect.at("Trigger") == "OnRaid" && action.at("Operation") == "GrantPiercing" &&
+              action.at("Target") == "Self" && action.at("Duration") == "CurrentCombat" &&
+              action.at("OptionalCost") == Json{{"Necromancy", 1},
+                                                {"RequiredArchetype", "HyakkiYagyo"}},
+          "Unsupported authored piercing effect");
+    auto& owner = MutablePlayer(player);
+    Check(Contains(owner.Graveyard, graveyardCost) &&
+              HasArchetype(OriginalId(graveyardCost), "HyakkiYagyo"),
+          "Piercing needs one owned HyakkiYagyo graveyard card");
+    Remove(owner.Graveyard, graveyardCost);
+    owner.Exile.push_back(graveyardCost);
+    Enqueue(player, graveyardCost, OriginalId(graveyardCost),
+            "OnBanishedForNecromancyCost");
+    Check(pendingEffects_.empty(), "Unimplemented piercing cost trigger");
+    response_.Respond(player, YakouChainLink{player, raider,
+        effect.at("Id").get<int>(), "OnRaid", {}});
+    journal_.push_back("PiercingActivated:" + std::to_string(raider));
 }
 
 void YakouMatch::PassRaidResponse(int player)
@@ -2206,6 +2426,30 @@ void YakouMatch::PassRaidResponseImpl(int player)
         Check(links.size() <= static_cast<std::size_t>(MaximumRaidResponseLinks), "Unsupported raid chain length");
         for (auto const& link : links)
         {
+            if (link.Controller == ActivePlayer() && link.Trigger == "OnRaid")
+            {
+                Check(FindUnit(Player(link.Controller), link.SourceInstance) != nullptr &&
+                          FindUnit(Player(link.Controller), link.SourceInstance)->DefinitionId == 2101 &&
+                          std::any_of(attacks_.begin(), attacks_.end(), [&](YakouAttack const& attack)
+                              { return attack.Card == link.SourceInstance; }) &&
+                          !piercingRaiders_.contains(link.SourceInstance),
+                      "Piercing raider left combat before resolution");
+                piercingRaiders_.insert(link.SourceInstance);
+                journal_.push_back("PiercingGranted:" + std::to_string(link.SourceInstance));
+                continue;
+            }
+            if (link.Controller == ActivePlayer() && link.Trigger == "OnResolve" &&
+                OriginalId(link.SourceInstance) == 3017)
+            {
+                Check(link.Targets.size() == 1 &&
+                          chainTargetedByEnemySpell_.contains(link.Targets[0]) &&
+                          FindUnit(Player(link.Controller), link.Targets[0]) != nullptr,
+                      "3017 protected target left the chain");
+                chainEffectDamagePrevention_.insert(link.Targets[0]);
+                journal_.push_back("EffectDamagePreventionGranted:" +
+                                   std::to_string(link.Targets[0]));
+                continue;
+            }
             Check(link.Controller == 3 - ActivePlayer() &&
                       link.Trigger == "OnResolve", "Unsupported raid response link");
             auto const card = CardDefinition(OriginalId(link.SourceInstance));
@@ -2220,9 +2464,10 @@ void YakouMatch::PassRaidResponseImpl(int player)
                 Check(FindUnit(Player(link.Controller), target) != nullptr,
                       "Raid shield target left its owner's field");
                 int const amount = action.at("Amount").get<int>();
-                Check(amount > 0 && !raidShields_.contains(target),
-                      "Invalid or duplicate raid shield");
-                raidShields_[target] = amount;
+                int& reduction = raidShields_[target];
+                Check(amount > 0 && reduction <= std::numeric_limits<int>::max() - amount,
+                      "Raid shield overflow");
+                reduction += amount;
                 journal_.push_back("RaidShieldResolved:" + std::to_string(target));
             }
             else if (id == 4018)
@@ -2325,6 +2570,13 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                       effect.at("Actions").is_array() && effect.at("Actions").size() == 1,
                   "Unsupported raid trigger");
             auto const& action = effect.at("Actions")[0];
+            if (unit.DefinitionId == 2101 &&
+                action.value("Operation", std::string()) == "GrantPiercing")
+            {
+                // The optional cost is paid through an authorized raid
+                // response link; merely raiding grants no piercing.
+                continue;
+            }
             Check(action.is_object() &&
                       HasOnlyFields(action, {"Operation", "Target", "Delta", "Duration", "Condition"}) &&
                       action.at("Operation") == "ModifyAttack" &&
@@ -2493,11 +2745,12 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         }
         else
         {
-            // A missing blocker still blocks an assigned attacker; no direct
-            // hero damage unless a separate piercing effect is later implemented.
+            // A missing blocker still blocks an assigned attacker. Piercing
+            // requires a surviving blocker that takes lethal positive damage.
             if (dSlot >= 0)
             {
                 auto& target = *defender.Field[dSlot];
+                int const hpBefore = target.Hp();
                 int const dDamage = applyNextDamageShield(source.InstanceId,
                                                            std::max(0, target.Attack()));
                 source.Damage += dDamage;
@@ -2508,7 +2761,14 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                     remainingDamage = std::max(0, remainingDamage - shield->second);
                     raidShields_.erase(shield); // first actual damage event
                 }
-                target.Damage += applyNextDamageShield(target.InstanceId, remainingDamage);
+                int const actualDamage = applyNextDamageShield(target.InstanceId, remainingDamage);
+                target.Damage += actualDamage;
+                if (piercingRaiders_.contains(source.InstanceId) && actualDamage >= hpBefore)
+                {
+                    int const excess = std::max(0, actualDamage - hpBefore);
+                    defender.Life = std::max(0, defender.Life - excess);
+                    journal_.push_back("PiercingDamage:" + std::to_string(excess));
+                }
                 if (target.Hp() <= 0)
                 {
                     destroyedEnemyByCombat = true;
@@ -2547,6 +2807,10 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         {
             raidAttackModifiers_.clear();
             raidShields_.clear();
+            piercingRaiders_.clear();
+            chainTargetedByEnemySpell_.clear();
+            chainEffectDamageReduction_.clear();
+            chainEffectDamagePrevention_.clear();
             phase_ = YakouPhase::Finished;
             winner_ = attacker.Id;
             journal_.push_back("GameOver:" + std::to_string(attacker.Id));
@@ -2561,6 +2825,10 @@ void YakouMatch::TurnOver()
     manifestConditionWaivers_[players_[active_].Id - 1] = 0;
     raidAttackModifiers_.clear();
     raidShields_.clear();
+    piercingRaiders_.clear();
+    chainTargetedByEnemySpell_.clear();
+    chainEffectDamageReduction_.clear();
+    chainEffectDamagePrevention_.clear();
     attacks_.clear();
     active_ = 1 - active_;
     ++turn_;

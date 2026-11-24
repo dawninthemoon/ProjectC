@@ -616,7 +616,8 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.cast_spell_target"), () => BeginResponse("BeginSpellResponse", id)));
                 }
             }
-            if (card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id))
+            if ((card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id)) ||
+                OwnFieldContains(id))
             {
                 foreach (var response in _state["ResponseOptions"] as JArray ?? new JArray())
                 {
@@ -625,7 +626,10 @@ namespace ProjectC.Client
                         var offered = (JObject)response;
                         string type = (string)offered["Type"];
                         string label = YakouUiText.Get(type == "RespondWithRaidShield" ? "ui.yakou.action.response_shield"
-                            : type == "RespondWithRaidTactic" ? "ui.yakou.action.response_tactic" : "ui.yakou.action.response_negate");
+                            : type == "RespondWithRaidTactic" ? "ui.yakou.action.response_tactic"
+                            : type == "RespondWithPiercing" || type == "RespondWithEffectProtection"
+                                ? "ui.yakou.action.play_response"
+                            : "ui.yakou.action.response_negate");
                         options.Add(Option(label, () => BeginOfferedResponse(offered)));
                     }
                 }
@@ -886,13 +890,19 @@ namespace ProjectC.Client
             {
                 fields["Cards"] = new JArray(_responseCosts);
             }
-            if (_responseType == "RespondWithRaidShield" || _responseType == "RespondWithRaidTactic")
+            if (_responseType == "RespondWithRaidShield" || _responseType == "RespondWithRaidTactic" ||
+                _responseType == "RespondWithEffectProtection")
             {
                 fields["TargetId"] = _responseTarget;
             }
             if (_responseType == "RespondWithRaidTactic")
             {
                 fields["ReplacementBlocker"] = _responseReplacement;
+            }
+            if (_responseType == "RespondWithPiercing" ||
+                _responseType == "RespondWithEffectProtection")
+            {
+                fields["CostId"] = _responseCosts.Count == 1 ? _responseCosts.First() : 0;
             }
             if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" ||
                 _responseType == "ActivateMainSpell" || _responseType == "BeginSpellResponse")
