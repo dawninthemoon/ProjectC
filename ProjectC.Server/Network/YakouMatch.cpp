@@ -107,6 +107,13 @@ void CheckSupportedAction(Json const& action)
     {
         supported = HasOnlyFields(action, {"Operation", "Target", "Amount", "Optional"});
     }
+    else if (operation == "ReduceDamage")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "Amount", "Duration", "Minimum"}) &&
+            action.value("Target", std::string()) == "FriendlyMonster" &&
+            action.value("Duration", std::string()) == "NextDamageEvent" &&
+            action.value("Amount", 0) == 2 && action.value("Minimum", -1) == 0;
+    }
     else if (operation == "Salvage")
     {
         supported = HasOnlyFields(action, {"Operation", "From", "To", "Count", "CardType",
@@ -280,6 +287,11 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                              {"CardType", 0}, {"Attack", unit.Attack()}, {"Hp", unit.Hp()},
                              {"MaxHp", unit.MaxHp()}, {"AttackCounter", unit.Countdown},
                              {"MaxBlocks", unit.MaxBlocks}});
+            if (auto const shield = nextDamageShields_.find(unit.InstanceId);
+                shield != nextDamageShields_.end())
+            {
+                field.back()["NextDamageShield"] = shield->second;
+            }
         }
         Json visiblePlayer = {{"PlayerId", player.Id}, {"Life", player.Life}, {"Ki", player.Ki},
                               {"HandCount", player.Hand.size()}, {"DeckCount", player.Deck.size()},
@@ -324,7 +336,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 for (int instance : player.Hand)
                 {
                     int const definitionId = OriginalId(instance);
-                    if (definitionId != 2010 && definitionId != 3012 && definitionId != 3013 && definitionId != 4006 &&
+                    if (definitionId != 2010 && definitionId != 2012 && definitionId != 3012 && definitionId != 3013 && definitionId != 4006 &&
                         definitionId != 4012 && definitionId != 4013)
                     {
                         continue;
@@ -600,6 +612,15 @@ Json YakouMatch::ServerCanonicalState() const
             shields.push_back(Json::array({instance, amount}));
         state["RaidShields"] = std::move(shields);
     }
+    if (!nextDamageShields_.empty())
+    {
+        Json shields = Json::array();
+        for (auto const& [instance, amount] : nextDamageShields_)
+        {
+            shields.push_back(Json::array({instance, amount}));
+        }
+        state["NextDamageShields"] = std::move(shields);
+    }
     if (!raidAttackModifiers_.empty())
     {
         Json modifiers = Json::array();
@@ -829,7 +850,8 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
     else
     {
         Check(choice.Operation == "ModifyCountdown" || choice.Operation == "SetCountdown" ||
-                  choice.Operation == "HealAccumulatedDamage", "Unsupported Yakou effect operation: " + choice.Operation);
+                  choice.Operation == "HealAccumulatedDamage" || choice.Operation == "ReduceDamage",
+              "Unsupported Yakou effect operation: " + choice.Operation);
         auto const targetMode = action.at("Target").get<std::string>();
         Check(targetMode == "Self" || targetMode == "FriendlyMonster" || targetMode == "OtherFriendlyMonster" ||
                   targetMode == "DevouringMonster" ||
@@ -1083,7 +1105,17 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
                 next.journal_.push_back("EffectMill:" + std::to_string(queued.SourceCard) + ":1");
             }
             auto& unit = *owner.Field[slot];
-            if (operation == "HealAccumulatedDamage")
+            if (operation == "ReduceDamage")
+            {
+                int const amount = action.at("Amount").get<int>();
+                int& shield = next.nextDamageShields_[target];
+                Check(amount > 0 && shield <= std::numeric_limits<int>::max() - amount,
+                      "Next damage shield overflow");
+                shield += amount;
+                next.journal_.push_back("EffectNextDamageShield:" +
+                                        std::to_string(target) + ":" + std::to_string(amount));
+            }
+            else if (operation == "HealAccumulatedDamage")
             {
                 Check(queued.DefinitionId != 4015 || unit.Damage > 0,
                       "Healing target has no accumulated damage");
@@ -1687,6 +1719,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
             Check(index >= 0, "Missing devour material");
             int const sourceDefinition = owner.Field[index]->DefinitionId;
             owner.Field[index].reset();
+            nextDamageShields_.erase(instance);
             owner.Graveyard.push_back(instance);
             Enqueue(player, instance, sourceDefinition, "OnDevoured", handInstance);
         }
@@ -1800,6 +1833,7 @@ void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDe
     {
         int const index = FindSlot(owner, fieldInstance);
         owner.Field[index].reset();
+        nextDamageShields_.erase(fieldInstance);
         owner.Graveyard.push_back(fieldInstance);
     }
 }
@@ -2371,6 +2405,23 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                                std::to_string(value));
         }
     };
+    auto applyNextDamageShield = [&](int instance, int incoming) -> int
+    {
+        if (incoming <= 0)
+        {
+            return incoming;
+        }
+        auto const shield = nextDamageShields_.find(instance);
+        if (shield == nextDamageShields_.end())
+        {
+            return incoming;
+        }
+        int const reduced = std::max(0, incoming - shield->second);
+        journal_.push_back("NextDamageShieldUsed:" + std::to_string(instance) +
+                           ":" + std::to_string(incoming - reduced));
+        nextDamageShields_.erase(shield);
+        return reduced;
+    };
     for (auto const& attack : attacks_)
     {
         int const aSlot = FindSlot(attacker, attack.Card);
@@ -2401,7 +2452,8 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
             if (dSlot >= 0)
             {
                 auto& target = *defender.Field[dSlot];
-                int const dDamage = std::max(0, target.Attack());
+                int const dDamage = applyNextDamageShield(source.InstanceId,
+                                                           std::max(0, target.Attack()));
                 source.Damage += dDamage;
                 int remainingDamage = std::max(0, aDamage - blockerReduction);
                 auto shield = raidShields_.find(target.InstanceId);
@@ -2410,12 +2462,13 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                     remainingDamage = std::max(0, remainingDamage - shield->second);
                     raidShields_.erase(shield); // first actual damage event
                 }
-                target.Damage += remainingDamage; // simultaneous combat
+                target.Damage += applyNextDamageShield(target.InstanceId, remainingDamage);
                 if (target.Hp() <= 0)
                 {
                     destroyedEnemyByCombat = true;
                     int const id = target.InstanceId;
                     defender.Field[dSlot].reset();
+                    nextDamageShields_.erase(id);
                     defender.Graveyard.push_back(id);
                     Enqueue(defender.Id, id, OriginalId(id), "OnDestroyed");
                 }
@@ -2429,6 +2482,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
             {
                 int const id = attacker.Field[aSlot]->InstanceId;
                 attacker.Field[aSlot].reset();
+                nextDamageShields_.erase(id);
                 attacker.Graveyard.push_back(id);
                 Enqueue(attacker.Id, id, OriginalId(id), "OnDestroyed");
             }

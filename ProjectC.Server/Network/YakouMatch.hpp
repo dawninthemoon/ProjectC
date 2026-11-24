@@ -224,6 +224,8 @@ private:
     std::vector<YakouAttack> attacks_;
     // Server-private, one-shot damage reductions, removed at raid end.
     std::map<int, int> raidShields_;
+    // Persists until the targeted monster next receives positive damage.
+    std::map<int, int> nextDamageShields_;
     // Signed temporary attack modifiers indexed by attacking instance.
     std::map<int, int> raidAttackModifiers_;
     std::vector<YakouPendingEffect> pendingEffects_;

@@ -1694,6 +1694,128 @@ int main()
                   "Negated paid spell keeps its cost but creates no private choice");
         }
         {
+            // Card 2012 persists through turns and consumes its shield only
+            // when the chosen monster actually receives positive damage.
+            auto shieldProto = proto;
+            for (auto& id : shieldProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3004;
+                    break;
+                }
+            }
+            auto match = Make(shieldProto, {2001, 2012}, {3004});
+            match.StartTurn(1);
+            int const protectedUnit = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, protectedUnit, "Normal", {}, 0);
+            int const cost = match.Player(1).Graveyard[0];
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell, 0, {spell}); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "2012 must roll back invalid necromancy cost");
+            match.BeginSpellResponse(1, spell, 0, {cost});
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.ViewerSnapshot(1).at("PendingSelection").at("Candidates").size() == 1,
+                  "2012 must ask for a living friendly monster after response");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(
+                1, match.Player(2).Hand[0]); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "2012 must reject enemy targets atomically");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, protectedUnit);
+            Check(match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                      .at("NextDamageShield") == 2,
+                  "2012 shield must be visible on its public field target");
+            int const blocker = match.Player(2).Hand[0];
+            int protectedRaids = 0;
+            bool blockerSummoned = false;
+            for (int step = 0; step < 24 && protectedRaids < 2; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    if (active == 2 && !blockerSummoned)
+                    {
+                        match.Summon(2, blocker, "Normal", {}, 0);
+                        blockerSummoned = true;
+                    }
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, active == 1
+                        ? std::vector<std::pair<int, int>>{{protectedUnit, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    match.PassRaidResponse(defending);
+                    match.PassRaidResponse(active);
+                    match.ResolveRaid(defending);
+                    if (active == 1)
+                    {
+                        ++protectedRaids;
+                        Check(match.Player(1).Field[0] &&
+                                  match.Player(1).Field[0]->Damage == (protectedRaids == 1 ? 0 : 1),
+                              "2012 must prevent only the first positive damage event");
+                    }
+                }
+            }
+            Check(protectedRaids == 2 &&
+                      !match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                          .contains("NextDamageShield"),
+                  "2012 shield must be consumed after its first positive hit");
+
+            auto zeroDamage = shieldProto;
+            for (auto& card : zeroDamage.Cards["Cards"])
+            {
+                if (card["Id"] == 3004)
+                {
+                    card["Attack"] = 0; // Test fixture: no incoming damage event.
+                }
+            }
+            auto noHit = Make(zeroDamage, {2001, 2012}, {3004});
+            noHit.StartTurn(1);
+            int const noHitUnit = noHit.Player(1).Hand[0];
+            int const noHitSpell = noHit.Player(1).Hand[1];
+            (void)noHit.SummonAndRunAutomaticTriggers(1, noHitUnit, "Normal", {}, 0);
+            noHit.BeginSpellResponse(1, noHitSpell, 0, {noHit.Player(1).Graveyard[0]});
+            noHit.PassSpellResponse(2);
+            noHit.PassSpellResponse(1);
+            (void)noHit.ResolveSelectedEffectAndRunAutomaticTriggers(1, noHitUnit);
+            int const noHitBlocker = noHit.Player(2).Hand[0];
+            for (int step = 0; step < 12 && noHit.Phase() != YakouPhase::AssignBlockers; ++step)
+            {
+                int const active = noHit.ActivePlayer();
+                if (noHit.Phase() == YakouPhase::TurnStart)
+                {
+                    noHit.StartTurn(active);
+                    if (active == 2 && !noHit.Player(2).Field[0])
+                    {
+                        noHit.Summon(2, noHitBlocker, "Normal", {}, 0);
+                    }
+                }
+                if (noHit.Phase() == YakouPhase::Main)
+                {
+                    noHit.BeginRaid(active);
+                }
+            }
+            Check(noHit.Phase() == YakouPhase::AssignBlockers && noHit.ActivePlayer() == 1,
+                  "Zero-damage fixture must reach protected attack");
+            noHit.AssignBlockers(2, {{noHitUnit, noHitBlocker}});
+            noHit.PassRaidResponse(2);
+            noHit.PassRaidResponse(1);
+            noHit.ResolveRaid(2);
+            Check(noHit.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                      .at("NextDamageShield") == 2,
+                  "Zero incoming damage must not consume 2012 protection");
+        }
+        {
             // A free main-phase spell waits for both players to pass before
             // resolving. The wrong priority must not mutate any private state.
             auto match = Make(proto, {2009, 2009}, {3020, 2001, 2002, 3001, 2004});
