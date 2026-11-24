@@ -351,6 +351,12 @@ namespace ProjectC.Tests
             yield return Until(() => !a.Yakou.Busy && a.Yakou.State?["PendingSelection"] != null);
             Assert.AreEqual(2, (int)a.Yakou.State["PendingSelection"]["MaxCount"]);
             Assert.IsNull(b.Yakou.State["PendingSelection"]);
+            a.DisconnectNetwork();
+            a.ReconnectNetwork();
+            yield return Until(() => a.Yakou.Bound &&
+                (int?)a.Yakou.State?["PendingSelection"]?["MaxCount"] == 2);
+            Assert.IsNull(b.Yakou.State["PendingSelection"],
+                "The opponent must not see the restored private target choice");
             yield return Until(() => field.Widgets.Count == 2 &&
                 field.Widgets.All(widget => !widget.IsInFlight));
             field.Widgets.Find(widget => widget.Card.Id == first).OnPointerClick(null);
