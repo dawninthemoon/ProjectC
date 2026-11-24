@@ -1300,18 +1300,20 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
 }
 
 
-void YakouMatch::BeginSpellResponse(int player, int handInstance, int targetInstance)
+void YakouMatch::BeginSpellResponse(int player, int handInstance, int targetInstance,
+                                    std::vector<int> const& costs)
 {
     YakouMatch next = *this;
-    next.BeginSpellResponseImpl(player, handInstance, targetInstance);
+    next.BeginSpellResponseImpl(player, handInstance, targetInstance, costs);
     *this = std::move(next);
 }
 
-void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int targetInstance)
+void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int targetInstance,
+                                        std::vector<int> const& costs)
 {
     // Reuse all authored spell and cost checks; do not expose the provisional
     // effect to the normal resolver before the priority window closes.
-    ActivateMainSpellImpl(player, handInstance, {});
+    ActivateMainSpellImpl(player, handInstance, costs);
     auto const choice = PendingEffectChoices(player);
     if (choice.MaxCount == 0)
     {
@@ -1319,8 +1321,7 @@ void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int target
     }
     else
     {
-        Check(targetInstance == 0 ? choice.MinCount == 0 :
-                  Contains(choice.Candidates, targetInstance),
+        Check(targetInstance == 0 || Contains(choice.Candidates, targetInstance),
               "Selected spell target is not an authorized candidate");
     }
     auto const pending = pendingEffects_.front();
@@ -1476,8 +1477,15 @@ void YakouMatch::PassSpellResponseImpl(int player)
             Enqueue(link.Controller, link.SourceInstance, definitionId, "OnResolve");
             Check(pendingEffects_.size() == 1,
                   "Expected one original spell effect after response");
-            ResolvePendingEffect(link.Controller,
-                                 link.Targets.empty() ? 0 : link.Targets.front());
+            auto const choice = PendingEffectChoices(link.Controller);
+            if (!link.Targets.empty())
+            {
+                ResolvePendingEffect(link.Controller, link.Targets.front());
+            }
+            else if (choice.MinCount == 0 && choice.MaxCount == 0)
+            {
+                ResolvePendingEffect(link.Controller);
+            }
         }
     }
     phase_ = YakouPhase::Main;

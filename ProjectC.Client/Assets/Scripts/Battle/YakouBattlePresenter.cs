@@ -599,7 +599,7 @@ namespace ProjectC.Client
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.paid_spell_cost"), () =>
                     {
-                        BeginResponse("ActivateMainSpell", id);
+                        BeginResponse("BeginSpellResponse", id);
                         _responseOption = new JObject
                         {
                             ["CostCandidates"] = paid["CostCandidates"].DeepClone(),
@@ -608,7 +608,6 @@ namespace ProjectC.Client
                             ["ReplacementCandidates"] = new JArray(),
                         };
                         SelectResponsePart("cost");
-                        ShowFeedback(YakouUiText.Get("ui.yakou.feedback.paid_spell_no_response"));
                     }));
                 }
                 else if (card.DefinitionId != PaidMapSpellDefinitionId)
@@ -702,7 +701,9 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.response_cost", _responseCosts.Count, required),
                         () => SelectResponsePart("cost")));
                 }
-                options.Add(Option(_responseType == "ActivateMainSpell" || _responseType == "Redraw"
+                options.Add(Option(_responseType == "ActivateMainSpell" || _responseType == "Redraw" ||
+                    (_responseType == "BeginSpellResponse" && _responseOption != null &&
+                     (int)_responseOption["CostCount"] > 0)
                     ? YakouUiText.Get("ui_battle_confirm_selection") : YakouUiText.Get("ui.yakou.action.play_response"), SubmitResponse));
                 options.Add(Option(YakouUiText.Get("ui_battle_cancel_selection"), () =>
                 {
@@ -893,7 +894,8 @@ namespace ProjectC.Client
             {
                 fields["ReplacementBlocker"] = _responseReplacement;
             }
-            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" || _responseType == "ActivateMainSpell")
+            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" ||
+                _responseType == "ActivateMainSpell" || _responseType == "BeginSpellResponse")
             {
                 fields["Costs"] = new JArray(_responseCosts);
             }

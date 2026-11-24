@@ -1625,6 +1625,75 @@ int main()
                   "Paid map activation and choice must replay deterministically");
         }
         {
+            // Paid main spells pay at activation, then wait for opponent
+            // priority. A private deck choice is created only after passes.
+            auto match = Make(proto, {3012, 2001}, {3020, 2001, 2002});
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const cost = match.Player(1).Hand[1];
+            auto const before = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell); });
+            Reject([&] { match.BeginSpellResponse(1, spell, 0, {spell}); });
+            Check(match.ServerStateHash() == before,
+                  "Rejected paid spell must preserve all zones and priority");
+            match.BeginSpellResponse(1, spell, 0, {cost});
+            Check(match.Phase() == YakouPhase::SpellResponse &&
+                      match.PriorityPlayer() == 2 &&
+                      match.Player(1).Graveyard.size() == 2 &&
+                      !match.ViewerSnapshot(1).contains("PendingSelection"),
+                  "Paid spell must open priority after committing its cost");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.ViewerSnapshot(1).at("PendingSelection").at("CandidateCards").size() == 3 &&
+                      !match.ViewerSnapshot(2).contains("PendingSelection"),
+                  "Private map choice must begin only after both players pass");
+            auto const target = match.ViewerSnapshot(1).at("PendingSelection")
+                                    .at("Candidates")[0].get<int>();
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, target);
+            Check(match.PendingEffects().empty() && match.Player(1).Hand.back() == target,
+                  "Paid spell choice must finish after the response window");
+
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {3012, 2001}), Deck(proto, {3020, 2001, 2002})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            cast.Cards = {cost};
+            YakouReplayCommand passOpponent;
+            passOpponent.Operation = YakouReplayOperation::PassSpellResponse;
+            passOpponent.Player = 2;
+            auto passOwner = passOpponent;
+            passOwner.Player = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = target;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, cast, passOpponent, passOwner, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Paid spell response and private choice must replay deterministically");
+
+            auto countered = Make(proto, {3012, 2001}, {3020, 2001, 2002});
+            countered.StartTurn(1);
+            countered.BeginSpellResponse(1, countered.Player(1).Hand[0], 0,
+                                         {countered.Player(1).Hand[1]});
+            auto const counterHand = countered.Player(2).Hand;
+            countered.RespondWithNegation(2, counterHand[0],
+                                          {counterHand[1], counterHand[2]});
+            countered.PassSpellResponse(1);
+            countered.PassSpellResponse(2);
+            Check(countered.Phase() == YakouPhase::Main &&
+                      countered.PendingEffects().empty() &&
+                      !countered.ViewerSnapshot(1).contains("PendingSelection") &&
+                      countered.Player(1).Graveyard.size() == 2,
+                  "Negated paid spell keeps its cost but creates no private choice");
+        }
+        {
             // A free main-phase spell waits for both players to pass before
             // resolving. The wrong priority must not mutate any private state.
             auto match = Make(proto, {2009, 2009}, {3020, 2001, 2002, 3001, 2004});
