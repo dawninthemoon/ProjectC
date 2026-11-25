@@ -66,8 +66,11 @@ void Reply(std::shared_ptr<ClientSession> const& client,
 }
 
 YakouTransportHub::YakouTransportHub(std::string const& dataDirectory,
-                                     std::size_t maxRooms)
-    : catalog_(YakouPrototype::Load(std::filesystem::path(dataDirectory) / "YakouPrototype")),
+                                     std::size_t maxRooms, bool alpha02)
+    : catalog_(alpha02
+        ? YakouPrototype::LoadAuthoringSnapshot(std::filesystem::path(dataDirectory) /
+                                                "Alpha02" / "AuthoringSnapshot.json",true)
+        : YakouPrototype::Load(std::filesystem::path(dataDirectory) / "YakouPrototype")),
       maxRooms_(maxRooms)
 {
     (void)Decks(catalog_, {DefaultYakouDeckId, DefaultYakouDeckId});

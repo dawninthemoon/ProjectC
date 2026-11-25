@@ -49,12 +49,15 @@ MatchManager::MatchManager(ServerConfig config) : config(std::move(config))
         throw std::runtime_error("Website matchmaking requires a versioned 30-card/3-copy catalog; "
                                  "configure PROJECTC_DATA_DIRECTORY or --data");
     }
+    if (this->config.EnableAlpha02 && !this->config.EnableYakouPrototype)
+        throw std::runtime_error("Alpha02 requires --yakou-prototype on");
     if (this->config.EnableYakouPrototype)
     {
         if (website)
             throw std::runtime_error("Yakou prototype must never run with website/ranked mode");
         yakou = std::make_unique<YakouTransportHub>(this->config.DataDirectory,
-                                                     this->config.MaxMatches);
+                                                     this->config.MaxMatches,
+                                                     this->config.EnableAlpha02);
     }
     if (this->config.TurnDurationSeconds < MinimumPositiveTimeoutSeconds ||
         this->config.MulliganTimeoutSeconds < MinimumPositiveTimeoutSeconds ||

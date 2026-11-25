@@ -194,6 +194,114 @@ int main()
             Check(match.Player(1).Resources.at("Blood").Current == 0,
                   "Blood resource is spendable after damage");
         }
+
+        {
+            auto alpha = YakouPrototype::LoadAuthoringSnapshot(
+                std::filesystem::path(DefaultDataDirectory()) / "Alpha02" / "AuthoringSnapshot.json",true);
+            Check(alpha.Cards.at("Cards").size() == 91 && alpha.Decks.at("Decks").size() == 6,
+                  "Actual Alpha02 catalog must contain 91 definitions and six decks");
+            auto const onmyo = SampleDeck(alpha,4,{5101,5111,5105,5115,5112});
+            auto const blood = SampleDeck(alpha,5,{5201,5212,5211,5205,5204});
+            auto const guard = SampleDeck(alpha,3,{3009,3014});
+            Check(YakouDeckResourceTypes(alpha.Cards,alpha.Config,onmyo) == std::set<std::string>{"Spirit"} &&
+                  YakouDeckResourceTypes(alpha.Cards,alpha.Config,blood) == std::set<std::string>{"Blood"} &&
+                  YakouDeckResourceTypes(alpha.Cards,alpha.Config,guard).empty(),
+                  "Actual decks activate only required special resources");
+            auto cast = [](YakouMatch& m,int player,int instance,int target=0)
+            {
+                m.BeginSpellResponse(player,instance,target);
+                m.PassSpellResponse(3-player);
+                m.PassSpellResponse(player);
+            };
+            YakouMatch spirit(alpha,1,{onmyo,blood});
+            spirit.StartTurn(1);
+            auto const hand = spirit.Player(1).Hand;
+            (void)spirit.SummonAndRunAutomaticTriggers(1,hand[0],"Normal",{},0);
+            cast(spirit,1,hand[1]);
+            Check(spirit.Player(1).Resources.at("Spirit").Current == 2,
+                  "Actual apprentice + purification must yield two spirit");
+            (void)spirit.SummonAndRunAutomaticTriggers(1,hand[2],"Resource",{},1);
+            auto const choice = spirit.PendingEffectChoices(1);
+            Check(choice.Candidates == std::vector<int>{hand[0]},
+                  "Paper crane must choose another friendly monster");
+            (void)spirit.ResolveSelectedEffectAndRunAutomaticTriggers(1,hand[0]);
+            Check(spirit.Player(1).Resources.at("Spirit").Current == 0 &&
+                  spirit.Player(1).Field[0]->Countdown == 1,
+                  "Actual resource summon and countdown combo failed");
+            YakouMatch wound(alpha,1,{blood,onmyo});
+            wound.StartTurn(1);
+            auto const bloodHand = wound.Player(1).Hand;
+            (void)wound.SummonAndRunAutomaticTriggers(1,bloodHand[0],"Normal",{},0);
+            cast(wound,1,bloodHand[1],bloodHand[0]);
+            cast(wound,1,bloodHand[2]);
+            Check(wound.Player(1).Resources.at("Blood").Current == 3 &&
+                  wound.Player(1).Life == 18 && wound.Player(1).Field[0]->Damage == 1,
+                  "Actual wounded Ronin and blood contract must yield three blood");
+            (void)wound.SummonAndRunAutomaticTriggers(1,bloodHand[3],"Resource",{},1);
+            Check(wound.Player(1).Resources.at("Blood").Current == 1 &&
+                  wound.Player(1).Field[1]->Countdown == 1,
+                  "Actual wounded ally must accelerate blood pursuer");
+            auto mixed = onmyo;
+            mixed[3] = 5205;
+            mixed[4] = 2003;
+            bool rejected = false;
+            try { (void)YakouDeckResourceTypes(alpha.Cards,alpha.Config,mixed); }
+            catch (std::runtime_error const&) { rejected = true; }
+            Check(rejected,"Actual three-resource deck must be rejected");
+            for (bool protectedBySpell : {false,true})
+            {
+                auto defender = guard;
+                if (protectedBySpell) defender[2] = 3017;
+                YakouMatch m(alpha,1,{onmyo,defender});
+                m.StartTurn(1);
+                auto const opening = m.Player(1).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(1,opening[0],"Normal",{},0);
+                cast(m,1,opening[1]);
+                m.BeginRaid(1);
+                m.StartTurn(2);
+                auto const opposing = m.Player(2).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(2,opposing[0],"Normal",{},0);
+                cast(m,2,opposing[1],opposing[0]);
+                m.BeginRaid(2);
+                m.StartTurn(1);
+                m.BeginSpellResponse(1,opening[4],opposing[0]);
+                if (protectedBySpell)
+                {
+                    m.RespondWithEffectProtection(2,opposing[2],opposing[0],opposing[1]);
+                    m.PassSpellResponse(1);
+                    m.PassSpellResponse(2);
+                }
+                else
+                {
+                    m.PassSpellResponse(2);
+                    m.PassSpellResponse(1);
+                }
+                Check(m.Player(2).Field[0]->Damage == (protectedBySpell ? 0 : 1),
+                      "Existing 3009 and 3017 must mitigate actual Alpha02 effect damage");
+                Check(m.ViewerSnapshot(1).at("CatalogVersion") == "projectc-alpha02-v1",
+                      "Client must receive actual Alpha02 catalog identity");
+            }
+            auto searchDeck = SampleDeck(alpha,4,{5101,5111,5117});
+            auto runSearch = [&]() {
+                YakouMatch m(alpha,1,{searchDeck,blood});
+                m.StartTurn(1);
+                auto const opening = m.Player(1).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(1,opening[0],"Normal",{},0);
+                cast(m,1,opening[1]);
+                cast(m,1,opening[2]);
+                auto const choice = m.PendingEffectChoices(1);
+                Check(choice.SourceZone == "FriendlyDeckSearch" &&
+                      !choice.Candidates.empty() &&
+                      !m.ViewerSnapshot(2).contains("PendingSelection"),
+                      "Deck search is private and uses definition choices");
+                int const chosen = choice.Candidates.front();
+                (void)m.ResolveSelectedEffectAndRunAutomaticTriggers(1,chosen);
+                Check(m.ViewerSnapshot(2).at("LastDeckSearchReveal").at("DefinitionId") == chosen,
+                      "Selected definition becomes public, not hidden deck order");
+                return m.ServerStateHash();
+            };
+            Check(runSearch() == runSearch(),"Deck search shuffle must replay deterministically");
+        }
         for (auto const& [deckIndex, defenderId, reduction] :
              std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
         {

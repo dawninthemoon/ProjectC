@@ -10,6 +10,7 @@ struct ServerConfig
     unsigned short Port = 7777;
     std::size_t MaxMatches = 64;
     bool EnableYakouPrototype = false; // Developer-only, never implicitly enabled.
+    bool EnableAlpha02 = false; // Explicit local experimental catalog opt-in.
     std::size_t MaxReplays = 128;
     int WaitingTimeoutSeconds = 900;
     int PlayingTimeoutSeconds = 1800;

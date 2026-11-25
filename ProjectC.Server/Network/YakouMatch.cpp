@@ -627,6 +627,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                    {"WinnerPlayerId", winner_}, {"Players", std::move(players)},
                    {"Attacks", std::move(attacks)}};
     // The next public action must not advance a raid past unresolved cost triggers.
+    if (Alpha02()) result["CatalogVersion"] = catalog_->Cards.at("CatalogVersion");
     if (Alpha02() && lastRevealedDefinition_ > 0)
         result["LastDeckSearchReveal"] = {{"PlayerId",lastRevealPlayer_},{"DefinitionId",lastRevealedDefinition_}};
     result["PendingEffectCount"] = pendingEffects_.size();
@@ -2503,6 +2504,7 @@ void YakouMatch::StartTurnImpl(int player)
 {
     Check(phase_ == YakouPhase::TurnStart && player == ActivePlayer(),
           "Cannot start this turn");
+    if (Alpha02()) Check(pendingEffects_.empty(),"Resolve pending effects before turn start");
     auto& owner = MutablePlayer(player);
     int const drawn = (turn_ == 1 && active_ == first_) ? 0
             : owner.Hand.size() >= 5 ? 1

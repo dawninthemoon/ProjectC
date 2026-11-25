@@ -14,7 +14,8 @@ namespace ProjectC::Network
 class YakouTransportHub
 {
 public:
-    explicit YakouTransportHub(std::string const& dataDirectory, std::size_t maxRooms);
+    explicit YakouTransportHub(std::string const& dataDirectory, std::size_t maxRooms,
+                               bool alpha02 = false);
     void Receive(std::shared_ptr<ClientSession> const& client, Json const& request,
                  std::string const& requestId, std::string const& type);
     void Disconnect(std::shared_ptr<ClientSession> const& client);
