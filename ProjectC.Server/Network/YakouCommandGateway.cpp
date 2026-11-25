@@ -68,9 +68,10 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "ActivateMainSpell")
     {
-        Fields(request, {"Type", "CardId", "Costs"});
+        Fields(request, {"Type", "CardId", "Costs", "TargetId"});
         // Preserve the wire command, but never let it bypass opponent priority.
-        match.BeginSpellResponse(seat, Id(request, "CardId"), 0,
+        match.BeginSpellResponse(seat, Id(request, "CardId"),
+                                 request.contains("TargetId") ? Id(request, "TargetId") : 0,
                                  request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
     }
     else if (type == "ChooseEffect")

@@ -226,6 +226,13 @@ private:
                  int relatedCard = 0, std::vector<int> paidCostCards = {});
     void DeferPendingCostTriggers(std::size_t firstNewEffect);
     void ReleaseDeferredCostTriggers();
+    bool Alpha02() const;
+    void NotifySpellResolved(int player, bool response);
+    void NotifySurvivingDamage(int player, int instance, int amount, bool combat);
+    void ApplyEffectDamage(int targetPlayer, int instance, int amount);
+    YakouEffectChoice ExtendedEffectChoices(YakouPendingEffect const& queued, Json const& effect) const;
+    void ResolveExtendedEffect(YakouPendingEffect const& queued, Json const& effect,
+                               std::vector<int> const& targets);
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 
@@ -256,6 +263,9 @@ private:
     std::vector<YakouPendingEffect> deferredCostEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
+    std::array<int, 2> spellResolvedTurn_{};
+    // Private cost identities remain available when a main spell resolves after priority.
+    std::vector<int> spellResponsePaidCosts_;
     std::vector<std::string> journal_;
 };
 } // namespace ProjectC::Network

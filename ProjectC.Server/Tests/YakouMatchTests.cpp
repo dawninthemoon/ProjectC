@@ -142,6 +142,58 @@ int main()
             catch (std::runtime_error const&) { rejected = true; }
             Check(rejected, "Third distinct special resource must reject deck");
         }
+
+        {
+            auto alpha = proto;
+            alpha.Config["deck.maxSpecialResourceTypes"] = 2;
+            alpha.Config["alpha02.experimentalRuntime"] = true;
+            alpha.Config["resource.definitions"] = {
+                {"Ki", {{"InitialValue",3},{"MaxValue",3},{"RegenPerOwnTurn",0}}},
+                {"Blood", {{"InitialValue",0},{"MaxValue",6},{"RegenPerOwnTurn",0}}}};
+            for (auto& card : alpha.Cards["Cards"])
+            {
+                if (card["Id"] == 2001)
+                {
+                    card["Effects"] = Json::array({
+                        {{"Id",1},{"Type","Triggered"},{"Trigger","OnDamaged"},
+                         {"Condition",{{"PositiveDamage",true},{"Survived",true}}},
+                         {"PerTurnLimit",1},{"LimitScope","CardName"},
+                         {"Actions",Json::array({{{"Operation","ModifyResource"},{"Target","FriendlyPlayer"},
+                             {"ResourceId","Blood"},{"Delta",1}}})}}});
+                }
+                if (card["Id"] == 2009)
+                {
+                    card["SummonCostJson"]["Activation"] = {{"Costs",Json::array()}};
+                    card["Effects"][0]["Actions"] = Json::array({
+                        {{"Operation","DealDamage"},{"Target","FriendlyMonster"},{"Amount",1},{"DamageType","Effect"}},
+                        {{"Operation","ModifyCountdown"},{"Target","SameTarget"},{"Delta",-1},{"Minimum",0},
+                         {"Condition",{{"TargetSurvived",true}}}}});
+                }
+                if (card["Id"] == 2002)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource",{{"Costs",Json::array({
+                        {{"Type","Resource"},{"ResourceId","Blood"},{"Amount",1}}})}}}};
+                    card["Effects"] = Json::array();
+                }
+            }
+            auto deck = Deck(alpha,{2001,2009,2002});
+            YakouMatch match(alpha,1,{deck,deck});
+            match.StartTurn(1);
+            int const unit = match.Player(1).Hand[0], spell = match.Player(1).Hand[1];
+            int const consumer = match.Player(1).Hand[2];
+            (void)match.SummonAndRunAutomaticTriggers(1,unit,"Normal",{},0);
+            match.BeginSpellResponse(1,spell,unit);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Player(1).Field[0]->Damage == 1 &&
+                  match.Player(1).Field[0]->Countdown == 1 &&
+                  match.Player(1).Resources.at("Blood").Current == 1,
+                  "Blood damage + countdown sequence must produce surviving damage resource");
+            (void)match.SummonAndRunAutomaticTriggers(1,consumer,"Resource",{},1);
+            Check(match.Player(1).Resources.at("Blood").Current == 0,
+                  "Blood resource is spendable after damage");
+        }
         for (auto const& [deckIndex, defenderId, reduction] :
              std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
         {

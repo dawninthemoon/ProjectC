@@ -207,6 +207,77 @@ void CheckSupportedAction(Json const& action)
     Check(supported, "Unsupported Yakou effect operation or action fields: " + operation);
 }
 
+
+bool ExtendedEffect(Json const& actions)
+{
+    if (!actions.is_array() || actions.empty()) return false;
+    auto const& a = actions[0];
+    auto const op = a.value("Operation", std::string());
+    return op == "DealDamage" || op == "SearchDeck" ||
+        (op == "ModifyCountdown" && (a.value("Target", std::string()) == "EnemyMonster" ||
+                                      a.contains("Condition"))) ||
+        (op == "HealAccumulatedDamage" && (a.contains("TargetCondition") || actions.size() > 1));
+}
+
+void CheckExtendedEffect(Json const& effect)
+{
+    auto const& actions = effect.at("Actions");
+    Check(actions.is_array() && !actions.empty() && actions.size() <= 2,
+          "Invalid extended effect sequence");
+    auto const& a = actions[0];
+    auto const op = a.at("Operation").get<std::string>();
+    auto const target = a.value("Target", std::string());
+    if (op == "DealDamage")
+    {
+        Check(HasOnlyFields(a, {"Operation","Target","Amount","DamageType","TargetTiming"}) &&
+              a.at("DamageType") == "Effect" && a.contains("Amount") &&
+              a.at("Amount").is_number_integer() && a.at("Amount").get<int>() > 0 &&
+              a.at("Amount").get<int>() <= 30 &&
+              (target == "Self" || target == "FriendlyPlayer" || target == "FriendlyMonster" ||
+               target == "OtherFriendlyMonster" || target == "EnemyMonster"),
+              "Unsupported damage effect");
+    }
+    else if (op == "ModifyCountdown")
+    {
+        Check(HasOnlyFields(a, {"Operation","Target","Delta","Minimum","Condition"}) &&
+              a.at("Delta").is_number_integer() && a.at("Minimum") == 0 &&
+              (target == "EnemyMonster" || target == "Self"), "Unsupported extended countdown");
+        if (a.contains("Condition"))
+            Check(target == "Self" &&
+                (a.at("Condition") == Json{{"FriendlyWoundedMonsterExists",true}} ||
+                 a.at("Condition") == Json{{"DevouredMaterialDamageAtLeast",1}}),
+                  "Unsupported countdown condition");
+    }
+    else if (op == "HealAccumulatedDamage")
+    {
+        Check(HasOnlyFields(a, {"Operation","Target","Amount","Optional","TargetCondition"}) &&
+              a.at("Amount").is_number_integer() && a.at("Amount").get<int>() > 0 &&
+              (target == "FriendlyMonster" || target == "OtherFriendlyMonster") &&
+              (!a.contains("TargetCondition") ||
+               a.at("TargetCondition") == Json{{"AccumulatedDamageAtLeast",1}}),
+              "Unsupported extended healing");
+    }
+    else
+        Check(false, "Extended operation not yet executable");
+    if (actions.size() == 2)
+    {
+        auto const& second = actions[1];
+        if (op == "DealDamage" && target == "FriendlyPlayer")
+        {
+            CheckSupportedAction(second);
+            Check(second.at("Operation") == "ModifyResource", "Unsupported player damage sequence");
+        }
+        else if (op == "DealDamage")
+            Check(second == Json{{"Operation","ModifyCountdown"},{"Target","SameTarget"},
+                  {"Delta",-1},{"Minimum",0},{"Condition",{{"TargetSurvived",true}}}},
+                  "Unsupported damage follow-up");
+        else if (op == "HealAccumulatedDamage")
+            Check(second == Json{{"Operation","ReduceDamage"},{"Target","SameTarget"},
+                  {"Amount",1},{"Duration","NextDamageEvent"}}, "Unsupported heal follow-up");
+        else Check(false, "Unsupported extended sequence");
+    }
+}
+
 bool IsMillThenCountdown(Json const& actions)
 {
     return actions.is_array() && actions.size() == 2 &&
@@ -824,6 +895,11 @@ Json YakouMatch::ServerCanonicalState() const
             {"Chain", {{"Open", chain.Open}, {"Priority", chain.Priority}, {"Passes", chain.ConsecutivePasses},
                        {"Stack", links(chain.Stack)}, {"Resolution", links(chain.Resolution)},
                        {"Deferred", links(chain.Deferred)}}}};
+    if (Alpha02())
+    {
+        state["SpellResolvedTurn"] = spellResolvedTurn_;
+        state["SpellResponsePaidCosts"] = spellResponsePaidCosts_;
+    }
     if (!deferredCosts.empty())
         state["DeferredCostEffects"] = std::move(deferredCosts);
     // Preserve the existing canonical replay fixture whenever no raid shield
@@ -910,7 +986,203 @@ void YakouMatch::RequireMain(int player) const
 {
     Check(phase_ == YakouPhase::Main, "Not in Yakou main phase");
     Check(player == ActivePlayer(), "Not active player");
+    if (Alpha02()) Check(pendingEffects_.empty(),"Resolve pending effects first");
 }
+
+bool YakouMatch::Alpha02() const
+{
+    return catalog_->Config.contains("resource.definitions");
+}
+
+void YakouMatch::NotifySpellResolved(int player, bool response)
+{
+    if (!Alpha02()) return;
+    spellResolvedTurn_[player - 1] = turn_;
+    // Stable field-slot order; effects are queued after the resolving spell.
+    for (auto const& unit : Player(player).Field)
+    {
+        if (!unit) continue;
+        Enqueue(player, unit->InstanceId, unit->DefinitionId, "OnFriendlySpellResolved");
+        if (response)
+            Enqueue(player, unit->InstanceId, unit->DefinitionId, "OnFriendlyResponseSpellResolved");
+    }
+}
+
+void YakouMatch::NotifySurvivingDamage(int player, int instance, int amount, bool combat)
+{
+    if (!Alpha02() || amount <= 0 || !FindUnit(Player(player), instance)) return;
+    // The authored damage listeners in this release are targetless resource
+    // gains. Resolve them at the damage boundary, after simultaneous combat
+    // damage and destruction have been committed, using the current turn.
+    auto& owner = MutablePlayer(player);
+    for (auto const& unit : owner.Field)
+    {
+        if (!unit || unit->Hp() <= 0) continue;
+        auto const definition = CardDefinition(unit->DefinitionId);
+        for (auto const& effect : definition.at("Effects"))
+        {
+            auto const expected = unit->InstanceId == instance ? "OnDamaged" : "OnOtherFriendlyDamaged";
+            if (effect.at("Trigger") != expected) continue;
+            auto const& condition = effect.at("Condition");
+            Check(HasOnlyFields(condition, {"PositiveDamage","Survived","DamageType"}) &&
+                  condition.value("PositiveDamage",false) && condition.value("Survived",false),
+                  "Unsupported damage event condition");
+            if (condition.contains("DamageType"))
+            {
+                Check(condition.at("DamageType") == "Combat" || condition.at("DamageType") == "Effect",
+                      "Unsupported damage event type");
+                if ((condition.at("DamageType") == "Combat") != combat) continue;
+            }
+            auto const& actions = effect.at("Actions");
+            Check(effect.at("Type") == "Triggered" && actions.size() == 1,
+                  "Unsupported damage listener");
+            auto const& action = actions[0];
+            CheckSupportedAction(action);
+            Check(action.at("Operation") == "ModifyResource" &&
+                  effect.value("PerTurnLimit",0) == 1 &&
+                  effect.value("LimitScope",std::string()) == "CardName",
+                  "Unsupported damage listener action");
+            auto const key = std::make_tuple(turn_,player,
+                definition.at("NameKey").get<std::string>(),effect.at("Id").get<int>());
+            if (effectUses_[key] >= 1) continue;
+            auto const resource = action.at("ResourceId").get<std::string>();
+            Check(YakouReadResourceDefinitions(catalog_->Config).contains(resource),"Unknown damage resource");
+            ChangeResource(owner,resource,action.at("Delta").get<int>());
+            ++effectUses_[key];
+            journal_.push_back("DamageResource:" + std::to_string(unit->InstanceId) + ":" + resource);
+        }
+    }
+}
+
+void YakouMatch::ApplyEffectDamage(int targetPlayer, int instance, int amount)
+{
+    Check(amount > 0 && amount <= 30, "Invalid effect damage");
+    auto& owner = MutablePlayer(targetPlayer);
+    if (instance == 0)
+    {
+        owner.Life = std::max(0,owner.Life - amount);
+        journal_.push_back("EffectHeroDamage:" + std::to_string(targetPlayer) + ":" + std::to_string(amount));
+        if (owner.Life == 0)
+        {
+            winner_ = 3 - targetPlayer;
+            phase_ = YakouPhase::Finished;
+            journal_.push_back("GameOver:" + std::to_string(winner_));
+        }
+        return;
+    }
+    auto const slot = FindSlot(owner,instance);
+    if (slot < 0) return; // A committed target that leaves the field is not retargeted.
+    auto& unit = *owner.Field[slot];
+    int actual = FilterEffectDamage(instance,amount);
+    if (actual > 0)
+    {
+        if (auto it = nextDamageShields_.find(instance); it != nextDamageShields_.end())
+        {
+            actual = std::max(0,actual-it->second);
+            nextDamageShields_.erase(it);
+        }
+    }
+    unit.Damage += actual;
+    journal_.push_back("EffectDamage:" + std::to_string(instance) + ":" + std::to_string(actual));
+    if (unit.Hp() <= 0)
+    {
+        int const definition = unit.DefinitionId;
+        owner.Field[slot].reset();
+        nextDamageShields_.erase(instance);
+        owner.Graveyard.push_back(instance);
+        Enqueue(targetPlayer,instance,definition,"OnDestroyed");
+    }
+    else NotifySurvivingDamage(targetPlayer,instance,actual,false);
+}
+
+YakouEffectChoice YakouMatch::ExtendedEffectChoices(YakouPendingEffect const& queued,
+                                                     Json const& effect) const
+{
+    CheckExtendedEffect(effect);
+    auto const& action = effect.at("Actions")[0];
+    YakouEffectChoice choice;
+    choice.Operation = action.at("Operation").get<std::string>();
+    auto const target = action.at("Target").get<std::string>();
+    if (target == "FriendlyPlayer" || target == "Self") return choice;
+    bool const enemy = target == "EnemyMonster";
+    choice.SourceZone = enemy ? "EnemyField" : "FriendlyField";
+    for (auto const& unit : Player(enemy ? 3-queued.Player : queued.Player).Field)
+    {
+        if (!unit || unit->Hp() <= 0 ||
+            (target == "OtherFriendlyMonster" && unit->InstanceId == queued.SourceCard) ||
+            (action.contains("TargetCondition") && unit->Damage < 1)) continue;
+        choice.Candidates.push_back(unit->InstanceId);
+    }
+    // A mandatory summon trigger with no candidate fizzles, but a main
+    // spell must not be activated if it has no legal target.
+    if (choice.Candidates.empty() && queued.Trigger != "OnResolve") return choice;
+    choice.MinCount = action.value("Optional",false) ? 0 : 1;
+    choice.MaxCount = 1;
+    return choice;
+}
+
+void YakouMatch::ResolveExtendedEffect(YakouPendingEffect const& queued, Json const& effect,
+                                       std::vector<int> const& targets)
+{
+    auto const choice = ExtendedEffectChoices(queued,effect);
+    auto const& actions = effect.at("Actions");
+    auto const& first = actions[0];
+    auto const mode = first.at("Target").get<std::string>();
+    Check(targets.size() >= static_cast<std::size_t>(choice.MinCount) &&
+          targets.size() <= static_cast<std::size_t>(choice.MaxCount) &&
+          (targets.empty() || Contains(choice.Candidates,targets[0])),
+          "Invalid extended effect target");
+    bool const automatic = mode == "Self" || mode == "FriendlyPlayer";
+    if (!automatic && targets.empty()) return;
+    int const target = mode == "Self" ? queued.SourceCard : targets.empty() ? 0 : targets[0];
+    int const targetPlayer = mode == "EnemyMonster" ? 3-queued.Player : queued.Player;
+    auto& owner = MutablePlayer(queued.Player);
+    for (auto const& action : actions)
+    {
+        if (phase_ == YakouPhase::Finished) break;
+        auto const op = action.at("Operation").get<std::string>();
+        if (op == "ModifyResource")
+        {
+            auto const resource = action.at("ResourceId").get<std::string>();
+            Check(YakouReadResourceDefinitions(catalog_->Config).contains(resource),"Unknown resource gain");
+            ChangeResource(owner,resource,action.at("Delta").get<int>());
+            continue;
+        }
+        if (op == "DealDamage")
+        {
+            ApplyEffectDamage(targetPlayer,target,action.at("Amount").get<int>());
+            continue;
+        }
+        int const slot = FindSlot(Player(targetPlayer),target);
+        if (slot < 0) continue;
+        auto& unit = *MutablePlayer(targetPlayer).Field[slot];
+        if (op == "ModifyCountdown")
+        {
+            if (action.contains("Condition"))
+            {
+                auto const& condition = action.at("Condition");
+                if (condition.contains("FriendlyWoundedMonsterExists") &&
+                    std::none_of(owner.Field.begin(),owner.Field.end(),
+                        [](auto const& candidate){return candidate && candidate->Damage > 0;})) continue;
+                if (condition.contains("DevouredMaterialDamageAtLeast") && queued.RelatedCard < 1) continue;
+            }
+            auto const adjusted = static_cast<std::int64_t>(unit.Countdown) + action.at("Delta").get<int>();
+            Check(adjusted <= std::numeric_limits<int>::max(),"Countdown overflow");
+            unit.Countdown = static_cast<int>(std::max<std::int64_t>(0,adjusted));
+        }
+        else if (op == "HealAccumulatedDamage")
+            unit.Damage = std::max(0,unit.Damage-action.at("Amount").get<int>());
+        else if (op == "ReduceDamage")
+        {
+            auto& shield = nextDamageShields_[target];
+            Check(shield < std::numeric_limits<int>::max(),"Shield overflow");
+            ++shield;
+        }
+        else Check(false,"Unsupported extended effect action");
+        journal_.push_back("ExtendedEffect:" + op + ":" + std::to_string(target));
+    }
+}
+
 void YakouMatch::Enqueue(int player, int instance, int definition, std::string const& trigger,
                          int relatedCard, std::vector<int> paidCostCards)
 {
@@ -920,6 +1192,22 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
         if (effect.at("Trigger") != trigger)
         {
             continue;
+        }
+        if (Alpha02() && trigger != "OnResolve")
+        {
+            int const limit = effect.value("PerTurnLimit",0);
+            if (limit > 0)
+            {
+                auto const key = std::make_tuple(turn_,player,
+                    data.at("NameKey").get<std::string>(),effect.at("Id").get<int>());
+                if (effectUses_.contains(key) && effectUses_.at(key) >= limit) continue;
+                auto same = [&](YakouPendingEffect const& pending) {
+                    return pending.Player == player && pending.EffectId == effect.at("Id").get<int>() &&
+                           CardDefinition(pending.DefinitionId).at("NameKey") == data.at("NameKey");
+                };
+                if (std::any_of(pendingEffects_.begin(),pendingEffects_.end(),same) ||
+                    std::any_of(deferredCostEffects_.begin(),deferredCostEffects_.end(),same)) continue;
+            }
         }
         auto const& actions = effect.at("Actions");
         if (actions.is_array() && actions.size() == 1 && actions[0].is_object() &&
@@ -1021,6 +1309,7 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
               "Card-name effect turn limit reached");
     }
     auto const& actions = definition->at("Actions");
+    if (Alpha02() && ExtendedEffect(actions)) return ExtendedEffectChoices(queued,*definition);
     Check(actions.is_array() && (actions.size() == 1 || IsMillThenCountdown(actions)),
           "Unsupported multi-action or empty Yakou effect");
     bool const millThenCountdown = IsMillThenCountdown(actions);
@@ -1150,6 +1439,9 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
     }
     choice.MaxCount = action.value("MaxTargets", 1);
     choice.MinCount = action.value("MinTargets", action.value("Optional", false) ? 0 : 1);
+    if (Alpha02() && queued.Trigger != "OnResolve" && choice.Candidates.empty() &&
+        queued.DefinitionId >= 5101 && queued.DefinitionId <= 5218)
+        choice.MinCount = choice.MaxCount = 0;
     return choice;
 }
 
@@ -1184,6 +1476,35 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
     Check(definition != nullptr, "Queued Yakou effect definition missing");
     Check(definition->at("Type") == "Triggered", "Only triggered effects can resolve");
     auto const& actions = definition->at("Actions");
+    if (Alpha02() && queued.Trigger != "OnResolve" && queued.DefinitionId >= 5101 &&
+        queued.DefinitionId <= 5218 && !ExtendedEffect(actions) && actions.size() == 1 &&
+        (actions[0].value("Target",std::string()) == "OtherFriendlyMonster" ||
+         actions[0].value("Operation",std::string()) == "Salvage"))
+    {
+        auto const choice = PendingEffectChoices(player);
+        if (choice.MaxCount == 0 && choice.Candidates.empty())
+        {
+            Check(selectedTargets.empty() && slot == -1,"Targetless fizzle");
+            pendingEffects_.erase(pendingEffects_.begin());
+            return;
+        }
+    }
+    if (Alpha02() && ExtendedEffect(actions))
+    {
+        Check(slot == -1, "Extended effect cannot choose slot");
+        auto const choice = PendingEffectChoices(player); // validates ownership and use limit
+        YakouMatch next = *this;
+        next.ResolveExtendedEffect(queued,*definition,selectedTargets);
+        int const limit = definition->value("PerTurnLimit",0);
+        if (limit > 0 && !(choice.MinCount == 0 && choice.MaxCount == 1 && selectedTargets.empty()))
+            ++next.effectUses_[std::make_tuple(turn_,player,card.at("NameKey").get<std::string>(),queued.EffectId)];
+        next.pendingEffects_.erase(next.pendingEffects_.begin());
+        if (queued.Trigger == "OnResolve" && next.phase_ != YakouPhase::Finished)
+            next.NotifySpellResolved(player,false);
+        if (next.phase_ == YakouPhase::Finished) next.pendingEffects_.clear();
+        *this = std::move(next);
+        return;
+    }
     Check(actions.is_array() && (actions.size() == 1 || IsMillThenCountdown(actions)),
           "Unsupported multi-action or empty Yakou effect");
     bool const millThenCountdown = IsMillThenCountdown(actions);
@@ -1439,6 +1760,7 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
         ++next.effectUses_[usage];
     }
     next.pendingEffects_.erase(next.pendingEffects_.begin());
+    if (queued.Trigger == "OnResolve") next.NotifySpellResolved(player,false);
     *this = std::move(next);
 }
 
@@ -1594,9 +1916,14 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
     Check(effect.at("Type") == "Triggered" &&
               effect.at("Trigger") == "OnResolve" &&
               effect.at("Actions").is_array() &&
-              (effect.at("Actions").size() == 1 || IsMillThenCountdown(effect.at("Actions"))),
+              (effect.at("Actions").size() == 1 || IsMillThenCountdown(effect.at("Actions")) ||
+               (Alpha02() && ExtendedEffect(effect.at("Actions")))),
           "Unsupported main-phase spell effect");
-    if (IsMillThenCountdown(effect.at("Actions")))
+    if (Alpha02() && ExtendedEffect(effect.at("Actions")))
+    {
+        CheckExtendedEffect(effect);
+    }
+    else if (IsMillThenCountdown(effect.at("Actions")))
     {
         CheckSupportedAction(effect.at("Actions")[0]);
         CheckSupportedAction(effect.at("Actions")[1]);
@@ -1667,6 +1994,15 @@ void YakouMatch::BeginSpellResponseImpl(int player, int handInstance, int target
               "Selected spell target is not an authorized candidate");
     }
     auto const pending = pendingEffects_.front();
+    if (Alpha02())
+    {
+        auto const definition = CardDefinition(pending.DefinitionId);
+        auto const& action = definition.at("Effects")[0].at("Actions")[0];
+        if (action.value("TargetTiming",std::string()) == "Activation")
+            Check(targetInstance != 0 && Contains(choice.Candidates,targetInstance),
+                  "Damage spell needs a legal activation target");
+        spellResponsePaidCosts_ = pending.PaidCostCards;
+    }
     Check(pending.Player == player && pending.SourceCard == handInstance,
           "Unexpected spell effect while opening chain");
     pendingEffects_.erase(pendingEffects_.begin());
@@ -1822,7 +2158,7 @@ void YakouMatch::PassSpellResponseImpl(int player)
         else
         {
             int const definitionId = OriginalId(link.SourceInstance);
-            Enqueue(link.Controller, link.SourceInstance, definitionId, "OnResolve");
+            Enqueue(link.Controller, link.SourceInstance, definitionId, "OnResolve",0,spellResponsePaidCosts_);
             Check(pendingEffects_.size() == 1,
                   "Expected one original spell effect after response");
             auto const choice = PendingEffectChoices(link.Controller);
@@ -1836,8 +2172,14 @@ void YakouMatch::PassSpellResponseImpl(int player)
             }
         }
     }
-    phase_ = YakouPhase::Main;
-    ReleaseDeferredCostTriggers();
+    if (phase_ != YakouPhase::Finished)
+    {
+        phase_ = YakouPhase::Main;
+        ReleaseDeferredCostTriggers();
+        if (Alpha02()) (void)ResolveAutomaticTriggers();
+    }
+    else deferredCostEffects_.clear();
+    spellResponsePaidCosts_.clear();
     journal_.push_back("SpellResponseClosed");
 }
 
@@ -2004,6 +2346,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
         Check(owner.NormalSummons == 0, "Normal summon already used");
     std::set<int> unique;
     int bonusAttack = 0, bonusMaxHp = 0;
+    int devouredDamage = 0;
     int occupied = owner.Field[slot] ? owner.Field[slot]->InstanceId : 0;
     for (int instance : materialIds)
     {
@@ -2012,6 +2355,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
         {
             auto const* unit = FindUnit(owner, instance);
             Check(unit != nullptr, "Devour requires allied field monster");
+            devouredDamage = std::max(devouredDamage,unit->Damage);
             auto const printed = CardDefinition(OriginalId(instance));
             bonusAttack += printed.at("Attack").get<int>();
             bonusMaxHp += printed.at("MaxHp").get<int>();
@@ -2071,7 +2415,8 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
                                    .MaxBlocks = maxBlocks};
     if (method == "Normal") ++owner.NormalSummons;
     Enqueue(player, handInstance, OriginalId(handInstance), "OnSummoned", 0, materialIds);
-    if (requirement.SourceZone == "FriendlyField") Enqueue(player, handInstance, OriginalId(handInstance), "OnDevourSummoned");
+    if (requirement.SourceZone == "FriendlyField") Enqueue(player, handInstance, OriginalId(handInstance), "OnDevourSummoned",
+        Alpha02() ? devouredDamage : 0);
     if (requirement.SourceZone == "FriendlyGraveyard") Enqueue(player, handInstance, OriginalId(handInstance), "OnNecromancySummoned");
     journal_.push_back("Summon:" + method + ":" + std::to_string(handInstance));
 }
@@ -2792,8 +3137,17 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 // response link; merely raiding grants no piercing.
                 continue;
             }
+            if (Alpha02() && action.at("Operation") == "GrantPiercing")
+            {
+                Check(action == Json{{"Operation","GrantPiercing"},{"Target","Self"},
+                          {"Duration","CurrentCombat"},{"Condition",{{"AccumulatedDamageAtLeast",1}}}},
+                      "Unsupported intrinsic piercing");
+                if (unit.Damage > 0) piercingRaiders_.insert(unit.InstanceId);
+                continue;
+            }
             Check(action.is_object() &&
-                      HasOnlyFields(action, {"Operation", "Target", "Delta", "Duration", "Condition"}) &&
+                      HasOnlyFields(action, {"Operation", "Target", "Delta", "Duration", "Condition", "Minimum"}) &&
+                      (!action.contains("Minimum") || action.at("Minimum") == 0) &&
                       action.at("Operation") == "ModifyAttack" &&
                       action.at("Target") == "Self" &&
                       action.at("Duration") == "CurrentCombat" &&
@@ -2802,6 +3156,16 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
             if (action.contains("Condition"))
             {
                 auto const& condition = action.at("Condition");
+                if (Alpha02() && condition == Json{{"AccumulatedDamageAtLeast",1}})
+                {
+                    if (unit.Damage < 1) continue;
+                }
+                else if (Alpha02() && condition == Json{{"FriendlySpellResolvedThisTurn",true}})
+                {
+                    if (spellResolvedTurn_[attacker.Id-1] != turn_) continue;
+                }
+                else
+                {
                 Check(condition.is_object() &&
                           HasOnlyFields(condition, {"FriendlyGraveyardArchetypeCountAtLeast", "Archetype"}) &&
                           condition.at("FriendlyGraveyardArchetypeCountAtLeast").is_number_integer() &&
@@ -2814,6 +3178,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                         ++tally;
                 if (tally < condition.at("FriendlyGraveyardArchetypeCountAtLeast").get<int>())
                     continue;
+                }
             }
             auto const sum = static_cast<std::int64_t>(bonus) + action.at("Delta").get<int>();
             Check(sum >= std::numeric_limits<int>::min() &&
@@ -2847,13 +3212,16 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
             else
             {
                 Check(action.is_object() &&
-                          HasOnlyFields(action, {"Operation", "Target", "Amount", "Duration"}) &&
+                          HasOnlyFields(action, {"Operation", "Target", "Amount", "Duration", "Condition"}) &&
+                          (!action.contains("Condition") || (Alpha02() &&
+                            action.at("Condition") == Json{{"AccumulatedDamageAtLeast",1}})) &&
                           action.at("Operation") == "ReduceDamage" &&
                           action.at("Target") == "Self" &&
                           action.at("Duration") == "CurrentCombat" &&
                           action.at("Amount").is_number_integer(),
                       "Unsupported blocker combat effect");
             }
+            if (action.contains("Condition") && unit.Damage < 1) continue;
             int const limit = effect.value("PerTurnLimit", 0);
             if (limit > 0)
             {
@@ -2953,6 +3321,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
               "Combat attack overflow");
         int const aDamage = static_cast<int>(std::max<std::int64_t>(0, modifiedAttack));
         bool destroyedEnemyByCombat = false;
+        int damageToAttacker = 0, damageToBlocker = 0;
         if (!attack.Blocker)
         {
             defender.Life = std::max(0, defender.Life - aDamage);
@@ -2969,6 +3338,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 int const dDamage = applyNextDamageShield(source.InstanceId,
                                                            std::max(0, target.Attack()));
                 source.Damage += dDamage;
+                damageToAttacker = dDamage;
                 int remainingDamage = std::max(0, aDamage - blockerReduction);
                 auto shield = raidShields_.find(target.InstanceId);
                 if (shield != raidShields_.end() && remainingDamage > 0)
@@ -2978,6 +3348,7 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 }
                 int const actualDamage = applyNextDamageShield(target.InstanceId, remainingDamage);
                 target.Damage += actualDamage;
+                damageToBlocker = actualDamage;
                 if (piercingRaiders_.contains(source.InstanceId) && actualDamage >= hpBefore)
                 {
                     int const excess = std::max(0, actualDamage - hpBefore);
@@ -3018,6 +3389,8 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
                 }
             }
         }
+        NotifySurvivingDamage(attacker.Id,attack.Card,damageToAttacker,true);
+        if (attack.Blocker) NotifySurvivingDamage(defender.Id,attack.Blocker,damageToBlocker,true);
         if (defender.Life == 0)
         {
             raidAttackModifiers_.clear();
