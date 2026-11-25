@@ -526,9 +526,22 @@ namespace ProjectC.Client
                 }
                 if (_responseSelection == "cost")
                 {
-                    if (!_responseCosts.Add(id))
+                    if (_responseCosts.Contains(id))
                     {
                         _responseCosts.Remove(id);
+                    }
+                    else
+                    {
+                        // Do not let the UI submit more payment cards than
+                        // the server-authorized response requires. Redraw has
+                        // its own choice flow and is not limited here.
+                        int? required = (int?)_responseOption?["CostCount"];
+                        if (required.HasValue && _responseCosts.Count >= required.Value)
+                        {
+                            ShowFeedback(YakouUiText.Get("ui.yakou.feedback.response_ready"));
+                            return;
+                        }
+                        _responseCosts.Add(id);
                     }
                 }
                 else if (_responseSelection == "target")
