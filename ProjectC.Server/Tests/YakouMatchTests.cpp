@@ -74,6 +74,133 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        for (auto const& [deckIndex, definition] :
+             std::vector<std::pair<std::size_t, int>>{{0, 3001}, {1, 4001}})
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, deckIndex, {definition}), SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const card = match.Player(1).Hand[0];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const hashBefore = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                2, card, "Normal", {}, 0); });
+            Check(match.ServerStateHash() == hashBefore,
+                  "Opponent cannot summon the authored mill monster");
+            (void)match.SummonAndRunAutomaticTriggers(1, card, "Normal", {}, 0);
+            Check(match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->InstanceId == card &&
+                      static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 1 &&
+                      match.Player(1).Graveyard.size() == 1 &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Graveyard").size() == 1,
+                  "Authored mill monster must move one own deck card into public graveyard");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = card;
+            summon.Method = "Normal";
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Authored mill monster must replay with the same hidden deck order");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const beforeWrongSeat = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(2, spell); });
+            Check(match.ServerStateHash() == beforeWrongSeat,
+                  "Opponent cannot activate the authored mill spell");
+            match.BeginSpellResponse(1, spell);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore &&
+                      match.PriorityPlayer() == 2,
+                  "2009 must wait for opponent priority before milling");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 2 &&
+                      match.Player(1).Graveyard.size() == 3 &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Graveyard").size() == 3,
+                  "2009 must mill exactly two cards after consecutive passes");
+            auto const beforeRepeat = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell); });
+            Check(match.ServerStateHash() == beforeRepeat,
+                  "Resolved 2009 cannot be activated again from graveyard");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, cast, passTwo, passOne});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2009 spell resolution must replay with identical hidden deck order");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 1, {4001, 4007}), SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const monster = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, monster, "Normal", {}, 0);
+            int const deckBeforeSpell = static_cast<int>(match.Player(1).Deck.size());
+            int const counterBefore = match.Player(1).Field[0]->Countdown;
+            match.BeginSpellResponse(1, spell);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBeforeSpell &&
+                      match.PendingEffectChoices(1).Candidates.size() == 1 &&
+                      match.PendingEffectChoices(1).Candidates[0] == monster,
+                  "4007 must wait for a valid friendly target before resolving both actions");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, spell); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "4007 must reject a spell instance as countdown target atomically");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, monster);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBeforeSpell - 1 &&
+                      match.Player(1).Field[0]->Countdown == std::max(0, counterBefore - 1) &&
+                      match.PendingEffects().empty(),
+                  "4007 must mill and reduce countdown after valid selection");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = monster;
+            summon.Method = "Normal";
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = monster;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, summon, cast, passTwo, passOne, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "4007 mill and countdown selection must replay deterministically");
+        }
         for (int definition : {4008, 4009})
         {
             // Both authored vanilla monsters share the normal-summon path.

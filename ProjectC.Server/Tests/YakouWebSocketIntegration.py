@@ -172,6 +172,10 @@ def run_deck_selection(port):
             assert "DeckId" not in right["State"]["Players"][0]
             state = left["State"]
             summoned = False
+            guard_summoned = False
+            guard_blocked = False
+            guard_combat_checked = False
+            grave_mill_checked = False
             for step in range(256):
                 if state["Phase"] == "Finished":
                     break
@@ -187,10 +191,25 @@ def run_deck_selection(port):
                     payload = {"Type": "Summon", "CardId": card["Id"],
                                "Method": "Normal", "Materials": [], "Slot": 0}
                     summoned = True
+                elif (phase == "Main" and active == 2 and first == grave and
+                      second == guard and not guard_summoned):
+                    card = next(card for card in right["State"]["Players"][1]["Hand"]
+                                if card["DefinitionId"] == 3004)
+                    seat = 2
+                    payload = {"Type": "Summon", "CardId": card["Id"],
+                               "Method": "Normal", "Materials": [], "Slot": 0}
+                    guard_summoned = True
                 elif phase == "Main":
                     seat, payload = active, {"Type": "BeginRaid"}
                 elif phase == "AssignBlockers":
-                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": []}
+                    blockers = []
+                    if (first == grave and second == guard and active == 1 and
+                          not guard_blocked and state["Attacks"] and
+                          state["Players"][1]["FieldSlots"][0]):
+                        blockers = [{"Attacker": state["Attacks"][0]["AttackerId"],
+                                     "Blocker": state["Players"][1]["FieldSlots"][0]["Id"]}]
+                        guard_blocked = True
+                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": blockers}
                 elif phase == "RaidResponse":
                     priority = state["PriorityPlayerId"]
                     seat = priority if priority else 3 - active
@@ -206,7 +225,21 @@ def run_deck_selection(port):
                 assert left["State"]["Players"][1]["Hand"] == []
                 assert right["State"]["Players"][0]["Hand"] == []
                 state = left["State"]
+                if payload["Type"] == "Summon" and first == grave and seat == 1:
+                    # 2001's authored OnSummoned effect mills two cards.
+                    assert len(state["Players"][0]["Graveyard"]) == 2
+                    grave_mill_checked = True
+                if (payload["Type"] == "ResolveRaid" and guard_blocked and
+                      not guard_combat_checked and active == 1):
+                    blocker = state["Players"][1]["FieldSlots"][0]
+                    assert blocker and blocker["DefinitionId"] == 3004
+                    assert blocker["Hp"] == 5  # 3004 reduces the 1-point raid hit.
+                    guard_combat_checked = True
             assert summoned and state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
+            if first == grave:
+                assert grave_mill_checked
+            if first == grave and second == guard:
+                assert guard_summoned and guard_combat_checked
             b.send("YakouLeave", MatchId=match)
             expect(a, "YakouClosed")
             expect(b, "YakouClosed")
