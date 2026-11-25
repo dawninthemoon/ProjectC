@@ -9,33 +9,33 @@
 | ID | 효과/트리거 | D | E: 확인한 시나리오 | R | W | U | 상태 |
 |---:|---|:---:|---|:---:|:---:|:---:|---|
 | 2001 | OnSummoned:Mill | ✓ | 소환 밀링 및 묘지 이동 (YakouMatchTests) (부분) | — | △ | — | Partially Verified |
-| 2002 | OnNecromancySummoned:Salvage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 2003 | OnSummoned:ModifyCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 2004 | OnSummoned:Salvage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 2002 | OnNecromancySummoned:Salvage | ✓ | YakouMatchTests: 강령 소환 후 묘지 회수 후보·잘못된 대상 거부 (부분) | — | — | — | Partially Verified |
+| 2003 | OnSummoned:ModifyCountdown | ✓ | YakouMatchTests: 강령 비용 2·다른 아군 카운터 감소·비용/대상 거부·리플레이 (부분) | △ | — | — | Partially Verified |
+| 2004 | OnSummoned:Salvage | ✓ | YakouMatchTests: 묘지 조건 충족/미충족·선택 회수 (부분) | — | — | — | Partially Verified |
 | 2005 | OnDiscarded:Mill, OnBanishedForNecromancyCost:ModifyCountdown | ✓ | YakouMatchTests: 폐기 비용 이동·밀링 1·잘못된 비용 거부·리플레이; 강령 제외 트리거 미검증 (부분) | △ | — | — | Partially Verified |
 | 2006 | OnAssignedAsBlocker:ReduceDamage | ✓ | YakouMatchTests: 실전 방어 배정·전투 피해 1 감소·권한 거부·리플레이 (부분) | △ | — | — | Partially Verified |
-| 2007 | OnRaid:ModifyAttack | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 2008 | OnDevourSummoned:Mill | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 2007 | OnRaid:ModifyAttack | ✓ | YakouMatchTests: 강령 비용·묘지 조건 습격 공격력 +1·중복 비용 거부·리플레이 (부분) | △ | — | — | Partially Verified |
+| 2008 | OnDevourSummoned:Mill | ✓ | YakouMatchTests: 포식 소환·잘못된 재료 거부·밀링 1·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2009 | OnResolve:Mill | ✓ | YakouMatchTests: 주문 응전 후 밀링 2·우선권/중복 거부·리플레이 (부분) | △ | — | — | Partially Verified |
-| 2010 | OnResolve:SpecialSummon | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 2010 | OnResolve:SpecialSummon | ✓ | YakouCommandGatewayTests: 묘지 특수 소환 비용·비공개 후보·잘못된 칸/대상·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2011 | OnResolve:ModifyAttack | ✓ | raid tactic target/cost (부분) | — | — | — | Partially Verified |
 | 2012 | OnResolve:ReduceDamage | ✓ | next-damage shield and replay (부분) | △ | — | — | Partially Verified |
 | 2101 | OnManifested:ModifyCountdown, OnRaid:GrantPiercing | ✓ | piercing cost/combat/replay (부분) | △ | — | — | Partially Verified |
-| 2102 | OnDestroyedEnemyByCombat:SetCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 2102 | OnDestroyedEnemyByCombat:SetCountdown | ✓ | YakouMatchTests: 현현 조건·기력·중복 현현 거부; 전투 파괴 트리거 fixture (부분) | — | — | — | Partially Verified |
 | 3001 | OnSummoned:Mill | ✓ | YakouMatchTests: 소환 밀링 1·소유자 거부·공개 묘지·리플레이 (부분) | △ | — | — | Partially Verified |
-| 3002 | OnSummoned:HealAccumulatedDamage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 3002 | OnSummoned:HealAccumulatedDamage | ✓ | YakouMatchTests: 실제 전투 부상 후 2 회복·잘못된 대상 거부 (부분) | — | — | — | Partially Verified |
 | 3003 | OnRaid:ModifyAttack | ✓ | YakouWebSocketIntegration: 습격 시 공격력 3+1과 플레이어 피해 4 (부분) | — | △ | — | Partially Verified |
 | 3004 | OnAssignedAsBlocker:ReduceDamage | ✓ | YakouWebSocketIntegration: Grave 대 Guard의 방어 피해 1 감소 (부분) | — | △ | — | Partially Verified |
-| 3005 | OnDevourSummoned:ModifyCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 3006 | OnNecromancySummoned:HealAccumulatedDamage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 3007 | OnSummoned:ModifyCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 3008 | OnDevoured:ModifyCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 3005 | OnDevourSummoned:ModifyCountdown | ✓ | YakouMatchTests: 포식 소환·잘못된 재료 거부·자신 카운터 감소·리플레이 (부분) | △ | — | — | Partially Verified |
+| 3006 | OnNecromancySummoned:HealAccumulatedDamage | ✓ | YakouMatchTests: 실제 전투 부상·강령 비용·다른 아군 회복·잘못된 비용/대상·리플레이 (부분) | △ | — | — | Partially Verified |
+| 3007 | OnSummoned:ModifyCountdown | ✓ | YakouMatchTests: 폐기 소환·다른 아군 카운터 감소·잘못된 비용 거부·리플레이 (부분) | △ | — | — | Partially Verified |
+| 3008 | OnDevoured:ModifyCountdown | ✓ | YakouMatchTests: 포식당함 이벤트 문맥·소비자 카운터 감소·잘못된 대상 거부 (부분) | — | — | — | Partially Verified |
 | 3009 | OnTargetedByEnemySpell:ReduceDamage | ✓ | accepted target event and replay (부분) | △ | — | — | Partially Verified |
-| 3010 | Passive:IncreaseMaxBlocks | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 3011 | OnResolve:ModifyCountdown | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 3010 | Passive:IncreaseMaxBlocks | ✓ | YakouMatchTests: 지속 최대 방어 횟수 2·중복 공격자 배정 거부 (부분) | — | — | — | Partially Verified |
+| 3011 | OnResolve:ModifyCountdown | ✓ | YakouMatchTests: 주문 응전·아군 카운터 감소·잘못된 대상/권한 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 3012 | OnResolve:LookAndChoose | ✓ | paid spell choice and replay (부분) | △ | — | — | Partially Verified |
-| 3013 | OnResolve:Salvage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
-| 3014 | OnResolve:HealAccumulatedDamage | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 3013 | OnResolve:Salvage | ✓ | YakouMatchTests: 강령 비용 2·응전·비공개 묘지 회수·비용/대상 거부·리플레이 (부분) | △ | — | — | Partially Verified |
+| 3014 | OnResolve:HealAccumulatedDamage | ✓ | YakouMatchTests: 전투 부상 대상 주문 회복 3·잘못된 대상 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 3015 | OnResolve:IgnoreOneManifestCondition | ✓ | condition waiver (부분) | — | — | — | Partially Verified |
 | 3016 | OnResolve:ReduceDamage | ✓ | raid shield interaction (부분) | — | — | — | Partially Verified |
 | 3017 | OnResolve:PreventEffectDamage | ✓ | targeted protection and replay (부분) | △ | — | — | Partially Verified |
@@ -60,13 +60,13 @@
 | 4016 | OnAssignedAsBlocker:ReduceDamage | ✓ | YakouMatchTests: 실전 방어 배정·전투 피해 2 감소·권한 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 4017 | OnResolve:ReassignBlocker/ReduceDamage | ✓ | replacement plus shield (부분) | — | — | — | Partially Verified |
 | 4018 | OnResolve:ReduceDamage | ✓ | all-blocker shield (부분) | — | — | — | Partially Verified |
-| 4019 | OnAssignedAsBlocker:ModifyAttack | ✓ | 카드별 실행 근거 미확인 | — | — | — | Untested |
+| 4019 | OnAssignedAsBlocker:ModifyAttack | ✓ | YakouMatchTests: 강령 소환·방어 시 공격력 감소 (부분) | — | — | — | Partially Verified |
 | 4020 | OnResolve:NegateSpellEffect | ✓ | nested negation (부분) | △ | — | — | Partially Verified |
 | 4021 | OnSummoned:Salvage | ✓ | 주문 묘지 회수·상대 비공개 선택 (YakouMatchTests) (부분) | — | — | — | Partially Verified |
 
 ## 판정 및 남은 검증
 
-- Verified: **0**, Partially Verified: **38**, Unsupported: **0**, Untested: **17**. `Unsupported: 0`은 모든 카드가 지원된다는 의미가 아니다. 미지원 여부를 확정할 충분한 카드별 실행 감사를 아직 마치지 않았다.
+- Verified: **0**, Partially Verified: **55**, Unsupported: **0**, Untested: **0**. `Unsupported: 0`은 모든 카드가 지원된다는 의미가 아니다. 미지원 여부를 확정할 충분한 카드별 실행 감사를 아직 마치지 않았다.
 - 여섯 덱 조합을 사용하는 기존 WebSocket 테스트는 제한된 소환/습격/승패 흐름을 검증한다. 이번 확장으로 Grave 덱의 2001 밀링, Raid 덱의 3003 습격 피해, Grave 대 Guard 경기의 3004 방어 피해 감소는 두 실제 WebSocket 연결에서 검증했다. 나머지 카드의 `W`는 미검증이다. Unity PlayMode도 특정 카드별 완결 경기나 독립 빌드 2개를 검증하지 않아 `U`는 모두 미검증이다.
 - 3009/3017의 대상 지정·응전·비용·상태·리플레이는 실제 카드로 확인했다. 효과 피해 감소/완전 방지 판정은 현 카드 풀에 직접 효과 피해 카드가 없어 별도 판정 fixture에서만 확인했다.
 - 55종 전체 Verified 판정에는 카드별 정상/거부 비용, 대상, 트리거, 응전, 선택 중 재접속, 최종 스냅샷, 리플레이 및 Unity 입력 증거가 더 필요하다. `RuntimeReady`는 false다.
@@ -76,6 +76,8 @@
 - `WebsiteBattleIntegration`의 CTest 제한은 120초이고 테스트는 순차 실행한다. 테스트는 동적 포트를 할당하며 종료 시 연결, 서버 프로세스, 로컬 HTTP 서버를 정리한다.
 - 이전 실행에서는 테스트가 성공 문구를 출력하거나 직접 실행에서 종료 코드 0을 반환했는데도 CTest가 수천 초의 경과 시간을 기록하며 타임아웃으로 분류했다. 이번 전체 CTest에서는 같은 테스트가 23.69초, 전체 18/18 통과했다. 제한 시간을 변경하지 않았다.
 - 따라서 간헐적 시간 측정 이상은 관찰했지만 원인은 확정하지 못했다. 포트 충돌이나 서버 자식 프로세스 잔류의 증거도 현재 없다. 다음 재현 시 CTest 상세 로그와 시스템 시각 변화를 함께 기록해야 한다.
+- 이후 Yakou WebSocket 테스트는 모든 경기 성공 문구를 출력한 뒤 서버 종료 대기에서 5초를 초과한 사례가 있었다. 테스트 하네스가 서버 표준 출력을 `PIPE`로 받아 시작 한 줄만 읽고 경기 중 드레인하지 않아 출력 버퍼가 찰 수 있는 구조였다. 별도 스레드로 로그를 계속 수집하도록 고쳤고 단독 CTest 3회가 각각 약 5.6초에 통과했다.
+- 같은 작업 중 `OutboxRecoveryIntegration`은 성공 문구를 출력한 뒤 CTest에 197초로 기록된 사례가 있었다. 단독 재실행은 12.15초에 통과했다. 원인을 Yakou 출력 버퍼와 동일하다고 단정하지 않는다. 제한 시간은 변경하지 않았다. 마지막 전체 CTest 재실행은 18/18 통과했다.
 
 ## 이번 실행 검증 근거
 
@@ -85,3 +87,11 @@
 ## 후속 카드별 실행 검증
 
 - `YakouMatchTests`: 2006/4016은 3003의 실제 습격과 방어 배정으로 피해 감소량·공개 HP·권한 거부·리플레이를 확인했다. 2005는 폐기 비용으로 이동할 때의 밀링·잘못된 비용 거부·리플레이를 확인했다. 2005의 강령 제외 트리거는 이 시나리오에서 검증하지 않았다.
+
+- `YakouMatchTests`: 3007은 폐기 소환과 다른 아군 카운터 감소, 3011은 주문 응전 후 대상 선택·카운터 감소를 검증했다. 양쪽 모두 적어도 하나의 거부 경로가 상태 해시를 유지하고, 전체 선택 흐름의 리플레이 해시가 일치한다.
+
+- 새 포식 실행 테스트는 2008/3005의 비용 재료, 효과 결과, 거부 상태 해시, 결정론적 리플레이를 검증했다. 기존 테스트의 실제 카드 실행 근거를 재확인하여 2002/2004/2102/3008/3010/4019를 부분 검증으로 기록했다. 이 카드들의 모든 경계 및 리플레이가 검증됐다는 뜻은 아니다.
+
+- 3006은 샘플 덱에 없어 복사한 테스트 카탈로그의 합법 덱 슬롯에만 넣었다. 실제 카드 정의는 유지하고, 전투에서 부상한 아군의 강령 소환 후 회복, 비용·대상 거부, 리플레이를 검증했다. 기존 3002의 전투 회복 테스트와 2010의 게이트웨이 특수 소환·리플레이 테스트도 카드별 부분 근거로 재확인했다.
+
+- 2003/2007/3013/3014도 신규 서버 실행 fixture에서 고유 효과, 의미 있는 거부 사례, 최종 리플레이 해시를 확인했다. 이로써 카드별 실행 근거가 없는 `Untested`는 0이지만, 모든 카드의 모든 예외·WebSocket·Unity 경로가 검증된 것은 아니므로 Verified 승격과 Alpha 완료 판정은 보류한다.

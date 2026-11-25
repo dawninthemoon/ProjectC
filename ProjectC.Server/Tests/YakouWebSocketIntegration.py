@@ -5,6 +5,7 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+import threading
 
 from WebSocketIntegration import Peer
 
@@ -268,9 +269,20 @@ if __name__ == "__main__":
          "--max-matches", "2"],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     tokens = []
+    output = []
+    reader = None
     try:
         line = proc.stdout.readline()
         assert "listening" in line, line
+        output.append(line)
+        # Keep draining server diagnostics during all six matches. Leaving the
+        # pipe unread can block the server during shutdown when it fills.
+        def collect_output():
+            for server_line in proc.stdout:
+                output.append(server_line)
+
+        reader = threading.Thread(target=collect_output, daemon=True)
+        reader.start()
         tokens = run(port)
         run_deck_selection(port)
     finally:
@@ -281,7 +293,10 @@ if __name__ == "__main__":
             proc.kill()
             proc.wait()
             raise AssertionError("Yakou server shutdown hung")
-        logs = proc.stdout.read()
+        if reader is not None:
+            reader.join(timeout=5)
+            assert not reader.is_alive(), "Yakou server output pipe did not close"
+        logs = "".join(output)
         assert all(token not in logs for token in tokens), "Secret token in logs"
     if os.name != "nt":
         assert proc.returncode == 0, (proc.returncode, logs)
