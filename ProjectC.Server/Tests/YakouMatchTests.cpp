@@ -1284,6 +1284,19 @@ int main()
             match.BeginRaid(2);
             match.StartTurn(1);
             match.BeginRaid(1);
+            {
+                auto unblocked = match;
+                unblocked.AssignBlockers(2, {});
+                auto const unblockedOptions = unblocked.ViewerSnapshot(2).at("ResponseOptions");
+                Check(std::none_of(unblockedOptions.begin(), unblockedOptions.end(),
+                    [&](Json const& option) { return option.at("CardId") == tactic; }),
+                    "Blocker replacement must not be offered for an unblocked raid");
+                auto const beforeUnblocked = unblocked.ServerStateHash();
+                Reject([&] { unblocked.RespondWithRaidTactic(2, tactic, attacker,
+                                               replacement, {costOne, costTwo}); });
+                Check(unblocked.ServerStateHash() == beforeUnblocked,
+                      "Unblocked raid replacement rejection must be atomic");
+            }
             match.AssignBlockers(2, {{attacker, originalBlocker}});
             auto const options = match.ViewerSnapshot(2).at("ResponseOptions");
             Check(std::any_of(options.begin(), options.end(), [&](Json const& option) {
@@ -1292,6 +1305,8 @@ int main()
                     option.at("CostCount") != 2) return false;
                 auto const& candidates = option.at("ReplacementCandidates");
                 return candidates.size() == 1 && candidates.at(0) == replacement &&
+                    option.at("TargetCandidates").size() == 1 &&
+                    option.at("TargetCandidates").at(0) == attacker &&
                     std::find(candidates.begin(), candidates.end(),
                               Json(originalBlocker)) == candidates.end();
             }), "Replacement tactic must only offer an eligible alternative blocker");
