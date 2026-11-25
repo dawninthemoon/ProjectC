@@ -51,6 +51,7 @@ struct YakouReplayCommand
     std::vector<int> Cards;
     std::vector<std::pair<int, int>> Blockers;
     int MaxEffects = 64; // Budget for ResolveAutomaticTriggers only.
+    int SecondaryTargetId = 0; // Additional authored activation target, if required.
 };
 
 struct YakouReplayStep

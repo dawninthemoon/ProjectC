@@ -299,6 +299,15 @@ YakouPrototype YakouPrototype::Load(std::filesystem::path const& directory)
                     ReadFile(directory / "GameConfig.json"));
 }
 
+YakouPrototype YakouPrototype::LoadAuthoringSnapshot(std::filesystem::path const& path,
+                                                       bool experimentalRuntime)
+{
+    auto const snapshot = ReadFile(path);
+    auto config = snapshot.at("GameConfig");
+    config["alpha02.experimentalRuntime"] = experimentalRuntime;
+    return Validate(snapshot.at("Cards"),snapshot.at("Decks"),snapshot.at("Localize"),config);
+}
+
 YakouPrototype YakouPrototype::Validate(Json const& cards,
                                         Json const& decks,
                                         Json const& localize,

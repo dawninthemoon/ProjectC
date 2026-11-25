@@ -86,7 +86,8 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
             command.MaxEffects);
         break;
     case YakouReplayOperation::BeginSpellResponse:
-        match.BeginSpellResponse(command.Player, command.CardId, command.TargetId, command.Cards);
+        match.BeginSpellResponse(command.Player, command.CardId, command.TargetId, command.Cards,
+                                 command.SecondaryTargetId);
         break;
     case YakouReplayOperation::RespondWithNegation:
         match.RespondWithNegation(command.Player, command.CardId, command.Cards);

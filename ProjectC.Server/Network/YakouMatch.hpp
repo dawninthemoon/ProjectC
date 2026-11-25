@@ -100,6 +100,7 @@ struct YakouEffectChoice
     int MaxCount = 0;
     std::vector<int> Candidates;
     std::vector<int> AvailableSlots;
+    std::vector<int> SecondaryCandidates;
 };
 
 class YakouMatch
@@ -168,7 +169,7 @@ public:
     void ActivateMainSpell(int player, int handInstance, std::vector<int> const& costs = {});
     // Opt-in response-aware spell path; supported counterspell: 3020 only.
     void BeginSpellResponse(int player, int handInstance, int targetInstance = 0,
-                            std::vector<int> const& costs = {});
+                            std::vector<int> const& costs = {}, int secondaryTarget = 0);
     void RespondWithNegation(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponse(int player);
     void StartTurn(int player);
@@ -197,7 +198,7 @@ public:
 private:
     void ActivateMainSpellImpl(int player, int handInstance, std::vector<int> const& costs);
     void BeginSpellResponseImpl(int player, int handInstance, int targetInstance,
-                                std::vector<int> const& costs);
+                                std::vector<int> const& costs, int secondaryTarget);
     void RespondWithNegationImpl(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponseImpl(int player);
     void StartTurnImpl(int player);
@@ -230,6 +231,12 @@ private:
     void NotifySpellResolved(int player, bool response);
     void NotifySurvivingDamage(int player, int instance, int amount, bool combat);
     void ApplyEffectDamage(int targetPlayer, int instance, int amount);
+    void MarkEnemySpellTarget(int player, int target);
+    void PayTypedSpellCost(int player, int spell, Json const& activation,
+                           std::vector<int> const& costs);
+    std::vector<int> Alpha02RaidTargets(int player, Json const& action) const;
+    void RespondWithTypedRaidTactic(int player, int spell, int target,
+                                     std::vector<int> const& costs);
     YakouEffectChoice ExtendedEffectChoices(YakouPendingEffect const& queued, Json const& effect) const;
     void ResolveExtendedEffect(YakouPendingEffect const& queued, Json const& effect,
                                std::vector<int> const& targets);
@@ -266,6 +273,8 @@ private:
     std::array<int, 2> spellResolvedTurn_{};
     // Private cost identities remain available when a main spell resolves after priority.
     std::vector<int> spellResponsePaidCosts_;
+    int lastRevealedDefinition_ = 0;
+    int lastRevealPlayer_ = 0;
     std::vector<std::string> journal_;
 };
 } // namespace ProjectC::Network

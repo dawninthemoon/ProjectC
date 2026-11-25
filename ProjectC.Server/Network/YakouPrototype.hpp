@@ -21,6 +21,8 @@ struct YakouPrototype
     bool RuntimeReady = false;
 
     static YakouPrototype Load(std::filesystem::path const& directory);
+    static YakouPrototype LoadAuthoringSnapshot(std::filesystem::path const& path,
+                                                bool experimentalRuntime = false);
     static YakouPrototype Validate(Json const& cards,
                                    Json const& decks,
                                    Json const& localize,
