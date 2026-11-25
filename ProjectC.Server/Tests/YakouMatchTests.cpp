@@ -182,13 +182,13 @@ int main()
             // A necromancy-paid 2005 must trigger after the counterspell
             // chain closes, rather than invalidate an otherwise legal cost.
             auto fixture = proto;
-            auto& firstDeck = fixture.Decks["Decks"][0]["Cards"];
+            auto& firstDeck = fixture.Decks["Decks"][1]["Cards"];
             auto replaced = std::find(firstDeck.begin(), firstDeck.end(), Json(4001));
             Check(replaced != firstDeck.end(), "Missing deck slot for 4020 fixture");
             *replaced = 4020;
             std::array<std::vector<int>, 2> const decks{
-                SampleDeck(fixture, 0, {4003, 2005, 4020, 2001, 2009}),
-                SampleDeck(fixture, 0, {2009})};
+                SampleDeck(fixture, 1, {4003, 2005, 4020, 2001, 2009}),
+                SampleDeck(fixture, 1, {2009})};
             YakouMatch match(fixture, 1, decks);
             auto command = [](YakouReplayOperation operation, int player)
             {
