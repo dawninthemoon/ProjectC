@@ -519,6 +519,14 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                     {
                         for (auto const& attack : attacks_)
                         {
+                            // Blocker replacement only applies to raids that
+                            // already have an assigned, still-present blocker.
+                            if ((definition == 3018 || definition == 4017) &&
+                                (attack.Blocker <= 0 ||
+                                 FindUnit(Player(viewer), attack.Blocker) == nullptr))
+                            {
+                                continue;
+                            }
                             targets.push_back(attack.Card);
                         }
                     }
