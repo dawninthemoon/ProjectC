@@ -140,7 +140,6 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     {
         Fields(request, {"Type"});
         match.PassRaidResponse(seat);
-        (void)match.ResolveAutomaticTriggers(AutomaticTriggerBudget);
     }
     else if (type == "RespondWithPiercing")
     {
@@ -174,7 +173,6 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     {
         Fields(request, {"Type"});
         match.PassSpellResponse(seat);
-        (void)match.ResolveAutomaticTriggers(AutomaticTriggerBudget);
     }
     else
     {

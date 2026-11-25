@@ -69,6 +69,7 @@ struct YakouPendingEffect
     // Immutable event context; the source may have left the field already.
     int RelatedCard = 0;
     std::vector<int> PaidCostCards;
+    bool DeferredCost = false;
 };
 
 // Server-derived selection metadata. Candidates are instance IDs, never client-authored.

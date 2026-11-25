@@ -428,6 +428,9 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                    {"Attacks", std::move(attacks)}};
     // The next public action must not advance a raid past unresolved cost triggers.
     result["PendingEffectCount"] = pendingEffects_.size();
+    result["PendingDeferredCostCount"] = std::count_if(
+        pendingEffects_.begin(), pendingEffects_.end(),
+        [](YakouPendingEffect const& effect) { return effect.DeferredCost; });
     // Both players can follow the public response depth and priority,
     // but private target selections never leave the authoritative server.
     if (phase_ == YakouPhase::RaidResponse)
@@ -701,6 +704,8 @@ Json YakouMatch::ServerCanonicalState() const
                            {"Definition", effect.DefinitionId}, {"Effect", effect.EffectId},
                            {"Trigger", effect.Trigger}, {"RelatedCard", effect.RelatedCard},
                            {"PaidCostCards", effect.PaidCostCards}});
+        if (effect.DeferredCost)
+            pending.back()["DeferredCost"] = true;
     }
     Json deferredCosts = Json::array();
     for (auto const& effect : deferredCostEffects_)
@@ -709,6 +714,8 @@ Json YakouMatch::ServerCanonicalState() const
                                  {"Definition", effect.DefinitionId}, {"Effect", effect.EffectId},
                                  {"Trigger", effect.Trigger}, {"RelatedCard", effect.RelatedCard},
                                  {"PaidCostCards", effect.PaidCostCards}});
+        if (effect.DeferredCost)
+            deferredCosts.back()["DeferredCost"] = true;
     }
     Json uses = Json::array();
     for (auto const& [key, count] : effectUses_)
@@ -886,7 +893,10 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
 void YakouMatch::DeferPendingCostTriggers()
 {
     for (auto& effect : pendingEffects_)
+    {
+        effect.DeferredCost = true;
         deferredCostEffects_.push_back(std::move(effect));
+    }
     pendingEffects_.clear();
 }
 
@@ -2610,7 +2620,9 @@ void YakouMatch::ResolveRaid(int defendingPlayer)
 void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 {
     Check(phase_ == YakouPhase::RaidResponse && !response_.IsOpen() &&
-              pendingEffects_.empty() && defendingPlayer != ActivePlayer() &&
+              std::none_of(pendingEffects_.begin(), pendingEffects_.end(),
+                  [](YakouPendingEffect const& effect) { return effect.DeferredCost; }) &&
+              defendingPlayer != ActivePlayer() &&
               (defendingPlayer == 1 || defendingPlayer == 2),
           "Cannot resolve raid");
     auto& attacker = players_[active_];

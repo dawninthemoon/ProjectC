@@ -759,7 +759,7 @@ namespace ProjectC.Client
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.pass_raid_response"), () => Send("PassRaidResponse", new JObject())));
             }
             if (phase == "RaidResponse" && priority == 0 &&
-                (int?)_state["PendingEffectCount"] == 0 && active != _session.Seat)
+                (int?)_state["PendingDeferredCostCount"] == 0 && active != _session.Seat)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.resolve_raid"), () => Send("ResolveRaid", new JObject())));
             }
@@ -771,6 +771,11 @@ namespace ProjectC.Client
             if (pending != null && (string)pending["Status"] == "Ready")
             {
                 bool multiple = (int?)pending["MaxCount"] > 1;
+                if ((int?)pending["MaxCount"] == 0)
+                {
+                    options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"),
+                        () => Send("ChooseEffect", new JObject { ["TargetId"] = 0 })));
+                }
                 bool ready = multiple ? _pendingTargets.Count >= (int)pending["MinCount"] &&
                     _pendingTargets.Count <= (int)pending["MaxCount"] : _pendingTarget != 0;
                 if (ready)
@@ -809,7 +814,7 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.choose_candidate", CardPresentation.Name(visible)),
                         () => SelectCard(visible, _screen.EndTurn.transform.position)));
                 }
-                if ((int?)pending["MinCount"] == 0)
+                if ((int?)pending["MinCount"] == 0 && (int?)pending["MaxCount"] != 0)
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.decline_optional_effect"), () => Send("ChooseEffect", new JObject { ["TargetId"] = 0 })));
                 }
