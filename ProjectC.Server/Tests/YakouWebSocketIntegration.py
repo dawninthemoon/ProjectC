@@ -176,6 +176,7 @@ def run_deck_selection(port):
             guard_blocked = False
             guard_combat_checked = False
             grave_mill_checked = False
+            raid_bonus_checked = False
             for step in range(256):
                 if state["Phase"] == "Finished":
                     break
@@ -216,6 +217,10 @@ def run_deck_selection(port):
                     payload = {"Type": "PassRaidResponse" if priority else "ResolveRaid"}
                 else:
                     raise AssertionError(f"Unexpected phase during Alpha duel: {phase}")
+                defender_life_before = state["Players"][1]["Life"]
+                unblocked_raid = (payload["Type"] == "ResolveRaid" and
+                                  first == raid and active == 1 and
+                                  any(attack["BlockerId"] == 0 for attack in state["Attacks"]))
                 acting = a if seat == 1 else b
                 result = command(acting, match, f"deck-game-{step}", payload)
                 assert result["Payload"]["Accepted"] is True
@@ -225,6 +230,9 @@ def run_deck_selection(port):
                 assert left["State"]["Players"][1]["Hand"] == []
                 assert right["State"]["Players"][0]["Hand"] == []
                 state = left["State"]
+                if unblocked_raid and not raid_bonus_checked:
+                    assert defender_life_before - state["Players"][1]["Life"] == 4
+                    raid_bonus_checked = True  # 3003: printed attack 3 + OnRaid 1.
                 if payload["Type"] == "Summon" and first == grave and seat == 1:
                     # 2001's authored OnSummoned effect mills two cards.
                     assert len(state["Players"][0]["Graveyard"]) == 2
@@ -240,6 +248,8 @@ def run_deck_selection(port):
                 assert grave_mill_checked
             if first == grave and second == guard:
                 assert guard_summoned and guard_combat_checked
+            if first == raid:
+                assert raid_bonus_checked
             b.send("YakouLeave", MatchId=match)
             expect(a, "YakouClosed")
             expect(b, "YakouClosed")
