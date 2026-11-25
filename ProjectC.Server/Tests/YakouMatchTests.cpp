@@ -74,6 +74,110 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        for (auto const& [deckIndex, defenderId, reduction] :
+             std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 2, {3003}), SampleDeck(proto, deckIndex, {defenderId})};
+            YakouMatch match(proto, 1, decks);
+            int const raider = match.Player(1).Hand[0];
+            int const blocker = match.Player(2).Hand[0];
+            std::vector<YakouReplayCommand> commands;
+            auto record = [&](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                commands.push_back(value);
+            };
+            for (int step = 0; step < 16 && match.Phase() != YakouPhase::AssignBlockers; ++step)
+            {
+                int const active = match.ActivePlayer();
+                match.StartTurn(active);
+                record(YakouReplayOperation::StartTurn, active);
+                if (active == 1 && !match.Player(1).Field[0])
+                {
+                    match.Summon(1, raider, "Normal", {}, 0);
+                    auto& command = commands.emplace_back();
+                    command.Operation = YakouReplayOperation::Summon;
+                    command.Player = 1;
+                    command.CardId = raider;
+                    command.Method = "Normal";
+                }
+                if (active == 2 && !match.Player(2).Field[0])
+                {
+                    match.Summon(2, blocker, "Normal", {}, 0);
+                    auto& command = commands.emplace_back();
+                    command.Operation = YakouReplayOperation::Summon;
+                    command.Player = 2;
+                    command.CardId = blocker;
+                    command.Method = "Normal";
+                }
+                match.BeginRaid(active);
+                record(YakouReplayOperation::BeginRaid, active);
+            }
+            Check(match.Phase() == YakouPhase::AssignBlockers &&
+                      match.ActivePlayer() == 1 && match.Attacks()[0].Card == raider,
+                  "Defensive authored cards must reach a real raid");
+            auto const beforeWrongBlock = match.ServerStateHash();
+            Reject([&] { match.AssignBlockers(1, {{raider, blocker}}); });
+            Check(match.ServerStateHash() == beforeWrongBlock,
+                  "Attacking player cannot assign the defender's blocker");
+            match.AssignBlockers(2, {{raider, blocker}});
+            auto& assignment = commands.emplace_back();
+            assignment.Operation = YakouReplayOperation::AssignBlockers;
+            assignment.Player = 2;
+            assignment.Blockers = {{raider, blocker}};
+            match.PassRaidResponse(2);
+            record(YakouReplayOperation::PassRaidResponse, 2);
+            match.PassRaidResponse(1);
+            record(YakouReplayOperation::PassRaidResponse, 1);
+            match.ResolveRaid(2);
+            record(YakouReplayOperation::ResolveRaid, 2);
+            Check(match.Player(2).Field[0] &&
+                      match.Player(2).Field[0]->Hp() == 5 - (4 - reduction) &&
+                      match.ViewerSnapshot(1).at("Players")[1].at("FieldSlots")[0]
+                          .at("Hp") == 5 - (4 - reduction),
+                  "Blocker must reduce the raider's actual combat damage once");
+            auto const replay = ReplayYakou(proto, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Defensive blocker combat must replay deterministically");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {3007, 2005}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const summoned = match.Player(1).Hand[0];
+            int const discarded = match.Player(1).Hand[1];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, summoned, "Discard", {summoned}, 0); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "2005 discard fixture must reject spending the summoned card");
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, summoned, "Discard", {discarded}, 0);
+            Check(match.Player(1).Field[0] &&
+                      static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 1 &&
+                      match.Player(1).Graveyard.size() == 2 &&
+                      std::find(match.Player(1).Graveyard.begin(),
+                                match.Player(1).Graveyard.end(), discarded) !=
+                          match.Player(1).Graveyard.end(),
+                  "Discarded 2005 must move to graveyard and mill one own deck card");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = summoned;
+            summon.Method = "Discard";
+            summon.Cards = {discarded};
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2005 discard trigger must replay deterministically");
+        }
         for (auto const& [deckIndex, definition] :
              std::vector<std::pair<std::size_t, int>>{{0, 3001}, {1, 4001}})
         {
