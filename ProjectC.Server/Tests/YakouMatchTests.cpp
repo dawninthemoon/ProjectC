@@ -74,6 +74,32 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        for (int definition : {4008, 4009})
+        {
+            // Both authored vanilla monsters share the normal-summon path.
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 2, {definition}), SampleDeck(proto, 0, {})});
+            int const card = match.Player(1).Hand[0];
+            auto const beforeTurn = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {}, 0); });
+            Check(match.ServerStateHash() == beforeTurn,
+                  "Vanilla summon before turn start must reject atomically");
+            match.StartTurn(1);
+            auto const beforeCost = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {match.Player(1).Hand[1]}, 0); });
+            Check(match.ServerStateHash() == beforeCost,
+                  "Vanilla normal summon cannot charge an unauthored material");
+            match.Summon(1, card, "Normal", {}, 0);
+            Check(match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->InstanceId == card &&
+                      std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), card) ==
+                          match.Player(1).Hand.end(),
+                  "Vanilla monster must move from hand into its field slot");
+            auto const beforeDuplicate = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {}, 1); });
+            Check(match.ServerStateHash() == beforeDuplicate,
+                  "Already summoned vanilla card must reject atomically");
+        }
         {
             std::array<std::vector<int>, 2> const decks{
                 SampleDeck(proto, 1, {2001, 4002, 4003, 4005, 4006, 4001, 4001}),
