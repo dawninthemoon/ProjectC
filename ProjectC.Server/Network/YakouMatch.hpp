@@ -38,11 +38,19 @@ struct YakouUnit
     [[nodiscard]] int Hp() const { return MaxHp() - Damage; }
 };
 
+struct YakouResourceState
+{
+    int Current = 0;
+    int Maximum = 0;
+    int RegenPerOwnTurn = 0;
+};
+
 struct YakouPlayer
 {
     int Id = 0;
     int Life = 20;
-    int Ki = 3;
+    int Ki = 3; // Legacy projection; synchronized with active Ki resource.
+    std::map<std::string, YakouResourceState> Resources;
     int NormalSummons = 0;
     int Manifestations = 0;
     int Redraws = 0;
@@ -80,6 +88,7 @@ struct YakouSummonChoice
     std::size_t RequiredCount = 0;
     std::vector<int> Candidates;
     std::vector<int> AvailableSlots;
+    YakouResourceAmounts ResourceCosts;
 };
 
 // Only the effect controller may receive these server-derived instance IDs.

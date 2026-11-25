@@ -58,6 +58,58 @@ bool HasOnlyFields(Json const& object, std::initializer_list<char const*> allowe
     return true;
 }
 
+
+bool CanPayResources(YakouPlayer const& player, YakouResourceAmounts const& costs)
+{
+    for (auto const& [resource, amount] : costs)
+    {
+        auto const found = player.Resources.find(resource);
+        if (amount <= 0 || found == player.Resources.end() || found->second.Current < amount)
+            return false;
+    }
+    return true;
+}
+
+void ChangeResource(YakouPlayer& player, std::string const& resource, int delta)
+{
+    auto found = player.Resources.find(resource);
+    if (found == player.Resources.end())
+    {
+        // A free card may be splashed into a deck that did not select this resource.
+        Check(delta >= 0, "Cannot spend inactive special resource");
+        return;
+    }
+    auto& state = found->second;
+    auto const next = static_cast<std::int64_t>(state.Current) + delta;
+    Check(next >= 0, "Insufficient special resource");
+    state.Current = static_cast<int>(std::min<std::int64_t>(state.Maximum, next));
+    if (resource == "Ki") player.Ki = state.Current;
+}
+
+void PayResources(YakouPlayer& player, YakouResourceAmounts const& costs)
+{
+    Check(CanPayResources(player, costs), "Insufficient or inactive special resource");
+    for (auto const& [resource, amount] : costs)
+        ChangeResource(player, resource, -amount);
+}
+
+void SpendLegacyKi(YakouPlayer& player, int amount)
+{
+    Check(amount >= 0 && player.Ki >= amount, "Insufficient Ki");
+    if (player.Resources.contains("Ki"))
+        ChangeResource(player, "Ki", -amount);
+    else
+        player.Ki -= amount;
+}
+
+Json PublicResources(YakouPlayer const& player)
+{
+    Json result = Json::object();
+    for (auto const& [id, state] : player.Resources)
+        result[id] = {{"Current", state.Current}, {"Max", state.Maximum}};
+    return result;
+}
+
 // Do not silently omit a newly authored cost, condition, duration or target rule.
 void CheckSupportedAction(Json const& action)
 {
@@ -86,7 +138,16 @@ void CheckSupportedAction(Json const& action)
               "Invalid conditional Yakou threshold");
     }
     bool supported = false;
-    if (operation == "Mill")
+    if (operation == "ModifyResource")
+    {
+        supported = HasOnlyFields(action, {"Operation", "Target", "ResourceId", "Delta"}) &&
+            action.value("Target", std::string()) == "FriendlyPlayer" &&
+            action.contains("ResourceId") && action.at("ResourceId").is_string() &&
+            action.contains("Delta") && action.at("Delta").is_number_integer() &&
+            action.at("Delta").get<std::int64_t>() > 0 &&
+            action.at("Delta").get<std::int64_t>() <= 100000;
+    }
+    else if (operation == "Mill")
     {
         supported = HasOnlyFields(action, {"Operation", "Count", "From", "To"});
     }
@@ -194,6 +255,10 @@ YakouMatch::YakouMatch(YakouPrototype const& catalog,
     Check(catalog.Config.at("ki.start") == 3 &&
               catalog.Config.at("ki.baseRegenPerTurn") == 0,
           "Unsupported Yakou configuration");
+    bool const alpha02 = catalog.Config.contains("resource.definitions");
+    Check(!alpha02 || catalog.Config.value("alpha02.experimentalRuntime", false),
+          "Alpha02 experimental runtime is not enabled");
+    auto const resourceDefinitions = YakouReadResourceDefinitions(catalog.Config);
     first_ = firstPlayer - 1;
     active_ = first_;
     std::set<int> legal;
@@ -208,6 +273,17 @@ YakouMatch::YakouMatch(YakouPrototype const& catalog,
         auto& player = players_[p];
         player.Id = p + 1;
         Check(deckDefinitions[p].size() == 30, "Yakou requires 30 cards per deck");
+        if (alpha02)
+        {
+            player.Ki = 0;
+            for (auto const& type : YakouDeckResourceTypes(catalog.Cards, catalog.Config, deckDefinitions[p]))
+            {
+                auto const& definition = resourceDefinitions.at(type);
+                player.Resources.emplace(type, YakouResourceState{definition.Initial, definition.Maximum,
+                                                                    definition.RegenPerOwnTurn});
+                if (type == "Ki") player.Ki = definition.Initial;
+            }
+        }
         std::map<int, int> copies;
         for (int definition : deckDefinitions[p])
         {
@@ -330,6 +406,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                               {"HandCount", player.Hand.size()}, {"DeckCount", player.Deck.size()},
                               {"Hand", std::move(hand)}, {"FieldSlots", std::move(field)},
                               {"Graveyard", std::move(grave)}, {"Exile", std::move(exile)}};
+        if (catalog_->Config.contains("resource.definitions"))
+            visiblePlayer["Resources"] = PublicResources(player);
         if (player.Id == viewer)
         {
             bool canNormal = false;
@@ -359,6 +437,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                                                   {"RequiredCount", option.RequiredCount},
                                                   {"Candidates", option.Candidates},
                                                   {"AvailableSlots", option.AvailableSlots}});
+                        if (!option.ResourceCosts.empty())
+                            summonChoices.back()["ResourceCosts"] = option.ResourceCosts;
                     }
                 }
             }
@@ -684,6 +764,8 @@ Json YakouMatch::ServerCanonicalState() const
                            {"NormalSummons", player.NormalSummons}, {"Manifestations", player.Manifestations},
                            {"Redraws", player.Redraws}, {"Deck", player.Deck}, {"Hand", player.Hand},
                            {"Graveyard", player.Graveyard}, {"Exile", player.Exile}, {"Field", std::move(field)}});
+        if (catalog_->Config.contains("resource.definitions"))
+            players.back()["Resources"] = PublicResources(player);
     }
     Json original = Json::array();
     std::vector<std::pair<int, int>> definitions(original_.begin(), original_.end());
@@ -960,6 +1042,12 @@ YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
               "Insufficient cards for authored mill");
         return choice;
     }
+    if (choice.Operation == "ModifyResource")
+    {
+        auto const definitions = YakouReadResourceDefinitions(catalog_->Config);
+        Check(definitions.contains(action.at("ResourceId").get<std::string>()), "Unknown resource gain");
+        return choice;
+    }
     if (choice.Operation == "IgnoreOneManifestCondition")
     {
         return choice;
@@ -1126,7 +1214,15 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
     YakouMatch next = *this;
     auto& owner = next.MutablePlayer(player);
     bool declined = false;
-    if (operation == "IgnoreOneManifestCondition")
+    if (operation == "ModifyResource")
+    {
+        Check(selectedTarget == 0, "Resource gain is targetless");
+        auto const resource = action.at("ResourceId").get<std::string>();
+        Check(YakouReadResourceDefinitions(catalog_->Config).contains(resource), "Unknown resource gain");
+        ChangeResource(owner, resource, action.at("Delta").get<int>());
+        next.journal_.push_back("EffectResource:" + resource + ":" + std::to_string(player));
+    }
+    else if (operation == "IgnoreOneManifestCondition")
     {
         Check(selectedTarget == 0, "Manifest condition waiver has no card target");
         Check(next.manifestConditionWaivers_[player - 1] < std::numeric_limits<int>::max(),
@@ -1454,7 +1550,21 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
           "Spell activation cost is missing");
     auto const& activation = definition.at("SummonCostJson").at("Activation");
     std::string costMethod;
-    if (activation.empty())
+    YakouResourceAmounts resourceCosts;
+    if (activation.contains("Costs"))
+    {
+        auto const typed = YakouParseTypedCost(activation.at("Costs"));
+        costMethod = typed.OrdinaryType;
+        resourceCosts = typed.Resources;
+        Check(costMethod != "Devour" && costs.size() == typed.OrdinaryCount &&
+                  CanPayResources(owner, resourceCosts), "Invalid typed spell payment");
+        std::set<int> unique;
+        for (int cardId : costs)
+            Check(cardId != handInstance && unique.insert(cardId).second &&
+                      Contains(costMethod == "Discard" ? owner.Hand : owner.Graveyard, cardId),
+                  "Invalid or repeated typed spell cost card");
+    }
+    else if (activation.empty())
     {
         Check(costs.empty(), "This spell does not accept a cost");
     }
@@ -1480,6 +1590,7 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
     Check(effects.is_array() && effects.size() == 1,
           "Only one supported spell effect may be activated");
     auto const& effect = effects.at(0);
+    Check(effect.value("Timing", std::string("Main")) == "Main", "Spell is not a main-phase spell");
     Check(effect.at("Type") == "Triggered" &&
               effect.at("Trigger") == "OnResolve" &&
               effect.at("Actions").is_array() &&
@@ -1513,6 +1624,7 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
     }
     DeferPendingCostTriggers(previousPendingCount);
 
+    PayResources(owner, resourceCosts);
     // Move the authored spell into its public graveyard, then queue precisely
     // its OnResolve operation. The outer candidate copy commits only if
     // target availability, the per-turn limit and effect shape are valid.
@@ -1752,6 +1864,7 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
     {
         auto const method = methodValue.get<std::string>();
         auto const requirement = YakouRequiredCost(card, method);
+        if (!CanPayResources(owner, requirement.Resources)) continue;
         if (method == "Normal" && owner.NormalSummons != 0)
         {
             continue;
@@ -1760,7 +1873,8 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
         choice.Method = method;
         choice.SourceZone = requirement.SourceZone;
         choice.RequiredCount = requirement.ExactCount;
-        if (method == "Devour")
+        choice.ResourceCosts = requirement.Resources;
+        if (requirement.SourceZone == "FriendlyField")
         {
             for (auto const& unit : owner.Field)
             {
@@ -1770,11 +1884,11 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
                 }
             }
         }
-        else if (method == "Necromancy")
+        else if (requirement.SourceZone == "FriendlyGraveyard")
         {
             choice.Candidates = owner.Graveyard;
         }
-        else if (method == "Discard")
+        else if (requirement.SourceZone == "FriendlyHand")
         {
             for (int instance : owner.Hand)
             {
@@ -1786,7 +1900,8 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
         }
         else
         {
-            Check(method == "Normal", "Unsupported summon cost method");
+            Check(requirement.ExactCount == 0 && (method == "Normal" || method == "Resource"),
+                  "Unsupported summon cost method");
         }
         if (choice.Candidates.size() < choice.RequiredCount)
         {
@@ -1795,7 +1910,7 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
         for (int slot = 0; slot < 5; ++slot)
         {
             if (!owner.Field[slot] ||
-                (method == "Devour" &&
+                (requirement.SourceZone == "FriendlyField" &&
                  Contains(choice.Candidates, owner.Field[slot]->InstanceId)))
             {
                 choice.AvailableSlots.push_back(slot);
@@ -1847,7 +1962,9 @@ void YakouMatch::StartTurnImpl(int player)
         owner.Hand.push_back(owner.Deck.front());
         owner.Deck.erase(owner.Deck.begin());
     }
-    // No Ki regeneration at any point.
+    // Alpha01 has no Ki regeneration; configured Alpha02 resources may opt in.
+    for (auto& [resource, state] : owner.Resources)
+        ChangeResource(owner, resource, state.RegenPerOwnTurn);
     phase_ = YakouPhase::Main;
     journal_.push_back("TurnStart:" + std::to_string(player));
 }
@@ -1881,6 +1998,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
                                     " cannot use " + method + ": " + error.what());
     }
     auto const count = requirement.ExactCount;
+    Check(CanPayResources(owner, requirement.Resources), "Insufficient summon resource");
     Check(materialIds.size() == count, "Incorrect number of summon materials");
     if (method == "Normal")
         Check(owner.NormalSummons == 0, "Normal summon already used");
@@ -1890,7 +2008,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
     for (int instance : materialIds)
     {
         Check(instance > 0 && unique.insert(instance).second, "Duplicate/invalid material");
-        if (method == "Devour")
+        if (requirement.SourceZone == "FriendlyField")
         {
             auto const* unit = FindUnit(owner, instance);
             Check(unit != nullptr, "Devour requires allied field monster");
@@ -1898,17 +2016,17 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
             bonusAttack += printed.at("Attack").get<int>();
             bonusMaxHp += printed.at("MaxHp").get<int>();
         }
-        else if (method == "Necromancy")
+        else if (requirement.SourceZone == "FriendlyGraveyard")
             Check(Contains(owner.Graveyard, instance), "Necromancy requires own graveyard");
-        else if (method == "Discard")
+        else if (requirement.SourceZone == "FriendlyHand")
             Check(instance != handInstance && Contains(owner.Hand, instance),
                   "Discard requires other cards in own hand");
         else
             Check(false, "Unexpected normal summon material");
     }
-    Check(!occupied || (method == "Devour" && unique.contains(occupied)),
+    Check(!occupied || (requirement.SourceZone == "FriendlyField" && unique.contains(occupied)),
           "Destination slot must be empty or devoured");
-    if (method == "Devour")
+    if (requirement.SourceZone == "FriendlyField")
     {
         for (int instance : materialIds)
         {
@@ -1921,7 +2039,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
             Enqueue(player, instance, sourceDefinition, "OnDevoured", handInstance);
         }
     }
-    else if (method == "Necromancy")
+    else if (requirement.SourceZone == "FriendlyGraveyard")
     {
         for (int instance : materialIds)
         {
@@ -1930,7 +2048,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
             Enqueue(player, instance, OriginalId(instance), "OnBanishedForNecromancyCost");
         }
     }
-    else if (method == "Discard")
+    else if (requirement.SourceZone == "FriendlyHand")
     {
         for (int instance : materialIds)
         {
@@ -1939,6 +2057,7 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
             Enqueue(player, instance, OriginalId(instance), "OnDiscarded");
         }
     }
+    PayResources(owner, requirement.Resources);
     Remove(owner.Hand, handInstance);
     owner.Field[slot] = YakouUnit{.InstanceId = handInstance,
                                    .DefinitionId = OriginalId(handInstance),
@@ -1947,13 +2066,13 @@ void YakouMatch::SummonImpl(int player, int handInstance, std::string const& met
                                    .BonusAttack = bonusAttack,
                                    .BonusMaxHp = bonusMaxHp,
                                    .Countdown = card.at("AttackInterval").get<int>(),
-                                   .WasDevourSummoned = method == "Devour",
+                                   .WasDevourSummoned = requirement.SourceZone == "FriendlyField",
                                    .BaseMaxBlocks = maxBlocks,
                                    .MaxBlocks = maxBlocks};
     if (method == "Normal") ++owner.NormalSummons;
     Enqueue(player, handInstance, OriginalId(handInstance), "OnSummoned", 0, materialIds);
-    if (method == "Devour") Enqueue(player, handInstance, OriginalId(handInstance), "OnDevourSummoned");
-    if (method == "Necromancy") Enqueue(player, handInstance, OriginalId(handInstance), "OnNecromancySummoned");
+    if (requirement.SourceZone == "FriendlyField") Enqueue(player, handInstance, OriginalId(handInstance), "OnDevourSummoned");
+    if (requirement.SourceZone == "FriendlyGraveyard") Enqueue(player, handInstance, OriginalId(handInstance), "OnNecromancySummoned");
     journal_.push_back("Summon:" + method + ":" + std::to_string(handInstance));
 }
 
@@ -1983,8 +2102,21 @@ void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDe
         if (entry == manifestationDefinition) allowed = true;
     Check(allowed, "Not a listed manifestation for this monster");
     auto const& data = target.at("SummonCostJson").at("Manifestation");
-    auto const ki = data.at("Ki").get<int>();
-    Check(ki == 2 && owner.Ki >= ki, "Insufficient Ki");
+    YakouResourceAmounts manifestationCosts;
+    int ki = 0;
+    if (data.contains("Costs"))
+    {
+        auto const typed = YakouParseTypedCost(data.at("Costs"));
+        Check(typed.OrdinaryCount == 0 && CanPayResources(owner, typed.Resources),
+              "Invalid manifestation special resource payment");
+        manifestationCosts = typed.Resources;
+    }
+    else
+    {
+        ki = data.at("Ki").get<int>();
+        Check(ki > 0 && (catalog_->Config.contains("resource.definitions") || ki == 2) &&
+                  owner.Ki >= ki, "Insufficient Ki");
+    }
     auto const& conditions = data.at("Condition");
     Check(conditions.is_object() &&
               HasOnlyFields(conditions, {"WasDevourSummoned", "FriendlyGraveyardArchetypeCountAtLeast",
@@ -2036,7 +2168,8 @@ void YakouMatch::ManifestImpl(int player, int fieldInstance, int manifestationDe
         --manifestConditionWaivers_[player - 1];
         journal_.push_back("ManifestConditionIgnored:" + std::to_string(fieldInstance));
     }
-    owner.Ki -= ki;
+    PayResources(owner, manifestationCosts);
+    SpendLegacyKi(owner, ki);
     ++owner.Manifestations;
     unit.BaseAttack = target.at("Attack").get<int>();
     unit.BaseMaxHp = target.at("MaxHp").get<int>();
@@ -2071,7 +2204,7 @@ void YakouMatch::PostponeImpl(int player, int fieldInstance)
     auto& unit = FieldUnit(owner, fieldInstance);
     Check(unit.Countdown == 0 && !unit.PostponedThisTurn && owner.Ki >= 1,
           "Cannot postpone this raid");
-    --owner.Ki;
+    SpendLegacyKi(owner, 1);
     unit.Countdown = 1;
     unit.PostponedThisTurn = true;
     journal_.push_back("Postpone:" + std::to_string(fieldInstance));
@@ -2095,7 +2228,7 @@ void YakouMatch::RedrawImpl(int player, std::vector<int> const& cards)
     for (int instance : cards)
         Check(unique.insert(instance).second && Contains(owner.Hand, instance),
               "Redraw cards must be distinct cards in own hand");
-    --owner.Ki;
+    SpendLegacyKi(owner, 1);
     ++owner.Redraws;
     for (int instance : cards)
     {

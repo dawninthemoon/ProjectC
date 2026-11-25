@@ -74,6 +74,74 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+
+        {
+            auto alpha = proto;
+            alpha.Config["deck.maxSpecialResourceTypes"] = 2;
+            alpha.Config["alpha02.experimentalRuntime"] = true;
+            alpha.Config["resource.definitions"] = {
+                {"Ki", {{"InitialValue", 3}, {"MaxValue", 3}, {"RegenPerOwnTurn", 0}}},
+                {"Spirit", {{"InitialValue", 0}, {"MaxValue", 8}, {"RegenPerOwnTurn", 0}}},
+                {"Blood", {{"InitialValue", 0}, {"MaxValue", 6}, {"RegenPerOwnTurn", 0}}}};
+            for (auto& card : alpha.Cards["Cards"])
+            {
+                if (card["Id"] == 2009)
+                {
+                    card["SummonCostJson"]["Activation"] = {{"Costs", Json::array()}};
+                    card["Effects"][0]["Actions"] = Json::array({
+                        {{"Operation", "ModifyResource"}, {"Target", "FriendlyPlayer"},
+                         {"ResourceId", "Spirit"}, {"Delta", 2}}});
+                }
+                if (card["Id"] == 2001)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource", {{"Costs", Json::array({
+                        {{"Type", "Resource"}, {"ResourceId", "Spirit"}, {"Amount", 2}}})}}}};
+                }
+            }
+            auto const deck = Deck(alpha, {2009, 2001});
+            auto const types = YakouDeckResourceTypes(alpha.Cards, alpha.Config, deck);
+            Check(types == std::set<std::string>{"Ki", "Spirit"},
+                  "Reachable manifestations must count toward the two-resource limit");
+            YakouMatch match(alpha, 1, {deck, deck});
+            Check(match.Player(1).Resources.size() == 2 &&
+                      match.Player(1).Resources.at("Spirit").Current == 0,
+                  "Only deck-selected resources are initialized");
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const unit = match.Player(1).Hand[1];
+            auto const before = match.ServerStateHash();
+            Reject([&] { match.Summon(1, unit, "Resource", {}, 0); });
+            Check(match.ServerStateHash() == before &&
+                      match.SummonChoices(1, unit).empty(),
+                  "Unavailable resource cannot be spent or offered");
+            match.BeginSpellResponse(1, spell);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Player(1).Resources.at("Spirit").Current == 2 &&
+                      match.Player(2).Resources.at("Spirit").Current == 0,
+                  "Resource gain belongs only to its controller");
+            auto const choices = match.SummonChoices(1, unit);
+            Check(choices.size() == 1 && choices[0].ResourceCosts.at("Spirit") == 2,
+                  "Server summon option must expose authored resource amount");
+            (void)match.SummonAndRunAutomaticTriggers(1, unit, "Resource", {}, 0);
+            Check(match.Player(1).Resources.at("Spirit").Current == 0 &&
+                      match.Player(1).NormalSummons == 0 && match.Player(1).Field[0] &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Resources").at("Spirit").at("Current") == 0,
+                  "Resource summon spends authored amount without normal-summon allowance");
+            // A resource-producing card alone does not activate a third special cost.
+            for (auto& card : alpha.Cards["Cards"])
+                if (card["Id"] == 2002)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource", {{"Costs", Json::array({
+                        {{"Type", "Resource"}, {"ResourceId", "Blood"}, {"Amount", 1}}})}}}};
+                }
+            bool rejected = false;
+            try { (void)YakouDeckResourceTypes(alpha.Cards, alpha.Config, deck); }
+            catch (std::runtime_error const&) { rejected = true; }
+            Check(rejected, "Third distinct special resource must reject deck");
+        }
         for (auto const& [deckIndex, defenderId, reduction] :
              std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
         {
