@@ -273,14 +273,17 @@ if __name__ == "__main__":
         tokens = []
         try:
             deadline = time.monotonic() + 10
-            line = ""
+            listening = False
             while time.monotonic() < deadline:
-                log.seek(0)
-                line = log.readline()
-                if "listening" in line or proc.poll() is not None:
+                if proc.poll() is not None:
                     break
-                time.sleep(.05)
-            assert "listening" in line, line
+                try:
+                    with socket.create_connection(("127.0.0.1", port), timeout=.2):
+                        listening = True
+                        break
+                except OSError:
+                    time.sleep(.05)
+            assert listening, "Yakou server did not open its WebSocket port"
             tokens = run(port)
             run_deck_selection(port)
         finally:
