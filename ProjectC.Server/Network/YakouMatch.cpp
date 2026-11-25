@@ -487,9 +487,30 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                     {
                         for (auto const& unit : Player(viewer).Field)
                         {
-                            if (unit && unit->Hp() > 0)
+                            if (!unit || unit->Hp() <= 0) continue;
+                            if (definition == 3016)
                             {
-                                (definition == 3016 ? targets : replacements).push_back(unit->InstanceId);
+                                targets.push_back(unit->InstanceId);
+                                continue;
+                            }
+                            // A replacement must have spare block capacity and
+                            // differ from the current blocker of at least one
+                            // assigned raid. Keep the server's per-raid validation
+                            // authoritative for the selected target/replacement pair.
+                            int assigned = 0;
+                            bool canReplace = false;
+                            for (auto const& attack : attacks_)
+                            {
+                                if (attack.Blocker == unit->InstanceId) ++assigned;
+                                if (attack.Blocker > 0 &&
+                                    attack.Blocker != unit->InstanceId)
+                                {
+                                    canReplace = true;
+                                }
+                            }
+                            if (canReplace && assigned < unit->MaxBlocks)
+                            {
+                                replacements.push_back(unit->InstanceId);
                             }
                         }
                     }
@@ -527,7 +548,10 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                         definition == 4020 || definition == 4017 ? 2
                         : definition == 2011 || definition == 3018 || definition == 3017 ? 1 : 0;
                     if (costs.size() < static_cast<std::size_t>(count) ||
-                        (definition == 3017 && targets.empty()))
+                        (definition == 3017 && targets.empty()) ||
+                        (definition == 3016 && targets.empty()) ||
+                        ((definition == 3018 || definition == 4017) &&
+                         replacements.empty()))
                     {
                         continue;
                     }
