@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -68,6 +69,7 @@ struct YakouPendingEffect
     // Immutable event context; the source may have left the field already.
     int RelatedCard = 0;
     std::vector<int> PaidCostCards;
+    bool DeferredCost = false;
 };
 
 // Server-derived selection metadata. Candidates are instance IDs, never client-authored.
@@ -156,7 +158,8 @@ public:
     // discard-one cost. Paid spells do not yet enter the response window.
     void ActivateMainSpell(int player, int handInstance, std::vector<int> const& costs = {});
     // Opt-in response-aware spell path; supported counterspell: 3020 only.
-    void BeginSpellResponse(int player, int handInstance, int targetInstance = 0);
+    void BeginSpellResponse(int player, int handInstance, int targetInstance = 0,
+                            std::vector<int> const& costs = {});
     void RespondWithNegation(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponse(int player);
     void StartTurn(int player);
@@ -170,6 +173,9 @@ public:
     // Two authorized consecutive passes close the raid preparation window.
     // Card response activation is deliberately unavailable until effect execution exists.
     void PassRaidResponse(int player);
+    void RespondWithPiercing(int player, int raider, int graveyardCost);
+    void RespondWithEffectProtection(int player, int spell, int target, int graveyardCost);
+    [[nodiscard]] int FilterEffectDamage(int target, int amount) const;
     // Defensive response spell 3016: owner-only target, first damage this raid.
     void RespondWithRaidShield(int player, int handInstance, int friendlyUnit);
     // Authored raid tactics 2011/3018/3019; selected attacker and optional
@@ -181,7 +187,8 @@ public:
 
 private:
     void ActivateMainSpellImpl(int player, int handInstance, std::vector<int> const& costs);
-    void BeginSpellResponseImpl(int player, int handInstance, int targetInstance);
+    void BeginSpellResponseImpl(int player, int handInstance, int targetInstance,
+                                std::vector<int> const& costs);
     void RespondWithNegationImpl(int player, int handInstance, std::vector<int> const& discarded);
     void PassSpellResponseImpl(int player);
     void StartTurnImpl(int player);
@@ -193,6 +200,8 @@ private:
     void BeginRaidImpl(int player);
     void AssignBlockersImpl(int defendingPlayer, std::vector<std::pair<int, int>> const& assignments);
     void PassRaidResponseImpl(int player);
+    void RespondWithPiercingImpl(int player, int raider, int graveyardCost);
+    void RespondWithEffectProtectionImpl(int player, int spell, int target, int graveyardCost);
     void RespondWithRaidShieldImpl(int player, int handInstance, int friendlyUnit);
     void RespondWithRaidTacticImpl(int player, int handInstance,
                                    int raidingUnit, int newBlocker,
@@ -206,6 +215,8 @@ private:
     void TurnOver();
     void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
                  int relatedCard = 0, std::vector<int> paidCostCards = {});
+    void DeferPendingCostTriggers(std::size_t firstNewEffect);
+    void ReleaseDeferredCostTriggers();
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 
@@ -222,9 +233,18 @@ private:
     std::vector<YakouAttack> attacks_;
     // Server-private, one-shot damage reductions, removed at raid end.
     std::map<int, int> raidShields_;
+    // Persists until the targeted monster next receives positive damage.
+    std::map<int, int> nextDamageShields_;
+    std::array<int, 2> manifestConditionWaivers_{};
     // Signed temporary attack modifiers indexed by attacking instance.
     std::map<int, int> raidAttackModifiers_;
+    std::set<int> piercingRaiders_;
+    std::set<int> chainTargetedByEnemySpell_;
+    std::map<int, int> chainEffectDamageReduction_;
+    std::set<int> chainEffectDamagePrevention_;
     std::vector<YakouPendingEffect> pendingEffects_;
+    // Cost-trigger effects resolve only after the active spell/raid chain closes.
+    std::vector<YakouPendingEffect> deferredCostEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
     std::vector<std::string> journal_;

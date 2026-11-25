@@ -526,9 +526,22 @@ namespace ProjectC.Client
                 }
                 if (_responseSelection == "cost")
                 {
-                    if (!_responseCosts.Add(id))
+                    if (_responseCosts.Contains(id))
                     {
                         _responseCosts.Remove(id);
+                    }
+                    else
+                    {
+                        // Do not let the UI submit more payment cards than
+                        // the server-authorized response requires. Redraw has
+                        // its own choice flow and is not limited here.
+                        int? required = (int?)_responseOption?["CostCount"];
+                        if (required.HasValue && _responseCosts.Count >= required.Value)
+                        {
+                            ShowFeedback(YakouUiText.Get("ui.yakou.feedback.response_ready"));
+                            return;
+                        }
+                        _responseCosts.Add(id);
                     }
                 }
                 else if (_responseSelection == "target")
@@ -599,7 +612,7 @@ namespace ProjectC.Client
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.paid_spell_cost"), () =>
                     {
-                        BeginResponse("ActivateMainSpell", id);
+                        BeginResponse("BeginSpellResponse", id);
                         _responseOption = new JObject
                         {
                             ["CostCandidates"] = paid["CostCandidates"].DeepClone(),
@@ -608,7 +621,6 @@ namespace ProjectC.Client
                             ["ReplacementCandidates"] = new JArray(),
                         };
                         SelectResponsePart("cost");
-                        ShowFeedback(YakouUiText.Get("ui.yakou.feedback.paid_spell_no_response"));
                     }));
                 }
                 else if (card.DefinitionId != PaidMapSpellDefinitionId)
@@ -617,7 +629,8 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.cast_spell_target"), () => BeginResponse("BeginSpellResponse", id)));
                 }
             }
-            if (card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id))
+            if ((card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id)) ||
+                OwnFieldContains(id))
             {
                 foreach (var response in _state["ResponseOptions"] as JArray ?? new JArray())
                 {
@@ -626,7 +639,10 @@ namespace ProjectC.Client
                         var offered = (JObject)response;
                         string type = (string)offered["Type"];
                         string label = YakouUiText.Get(type == "RespondWithRaidShield" ? "ui.yakou.action.response_shield"
-                            : type == "RespondWithRaidTactic" ? "ui.yakou.action.response_tactic" : "ui.yakou.action.response_negate");
+                            : type == "RespondWithRaidTactic" ? "ui.yakou.action.response_tactic"
+                            : type == "RespondWithPiercing" || type == "RespondWithEffectProtection"
+                                ? "ui.yakou.action.play_response"
+                            : "ui.yakou.action.response_negate");
                         options.Add(Option(label, () => BeginOfferedResponse(offered)));
                     }
                 }
@@ -702,7 +718,9 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.response_cost", _responseCosts.Count, required),
                         () => SelectResponsePart("cost")));
                 }
-                options.Add(Option(_responseType == "ActivateMainSpell" || _responseType == "Redraw"
+                options.Add(Option(_responseType == "ActivateMainSpell" || _responseType == "Redraw" ||
+                    (_responseType == "BeginSpellResponse" && _responseOption != null &&
+                     (int)_responseOption["CostCount"] > 0)
                     ? YakouUiText.Get("ui_battle_confirm_selection") : YakouUiText.Get("ui.yakou.action.play_response"), SubmitResponse));
                 options.Add(Option(YakouUiText.Get("ui_battle_cancel_selection"), () =>
                 {
@@ -740,7 +758,8 @@ namespace ProjectC.Client
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.pass_raid_response"), () => Send("PassRaidResponse", new JObject())));
             }
-            if (phase == "RaidResponse" && priority == 0 && active != _session.Seat)
+            if (phase == "RaidResponse" && priority == 0 &&
+                (int?)_state["PendingDeferredCostCount"] == 0 && active != _session.Seat)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.resolve_raid"), () => Send("ResolveRaid", new JObject())));
             }
@@ -752,6 +771,11 @@ namespace ProjectC.Client
             if (pending != null && (string)pending["Status"] == "Ready")
             {
                 bool multiple = (int?)pending["MaxCount"] > 1;
+                if ((int?)pending["MaxCount"] == 0)
+                {
+                    options.Add(Option(YakouUiText.Get("ui_battle_confirm_selection"),
+                        () => Send("ChooseEffect", new JObject { ["TargetId"] = 0 })));
+                }
                 bool ready = multiple ? _pendingTargets.Count >= (int)pending["MinCount"] &&
                     _pendingTargets.Count <= (int)pending["MaxCount"] : _pendingTarget != 0;
                 if (ready)
@@ -790,7 +814,7 @@ namespace ProjectC.Client
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.choose_candidate", CardPresentation.Name(visible)),
                         () => SelectCard(visible, _screen.EndTurn.transform.position)));
                 }
-                if ((int?)pending["MinCount"] == 0)
+                if ((int?)pending["MinCount"] == 0 && (int?)pending["MaxCount"] != 0)
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.decline_optional_effect"), () => Send("ChooseEffect", new JObject { ["TargetId"] = 0 })));
                 }
@@ -885,7 +909,8 @@ namespace ProjectC.Client
             {
                 fields["Cards"] = new JArray(_responseCosts);
             }
-            if (_responseType == "RespondWithRaidShield" || _responseType == "RespondWithRaidTactic")
+            if (_responseType == "RespondWithRaidShield" || _responseType == "RespondWithRaidTactic" ||
+                _responseType == "RespondWithEffectProtection")
             {
                 fields["TargetId"] = _responseTarget;
             }
@@ -893,7 +918,13 @@ namespace ProjectC.Client
             {
                 fields["ReplacementBlocker"] = _responseReplacement;
             }
-            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" || _responseType == "ActivateMainSpell")
+            if (_responseType == "RespondWithPiercing" ||
+                _responseType == "RespondWithEffectProtection")
+            {
+                fields["CostId"] = _responseCosts.Count == 1 ? _responseCosts.First() : 0;
+            }
+            if (_responseType == "RespondWithRaidTactic" || _responseType == "RespondWithNegation" ||
+                _responseType == "ActivateMainSpell" || _responseType == "BeginSpellResponse")
             {
                 fields["Costs"] = new JArray(_responseCosts);
             }

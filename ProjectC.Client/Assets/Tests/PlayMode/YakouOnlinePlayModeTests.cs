@@ -348,6 +348,10 @@ namespace ProjectC.Tests
             hand.Widgets.Find(widget => widget.Card.Id == cost).OnPointerClick(null);
             _battle.GetComponent<BattlePresenter>().EndTurn.onClick.Invoke();
             ActionButton(YakouUiText.Get("ui_battle_confirm_selection")).onClick.Invoke();
+            yield return Until(() => !a.Yakou.Busy && (string)a.Yakou.State?["Phase"] == "SpellResponse");
+            Assert.IsNull(a.Yakou.State["PendingSelection"]);
+            yield return Send(b, new JObject { ["Type"] = "PassSpellResponse" });
+            yield return Send(a, new JObject { ["Type"] = "PassSpellResponse" });
             yield return Until(() => !a.Yakou.Busy && a.Yakou.State?["PendingSelection"] != null);
             Assert.AreEqual(2, (int)a.Yakou.State["PendingSelection"]["MaxCount"]);
             Assert.IsNull(b.Yakou.State["PendingSelection"]);
@@ -642,6 +646,9 @@ namespace ProjectC.Tests
             opponentHand.Widgets.Find(widget => widget.Card.Id == discard).OnPointerClick(null);
             opponentScreen.EndTurn.onClick.Invoke();
             ActionButton(YakouUiText.Get("ui_battle_confirm_selection"), _opponentBattle).onClick.Invoke();
+            yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State?["Phase"] == "SpellResponse");
+            yield return Send(a, new JObject { ["Type"] = "PassSpellResponse" });
+            yield return Send(b, new JObject { ["Type"] = "PassSpellResponse" });
             yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["PendingSelection"]?["Operation"] == "LookAndChoose");
             Assert.AreEqual(3, ((JArray)b.Yakou.State["PendingSelection"]["CandidateCards"]).Count);
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);

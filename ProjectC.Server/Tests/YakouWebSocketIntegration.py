@@ -5,6 +5,8 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+import tempfile
+import time
 
 from WebSocketIntegration import Peer
 
@@ -172,6 +174,11 @@ def run_deck_selection(port):
             assert "DeckId" not in right["State"]["Players"][0]
             state = left["State"]
             summoned = False
+            guard_summoned = False
+            guard_blocked = False
+            guard_combat_checked = False
+            grave_mill_checked = False
+            raid_bonus_checked = False
             for step in range(256):
                 if state["Phase"] == "Finished":
                     break
@@ -187,16 +194,35 @@ def run_deck_selection(port):
                     payload = {"Type": "Summon", "CardId": card["Id"],
                                "Method": "Normal", "Materials": [], "Slot": 0}
                     summoned = True
+                elif (phase == "Main" and active == 2 and first == grave and
+                      second == guard and not guard_summoned):
+                    card = next(card for card in right["State"]["Players"][1]["Hand"]
+                                if card["DefinitionId"] == 3004)
+                    seat = 2
+                    payload = {"Type": "Summon", "CardId": card["Id"],
+                               "Method": "Normal", "Materials": [], "Slot": 0}
+                    guard_summoned = True
                 elif phase == "Main":
                     seat, payload = active, {"Type": "BeginRaid"}
                 elif phase == "AssignBlockers":
-                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": []}
+                    blockers = []
+                    if (first == grave and second == guard and active == 1 and
+                          not guard_blocked and state["Attacks"] and
+                          state["Players"][1]["FieldSlots"][0]):
+                        blockers = [{"Attacker": state["Attacks"][0]["AttackerId"],
+                                     "Blocker": state["Players"][1]["FieldSlots"][0]["Id"]}]
+                        guard_blocked = True
+                    seat, payload = 3 - active, {"Type": "AssignBlockers", "Blockers": blockers}
                 elif phase == "RaidResponse":
                     priority = state["PriorityPlayerId"]
                     seat = priority if priority else 3 - active
                     payload = {"Type": "PassRaidResponse" if priority else "ResolveRaid"}
                 else:
                     raise AssertionError(f"Unexpected phase during Alpha duel: {phase}")
+                defender_life_before = state["Players"][1]["Life"]
+                unblocked_raid = (payload["Type"] == "ResolveRaid" and
+                                  first == raid and active == 1 and
+                                  any(attack["BlockerId"] == 0 for attack in state["Attacks"]))
                 acting = a if seat == 1 else b
                 result = command(acting, match, f"deck-game-{step}", payload)
                 assert result["Payload"]["Accepted"] is True
@@ -206,7 +232,26 @@ def run_deck_selection(port):
                 assert left["State"]["Players"][1]["Hand"] == []
                 assert right["State"]["Players"][0]["Hand"] == []
                 state = left["State"]
+                if unblocked_raid and not raid_bonus_checked:
+                    assert defender_life_before - state["Players"][1]["Life"] == 4
+                    raid_bonus_checked = True  # 3003: printed attack 3 + OnRaid 1.
+                if payload["Type"] == "Summon" and first == grave and seat == 1:
+                    # 2001's authored OnSummoned effect mills two cards.
+                    assert len(state["Players"][0]["Graveyard"]) == 2
+                    grave_mill_checked = True
+                if (payload["Type"] == "ResolveRaid" and guard_blocked and
+                      not guard_combat_checked and active == 1):
+                    blocker = state["Players"][1]["FieldSlots"][0]
+                    assert blocker and blocker["DefinitionId"] == 3004
+                    assert blocker["Hp"] == 5  # 3004 reduces the 1-point raid hit.
+                    guard_combat_checked = True
             assert summoned and state["Phase"] == "Finished" and state["WinnerPlayerId"] in (1, 2)
+            if first == grave:
+                assert grave_mill_checked
+            if first == grave and second == guard:
+                assert guard_summoned and guard_combat_checked
+            if first == raid:
+                assert raid_bonus_checked
             b.send("YakouLeave", MatchId=match)
             expect(a, "YakouClosed")
             expect(b, "YakouClosed")
@@ -220,25 +265,37 @@ if __name__ == "__main__":
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
-    proc = subprocess.Popen(
-        [sys.argv[1], "--port", str(port), "--yakou-prototype", "on",
-         "--max-matches", "2"],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    tokens = []
-    try:
-        line = proc.stdout.readline()
-        assert "listening" in line, line
-        tokens = run(port)
-        run_deck_selection(port)
-    finally:
-        proc.terminate()
+    with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as log:
+        proc = subprocess.Popen(
+            [sys.argv[1], "--port", str(port), "--yakou-prototype", "on",
+             "--max-matches", "2"],
+            stdout=log, stderr=subprocess.STDOUT, text=True)
+        tokens = []
         try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-            raise AssertionError("Yakou server shutdown hung")
-        logs = proc.stdout.read()
-        assert all(token not in logs for token in tokens), "Secret token in logs"
-    if os.name != "nt":
-        assert proc.returncode == 0, (proc.returncode, logs)
+            deadline = time.monotonic() + 10
+            listening = False
+            while time.monotonic() < deadline:
+                if proc.poll() is not None:
+                    break
+                try:
+                    with socket.create_connection(("127.0.0.1", port), timeout=.2):
+                        listening = True
+                        break
+                except OSError:
+                    time.sleep(.05)
+            assert listening, "Yakou server did not open its WebSocket port"
+            tokens = run(port)
+            run_deck_selection(port)
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+                raise AssertionError("Yakou server shutdown hung")
+            log.seek(0)
+            logs = log.read()
+            assert all(token not in logs for token in tokens), "Secret token in logs"
+        if os.name != "nt":
+            assert proc.returncode == 0, (proc.returncode, logs)

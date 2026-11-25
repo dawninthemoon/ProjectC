@@ -86,13 +86,28 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
             command.MaxEffects);
         break;
     case YakouReplayOperation::BeginSpellResponse:
-        match.BeginSpellResponse(command.Player, command.CardId, command.TargetId);
+        match.BeginSpellResponse(command.Player, command.CardId, command.TargetId, command.Cards);
         break;
     case YakouReplayOperation::RespondWithNegation:
         match.RespondWithNegation(command.Player, command.CardId, command.Cards);
         break;
     case YakouReplayOperation::PassSpellResponse:
         match.PassSpellResponse(command.Player);
+        break;
+    case YakouReplayOperation::RespondWithPiercing:
+        if (command.Cards.size() != 1)
+        {
+            throw std::invalid_argument("Piercing replay needs one cost card");
+        }
+        match.RespondWithPiercing(command.Player, command.CardId, command.Cards[0]);
+        break;
+    case YakouReplayOperation::RespondWithEffectProtection:
+        if (command.Cards.size() != 1)
+        {
+            throw std::invalid_argument("Effect-protection replay needs one cost card");
+        }
+        match.RespondWithEffectProtection(command.Player, command.CardId,
+                                          command.TargetId, command.Cards[0]);
         break;
     default:
         throw std::invalid_argument("Unknown Yakou replay operation");

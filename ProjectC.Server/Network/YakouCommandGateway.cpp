@@ -69,8 +69,9 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     else if (type == "ActivateMainSpell")
     {
         Fields(request, {"Type", "CardId", "Costs"});
-        (void)match.ActivateMainSpellAndRunAutomaticTriggers(seat, Id(request, "CardId"), AutomaticTriggerBudget,
-            request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
+        // Preserve the wire command, but never let it bypass opponent priority.
+        match.BeginSpellResponse(seat, Id(request, "CardId"), 0,
+                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
     }
     else if (type == "ChooseEffect")
     {
@@ -140,6 +141,17 @@ void Apply(YakouMatch& match, int seat, Json const& request)
         Fields(request, {"Type"});
         match.PassRaidResponse(seat);
     }
+    else if (type == "RespondWithPiercing")
+    {
+        Fields(request, {"Type", "CardId", "CostId"});
+        match.RespondWithPiercing(seat, Id(request, "CardId"), Id(request, "CostId"));
+    }
+    else if (type == "RespondWithEffectProtection")
+    {
+        Fields(request, {"Type", "CardId", "TargetId", "CostId"});
+        match.RespondWithEffectProtection(seat, Id(request, "CardId"),
+                                          Id(request, "TargetId"), Id(request, "CostId"));
+    }
     else if (type == "ResolveRaid")
     {
         Fields(request, {"Type"});
@@ -147,9 +159,10 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "BeginSpellResponse")
     {
-        Fields(request, {"Type", "CardId", "TargetId"});
+        Fields(request, {"Type", "CardId", "TargetId", "Costs"});
         match.BeginSpellResponse(seat, Id(request, "CardId"),
-                                 request.contains("TargetId") ? Id(request, "TargetId") : 0);
+                                 request.contains("TargetId") ? Id(request, "TargetId") : 0,
+                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
     }
     else if (type == "RespondWithNegation")
     {

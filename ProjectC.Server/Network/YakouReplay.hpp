@@ -34,6 +34,8 @@ enum class YakouReplayOperation
     BeginSpellResponse,
     RespondWithNegation,
     PassSpellResponse,
+    RespondWithPiercing,
+    RespondWithEffectProtection,
 };
 
 struct YakouReplayCommand

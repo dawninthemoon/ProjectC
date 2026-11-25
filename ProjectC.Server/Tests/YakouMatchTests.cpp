@@ -74,6 +74,818 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+        for (auto const& [deckIndex, defenderId, reduction] :
+             std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 2, {3003}), SampleDeck(proto, deckIndex, {defenderId})};
+            YakouMatch match(proto, 1, decks);
+            int const raider = match.Player(1).Hand[0];
+            int const blocker = match.Player(2).Hand[0];
+            std::vector<YakouReplayCommand> commands;
+            auto record = [&](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                commands.push_back(value);
+            };
+            for (int step = 0; step < 16 && match.Phase() != YakouPhase::AssignBlockers; ++step)
+            {
+                int const active = match.ActivePlayer();
+                match.StartTurn(active);
+                record(YakouReplayOperation::StartTurn, active);
+                if (active == 1 && !match.Player(1).Field[0])
+                {
+                    match.Summon(1, raider, "Normal", {}, 0);
+                    auto& command = commands.emplace_back();
+                    command.Operation = YakouReplayOperation::Summon;
+                    command.Player = 1;
+                    command.CardId = raider;
+                    command.Method = "Normal";
+                }
+                if (active == 2 && !match.Player(2).Field[0])
+                {
+                    match.Summon(2, blocker, "Normal", {}, 0);
+                    auto& command = commands.emplace_back();
+                    command.Operation = YakouReplayOperation::Summon;
+                    command.Player = 2;
+                    command.CardId = blocker;
+                    command.Method = "Normal";
+                }
+                match.BeginRaid(active);
+                record(YakouReplayOperation::BeginRaid, active);
+            }
+            Check(match.Phase() == YakouPhase::AssignBlockers &&
+                      match.ActivePlayer() == 1 && match.Attacks()[0].Card == raider,
+                  "Defensive authored cards must reach a real raid");
+            auto const beforeWrongBlock = match.ServerStateHash();
+            Reject([&] { match.AssignBlockers(1, {{raider, blocker}}); });
+            Check(match.ServerStateHash() == beforeWrongBlock,
+                  "Attacking player cannot assign the defender's blocker");
+            match.AssignBlockers(2, {{raider, blocker}});
+            auto& assignment = commands.emplace_back();
+            assignment.Operation = YakouReplayOperation::AssignBlockers;
+            assignment.Player = 2;
+            assignment.Blockers = {{raider, blocker}};
+            match.PassRaidResponse(2);
+            record(YakouReplayOperation::PassRaidResponse, 2);
+            match.PassRaidResponse(1);
+            record(YakouReplayOperation::PassRaidResponse, 1);
+            match.ResolveRaid(2);
+            record(YakouReplayOperation::ResolveRaid, 2);
+            Check(match.Player(2).Field[0] &&
+                      match.Player(2).Field[0]->Hp() == 5 - (4 - reduction) &&
+                      match.ViewerSnapshot(1).at("Players")[1].at("FieldSlots")[0]
+                          .at("Hp") == 5 - (4 - reduction),
+                  "Blocker must reduce the raider's actual combat damage once");
+            auto const replay = ReplayYakou(proto, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Defensive blocker combat must replay deterministically");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {3007, 2005}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const summoned = match.Player(1).Hand[0];
+            int const discarded = match.Player(1).Hand[1];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, summoned, "Discard", {summoned}, 0); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "2005 discard fixture must reject spending the summoned card");
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, summoned, "Discard", {discarded}, 0);
+            Check(match.Player(1).Field[0] &&
+                      static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 1 &&
+                      match.Player(1).Graveyard.size() == 2 &&
+                      std::find(match.Player(1).Graveyard.begin(),
+                                match.Player(1).Graveyard.end(), discarded) !=
+                          match.Player(1).Graveyard.end(),
+                  "Discarded 2005 must move to graveyard and mill one own deck card");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = summoned;
+            summon.Method = "Discard";
+            summon.Cards = {discarded};
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2005 discard trigger must replay deterministically");
+        }
+        {
+            // A necromancy-paid 2005 must trigger after the counterspell
+            // chain closes, rather than invalidate an otherwise legal cost.
+            auto fixture = proto;
+            auto& firstDeck = fixture.Decks["Decks"][1]["Cards"];
+            auto replaced = std::find(firstDeck.begin(), firstDeck.end(), Json(4001));
+            Check(replaced != firstDeck.end(), "Missing deck slot for 4020 fixture");
+            *replaced = 4020;
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(fixture, 1, {4003, 2005, 4020, 2001, 2009}),
+                SampleDeck(fixture, 1, {2009})};
+            YakouMatch match(fixture, 1, decks);
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> commands;
+            match.StartTurn(1);
+            commands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const ownHand = match.Player(1).Hand;
+            int const summoner = ownHand[0], triggerCost = ownHand[1], counter = ownHand[2];
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, summoner, "Discard", {triggerCost}, 0);
+            auto summon = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summon.CardId = summoner;
+            summon.Method = "Discard";
+            summon.Cards = {triggerCost};
+            commands.push_back(summon);
+            Check(match.Player(1).Graveyard.size() >= 2,
+                  "Discard and mill must produce two counterspell cost cards");
+            match.BeginRaid(1);
+            commands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            commands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            int const originalSpell = match.Player(2).Hand[0];
+            match.BeginSpellResponse(2, originalSpell);
+            auto begin = command(YakouReplayOperation::BeginSpellResponse, 2);
+            begin.CardId = originalSpell;
+            commands.push_back(begin);
+            int const otherCost = *std::find_if(match.Player(1).Graveyard.begin(),
+                match.Player(1).Graveyard.end(),
+                [&](int id) { return id != triggerCost; });
+            match.RespondWithNegation(1, counter, {triggerCost, otherCost});
+            auto negate = command(YakouReplayOperation::RespondWithNegation, 1);
+            negate.CardId = counter;
+            negate.Cards = {triggerCost, otherCost};
+            commands.push_back(negate);
+            Check(match.PendingEffects().empty() &&
+                      match.ViewerSnapshot(1).at("PendingEffectCount") == 0,
+                  "Cost trigger must wait until the chain closes");
+            match.PassSpellResponse(2);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse, 2));
+            match.PassSpellResponse(1);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse, 1));
+            Check(match.PendingEffects().size() == 1 &&
+                      match.PendingEffects().front().SourceCard == triggerCost &&
+                      match.PendingEffects().front().Player == 1,
+                  "Banished 2005 should become a pending optional countdown effect");
+            int const before = match.Player(1).Field[0]->Countdown;
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { match.ResolvePendingEffect(1, 999999); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "Bad deferred target must reject atomically");
+            match.ResolvePendingEffect(1, summoner);
+            auto resolve = command(YakouReplayOperation::ResolvePendingEffect, 1);
+            resolve.TargetId = summoner;
+            commands.push_back(resolve);
+            Check(match.PendingEffects().empty() &&
+                      match.Player(1).Field[0]->Countdown == std::max(0, before - 1),
+                  "Deferred necromancy trigger must reduce a friendly countdown");
+            auto const replay = ReplayYakou(fixture, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Deferred cost trigger must replay deterministically");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 2, {3001, 3007, 3011, 3003}),
+                SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            int const countdownBefore = match.Player(1).Field[0]->Countdown;
+            auto const beforeCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[1], "Discard", {hand[0]}, 1); });
+            Check(match.ServerStateHash() == beforeCost,
+                  "3007 cannot discard an already summoned field card");
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[1], "Discard", {hand[3]}, 1);
+            Check(match.PendingEffectChoices(1).Candidates.size() == 1 &&
+                      match.PendingEffectChoices(1).Candidates[0] == hand[0],
+                  "3007 must offer its other friendly monster as countdown target");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[0]);
+            Check(match.Player(1).Field[0]->Countdown == countdownBefore - 1 &&
+                      std::find(match.Player(1).Graveyard.begin(),
+                                match.Player(1).Graveyard.end(), hand[3]) !=
+                          match.Player(1).Graveyard.end(),
+                  "3007 must pay its discard and reduce the selected counter");
+            auto const beforeWrongPhase = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(2, hand[2]); });
+            Check(match.ServerStateHash() == beforeWrongPhase,
+                  "Opponent cannot activate 3011 from another player's hand");
+            match.BeginSpellResponse(1, hand[2]);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[2]); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "3011 cannot target its own spell instance");
+            int const secondBefore = match.Player(1).Field[1]->Countdown;
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[1]);
+            Check(match.Player(1).Field[1]->Countdown == secondBefore - 1,
+                  "3011 must reduce the selected friendly monster's countdown");
+            auto make = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand command;
+                command.Operation = operation;
+                command.Player = player;
+                return command;
+            };
+            auto normal = make(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            normal.CardId = hand[0];
+            normal.Method = "Normal";
+            auto discard = make(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            discard.CardId = hand[1];
+            discard.Method = "Discard";
+            discard.Cards = {hand[3]};
+            discard.Slot = 1;
+            auto chooseFirst = make(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers, 1);
+            chooseFirst.TargetId = hand[0];
+            auto cast = make(YakouReplayOperation::BeginSpellResponse, 1);
+            cast.CardId = hand[2];
+            auto chooseSecond = chooseFirst;
+            chooseSecond.TargetId = hand[1];
+            auto const replay = ReplayYakou(proto, 1, decks,
+                {make(YakouReplayOperation::StartTurn, 1), normal, discard, chooseFirst,
+                 cast, make(YakouReplayOperation::PassSpellResponse, 2),
+                 make(YakouReplayOperation::PassSpellResponse, 1), chooseSecond});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3007 discard and 3011 spell selection must replay deterministically");
+        }
+        for (auto const& [deckIndex, materialDefinition, devourDefinition] :
+             std::vector<std::tuple<std::size_t, int, int>>{{0, 2001, 2008}, {2, 3003, 3005}})
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, deckIndex, {materialDefinition, devourDefinition}),
+                SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const material = match.Player(1).Hand[0];
+            int const devour = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, material, "Normal", {}, 0);
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const beforeBadMaterial = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, devour, "Devour", {match.Player(1).Hand[2]}, 0); });
+            Check(match.ServerStateHash() == beforeBadMaterial,
+                  "Devour cannot spend a hand card instead of a field monster");
+            (void)match.SummonAndRunAutomaticTriggers(1, devour, "Devour", {material}, 0);
+            Check(match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->InstanceId == devour &&
+                      std::find(match.Player(1).Graveyard.begin(),
+                                match.Player(1).Graveyard.end(), material) !=
+                          match.Player(1).Graveyard.end(),
+                  "Devour must put the material into graveyard and occupy its slot");
+            if (devourDefinition == 2008)
+            {
+                Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 1,
+                      "2008 must mill one card after its actual Devour summon");
+            }
+            else
+            {
+                Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore &&
+                          match.Player(1).Field[0]->Countdown == 2,
+                      "3005 must reduce its printed attack countdown after Devour");
+            }
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = material;
+            summon.Method = "Normal";
+            auto eat = summon;
+            eat.CardId = devour;
+            eat.Method = "Devour";
+            eat.Cards = {material};
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon, eat});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Authored Devour trigger must replay with identical final state");
+        }
+        {
+            // 3006 is authored but absent from all three sample decks. A
+            // copied test catalog puts it into a legal deck without changing
+            // shipped data or altering the card's own definition.
+            auto fixture = proto;
+            auto& cards = fixture.Decks["Decks"][0]["Cards"];
+            auto replaced = std::find(cards.begin(), cards.end(), Json(3013));
+            Check(replaced != cards.end(), "3006 fixture needs a replaceable deck slot");
+            *replaced = 3006;
+            replaced = std::find(cards.begin(), cards.end(), Json(3020));
+            Check(replaced != cards.end(), "3014 fixture needs a replaceable deck slot");
+            *replaced = 3014;
+            std::array<std::vector<int>, 2> const decks{
+                Deck(fixture, {2001, 2006, 3006, 3014}), SampleDeck(fixture, 2, {3003})};
+            YakouMatch match(fixture, 1, decks);
+            std::vector<YakouReplayCommand> commands;
+            auto record = [&](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand command;
+                command.Operation = operation;
+                command.Player = player;
+                commands.push_back(command);
+            };
+            match.StartTurn(1);
+            record(YakouReplayOperation::StartTurn, 1);
+            auto const hand = match.Player(1).Hand;
+            int const attacker = match.Player(2).Hand[0];
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            auto summonMiller = YakouReplayCommand{};
+            summonMiller.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summonMiller.Player = 1;
+            summonMiller.CardId = hand[0];
+            summonMiller.Method = "Normal";
+            commands.push_back(summonMiller);
+            match.BeginRaid(1);
+            record(YakouReplayOperation::BeginRaid, 1);
+            match.StartTurn(2);
+            record(YakouReplayOperation::StartTurn, 2);
+            match.Summon(2, attacker, "Normal", {}, 0);
+            auto summonAttacker = YakouReplayCommand{};
+            summonAttacker.Operation = YakouReplayOperation::Summon;
+            summonAttacker.Player = 2;
+            summonAttacker.CardId = attacker;
+            summonAttacker.Method = "Normal";
+            commands.push_back(summonAttacker);
+            match.BeginRaid(2);
+            record(YakouReplayOperation::BeginRaid, 2);
+            match.StartTurn(1);
+            record(YakouReplayOperation::StartTurn, 1);
+            match.Summon(1, hand[1], "Normal", {}, 1);
+            auto summonPatient = summonMiller;
+            summonPatient.Operation = YakouReplayOperation::Summon;
+            summonPatient.CardId = hand[1];
+            summonPatient.Slot = 1;
+            commands.push_back(summonPatient);
+            bool injured = false;
+            for (int step = 0; step < 16 && !injured; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    record(YakouReplayOperation::StartTurn, active);
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                    record(YakouReplayOperation::BeginRaid, active);
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    int const defending = 3 - active;
+                    bool const canBlock = active == 2 &&
+                        std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                            [&](YakouAttack const& raid) { return raid.Card == attacker; });
+                    match.AssignBlockers(defending, canBlock
+                        ? std::vector<std::pair<int, int>>{{attacker, hand[1]}}
+                        : std::vector<std::pair<int, int>>{});
+                    auto assignment = YakouReplayCommand{};
+                    assignment.Operation = YakouReplayOperation::AssignBlockers;
+                    assignment.Player = defending;
+                    if (canBlock)
+                    {
+                        assignment.Blockers = {{attacker, hand[1]}};
+                    }
+                    commands.push_back(assignment);
+                    match.PassRaidResponse(defending);
+                    record(YakouReplayOperation::PassRaidResponse, defending);
+                    match.PassRaidResponse(active);
+                    record(YakouReplayOperation::PassRaidResponse, active);
+                    match.ResolveRaid(defending);
+                    record(YakouReplayOperation::ResolveRaid, defending);
+                    injured = canBlock;
+                }
+            }
+            Check(injured && match.Player(1).Field[1] &&
+                      match.Player(1).Field[1]->Damage > 0,
+                  "3006 fixture must wound the friendly blocker in actual combat");
+            if (match.Phase() == YakouPhase::TurnStart)
+            {
+                match.StartTurn(1);
+                record(YakouReplayOperation::StartTurn, 1);
+            }
+            int const cost = match.Player(1).Graveyard[0];
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[2], "Necromancy", {attacker}, 2); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "3006 cannot spend the opponent's card as necromancy cost");
+            int const damageBefore = match.Player(1).Field[1]->Damage;
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[2], "Necromancy", {cost}, 2);
+            auto summonHealer = summonMiller;
+            summonHealer.CardId = hand[2];
+            summonHealer.Method = "Necromancy";
+            summonHealer.Cards = {cost};
+            summonHealer.Slot = 2;
+            commands.push_back(summonHealer);
+            auto const healCandidates = match.PendingEffectChoices(1).Candidates;
+            Check(match.Player(1).Exile.back() == cost &&
+                      healCandidates.size() == 2 &&
+                      std::find(healCandidates.begin(), healCandidates.end(), hand[1]) !=
+                          healCandidates.end(),
+                  "3006 must exile one own cost and offer the wounded other monster");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[2]); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "3006 cannot heal itself through OtherFriendlyMonster target");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[1]);
+            auto choose = YakouReplayCommand{};
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = hand[1];
+            commands.push_back(choose);
+            Check(match.Player(1).Field[1]->Damage == damageBefore - 1,
+                  "3006 must heal exactly one accumulated damage after necromancy summon");
+            auto const replay = ReplayYakou(fixture, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3006 cost, combat wound, chosen healing and zones must replay exactly");
+            Check(match.Player(1).Field[1]->Damage > 0,
+                  "3014 fixture must retain damage after 3006 heals one");
+            match.BeginSpellResponse(1, hand[3]);
+            auto healSpell = YakouReplayCommand{};
+            healSpell.Operation = YakouReplayOperation::BeginSpellResponse;
+            healSpell.Player = 1;
+            healSpell.CardId = hand[3];
+            commands.push_back(healSpell);
+            match.PassSpellResponse(2);
+            record(YakouReplayOperation::PassSpellResponse, 2);
+            match.PassSpellResponse(1);
+            record(YakouReplayOperation::PassSpellResponse, 1);
+            auto const beforeBadHealTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[3]); });
+            Check(match.ServerStateHash() == beforeBadHealTarget,
+                  "3014 must reject its spell instance as a monster target");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[1]);
+            commands.push_back(choose);
+            Check(match.Player(1).Field[1]->Damage == 0 &&
+                      match.Player(1).Field[1]->Hp() ==
+                          match.Player(1).Field[1]->MaxHp(),
+                  "3014 must heal the remaining combat damage without exceeding maximum HP");
+            auto const healedReplay = ReplayYakou(fixture, 1, decks, commands);
+            Check(healedReplay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3014 response choice and healing must replay exactly");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2001, 2003}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const miller = match.Player(1).Hand[0];
+            int const guide = match.Player(1).Hand[1];
+            int const enemy = match.Player(2).Hand[0];
+            (void)match.SummonAndRunAutomaticTriggers(1, miller, "Normal", {}, 0);
+            auto const grave = match.Player(1).Graveyard;
+            Check(grave.size() == 2, "2003 fixture needs two milled necromancy cards");
+            auto const beforeWrongCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, guide, "Necromancy", {grave[0], enemy}, 1); });
+            Check(match.ServerStateHash() == beforeWrongCost,
+                  "2003 must reject an opponent's necromancy material atomically");
+            int const counterBefore = match.Player(1).Field[0]->Countdown;
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, guide, "Necromancy", {grave[0], grave[1]}, 1);
+            Check(match.Player(1).Exile.size() == 2 &&
+                      match.PendingEffectChoices(1).Candidates == std::vector<int>{miller},
+                  "2003 must exile two materials and offer the other friendly monster");
+            auto const beforeWrongTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, guide); });
+            Check(match.ServerStateHash() == beforeWrongTarget,
+                  "2003 cannot target itself through OtherFriendlyMonster");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, miller);
+            Check(match.Player(1).Field[0]->Countdown == counterBefore - 1,
+                  "2003 must reduce the selected other monster's countdown");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = miller;
+            summon.Method = "Normal";
+            auto necro = summon;
+            necro.CardId = guide;
+            necro.Method = "Necromancy";
+            necro.Cards = {grave[0], grave[1]};
+            necro.Slot = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = miller;
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon, necro, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2003 necromancy and selected countdown effect must replay exactly");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2001, 2007, 2009}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            std::vector<YakouReplayCommand> commands;
+            auto record = [&](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand command;
+                command.Operation = operation;
+                command.Player = player;
+                commands.push_back(command);
+            };
+            match.StartTurn(1);
+            record(YakouReplayOperation::StartTurn, 1);
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = hand[0];
+            summon.Method = "Normal";
+            commands.push_back(summon);
+            match.BeginSpellResponse(1, hand[2]);
+            auto cast = YakouReplayCommand{};
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = hand[2];
+            commands.push_back(cast);
+            match.PassSpellResponse(2);
+            record(YakouReplayOperation::PassSpellResponse, 2);
+            match.PassSpellResponse(1);
+            record(YakouReplayOperation::PassSpellResponse, 1);
+            auto const grave = match.Player(1).Graveyard;
+            Check(grave.size() >= 4, "2007 fixture needs four authored graveyard cards");
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[1], "Necromancy", {grave[0], grave[0]}, 1); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "2007 cannot pay the same necromancy card twice");
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, hand[1], "Necromancy", {grave[0], grave[1]}, 1);
+            auto necro = summon;
+            necro.CardId = hand[1];
+            necro.Method = "Necromancy";
+            necro.Cards = {grave[0], grave[1]};
+            necro.Slot = 1;
+            commands.push_back(necro);
+            bool raidReady = false;
+            for (int step = 0; step < 12 && !raidReady; ++step)
+            {
+                int const active = match.ActivePlayer();
+                match.BeginRaid(active);
+                record(YakouReplayOperation::BeginRaid, active);
+                raidReady = match.Phase() == YakouPhase::AssignBlockers &&
+                    std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                        [&](YakouAttack const& attack) { return attack.Card == hand[1]; });
+                if (!raidReady)
+                {
+                    match.StartTurn(match.ActivePlayer());
+                    record(YakouReplayOperation::StartTurn, match.ActivePlayer());
+                }
+            }
+            Check(raidReady && match.ActivePlayer() == 1,
+                  "2007 must reach a legal raid after its counter expires");
+            int const lifeBefore = match.Player(2).Life;
+            match.AssignBlockers(2, {});
+            record(YakouReplayOperation::AssignBlockers, 2);
+            match.PassRaidResponse(2);
+            record(YakouReplayOperation::PassRaidResponse, 2);
+            match.PassRaidResponse(1);
+            record(YakouReplayOperation::PassRaidResponse, 1);
+            match.ResolveRaid(2);
+            record(YakouReplayOperation::ResolveRaid, 2);
+            Check(lifeBefore - match.Player(2).Life == 5,
+                  "2007 must contribute printed attack 3 plus one conditioned raid bonus");
+            auto const replay = ReplayYakou(proto, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2007 cost, conditioned raid damage and turn order must replay exactly");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2001, 2009, 3013}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            match.BeginSpellResponse(1, hand[1]);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            auto const grave = match.Player(1).Graveyard;
+            Check(grave.size() >= 5, "3013 fixture needs post-cost graveyard monsters");
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, hand[2], 0,
+                                                   {grave[0], grave[0]}); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "3013 cannot spend the same graveyard cost twice");
+            match.BeginSpellResponse(1, hand[2], 0, {grave[0], grave[1]});
+            Check(match.PriorityPlayer() == 2 && match.Player(1).Exile.size() == 2,
+                  "3013 must pay necromancy two before opponent priority");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            auto const choices = match.PendingEffectChoices(1).Candidates;
+            Check(!choices.empty() &&
+                      std::find(choices.begin(), choices.end(), grave[0]) == choices.end() &&
+                      std::find(choices.begin(), choices.end(), grave[1]) == choices.end(),
+                  "3013 must exclude already paid cost cards from salvage choices");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, grave[0]); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "3013 cannot recover an exiled cost card");
+            int const selected = choices.front();
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, selected);
+            Check(std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), selected) !=
+                      match.Player(1).Hand.end(),
+                  "3013 must move the chosen eligible monster into hand");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = hand[0];
+            summon.Method = "Normal";
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = hand[1];
+            auto paid = cast;
+            paid.CardId = hand[2];
+            paid.Cards = {grave[0], grave[1]};
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = selected;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                {start, summon, cast, passTwo, passOne, paid, passTwo, passOne, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3013 paid response and private salvage must replay exactly");
+        }
+        for (auto const& [deckIndex, definition] :
+             std::vector<std::pair<std::size_t, int>>{{0, 3001}, {1, 4001}})
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, deckIndex, {definition}), SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const card = match.Player(1).Hand[0];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const hashBefore = match.ServerStateHash();
+            Reject([&] { (void)match.SummonAndRunAutomaticTriggers(
+                2, card, "Normal", {}, 0); });
+            Check(match.ServerStateHash() == hashBefore,
+                  "Opponent cannot summon the authored mill monster");
+            (void)match.SummonAndRunAutomaticTriggers(1, card, "Normal", {}, 0);
+            Check(match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->InstanceId == card &&
+                      static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 1 &&
+                      match.Player(1).Graveyard.size() == 1 &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Graveyard").size() == 1,
+                  "Authored mill monster must move one own deck card into public graveyard");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = card;
+            summon.Method = "Normal";
+            auto const replay = ReplayYakou(proto, 1, decks, {start, summon});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Authored mill monster must replay with the same hidden deck order");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009}), Deck(proto, {2001})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const deckBefore = static_cast<int>(match.Player(1).Deck.size());
+            auto const beforeWrongSeat = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(2, spell); });
+            Check(match.ServerStateHash() == beforeWrongSeat,
+                  "Opponent cannot activate the authored mill spell");
+            match.BeginSpellResponse(1, spell);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore &&
+                      match.PriorityPlayer() == 2,
+                  "2009 must wait for opponent priority before milling");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBefore - 2 &&
+                      match.Player(1).Graveyard.size() == 3 &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Graveyard").size() == 3,
+                  "2009 must mill exactly two cards after consecutive passes");
+            auto const beforeRepeat = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell); });
+            Check(match.ServerStateHash() == beforeRepeat,
+                  "Resolved 2009 cannot be activated again from graveyard");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, cast, passTwo, passOne});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2009 spell resolution must replay with identical hidden deck order");
+        }
+        {
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(proto, 1, {4001, 4007}), SampleDeck(proto, 0, {})};
+            YakouMatch match(proto, 1, decks);
+            match.StartTurn(1);
+            int const monster = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, monster, "Normal", {}, 0);
+            int const deckBeforeSpell = static_cast<int>(match.Player(1).Deck.size());
+            int const counterBefore = match.Player(1).Field[0]->Countdown;
+            match.BeginSpellResponse(1, spell);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBeforeSpell &&
+                      match.PendingEffectChoices(1).Candidates.size() == 1 &&
+                      match.PendingEffectChoices(1).Candidates[0] == monster,
+                  "4007 must wait for a valid friendly target before resolving both actions");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, spell); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "4007 must reject a spell instance as countdown target atomically");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, monster);
+            Check(static_cast<int>(match.Player(1).Deck.size()) == deckBeforeSpell - 1 &&
+                      match.Player(1).Field[0]->Countdown == std::max(0, counterBefore - 1) &&
+                      match.PendingEffects().empty(),
+                  "4007 must mill and reduce countdown after valid selection");
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = monster;
+            summon.Method = "Normal";
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = monster;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, summon, cast, passTwo, passOne, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "4007 mill and countdown selection must replay deterministically");
+        }
+        for (int definition : {4008, 4009})
+        {
+            // Both authored vanilla monsters share the normal-summon path.
+            YakouMatch match(proto, 1,
+                {SampleDeck(proto, 2, {definition}), SampleDeck(proto, 0, {})});
+            int const card = match.Player(1).Hand[0];
+            auto const beforeTurn = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {}, 0); });
+            Check(match.ServerStateHash() == beforeTurn,
+                  "Vanilla summon before turn start must reject atomically");
+            match.StartTurn(1);
+            auto const beforeCost = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {match.Player(1).Hand[1]}, 0); });
+            Check(match.ServerStateHash() == beforeCost,
+                  "Vanilla normal summon cannot charge an unauthored material");
+            match.Summon(1, card, "Normal", {}, 0);
+            Check(match.Player(1).Field[0] &&
+                      match.Player(1).Field[0]->InstanceId == card &&
+                      std::find(match.Player(1).Hand.begin(), match.Player(1).Hand.end(), card) ==
+                          match.Player(1).Hand.end(),
+                  "Vanilla monster must move from hand into its field slot");
+            auto const beforeDuplicate = match.ServerStateHash();
+            Reject([&] { match.Summon(1, card, "Normal", {}, 1); });
+            Check(match.ServerStateHash() == beforeDuplicate,
+                  "Already summoned vanilla card must reject atomically");
+        }
         {
             std::array<std::vector<int>, 2> const decks{
                 SampleDeck(proto, 1, {2001, 4002, 4003, 4005, 4006, 4001, 4001}),
@@ -549,13 +1361,32 @@ int main()
             match.BeginRaid(2);
             match.StartTurn(1);
             match.BeginRaid(1);
+            {
+                auto unblocked = match;
+                unblocked.AssignBlockers(2, {});
+                auto const unblockedOptions = unblocked.ViewerSnapshot(2).at("ResponseOptions");
+                Check(std::none_of(unblockedOptions.begin(), unblockedOptions.end(),
+                    [&](Json const& option) { return option.at("CardId") == tactic; }),
+                    "Blocker replacement must not be offered for an unblocked raid");
+                auto const beforeUnblocked = unblocked.ServerStateHash();
+                Reject([&] { unblocked.RespondWithRaidTactic(2, tactic, attacker,
+                                               replacement, {costOne, costTwo}); });
+                Check(unblocked.ServerStateHash() == beforeUnblocked,
+                      "Unblocked raid replacement rejection must be atomic");
+            }
             match.AssignBlockers(2, {{attacker, originalBlocker}});
             auto const options = match.ViewerSnapshot(2).at("ResponseOptions");
             Check(std::any_of(options.begin(), options.end(), [&](Json const& option) {
-                return option.at("CardId") == tactic &&
-                    option.at("Type") == "RespondWithRaidTactic" &&
-                    option.at("CostCount") == 2;
-            }), "Authored replacement tactic must offer two discard payments");
+                if (option.at("CardId") != tactic ||
+                    option.at("Type") != "RespondWithRaidTactic" ||
+                    option.at("CostCount") != 2) return false;
+                auto const& candidates = option.at("ReplacementCandidates");
+                return candidates.size() == 1 && candidates.at(0) == replacement &&
+                    option.at("TargetCandidates").size() == 1 &&
+                    option.at("TargetCandidates").at(0) == attacker &&
+                    std::find(candidates.begin(), candidates.end(),
+                              Json(originalBlocker)) == candidates.end();
+            }), "Replacement tactic must only offer an eligible alternative blocker");
             auto const before = match.ServerStateHash();
             Reject([&] { match.RespondWithRaidTactic(2, tactic, attacker,
                                                      originalBlocker, {costOne, costTwo}); });
@@ -1625,6 +2456,734 @@ int main()
                   "Paid map activation and choice must replay deterministically");
         }
         {
+            // Paid main spells pay at activation, then wait for opponent
+            // priority. A private deck choice is created only after passes.
+            auto match = Make(proto, {3012, 2001}, {3020, 2001, 2002});
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const cost = match.Player(1).Hand[1];
+            auto const before = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell); });
+            Reject([&] { match.BeginSpellResponse(1, spell, 0, {spell}); });
+            Check(match.ServerStateHash() == before,
+                  "Rejected paid spell must preserve all zones and priority");
+            match.BeginSpellResponse(1, spell, 0, {cost});
+            Check(match.Phase() == YakouPhase::SpellResponse &&
+                      match.PriorityPlayer() == 2 &&
+                      match.Player(1).Graveyard.size() == 2 &&
+                      !match.ViewerSnapshot(1).contains("PendingSelection"),
+                  "Paid spell must open priority after committing its cost");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.ViewerSnapshot(1).at("PendingSelection").at("CandidateCards").size() == 3 &&
+                      !match.ViewerSnapshot(2).contains("PendingSelection"),
+                  "Private map choice must begin only after both players pass");
+            auto const target = match.ViewerSnapshot(1).at("PendingSelection")
+                                    .at("Candidates")[0].get<int>();
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, target);
+            Check(match.PendingEffects().empty() && match.Player(1).Hand.back() == target,
+                  "Paid spell choice must finish after the response window");
+
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {3012, 2001}), Deck(proto, {3020, 2001, 2002})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            cast.Cards = {cost};
+            YakouReplayCommand passOpponent;
+            passOpponent.Operation = YakouReplayOperation::PassSpellResponse;
+            passOpponent.Player = 2;
+            auto passOwner = passOpponent;
+            passOwner.Player = 1;
+            YakouReplayCommand choose;
+            choose.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            choose.Player = 1;
+            choose.TargetId = target;
+            auto const replay = ReplayYakou(proto, 1, decks,
+                                            {start, cast, passOpponent, passOwner, choose});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Paid spell response and private choice must replay deterministically");
+
+            auto countered = Make(proto, {3012, 2001}, {3020, 2001, 2002});
+            countered.StartTurn(1);
+            countered.BeginSpellResponse(1, countered.Player(1).Hand[0], 0,
+                                         {countered.Player(1).Hand[1]});
+            auto const counterHand = countered.Player(2).Hand;
+            countered.RespondWithNegation(2, counterHand[0],
+                                          {counterHand[1], counterHand[2]});
+            countered.PassSpellResponse(1);
+            countered.PassSpellResponse(2);
+            Check(countered.Phase() == YakouPhase::Main &&
+                      countered.PendingEffects().empty() &&
+                      !countered.ViewerSnapshot(1).contains("PendingSelection") &&
+                      countered.Player(1).Graveyard.size() == 2,
+                  "Negated paid spell keeps its cost but creates no private choice");
+        }
+        {
+            // The enemy spell's accepted target event activates 3009 before
+            // resolution. Card 3017 may then protect that exact own target.
+            auto targetedProto = proto;
+            for (auto& id : targetedProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3009;
+                }
+                else if (id == 3020)
+                {
+                    id = 3017;
+                }
+            }
+            auto match = Make(targetedProto, {2001, 3009, 3017}, {2011, 2002});
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> replayCommands;
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const own = match.Player(1).Hand;
+            auto const enemy = match.Player(2).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, own[0], "Normal", {}, 0);
+            auto firstSummon = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            firstSummon.CardId = own[0];
+            firstSummon.Method = "Normal";
+            replayCommands.push_back(firstSummon);
+            match.BeginRaid(1);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            match.BeginRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 2));
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            match.Summon(1, own[1], "Normal", {}, 1);
+            auto secondSummon = command(YakouReplayOperation::Summon, 1);
+            secondSummon.CardId = own[1];
+            secondSummon.Method = "Normal";
+            secondSummon.Slot = 1;
+            replayCommands.push_back(secondSummon);
+            bool targetingWindow = false;
+            for (int step = 0; step < 20 && !targetingWindow; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    replayCommands.push_back(command(YakouReplayOperation::StartTurn, active));
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                    replayCommands.push_back(command(YakouReplayOperation::BeginRaid, active));
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    targetingWindow = active == 1 &&
+                        std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == own[1]; });
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, {});
+                    replayCommands.push_back(command(YakouReplayOperation::AssignBlockers, defending));
+                    if (!targetingWindow)
+                    {
+                        match.PassRaidResponse(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, defending));
+                        match.PassRaidResponse(active);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, active));
+                        match.ResolveRaid(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, defending));
+                    }
+                }
+            }
+            Check(targetingWindow, "3009 must be a raid target for enemy tactic");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { match.RespondWithRaidTactic(2, enemy[0], 0, 0, {enemy[1]}); });
+            Check(match.ServerStateHash() == beforeBadTarget &&
+                      match.FilterEffectDamage(own[1], 3) == 3,
+                  "Rejected target designation cannot trigger 3009");
+            match.RespondWithRaidTactic(2, enemy[0], own[1], 0, {enemy[1]});
+            auto targetSpell = command(YakouReplayOperation::RespondWithRaidTactic, 2);
+            targetSpell.CardId = enemy[0];
+            targetSpell.TargetId = own[1];
+            targetSpell.Cards = {enemy[1]};
+            replayCommands.push_back(targetSpell);
+            Check(match.FilterEffectDamage(own[1], 3) == 2 &&
+                      match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[1]
+                          .at("EffectDamageReductionThisChain") == 1 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "EnemySpellTargetConfirmed:" + std::to_string(own[1])) !=
+                          match.Journal().end(),
+                  "3009 must reduce effect damage at accepted target declaration");
+            int const graveCost = match.Player(1).Graveyard[0];
+            auto const beforeBadProtection = match.ServerStateHash();
+            Reject([&] { match.RespondWithEffectProtection(1, own[2], own[0], graveCost); });
+            Check(match.ServerStateHash() == beforeBadProtection,
+                  "3017 must reject an own monster not targeted by the enemy spell");
+            match.RespondWithEffectProtection(1, own[2], own[1], graveCost);
+            auto protect = command(YakouReplayOperation::RespondWithEffectProtection, 1);
+            protect.CardId = own[2];
+            protect.TargetId = own[1];
+            protect.Cards = {graveCost};
+            replayCommands.push_back(protect);
+            Check(match.Player(1).Exile.back() == graveCost &&
+                      match.PriorityPlayer() == 2,
+                  "3017 must pay one graveyard card and pass priority");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            match.PassRaidResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
+            Check(match.FilterEffectDamage(own[1], 3) == 0,
+                  "3017 complete effect-damage prevention must override 3009 reduction");
+            match.ResolveRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
+            Check(match.FilterEffectDamage(own[1], 3) == 3 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "EnemySpellTargetConfirmed:" + std::to_string(own[1])) !=
+                          match.Journal().end(),
+                  "Chain protection must expire while confirmed target event remains in journal");
+            std::array<std::vector<int>, 2> const replayDecks{
+                Deck(targetedProto, {2001, 3009, 3017}),
+                Deck(targetedProto, {2011, 2002})};
+            auto const replay = ReplayYakou(targetedProto, 1, replayDecks, replayCommands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "3009 target declaration and 3017 protection must replay exactly");
+        }
+        {
+            // Card 2101 needs an explicit HyakkiYagyo graveyard payment in
+            // raid priority. Only lethal post-reduction damage can pierce.
+            auto piercingProto = proto;
+            for (auto& id : piercingProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3016;
+                }
+                else if (id == 3020)
+                {
+                    id = 4018;
+                }
+            }
+            auto match = Make(piercingProto, {2001, 2009, 2003}, {2002, 3016, 4018});
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> replayCommands;
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            auto summonFirst = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summonFirst.CardId = hand[0];
+            summonFirst.Method = "Normal";
+            replayCommands.push_back(summonFirst);
+            match.BeginSpellResponse(1, hand[1]);
+            auto mill = command(YakouReplayOperation::BeginSpellResponse, 1);
+            mill.CardId = hand[1];
+            replayCommands.push_back(mill);
+            match.PassSpellResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassSpellResponse, 2));
+            match.PassSpellResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassSpellResponse, 1));
+            match.BeginRaid(1);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            int const blocker = match.Player(2).Hand[0];
+            match.Summon(2, blocker, "Normal", {}, 0);
+            auto summonBlocker = command(YakouReplayOperation::Summon, 2);
+            summonBlocker.CardId = blocker;
+            summonBlocker.Method = "Normal";
+            replayCommands.push_back(summonBlocker);
+            match.BeginRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::BeginRaid, 2));
+            match.StartTurn(1);
+            replayCommands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const grave = match.Player(1).Graveyard;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[2], "Necromancy",
+                                                       {grave[0], grave[1]}, 1);
+            auto summonNecro = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summonNecro.CardId = hand[2];
+            summonNecro.Method = "Necromancy";
+            summonNecro.Cards = {grave[0], grave[1]};
+            summonNecro.Slot = 1;
+            replayCommands.push_back(summonNecro);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers, 1));
+            auto const beforeManifest = match;
+            match.Manifest(1, hand[2], 2101);
+            auto manifest = command(YakouReplayOperation::Manifest, 1);
+            manifest.CardId = hand[2];
+            manifest.DefinitionId = 2101;
+            replayCommands.push_back(manifest);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers, 1));
+            int const raider = hand[2];
+            auto damagedFixture = beforeManifest;
+            bool assigned = false;
+            for (int step = 0; step < 24 && !assigned; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    replayCommands.push_back(command(YakouReplayOperation::StartTurn, active));
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                    replayCommands.push_back(command(YakouReplayOperation::BeginRaid, active));
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    bool const hasRaider = active == 1 &&
+                        std::any_of(match.Attacks().begin(), match.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == raider; });
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, hasRaider
+                        ? std::vector<std::pair<int, int>>{{raider, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    auto assignment = command(YakouReplayOperation::AssignBlockers, defending);
+                    if (hasRaider)
+                    {
+                        assignment.Blockers = {{raider, blocker}};
+                    }
+                    replayCommands.push_back(assignment);
+                    if (hasRaider)
+                    {
+                        assigned = true;
+                    }
+                    else
+                    {
+                        match.PassRaidResponse(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, defending));
+                        match.PassRaidResponse(active);
+                        replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, active));
+                        match.ResolveRaid(defending);
+                        replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, defending));
+                    }
+                }
+            }
+            Check(assigned, "2101 must reach a blocked raid");
+            auto const prepared = match;
+            auto noCost = prepared;
+            int const noCostLife = noCost.Player(2).Life;
+            noCost.PassRaidResponse(2);
+            noCost.PassRaidResponse(1);
+            noCost.ResolveRaid(2);
+            Check(noCost.Player(2).Life == noCostLife - 1 &&
+                      std::find_if(noCost.Journal().begin(), noCost.Journal().end(),
+                          [](std::string const& line)
+                          { return line.starts_with("PiercingDamage:"); }) == noCost.Journal().end(),
+                  "Unpaid 2101 must not pierce a destroyed blocker");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            auto const beforeInvalidCost = match.ServerStateHash();
+            Reject([&] { match.RespondWithPiercing(1, raider, blocker); });
+            Check(match.ServerStateHash() == beforeInvalidCost,
+                  "Invalid 2101 cost must not change chain or zones");
+            int const cost = match.Player(1).Graveyard[0];
+            int const lifeBefore = match.Player(2).Life;
+            match.RespondWithPiercing(1, raider, cost);
+            auto payPiercing = command(YakouReplayOperation::RespondWithPiercing, 1);
+            payPiercing.CardId = raider;
+            payPiercing.Cards = {cost};
+            replayCommands.push_back(payPiercing);
+            Check(match.Player(1).Exile.back() == cost && match.PriorityPlayer() == 2,
+                  "2101 must exile its cost and pass priority");
+            match.PassRaidResponse(2);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 2));
+            match.PassRaidResponse(1);
+            replayCommands.push_back(command(YakouReplayOperation::PassRaidResponse, 1));
+            match.ResolveRaid(2);
+            replayCommands.push_back(command(YakouReplayOperation::ResolveRaid, 2));
+            Check(match.Player(2).Life == lifeBefore - 2 &&
+                      std::find(match.Journal().begin(), match.Journal().end(),
+                                "PiercingDamage:1") != match.Journal().end() &&
+                      !match.Player(2).Field[0],
+                  "4 attack against 3 HP must pierce one; another unblocked raid deals one");
+            std::array<std::vector<int>, 2> const replayDecks{
+                Deck(piercingProto, {2001, 2009, 2003}),
+                Deck(piercingProto, {2002, 3016, 4018})};
+            auto const replay = ReplayYakou(piercingProto, 1, replayDecks, replayCommands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2101 cost, response priority, combat and piercing must replay exactly");
+
+            auto reduced = prepared;
+            int const shield = reduced.Player(2).Hand[0];
+            reduced.RespondWithRaidShield(2, shield, blocker);
+            reduced.RespondWithPiercing(1, raider, cost);
+            reduced.PassRaidResponse(2);
+            reduced.PassRaidResponse(1);
+            int const reducedLife = reduced.Player(2).Life;
+            reduced.ResolveRaid(2);
+            Check(reduced.Player(2).Field[0] &&
+                      reduced.Player(2).Life == reducedLife - 1 &&
+                      std::find(reduced.Journal().begin(), reduced.Journal().end(),
+                                "PiercingDamage:1") == reduced.Journal().end(),
+                  "Shielded blocker survives; only the other unblocked raid damages hero");
+
+            auto stacked = prepared;
+            int const firstShield = stacked.Player(2).Hand[0];
+            int const secondShield = stacked.Player(2).Hand[1];
+            stacked.RespondWithRaidShield(2, firstShield, blocker);
+            stacked.RespondWithPiercing(1, raider, cost);
+            stacked.RespondWithRaidShield(2, secondShield, 0);
+            stacked.PassRaidResponse(1);
+            stacked.PassRaidResponse(2);
+            int const stackedLife = stacked.Player(2).Life;
+            stacked.ResolveRaid(2);
+            Check(stacked.Player(2).Field[0] &&
+                      stacked.Player(2).Field[0]->Damage == 1 &&
+                      stacked.Player(2).Life == stackedLife - 1,
+                  "Two legal shields must add once before piercing is calculated");
+
+            bool earlierRaid = false;
+            for (int step = 0; step < 16 && !earlierRaid; ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    earlierRaid = active == 1 &&
+                        std::any_of(damagedFixture.Attacks().begin(), damagedFixture.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == hand[0]; });
+                    if (!earlierRaid)
+                    {
+                        int const defending = 3 - active;
+                        damagedFixture.AssignBlockers(defending, {});
+                        damagedFixture.PassRaidResponse(defending);
+                        damagedFixture.PassRaidResponse(active);
+                        damagedFixture.ResolveRaid(defending);
+                    }
+                }
+            }
+            Check(earlierRaid, "Earlier raider must reach blocker before 2101 manifests");
+            damagedFixture.AssignBlockers(2, {{hand[0], blocker}});
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.PassRaidResponse(1);
+            damagedFixture.ResolveRaid(2);
+            Check(damagedFixture.Player(2).Field[0] &&
+                      damagedFixture.Player(2).Field[0]->Hp() == 2,
+                  "Earlier combat must wound the blocker once");
+            for (int step = 0; step < 12 &&
+                !(damagedFixture.ActivePlayer() == 1 &&
+                  damagedFixture.Phase() == YakouPhase::Main); ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main && active != 1)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    int const defending = 3 - active;
+                    damagedFixture.AssignBlockers(defending, {});
+                    damagedFixture.PassRaidResponse(defending);
+                    damagedFixture.PassRaidResponse(active);
+                    damagedFixture.ResolveRaid(defending);
+                }
+            }
+            Check(damagedFixture.ActivePlayer() == 1 &&
+                      damagedFixture.Phase() == YakouPhase::Main,
+                  "Wounded-blocker fixture must return to manifest controller");
+            damagedFixture.Manifest(1, raider, 2101);
+            (void)damagedFixture.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            bool damagedRaid = false;
+            for (int step = 0; step < 24 && !damagedRaid; ++step)
+            {
+                int const active = damagedFixture.ActivePlayer();
+                if (damagedFixture.Phase() == YakouPhase::TurnStart)
+                {
+                    damagedFixture.StartTurn(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::Main)
+                {
+                    damagedFixture.BeginRaid(active);
+                }
+                if (damagedFixture.Phase() == YakouPhase::AssignBlockers)
+                {
+                    bool const hasRaider = active == 1 &&
+                        std::any_of(damagedFixture.Attacks().begin(), damagedFixture.Attacks().end(),
+                            [&](YakouAttack const& attack) { return attack.Card == raider; });
+                    int const defending = 3 - active;
+                    damagedFixture.AssignBlockers(defending, hasRaider
+                        ? std::vector<std::pair<int, int>>{{raider, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    if (hasRaider)
+                    {
+                        damagedRaid = true;
+                    }
+                    else
+                    {
+                        damagedFixture.PassRaidResponse(defending);
+                        damagedFixture.PassRaidResponse(active);
+                        damagedFixture.ResolveRaid(defending);
+                    }
+                }
+            }
+            Check(damagedRaid && damagedFixture.Player(2).Field[0] &&
+                      damagedFixture.Player(2).Field[0]->Hp() == 2,
+                  "Prior combat must leave blocker with two remaining HP");
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.RespondWithPiercing(1, raider,
+                                               damagedFixture.Player(1).Graveyard[0]);
+            damagedFixture.PassRaidResponse(2);
+            damagedFixture.PassRaidResponse(1);
+            int const damagedLife = damagedFixture.Player(2).Life;
+            damagedFixture.ResolveRaid(2);
+            Check(damagedFixture.Player(2).Life == damagedLife - 2 &&
+                      std::find(damagedFixture.Journal().begin(), damagedFixture.Journal().end(),
+                                "PiercingDamage:2") != damagedFixture.Journal().end(),
+                  "4 attack against a wounded 2-HP blocker must pierce two");
+        }
+        {
+            // Card 3015 waives one failed manifestation condition this turn,
+            // but its discard cost and the manifestation's Ki still apply.
+            auto waiverProto = proto;
+            for (auto& id : waiverProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3015;
+                    break;
+                }
+            }
+            for (auto& card : waiverProto.Cards["Cards"])
+            {
+                if (card["Id"] == 2101)
+                {
+                    card["SummonCostJson"]["Manifestation"]["Condition"]
+                        ["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 5;
+                }
+            }
+            auto match = Make(waiverProto, {2001, 2003, 3015, 2002, 3001}, {});
+            match.StartTurn(1);
+            auto const hand = match.Player(1).Hand;
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[0], "Normal", {}, 0);
+            match.BeginRaid(1);
+            match.StartTurn(2);
+            match.BeginRaid(2);
+            match.StartTurn(1);
+            (void)match.SummonAndRunAutomaticTriggers(1, hand[1], "Necromancy",
+                                                       {match.Player(1).Graveyard[0],
+                                                        match.Player(1).Graveyard[1]}, 1);
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, 0);
+            auto const beforeMissingCondition = match.ServerStateHash();
+            Reject([&] { match.Manifest(1, hand[1], 2101); });
+            Check(match.ServerStateHash() == beforeMissingCondition,
+                  "Unpaid 3015 waiver cannot skip a manifest condition");
+            match.BeginSpellResponse(1, hand[2], 0, {hand[3], hand[4]});
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.ViewerSnapshot(1).at("Players")[0]
+                      .at("ManifestConditionWaivers") == 1,
+                  "3015 must grant exactly one condition waiver");
+            auto satisfied = match;
+            for (auto& card : waiverProto.Cards["Cards"])
+            {
+                if (card["Id"] == 2101)
+                {
+                    auto& conditions = card["SummonCostJson"]["Manifestation"]["Condition"];
+                    conditions["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 3;
+                    satisfied.Manifest(1, hand[1], 2101);
+                    Check(satisfied.ViewerSnapshot(1).at("Players")[0]
+                              .at("ManifestConditionWaivers") == 1,
+                          "Satisfied manifest conditions must not consume 3015");
+                    conditions["ArchetypeMonsterTotalAcrossZones"]["AtLeast"] = 5;
+                    conditions["WasDevourSummoned"] = true;
+                    auto const twoFailures = match.ServerStateHash();
+                    Reject([&] { match.Manifest(1, hand[1], 2101); });
+                    Check(match.ServerStateHash() == twoFailures &&
+                              match.ViewerSnapshot(1).at("Players")[0]
+                                  .at("ManifestConditionWaivers") == 1,
+                          "One 3015 waiver cannot ignore two failed conditions");
+                    conditions.erase("WasDevourSummoned");
+                    break;
+                }
+            }
+            int const kiBefore = match.Player(1).Ki;
+            match.Manifest(1, hand[1], 2101);
+            Check(match.Player(1).Field[1]->DefinitionId == 2101 &&
+                      match.Player(1).Ki == kiBefore - 2 &&
+                      match.ViewerSnapshot(1).at("Players")[0]
+                          .at("ManifestConditionWaivers") == 0,
+                  "3015 must consume the waiver and preserve printed Ki cost");
+        }
+        {
+            // Card 2012 persists through turns and consumes its shield only
+            // when the chosen monster actually receives positive damage.
+            auto shieldProto = proto;
+            for (auto& id : shieldProto.Decks["Decks"][0]["Cards"])
+            {
+                if (id == 3013)
+                {
+                    id = 3004;
+                    break;
+                }
+            }
+            auto match = Make(shieldProto, {2001, 2012}, {3004});
+            match.StartTurn(1);
+            int const protectedUnit = match.Player(1).Hand[0];
+            int const spell = match.Player(1).Hand[1];
+            (void)match.SummonAndRunAutomaticTriggers(1, protectedUnit, "Normal", {}, 0);
+            int const cost = match.Player(1).Graveyard[0];
+            auto const beforeBadCost = match.ServerStateHash();
+            Reject([&] { match.BeginSpellResponse(1, spell, 0, {spell}); });
+            Check(match.ServerStateHash() == beforeBadCost,
+                  "2012 must roll back invalid necromancy cost");
+            match.BeginSpellResponse(1, spell, 0, {cost});
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.ViewerSnapshot(1).at("PendingSelection").at("Candidates").size() == 1,
+                  "2012 must ask for a living friendly monster after response");
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(
+                1, match.Player(2).Hand[0]); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "2012 must reject enemy targets atomically");
+            (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, protectedUnit);
+            Check(match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                      .at("NextDamageShield") == 2,
+                  "2012 shield must be visible on its public field target");
+            std::array<std::vector<int>, 2> const shieldDecks{
+                Deck(shieldProto, {2001, 2012}), Deck(shieldProto, {3004})};
+            YakouReplayCommand start;
+            start.Operation = YakouReplayOperation::StartTurn;
+            start.Player = 1;
+            YakouReplayCommand summon;
+            summon.Operation = YakouReplayOperation::SummonAndRunAutomaticTriggers;
+            summon.Player = 1;
+            summon.CardId = protectedUnit;
+            summon.Method = "Normal";
+            YakouReplayCommand cast;
+            cast.Operation = YakouReplayOperation::BeginSpellResponse;
+            cast.Player = 1;
+            cast.CardId = spell;
+            cast.Cards = {cost};
+            YakouReplayCommand passTwo;
+            passTwo.Operation = YakouReplayOperation::PassSpellResponse;
+            passTwo.Player = 2;
+            auto passOne = passTwo;
+            passOne.Player = 1;
+            YakouReplayCommand select;
+            select.Operation = YakouReplayOperation::ResolveSelectedEffectAndRunAutomaticTriggers;
+            select.Player = 1;
+            select.TargetId = protectedUnit;
+            auto const replay = ReplayYakou(shieldProto, 1, shieldDecks,
+                {start, summon, cast, passTwo, passOne, select});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "2012 private selection and persistent shield must replay exactly");
+            int const blocker = match.Player(2).Hand[0];
+            int protectedRaids = 0;
+            bool blockerSummoned = false;
+            for (int step = 0; step < 24 && protectedRaids < 2; ++step)
+            {
+                int const active = match.ActivePlayer();
+                if (match.Phase() == YakouPhase::TurnStart)
+                {
+                    match.StartTurn(active);
+                    if (active == 2 && !blockerSummoned)
+                    {
+                        match.Summon(2, blocker, "Normal", {}, 0);
+                        blockerSummoned = true;
+                    }
+                }
+                if (match.Phase() == YakouPhase::Main)
+                {
+                    match.BeginRaid(active);
+                }
+                if (match.Phase() == YakouPhase::AssignBlockers)
+                {
+                    int const defending = 3 - active;
+                    match.AssignBlockers(defending, active == 1
+                        ? std::vector<std::pair<int, int>>{{protectedUnit, blocker}}
+                        : std::vector<std::pair<int, int>>{});
+                    match.PassRaidResponse(defending);
+                    match.PassRaidResponse(active);
+                    match.ResolveRaid(defending);
+                    if (active == 1)
+                    {
+                        ++protectedRaids;
+                        Check(match.Player(1).Field[0] &&
+                                  match.Player(1).Field[0]->Damage == (protectedRaids == 1 ? 0 : 1),
+                              "2012 must prevent only the first positive damage event");
+                    }
+                }
+            }
+            Check(protectedRaids == 2 &&
+                      !match.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                          .contains("NextDamageShield"),
+                  "2012 shield must be consumed after its first positive hit");
+
+            auto zeroDamage = shieldProto;
+            for (auto& card : zeroDamage.Cards["Cards"])
+            {
+                if (card["Id"] == 3004)
+                {
+                    card["Attack"] = 0; // Test fixture: no incoming damage event.
+                }
+            }
+            auto noHit = Make(zeroDamage, {2001, 2012}, {3004});
+            noHit.StartTurn(1);
+            int const noHitUnit = noHit.Player(1).Hand[0];
+            int const noHitSpell = noHit.Player(1).Hand[1];
+            (void)noHit.SummonAndRunAutomaticTriggers(1, noHitUnit, "Normal", {}, 0);
+            noHit.BeginSpellResponse(1, noHitSpell, 0, {noHit.Player(1).Graveyard[0]});
+            noHit.PassSpellResponse(2);
+            noHit.PassSpellResponse(1);
+            (void)noHit.ResolveSelectedEffectAndRunAutomaticTriggers(1, noHitUnit);
+            int const noHitBlocker = noHit.Player(2).Hand[0];
+            for (int step = 0; step < 12 && noHit.Phase() != YakouPhase::AssignBlockers; ++step)
+            {
+                int const active = noHit.ActivePlayer();
+                if (noHit.Phase() == YakouPhase::TurnStart)
+                {
+                    noHit.StartTurn(active);
+                    if (active == 2 && !noHit.Player(2).Field[0])
+                    {
+                        noHit.Summon(2, noHitBlocker, "Normal", {}, 0);
+                    }
+                }
+                if (noHit.Phase() == YakouPhase::Main)
+                {
+                    noHit.BeginRaid(active);
+                }
+            }
+            Check(noHit.Phase() == YakouPhase::AssignBlockers && noHit.ActivePlayer() == 1,
+                  "Zero-damage fixture must reach protected attack");
+            noHit.AssignBlockers(2, {{noHitUnit, noHitBlocker}});
+            noHit.PassRaidResponse(2);
+            noHit.PassRaidResponse(1);
+            noHit.ResolveRaid(2);
+            Check(noHit.ViewerSnapshot(1).at("Players")[0].at("FieldSlots")[0]
+                      .at("NextDamageShield") == 2,
+                  "Zero incoming damage must not consume 2012 protection");
+        }
+        {
             // A free main-phase spell waits for both players to pass before
             // resolving. The wrong priority must not mutate any private state.
             auto match = Make(proto, {2009, 2009}, {3020, 2001, 2002, 3001, 2004});
@@ -1681,6 +3240,62 @@ int main()
             Reject([&] { match.BeginSpellResponse(1, match.Player(1).Hand[0]); });
             Check(match.ServerStateHash() == used,
                   "Negated spell must still consume its card-name per-turn allowance");
+        }
+        {
+            // A counterspell can itself be countered. Resolution is LIFO:
+            // the second counter cancels the first, then the original mills.
+            auto match = Make(proto,
+                {2009, 3020, 2001, 2002, 3001},
+                {3020, 2001, 2002, 3001, 2004});
+            match.StartTurn(1);
+            auto const first = match.Player(1).Hand;
+            auto const second = match.Player(2).Hand;
+            auto const deckBefore = match.Player(1).Deck.size();
+            match.BeginSpellResponse(1, first[0]);
+            match.RespondWithNegation(2, second[0], {second[1], second[2]});
+            Check(match.PriorityPlayer() == 1 &&
+                      match.ViewerSnapshot(1).at("ResponseOptions").size() == 1,
+                  "Opening player must receive counter-counter priority");
+            auto const beforeInvalid = match.ServerStateHash();
+            Reject([&] { match.RespondWithNegation(2, second[0], {second[3], second[4]}); });
+            Check(match.ServerStateHash() == beforeInvalid,
+                  "Wrong-priority nested response must roll back");
+            match.RespondWithNegation(1, first[1], {first[2], first[3]});
+            Check(match.ViewerSnapshot(1).at("ResponseStack").size() == 3 &&
+                      match.PriorityPlayer() == 2,
+                  "Two counters must remain public in activation order");
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Phase() == YakouPhase::Main &&
+                      match.PendingEffects().empty() &&
+                      match.Player(1).Deck.size() == deckBefore - 2 &&
+                      match.Player(1).Graveyard.size() >= 4,
+                  "Counter-counter must restore original spell effect after both passes");
+            std::array<std::vector<int>, 2> const decks{
+                Deck(proto, {2009, 3020, 2001, 2002, 3001}),
+                Deck(proto, {3020, 2001, 2002, 3001, 2004})};
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            auto start = command(YakouReplayOperation::StartTurn, 1);
+            auto cast = command(YakouReplayOperation::BeginSpellResponse, 1);
+            cast.CardId = first[0];
+            auto counter = command(YakouReplayOperation::RespondWithNegation, 2);
+            counter.CardId = second[0];
+            counter.Cards = {second[1], second[2]};
+            auto counterCounter = command(YakouReplayOperation::RespondWithNegation, 1);
+            counterCounter.CardId = first[1];
+            counterCounter.Cards = {first[2], first[3]};
+            auto passTwo = command(YakouReplayOperation::PassSpellResponse, 2);
+            auto passOne = command(YakouReplayOperation::PassSpellResponse, 1);
+            auto const replay = ReplayYakou(proto, 1, decks,
+                {start, cast, counter, counterCounter, passTwo, passOne});
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Nested counterspell sequence must replay deterministically");
         }
         {
             // With no response, the server resolves the original spell after
