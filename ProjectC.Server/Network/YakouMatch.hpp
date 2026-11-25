@@ -215,7 +215,7 @@ private:
     void TurnOver();
     void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
                  int relatedCard = 0, std::vector<int> paidCostCards = {});
-    void DeferPendingCostTriggers();
+    void DeferPendingCostTriggers(std::size_t firstNewEffect);
     void ReleaseDeferredCostTriggers();
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;

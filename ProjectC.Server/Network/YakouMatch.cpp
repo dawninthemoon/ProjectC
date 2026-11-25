@@ -890,14 +890,17 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
     }
 }
 
-void YakouMatch::DeferPendingCostTriggers()
+void YakouMatch::DeferPendingCostTriggers(std::size_t firstNewEffect)
 {
-    for (auto& effect : pendingEffects_)
+    Check(firstNewEffect <= pendingEffects_.size(), "Invalid cost trigger boundary");
+    // Ordinary pending effects may predate a raid response. Only the effects
+    // enqueued by this specific payment are deferred to the end of the chain.
+    for (std::size_t i = firstNewEffect; i < pendingEffects_.size(); ++i)
     {
-        effect.DeferredCost = true;
-        deferredCostEffects_.push_back(std::move(effect));
+        pendingEffects_[i].DeferredCost = true;
+        deferredCostEffects_.push_back(std::move(pendingEffects_[i]));
     }
-    pendingEffects_.clear();
+    pendingEffects_.resize(firstNewEffect);
 }
 
 void YakouMatch::ReleaseDeferredCostTriggers()
@@ -1492,6 +1495,7 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
         CheckSupportedAction(effect.at("Actions")[0]);
     }
 
+    std::size_t const previousPendingCount = pendingEffects_.size();
     for (int paid : costs)
     {
         if (costMethod == "Discard")
@@ -1507,7 +1511,7 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
             Enqueue(player, paid, OriginalId(paid), "OnBanishedForNecromancyCost");
         }
     }
-    DeferPendingCostTriggers();
+    DeferPendingCostTriggers(previousPendingCount);
 
     // Move the authored spell into its public graveyard, then queue precisely
     // its OnResolve operation. The outer candidate copy commits only if
@@ -1622,6 +1626,7 @@ void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
 
     // The top link is the spell being answered. Its identity is server-derived;
     // incoming clients never supply the target spell ID.
+    std::size_t const previousPendingCount = pendingEffects_.size();
     for (int cardId : discarded)
     {
         if (definitionId == 4020)
@@ -1637,7 +1642,7 @@ void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
             Enqueue(player, cardId, OriginalId(cardId), "OnDiscarded");
         }
     }
-    DeferPendingCostTriggers();
+    DeferPendingCostTriggers(previousPendingCount);
     Remove(owner.Hand, handInstance);
     owner.Graveyard.push_back(handInstance);
     response_.Respond(player, YakouChainLink{player, handInstance, effectId,
@@ -2327,6 +2332,7 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
     auto const usage = std::make_tuple(turn_, player,
                                       card.at("NameKey").get<std::string>(), effectId);
     Check(effectUses_[usage] < limit, "Raid tactic per-turn limit reached");
+    std::size_t const previousPendingCount = pendingEffects_.size();
     for (int instance : costs)
     {
         if (necromancy)
@@ -2342,7 +2348,7 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
             Enqueue(player, instance, OriginalId(instance), "OnDiscarded");
         }
     }
-    DeferPendingCostTriggers();
+    DeferPendingCostTriggers(previousPendingCount);
     Remove(owner.Hand, spell);
     owner.Graveyard.push_back(spell);
     response_.Respond(player, YakouChainLink{player, spell, effectId, "OnResolve",
@@ -2424,11 +2430,12 @@ void YakouMatch::RespondWithEffectProtectionImpl(int player, int spell,
           "3017 card-name response limit reached");
     Check(Contains(owner.Graveyard, graveyardCost),
           "3017 needs one own graveyard cost card");
+    std::size_t const previousPendingCount = pendingEffects_.size();
     Remove(owner.Graveyard, graveyardCost);
     owner.Exile.push_back(graveyardCost);
     Enqueue(player, graveyardCost, OriginalId(graveyardCost),
             "OnBanishedForNecromancyCost");
-    DeferPendingCostTriggers();
+    DeferPendingCostTriggers(previousPendingCount);
     Remove(owner.Hand, spell);
     owner.Graveyard.push_back(spell);
     response_.Respond(player, YakouChainLink{player, spell,
@@ -2465,11 +2472,12 @@ void YakouMatch::RespondWithPiercingImpl(int player, int raider, int graveyardCo
     Check(Contains(owner.Graveyard, graveyardCost) &&
               HasArchetype(OriginalId(graveyardCost), "HyakkiYagyo"),
           "Piercing needs one owned HyakkiYagyo graveyard card");
+    std::size_t const previousPendingCount = pendingEffects_.size();
     Remove(owner.Graveyard, graveyardCost);
     owner.Exile.push_back(graveyardCost);
     Enqueue(player, graveyardCost, OriginalId(graveyardCost),
             "OnBanishedForNecromancyCost");
-    DeferPendingCostTriggers();
+    DeferPendingCostTriggers(previousPendingCount);
     response_.Respond(player, YakouChainLink{player, raider,
         effect.at("Id").get<int>(), "OnRaid", {}});
     journal_.push_back("PiercingActivated:" + std::to_string(raider));
