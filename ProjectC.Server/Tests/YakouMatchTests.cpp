@@ -1287,10 +1287,14 @@ int main()
             match.AssignBlockers(2, {{attacker, originalBlocker}});
             auto const options = match.ViewerSnapshot(2).at("ResponseOptions");
             Check(std::any_of(options.begin(), options.end(), [&](Json const& option) {
-                return option.at("CardId") == tactic &&
-                    option.at("Type") == "RespondWithRaidTactic" &&
-                    option.at("CostCount") == 2;
-            }), "Authored replacement tactic must offer two discard payments");
+                if (option.at("CardId") != tactic ||
+                    option.at("Type") != "RespondWithRaidTactic" ||
+                    option.at("CostCount") != 2) return false;
+                auto const& candidates = option.at("ReplacementCandidates");
+                return candidates.size() == 1 && candidates.at(0) == replacement &&
+                    std::find(candidates.begin(), candidates.end(),
+                              Json(originalBlocker)) == candidates.end();
+            }), "Replacement tactic must only offer an eligible alternative blocker");
             auto const before = match.ServerStateHash();
             Reject([&] { match.RespondWithRaidTactic(2, tactic, attacker,
                                                      originalBlocker, {costOne, costTwo}); });
