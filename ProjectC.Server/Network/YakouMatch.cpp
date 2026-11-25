@@ -559,7 +559,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                         (definition == 3017 && targets.empty()) ||
                         (definition == 3016 && targets.empty()) ||
                         ((definition == 3018 || definition == 4017) &&
-                         replacements.empty()))
+                         (targets.empty() || replacements.empty())))
                     {
                         continue;
                     }
