@@ -179,6 +179,83 @@ int main()
                   "2005 discard trigger must replay deterministically");
         }
         {
+            // A necromancy-paid 2005 must trigger after the counterspell
+            // chain closes, rather than invalidate an otherwise legal cost.
+            auto fixture = proto;
+            auto& firstDeck = fixture.Decks["Decks"][0]["Cards"];
+            auto replaced = std::find(firstDeck.begin(), firstDeck.end(), Json(4001));
+            Check(replaced != firstDeck.end(), "Missing deck slot for 4020 fixture");
+            *replaced = 4020;
+            std::array<std::vector<int>, 2> const decks{
+                SampleDeck(fixture, 0, {4003, 2005, 4020, 2001, 2009}),
+                SampleDeck(fixture, 0, {2009})};
+            YakouMatch match(fixture, 1, decks);
+            auto command = [](YakouReplayOperation operation, int player)
+            {
+                YakouReplayCommand value;
+                value.Operation = operation;
+                value.Player = player;
+                return value;
+            };
+            std::vector<YakouReplayCommand> commands;
+            match.StartTurn(1);
+            commands.push_back(command(YakouReplayOperation::StartTurn, 1));
+            auto const ownHand = match.Player(1).Hand;
+            int const summoner = ownHand[0], triggerCost = ownHand[1], counter = ownHand[2];
+            (void)match.SummonAndRunAutomaticTriggers(
+                1, summoner, "Discard", {triggerCost}, 0);
+            auto summon = command(YakouReplayOperation::SummonAndRunAutomaticTriggers, 1);
+            summon.CardId = summoner;
+            summon.Method = "Discard";
+            summon.Cards = {triggerCost};
+            commands.push_back(summon);
+            Check(match.Player(1).Graveyard.size() >= 2,
+                  "Discard and mill must produce two counterspell cost cards");
+            match.BeginRaid(1);
+            commands.push_back(command(YakouReplayOperation::BeginRaid, 1));
+            match.StartTurn(2);
+            commands.push_back(command(YakouReplayOperation::StartTurn, 2));
+            int const originalSpell = match.Player(2).Hand[0];
+            match.BeginSpellResponse(2, originalSpell);
+            auto begin = command(YakouReplayOperation::BeginSpellResponse, 2);
+            begin.CardId = originalSpell;
+            commands.push_back(begin);
+            int const otherCost = *std::find_if(match.Player(1).Graveyard.begin(),
+                match.Player(1).Graveyard.end(),
+                [&](int id) { return id != triggerCost; });
+            match.RespondWithNegation(1, counter, {triggerCost, otherCost});
+            auto negate = command(YakouReplayOperation::RespondWithNegation, 1);
+            negate.CardId = counter;
+            negate.Cards = {triggerCost, otherCost};
+            commands.push_back(negate);
+            Check(match.PendingEffects().empty() &&
+                      match.ViewerSnapshot(1).at("PendingEffectCount") == 0,
+                  "Cost trigger must wait until the chain closes");
+            match.PassSpellResponse(2);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse, 2));
+            match.PassSpellResponse(1);
+            commands.push_back(command(YakouReplayOperation::PassSpellResponse, 1));
+            Check(match.PendingEffects().size() == 1 &&
+                      match.PendingEffects().front().SourceCard == triggerCost &&
+                      match.PendingEffects().front().Player == 1,
+                  "Banished 2005 should become a pending optional countdown effect");
+            int const before = match.Player(1).Field[0]->Countdown;
+            auto const beforeBadTarget = match.ServerStateHash();
+            Reject([&] { match.ResolvePendingEffect(1, 999999); });
+            Check(match.ServerStateHash() == beforeBadTarget,
+                  "Bad deferred target must reject atomically");
+            match.ResolvePendingEffect(1, summoner);
+            auto resolve = command(YakouReplayOperation::ResolvePendingEffect, 1);
+            resolve.TargetId = summoner;
+            commands.push_back(resolve);
+            Check(match.PendingEffects().empty() &&
+                      match.Player(1).Field[0]->Countdown == std::max(0, before - 1),
+                  "Deferred necromancy trigger must reduce a friendly countdown");
+            auto const replay = ReplayYakou(fixture, 1, decks, commands);
+            Check(replay.FinalState.ServerStateHash() == match.ServerStateHash(),
+                  "Deferred cost trigger must replay deterministically");
+        }
+        {
             std::array<std::vector<int>, 2> const decks{
                 SampleDeck(proto, 2, {3001, 3007, 3011, 3003}),
                 SampleDeck(proto, 0, {})};

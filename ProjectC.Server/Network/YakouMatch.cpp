@@ -426,6 +426,8 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                    {"TurnNumber", turn_}, {"PriorityPlayerId", PriorityPlayer()},
                    {"WinnerPlayerId", winner_}, {"Players", std::move(players)},
                    {"Attacks", std::move(attacks)}};
+    // The next public action must not advance a raid past unresolved cost triggers.
+    result["PendingEffectCount"] = pendingEffects_.size();
     // Both players can follow the public response depth and priority,
     // but private target selections never leave the authoritative server.
     if (phase_ == YakouPhase::RaidResponse)
@@ -700,6 +702,14 @@ Json YakouMatch::ServerCanonicalState() const
                            {"Trigger", effect.Trigger}, {"RelatedCard", effect.RelatedCard},
                            {"PaidCostCards", effect.PaidCostCards}});
     }
+    Json deferredCosts = Json::array();
+    for (auto const& effect : deferredCostEffects_)
+    {
+        deferredCosts.push_back({{"Player", effect.Player}, {"SourceCard", effect.SourceCard},
+                                 {"Definition", effect.DefinitionId}, {"Effect", effect.EffectId},
+                                 {"Trigger", effect.Trigger}, {"RelatedCard", effect.RelatedCard},
+                                 {"PaidCostCards", effect.PaidCostCards}});
+    }
     Json uses = Json::array();
     for (auto const& [key, count] : effectUses_)
     {
@@ -725,6 +735,8 @@ Json YakouMatch::ServerCanonicalState() const
             {"Chain", {{"Open", chain.Open}, {"Priority", chain.Priority}, {"Passes", chain.ConsecutivePasses},
                        {"Stack", links(chain.Stack)}, {"Resolution", links(chain.Resolution)},
                        {"Deferred", links(chain.Deferred)}}}};
+    if (!deferredCosts.empty())
+        state["DeferredCostEffects"] = std::move(deferredCosts);
     // Preserve the existing canonical replay fixture whenever no raid shield
     // is pending; include live reductions in the private hash when present.
     if (!raidShields_.empty())
@@ -869,6 +881,20 @@ void YakouMatch::Enqueue(int player, int instance, int definition, std::string c
                                    effect.at("Id").get<int>(), trigger, relatedCard,
                                    paidCostCards});
     }
+}
+
+void YakouMatch::DeferPendingCostTriggers()
+{
+    for (auto& effect : pendingEffects_)
+        deferredCostEffects_.push_back(std::move(effect));
+    pendingEffects_.clear();
+}
+
+void YakouMatch::ReleaseDeferredCostTriggers()
+{
+    for (auto& effect : deferredCostEffects_)
+        pendingEffects_.push_back(std::move(effect));
+    deferredCostEffects_.clear();
 }
 
 YakouEffectChoice YakouMatch::PendingEffectChoices(int player) const
@@ -1395,6 +1421,7 @@ void YakouMatch::ActivateMainSpell(int player, int handInstance, std::vector<int
 {
     YakouMatch next = *this;
     next.ActivateMainSpellImpl(player, handInstance, costs);
+    next.ReleaseDeferredCostTriggers();
     *this = std::move(next);
 }
 
@@ -1470,7 +1497,7 @@ void YakouMatch::ActivateMainSpellImpl(int player, int handInstance, std::vector
             Enqueue(player, paid, OriginalId(paid), "OnBanishedForNecromancyCost");
         }
     }
-    Check(pendingEffects_.empty(), "Unimplemented discarded-cost triggers");
+    DeferPendingCostTriggers();
 
     // Move the authored spell into its public graveyard, then queue precisely
     // its OnResolve operation. The outer candidate copy commits only if
@@ -1600,7 +1627,7 @@ void YakouMatch::RespondWithNegationImpl(int player, int handInstance,
             Enqueue(player, cardId, OriginalId(cardId), "OnDiscarded");
         }
     }
-    Check(pendingEffects_.empty(), "Unimplemented deferred counterspell cost triggers");
+    DeferPendingCostTriggers();
     Remove(owner.Hand, handInstance);
     owner.Graveyard.push_back(handInstance);
     response_.Respond(player, YakouChainLink{player, handInstance, effectId,
@@ -1683,6 +1710,7 @@ void YakouMatch::PassSpellResponseImpl(int player)
         }
     }
     phase_ = YakouPhase::Main;
+    ReleaseDeferredCostTriggers();
     journal_.push_back("SpellResponseClosed");
 }
 
@@ -2304,7 +2332,7 @@ void YakouMatch::RespondWithRaidTacticImpl(int player, int spell, int raider,
             Enqueue(player, instance, OriginalId(instance), "OnDiscarded");
         }
     }
-    Check(pendingEffects_.empty(), "Unimplemented deferred cost triggers");
+    DeferPendingCostTriggers();
     Remove(owner.Hand, spell);
     owner.Graveyard.push_back(spell);
     response_.Respond(player, YakouChainLink{player, spell, effectId, "OnResolve",
@@ -2390,7 +2418,7 @@ void YakouMatch::RespondWithEffectProtectionImpl(int player, int spell,
     owner.Exile.push_back(graveyardCost);
     Enqueue(player, graveyardCost, OriginalId(graveyardCost),
             "OnBanishedForNecromancyCost");
-    Check(pendingEffects_.empty(), "Unimplemented 3017 cost trigger");
+    DeferPendingCostTriggers();
     Remove(owner.Hand, spell);
     owner.Graveyard.push_back(spell);
     response_.Respond(player, YakouChainLink{player, spell,
@@ -2431,7 +2459,7 @@ void YakouMatch::RespondWithPiercingImpl(int player, int raider, int graveyardCo
     owner.Exile.push_back(graveyardCost);
     Enqueue(player, graveyardCost, OriginalId(graveyardCost),
             "OnBanishedForNecromancyCost");
-    Check(pendingEffects_.empty(), "Unimplemented piercing cost trigger");
+    DeferPendingCostTriggers();
     response_.Respond(player, YakouChainLink{player, raider,
         effect.at("Id").get<int>(), "OnRaid", {}});
     journal_.push_back("PiercingActivated:" + std::to_string(raider));
@@ -2567,6 +2595,7 @@ void YakouMatch::PassRaidResponseImpl(int player)
             }
             else Check(false, "Unsupported raid response card");
         }
+        ReleaseDeferredCostTriggers();
         journal_.push_back("RaidResponseClosed");
     }
 }
@@ -2581,7 +2610,7 @@ void YakouMatch::ResolveRaid(int defendingPlayer)
 void YakouMatch::ResolveRaidImpl(int defendingPlayer)
 {
     Check(phase_ == YakouPhase::RaidResponse && !response_.IsOpen() &&
-              defendingPlayer != ActivePlayer() &&
+              pendingEffects_.empty() && defendingPlayer != ActivePlayer() &&
               (defendingPlayer == 1 || defendingPlayer == 2),
           "Cannot resolve raid");
     auto& attacker = players_[active_];

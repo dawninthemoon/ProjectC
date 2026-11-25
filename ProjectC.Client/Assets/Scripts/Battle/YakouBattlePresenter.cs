@@ -758,7 +758,8 @@ namespace ProjectC.Client
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.pass_raid_response"), () => Send("PassRaidResponse", new JObject())));
             }
-            if (phase == "RaidResponse" && priority == 0 && active != _session.Seat)
+            if (phase == "RaidResponse" && priority == 0 &&
+                (int?)_state["PendingEffectCount"] == 0 && active != _session.Seat)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.resolve_raid"), () => Send("ResolveRaid", new JObject())));
             }

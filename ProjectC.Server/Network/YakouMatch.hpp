@@ -214,6 +214,8 @@ private:
     void TurnOver();
     void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
                  int relatedCard = 0, std::vector<int> paidCostCards = {});
+    void DeferPendingCostTriggers();
+    void ReleaseDeferredCostTriggers();
     int OriginalId(int instanceId) const;
     bool HasArchetype(int definitionId, std::string const& archetype) const;
 
@@ -240,6 +242,8 @@ private:
     std::map<int, int> chainEffectDamageReduction_;
     std::set<int> chainEffectDamagePrevention_;
     std::vector<YakouPendingEffect> pendingEffects_;
+    // Cost-trigger effects resolve only after the active spell/raid chain closes.
+    std::vector<YakouPendingEffect> deferredCostEffects_;
     // Turn, controller, authored card name key and authored effect identity.
     std::map<std::tuple<int, int, std::string, int>, int> effectUses_;
     std::vector<std::string> journal_;
