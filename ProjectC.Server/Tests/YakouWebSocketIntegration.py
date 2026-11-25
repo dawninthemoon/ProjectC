@@ -5,7 +5,8 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
-import threading
+import tempfile
+import time
 
 from WebSocketIntegration import Peer
 
@@ -264,39 +265,34 @@ if __name__ == "__main__":
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
-    proc = subprocess.Popen(
-        [sys.argv[1], "--port", str(port), "--yakou-prototype", "on",
-         "--max-matches", "2"],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    tokens = []
-    output = []
-    reader = None
-    try:
-        line = proc.stdout.readline()
-        assert "listening" in line, line
-        output.append(line)
-        # Keep draining server diagnostics during all six matches. Leaving the
-        # pipe unread can block the server during shutdown when it fills.
-        def collect_output():
-            for server_line in proc.stdout:
-                output.append(server_line)
-
-        reader = threading.Thread(target=collect_output, daemon=True)
-        reader.start()
-        tokens = run(port)
-        run_deck_selection(port)
-    finally:
-        proc.terminate()
+    with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as log:
+        proc = subprocess.Popen(
+            [sys.argv[1], "--port", str(port), "--yakou-prototype", "on",
+             "--max-matches", "2"],
+            stdout=log, stderr=subprocess.STDOUT, text=True)
+        tokens = []
         try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-            raise AssertionError("Yakou server shutdown hung")
-        if reader is not None:
-            reader.join(timeout=5)
-            assert not reader.is_alive(), "Yakou server output pipe did not close"
-        logs = "".join(output)
-        assert all(token not in logs for token in tokens), "Secret token in logs"
-    if os.name != "nt":
-        assert proc.returncode == 0, (proc.returncode, logs)
+            deadline = time.monotonic() + 10
+            line = ""
+            while time.monotonic() < deadline:
+                log.seek(0)
+                line = log.readline()
+                if "listening" in line or proc.poll() is not None:
+                    break
+                time.sleep(.05)
+            assert "listening" in line, line
+            tokens = run(port)
+            run_deck_selection(port)
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+                raise AssertionError("Yakou server shutdown hung")
+            log.seek(0)
+            logs = log.read()
+            assert all(token not in logs for token in tokens), "Secret token in logs"
+        if os.name != "nt":
+            assert proc.returncode == 0, (proc.returncode, logs)
