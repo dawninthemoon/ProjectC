@@ -34,7 +34,7 @@ namespace ProjectC.Client
         private int _selected, _attacker;
         private string _responseType, _responseSelection;
         private JObject _responseOption;
-        private int _responseCard, _responseTarget, _responseReplacement;
+        private int _responseCard, _responseTarget, _responseReplacement, _responseSecondary;
         private int _pendingTarget;
         private readonly HashSet<int> _pendingTargets = new HashSet<int>();
         private readonly HashSet<int> _responseCosts = new HashSet<int>();
@@ -257,6 +257,8 @@ namespace ProjectC.Client
                     zone.Render(null, 0, false, 0, false, null, null, null);
                 }
                 _detail.Show(null);
+                _ownPlayer.RenderResources(null);
+                _enemyPlayer.RenderResources(null);
                 _statusLine = null;
                 ShowFeedback(!string.IsNullOrEmpty(_session.Error)
                     ? YakouUiText.Error(_session.Error) : YakouUiText.Get("ui.yakou.status.wait_snapshot"));
@@ -287,6 +289,8 @@ namespace ProjectC.Client
             PresentFieldChanges();
             _ownPlayer.Render(new PlayerView { Life = (int)own["Life"] }, true, false);
             _enemyPlayer.Render(new PlayerView { Life = (int)enemy["Life"] }, false, false);
+            _ownPlayer.RenderResources(own["Resources"] as JObject);
+            _enemyPlayer.RenderResources(enemy["Resources"] as JObject);
             _ownDeckCount.text = (string)own["DeckCount"];
             _enemyDeckCount.text = (string)enemy["DeckCount"];
             _ownGraveCount.text = ((JArray)own["Graveyard"]).Count.ToString();
@@ -301,6 +305,10 @@ namespace ProjectC.Client
                 YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat),
                 YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat),
                 (int)own["Ki"], (int)enemy["Ki"]);
+            if (own["Resources"] is JObject)
+                _statusLine = _screen.PhaseLabel.text + " · " +
+                    YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
+                    YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
             var stack = _state["ResponseStack"] as JArray;
             _screen.EndTurn.interactable = _session.Bound && !_session.Busy;
             _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.menu");
@@ -519,7 +527,8 @@ namespace ProjectC.Client
             if (_responseType != null && _responseSelection != null)
             {
                 string candidateField = _responseSelection == "cost" ? "CostCandidates"
-                    : _responseSelection == "replacement" ? "ReplacementCandidates" : "TargetCandidates";
+                    : _responseSelection == "replacement" ? "ReplacementCandidates"
+                    : _responseSelection == "secondary" ? "SecondaryTargetCandidates" : "TargetCandidates";
                 if (_responseOption != null && !((_responseOption[candidateField] as JArray) ?? new JArray()).Values<int>().Contains(id))
                 {
                     return;
@@ -551,6 +560,10 @@ namespace ProjectC.Client
                 else if (_responseSelection == "replacement")
                 {
                     _responseReplacement = id;
+                }
+                else if (_responseSelection == "secondary")
+                {
+                    _responseSecondary = id;
                 }
                 ShowFeedback(YakouUiText.Get("ui.yakou.feedback.response_ready"));
                 UpdateHints();
@@ -595,7 +608,8 @@ namespace ProjectC.Client
                 {
                     var choice = (JObject)entry;
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.summon",
-                        YakouUiText.Method((string)choice["Method"])), () =>
+                        YakouUiText.Method((string)choice["Method"])) +
+                        CostSuffix(choice["ResourceCosts"] as JObject), () =>
                     {
                         _summonChoice = choice;
                         _materials.Clear();
@@ -606,9 +620,25 @@ namespace ProjectC.Client
             }
             if (ownMain && card.CardType == 1 && (own["Hand"] as JArray).Any(item => (int)item["Id"] == id))
             {
+                var typed = (own["MainSpellOptions"] as JArray ?? new JArray())
+                    .FirstOrDefault(item => (int)item["CardId"] == id) as JObject;
+                var definition = CardPresentation.LibraryFor(card).Find(card.DefinitionId);
+                bool typedCard = definition?.Data?["SummonCostJson"]?["Activation"]?["Costs"] is JArray;
                 var paid = (own["PaidSpellOptions"] as JArray ?? new JArray())
                     .FirstOrDefault(item => (int)item["CardId"] == id) as JObject;
-                if (paid != null)
+                if (typed != null)
+                {
+                    options.Add(Option(YakouUiText.Get("ui.yakou.action.cast_spell") +
+                        CostSuffix(typed["ResourceCosts"] as JObject), () =>
+                    {
+                        var offered = (JObject)typed.DeepClone();
+                        offered["Type"] = "BeginSpellResponse";
+                        offered["TargetCandidates"] = offered["TargetCandidates"] ?? new JArray();
+                        offered["ReplacementCandidates"] = new JArray();
+                        BeginOfferedResponse(offered);
+                    }));
+                }
+                else if (!typedCard && paid != null)
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.paid_spell_cost"), () =>
                     {
@@ -623,7 +653,7 @@ namespace ProjectC.Client
                         SelectResponsePart("cost");
                     }));
                 }
-                else if (card.DefinitionId != PaidMapSpellDefinitionId)
+                else if (!typedCard && card.DefinitionId != PaidMapSpellDefinitionId)
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.cast_spell"), () => Send("BeginSpellResponse", new JObject { ["CardId"] = id, ["TargetId"] = 0 })));
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.cast_spell_target"), () => BeginResponse("BeginSpellResponse", id)));
@@ -643,7 +673,8 @@ namespace ProjectC.Client
                             : type == "RespondWithPiercing" || type == "RespondWithEffectProtection"
                                 ? "ui.yakou.action.play_response"
                             : "ui.yakou.action.response_negate");
-                        options.Add(Option(label, () => BeginOfferedResponse(offered)));
+                        options.Add(Option(label + CostSuffix(offered["ResourceCosts"] as JObject),
+                            () => BeginOfferedResponse(offered)));
                     }
                 }
             }
@@ -657,7 +688,8 @@ namespace ProjectC.Client
                         CardPresentation.LibraryFor(card).Find(form)?.Name),
                         () => Send("Manifest", new JObject { ["CardId"] = id, ["DefinitionId"] = selectedForm })));
                 }
-                options.Add(Option(YakouUiText.Get("ui.yakou.action.postpone"), () => Send("Postpone", new JObject { ["CardId"] = id })));
+                if ((int?)own["Ki"] > 0)
+                    options.Add(Option(YakouUiText.Get("ui.yakou.action.postpone"), () => Send("Postpone", new JObject { ["CardId"] = id })));
             }
             _actions.ShowChoices(position, options);
         }
@@ -671,7 +703,8 @@ namespace ProjectC.Client
         private void ShowSummonProgress(Vector3 position)
         {
             int required = (int)_summonChoice["RequiredCount"];
-            ShowFeedback(YakouUiText.Get("ui.yakou.feedback.summon_cost", _materials.Count, required));
+            ShowFeedback(YakouUiText.Get("ui.yakou.feedback.summon_cost", _materials.Count, required) +
+                CostSuffix(_summonChoice["ResourceCosts"] as JObject));
             var options = new List<KeyValuePair<string, Action>>();
             if (_materials.Count == required)
             {
@@ -703,11 +736,13 @@ namespace ProjectC.Client
             var options = new List<KeyValuePair<string, Action>>();
             if (_responseType != null)
             {
-                if (_responseType == "BeginSpellResponse" ||
-                    (_responseOption != null && ((JArray)_responseOption["TargetCandidates"]).Count > 0))
+                if ((_responseType == "BeginSpellResponse" && _responseOption == null) ||
+                    (_responseOption != null && (_responseOption["TargetCandidates"] as JArray ?? new JArray()).Count > 0))
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.response_target"), () => SelectResponsePart("target")));
                 }
+                if ((_responseOption?["SecondaryTargetCandidates"] as JArray ?? new JArray()).Count > 0)
+                    options.Add(Option(YakouUiText.Get("ui.alpha02.secondary_target"), () => SelectResponsePart("secondary")));
                 if (_responseOption != null && ((JArray)_responseOption["ReplacementCandidates"]).Count > 0)
                 {
                     options.Add(Option(YakouUiText.Get("ui.yakou.action.replacement_blocker"), () => SelectResponsePart("replacement")));
@@ -734,14 +769,17 @@ namespace ProjectC.Client
             string phase = (string)_state["Phase"];
             int active = (int)_state["ActivePlayerId"];
             int priority = (int)_state["PriorityPlayerId"];
-            if (phase == "TurnStart" && active == _session.Seat)
+            bool alphaPending = _state["CatalogVersion"] != null && (int?)_state["PendingEffectCount"] > 0;
+            if (phase == "TurnStart" && active == _session.Seat && !alphaPending)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.start_turn"), () => Send("StartTurn", new JObject())));
             }
-            if (phase == "Main" && active == _session.Seat)
+            if (phase == "Main" && active == _session.Seat && !alphaPending)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.begin_raid"), () => Send("BeginRaid", new JObject())));
-                options.Add(Option(YakouUiText.Get("ui.yakou.action.redraw"), () =>
+                var own = ((JArray)_state["Players"]).First(p => (int)p["PlayerId"] == _session.Seat);
+                if ((int?)own["Ki"] > 0)
+                    options.Add(Option(YakouUiText.Get("ui.yakou.action.redraw"), () =>
                 {
                     BeginResponse("Redraw", 0);
                     SelectResponsePart("cost");
@@ -759,7 +797,7 @@ namespace ProjectC.Client
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.pass_raid_response"), () => Send("PassRaidResponse", new JObject())));
             }
             if (phase == "RaidResponse" && priority == 0 &&
-                (int?)_state["PendingDeferredCostCount"] == 0 && active != _session.Seat)
+                (int?)_state["PendingDeferredCostCount"] == 0 && active != _session.Seat && !alphaPending)
             {
                 options.Add(Option(YakouUiText.Get("ui.yakou.action.resolve_raid"), () => Send("ResolveRaid", new JObject())));
             }
@@ -826,6 +864,12 @@ namespace ProjectC.Client
         private static KeyValuePair<string, Action> Option(string name, Action action) =>
             new KeyValuePair<string, Action>(name, action);
 
+        private static string CostSuffix(JObject costs)
+        {
+            string text = YakouUiText.ResourceCosts(costs);
+            return string.IsNullOrEmpty(text) ? "" : " · " + text;
+        }
+
         private void BeginResponse(string type, int card)
         {
             _responseType = type;
@@ -833,6 +877,7 @@ namespace ProjectC.Client
             _responseCard = card;
             _responseTarget = 0;
             _responseReplacement = 0;
+            _responseSecondary = 0;
             _responseSelection = "target";
             _responseCosts.Clear();
             _actions.gameObject.SetActive(false);
@@ -844,6 +889,8 @@ namespace ProjectC.Client
             BeginResponse((string)offered["Type"], (int)offered["CardId"]);
             _responseOption = (JObject)offered.DeepClone();
             _responseSelection = ((JArray)offered["TargetCandidates"]).Count > 0 ? "target" : "cost";
+            ShowFeedback(YakouUiText.Get("ui.yakou.feedback.begin_response") +
+                CostSuffix(offered["ResourceCosts"] as JObject));
             UpdateHints();
         }
 
@@ -866,7 +913,8 @@ namespace ProjectC.Client
             else if (_responseOption != null && _responseSelection != null)
             {
                 string field = _responseSelection == "cost" ? "CostCandidates"
-                    : _responseSelection == "replacement" ? "ReplacementCandidates" : "TargetCandidates";
+                    : _responseSelection == "replacement" ? "ReplacementCandidates"
+                    : _responseSelection == "secondary" ? "SecondaryTargetCandidates" : "TargetCandidates";
                 candidates = _responseOption[field] as JArray;
             }
             var valid = new HashSet<int>((candidates ?? new JArray()).Values<int>());
@@ -879,7 +927,7 @@ namespace ProjectC.Client
                     int id = widget.Card?.Id ?? 0;
                     bool chosen = id == _pendingTarget || _pendingTargets.Contains(id) ||
                         _materials.Contains(id) || _responseCosts.Contains(id)
-                        || (_responseOption != null && (id == _responseTarget || id == _responseReplacement));
+                        || (_responseOption != null && (id == _responseTarget || id == _responseReplacement || id == _responseSecondary));
                     widget.SetSelected(chosen);
                     widget.SetHint(candidates == null ? (responseCards.Contains(id) ? TargetHint.Available : TargetHint.None)
                         : chosen ? TargetHint.Focused : valid.Contains(id) ? TargetHint.Available : TargetHint.Unavailable);
@@ -896,6 +944,16 @@ namespace ProjectC.Client
 
         private void SubmitResponse()
         {
+            if (_responseOption?["ResourceCosts"] is JObject)
+            {
+                bool targetsReady = (_responseOption["TargetCandidates"] as JArray ?? new JArray()).Count == 0 || _responseTarget != 0;
+                bool secondaryReady = (_responseOption["SecondaryTargetCandidates"] as JArray ?? new JArray()).Count == 0 || _responseSecondary != 0;
+                if (!targetsReady || !secondaryReady || _responseCosts.Count != ((int?)_responseOption["CostCount"] ?? 0))
+                {
+                    ShowFeedback(YakouUiText.Get("ui_battle_select_target"));
+                    return;
+                }
+            }
             var fields = new JObject();
             if (_responseType != "Redraw")
             {
@@ -904,6 +962,7 @@ namespace ProjectC.Client
             if (_responseType == "BeginSpellResponse")
             {
                 fields["TargetId"] = _responseTarget;
+                if (_responseSecondary != 0) fields["SecondaryTargetId"] = _responseSecondary;
             }
             if (_responseType == "Redraw")
             {

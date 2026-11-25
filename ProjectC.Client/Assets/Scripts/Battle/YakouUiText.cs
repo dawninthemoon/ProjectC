@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace ProjectC.Client
 {
@@ -75,8 +77,23 @@ namespace ProjectC.Client
                 ? key : "ui.yakou.error.generic");
         }
 
+        public static string ResourceName(string resource)
+        {
+            string key = "resource_" + (resource ?? "").ToLowerInvariant();
+            var localization = CardPresentation.YakouLibrary.Localization;
+            return localization.ContainsKey(key) ? localization.GetText(key) : resource;
+        }
+
+        public static string ResourceBalances(JObject resources) => resources == null ? "" :
+            string.Join("\n", resources.Properties().Select(p => ResourceName(p.Name) + " " +
+                (int)p.Value["Current"] + "/" + (int)p.Value["Max"]));
+
+        public static string ResourceCosts(JObject costs) => costs == null ? "" :
+            string.Join(" · ", costs.Properties().Select(p => ResourceName(p.Name) + " " + (int)p.Value));
+
         public static string Method(string method)
         {
+            if (method == "Resource") return Get("ui.alpha02.resource_summon");
             return Get(Methods.TryGetValue(method ?? string.Empty, out string key)
                 ? key : "ui.yakou.error.generic");
         }

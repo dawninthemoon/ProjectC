@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <map>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <unordered_set>
@@ -51,16 +52,39 @@ void ValidateCosts(Json const& card, std::string const& detail)
         Require(method.is_string(), detail + ": method must be string");
         std::string const name = method.get<std::string>();
         Require(name == "Normal" || name == "Devour" || name == "Necromancy" ||
-                    name == "Discard", detail + ": unknown summon method " + name);
+                    name == "Discard" || name == "Resource", detail + ": unknown summon method " + name);
         Require(costs.contains(name), detail + ": missing cost for " + name);
     }
     for (auto it = costs.begin(); it != costs.end(); ++it)
     {
         auto const& key = it.key();
         Require(key == "Normal" || key == "Devour" || key == "Necromancy" ||
-                    key == "Discard" || key == "Activation" || key == "Manifestation",
+                    key == "Discard" || key == "Activation" || key == "Manifestation" || key == "Resource",
                 detail + ": unknown cost kind " + key);
         Require(it.value().is_object(), detail + ": cost must be object: " + key);
+        if (it.value().contains("Costs"))
+        {
+            // A cost block cannot mix the old and new cost encodings.
+            Require(it.value().size() == 1 ||
+                        (key == "Manifestation" && it.value().size() == 2 && it.value().contains("Condition")),
+                    detail + ": ambiguous typed cost block");
+            auto const parsed = YakouParseTypedCost(it.value().at("Costs"));
+            if (key == "Normal")
+                Require(parsed.OrdinaryCount == 0 && parsed.Resources.empty(),
+                        detail + ": Normal summon must be free");
+            else if (key == "Resource")
+                Require(!parsed.Resources.empty() && parsed.OrdinaryType != "Devour",
+                        detail + ": Resource summon needs a special resource");
+            else if (key == "Activation")
+                Require(parsed.OrdinaryType != "Devour", detail + ": spell cannot devour");
+            else if (key == "Manifestation")
+                Require(parsed.OrdinaryType.empty(), detail + ": manifestation card-selection payment not wired");
+            else
+                Require(parsed.OrdinaryType == key && parsed.OrdinaryCount > 0,
+                        detail + ": summon method and ordinary cost disagree");
+            continue;
+        }
+        Require(key != "Resource", detail + ": resource summon needs typed Costs");
         if (key == "Devour" || key == "Necromancy" || key == "Discard")
         {
             Require(it.value().contains("Count") &&
@@ -85,6 +109,132 @@ void ValidateCosts(Json const& card, std::string const& detail)
 
 } // namespace
 
+
+YakouTypedCost YakouParseTypedCost(Json const& costs)
+{
+    Require(costs.is_array(), "Costs must be an array");
+    YakouTypedCost result;
+    for (auto const& cost : costs)
+    {
+        Require(cost.is_object() && cost.contains("Type") && cost.at("Type").is_string(),
+                "Cost type is missing");
+        auto const type = cost.at("Type").get<std::string>();
+        if (type == "Resource")
+        {
+            Require(cost.size() == 3 && cost.contains("ResourceId") &&
+                        cost.at("ResourceId").is_string() && cost.contains("Amount"),
+                    "Malformed special resource cost");
+            auto const resource = cost.at("ResourceId").get<std::string>();
+            int const amount = PositiveId(cost.at("Amount"), "resource amount");
+            Require(!resource.empty() && resource.size() <= 64 && amount <= 100000,
+                    "Invalid special resource cost");
+            auto& total = result.Resources[resource];
+            Require(total <= 100000 - amount, "Resource amount overflow");
+            total += amount;
+        }
+        else
+        {
+            Require((type == "Devour" || type == "Necromancy" || type == "Discard") &&
+                        cost.size() == 2 && cost.contains("Count") &&
+                        result.OrdinaryType.empty(), "Unsupported or ambiguous ordinary cost");
+            int const count = PositiveId(cost.at("Count"), "ordinary cost count");
+            Require(count <= 30, "Ordinary cost exceeds deck size");
+            result.OrdinaryType = type;
+            result.OrdinaryCount = static_cast<std::size_t>(count);
+        }
+    }
+    return result;
+}
+
+YakouResourceDefinitions YakouReadResourceDefinitions(Json const& config)
+{
+    YakouResourceDefinitions result;
+    if (!config.contains("resource.definitions"))
+        return result; // Preserve the original Alpha 01 Ki contract.
+    auto const& definitions = config.at("resource.definitions");
+    Require(definitions.is_object(), "resource.definitions must be an object");
+    Require(config.contains("deck.maxSpecialResourceTypes") &&
+                config.at("deck.maxSpecialResourceTypes") == 2,
+            "Alpha02 deck resource limit must be two");
+    for (auto it = definitions.begin(); it != definitions.end(); ++it)
+    {
+        auto const& d = it.value();
+        Require(!it.key().empty() && it.key().size() <= 64 && d.is_object() &&
+                    d.contains("InitialValue") && d.contains("MaxValue") &&
+                    d.contains("RegenPerOwnTurn") && d.at("InitialValue").is_number_integer() &&
+                    d.at("RegenPerOwnTurn").is_number_integer(), "Invalid resource definition");
+        int const maximum = PositiveId(d.at("MaxValue"), "resource maximum");
+        auto const initial = d.at("InitialValue").get<std::int64_t>();
+        auto const regen = d.at("RegenPerOwnTurn").get<std::int64_t>();
+        Require(maximum <= 100000 && initial >= 0 && initial <= maximum &&
+                    regen >= 0 && regen <= maximum, "Invalid resource bounds");
+        result.emplace(it.key(), YakouResourceDefinition{
+            static_cast<int>(initial), maximum, static_cast<int>(regen)});
+    }
+    return result;
+}
+
+namespace
+{
+void AddResourceTypes(Json const& object, std::set<std::string>& types)
+{
+    if (object.is_object())
+    {
+        if (object.contains("Costs"))
+        {
+            auto const parsed = YakouParseTypedCost(object.at("Costs"));
+            for (auto const& [resource, amount] : parsed.Resources)
+                types.insert(resource);
+        }
+        // Compatibility with the original authored manifestation cost.
+        if (object.contains("Ki"))
+        {
+            PositiveId(object.at("Ki"), "legacy Ki cost");
+            types.insert("Ki");
+        }
+        for (auto const& [key, value] : object.items())
+            if (key != "Costs") AddResourceTypes(value, types);
+    }
+    else if (object.is_array())
+        for (auto const& value : object) AddResourceTypes(value, types);
+}
+
+void AddCardResourceTypes(Json const& card, std::set<std::string>& types)
+{
+    AddResourceTypes(card.at("SummonCostJson"), types);
+    for (auto const& effect : card.at("Effects"))
+        for (auto const& action : effect.at("Actions"))
+            if (action.contains("OptionalCost"))
+                AddResourceTypes(action.at("OptionalCost"), types);
+}
+} // namespace
+
+std::set<std::string> YakouDeckResourceTypes(Json const& cards, Json const& config,
+                                              std::vector<int> const& deck)
+{
+    auto const definitions = YakouReadResourceDefinitions(config);
+    if (!config.contains("resource.definitions")) return {"Ki"};
+    std::set<std::string> types;
+    std::set<int> visited;
+    std::vector<int> pending = deck;
+    while (!pending.empty())
+    {
+        int const id = pending.back();
+        pending.pop_back();
+        if (!visited.insert(id).second) continue;
+        auto const it = std::find_if(cards.at("Cards").begin(), cards.at("Cards").end(),
+                                     [id](Json const& c) { return c.at("Id") == id; });
+        Require(it != cards.at("Cards").end(), "Unknown resource-bearing card");
+        AddCardResourceTypes(*it, types);
+        for (auto const& target : it->at("AllowedManifestations"))
+            pending.push_back(PositiveId(target, "manifestation resource link"));
+    }
+    for (auto const& type : types)
+        Require(definitions.contains(type), "Unknown special resource " + type);
+    Require(types.size() <= 2, "Deck exceeds two special resource types");
+    return types;
+}
+
 YakouCostRequirement YakouRequiredCost(Json const& card, std::string const& method)
 {
     Require(card.is_object() && card.contains("SummonMethods") &&
@@ -98,8 +248,16 @@ YakouCostRequirement YakouRequiredCost(Json const& card, std::string const& meth
     }
     Require(allowed && card["SummonCostJson"].contains(method),
             "summon method not declared on card: " + method);
-    if (method == "Normal") return YakouCostRequirement{"", 0};
     auto const& cost = card["SummonCostJson"][method];
+    if (cost.contains("Costs"))
+    {
+        auto const parsed = YakouParseTypedCost(cost.at("Costs"));
+        auto const zone = parsed.OrdinaryType == "Devour" ? "FriendlyField" :
+                          parsed.OrdinaryType == "Necromancy" ? "FriendlyGraveyard" :
+                          parsed.OrdinaryType == "Discard" ? "FriendlyHand" : "";
+        return {zone, parsed.OrdinaryCount, parsed.Resources};
+    }
+    if (method == "Normal") return YakouCostRequirement{"", 0};
     Require(cost.is_object() && cost.contains("Count") &&
                 cost["Count"].is_number_integer() && cost["Count"].get<int>() > 0 &&
                 cost["Count"].get<int>() <= 30, "invalid authored cost count");
@@ -141,6 +299,15 @@ YakouPrototype YakouPrototype::Load(std::filesystem::path const& directory)
                     ReadFile(directory / "GameConfig.json"));
 }
 
+YakouPrototype YakouPrototype::LoadAuthoringSnapshot(std::filesystem::path const& path,
+                                                       bool experimentalRuntime)
+{
+    auto const snapshot = ReadFile(path);
+    auto config = snapshot.at("GameConfig");
+    config["alpha02.experimentalRuntime"] = experimentalRuntime;
+    return Validate(snapshot.at("Cards"),snapshot.at("Decks"),snapshot.at("Localize"),config);
+}
+
 YakouPrototype YakouPrototype::Validate(Json const& cards,
                                         Json const& decks,
                                         Json const& localize,
@@ -177,6 +344,7 @@ YakouPrototype YakouPrototype::Validate(Json const& cards,
                 config["summon.devourMaterialCount"] == 1,
             "prototype summon defaults");
 
+    auto const resourceDefinitions = YakouReadResourceDefinitions(config);
     std::set<std::string> localizationKeys;
     for (auto const& row : localize)
     {
@@ -230,6 +398,13 @@ YakouPrototype YakouPrototype::Validate(Json const& cards,
             eligible.insert(id);
         }
         ValidateCosts(card, at);
+        if (config.contains("resource.definitions"))
+        {
+            std::set<std::string> types;
+            AddCardResourceTypes(card, types);
+            for (auto const& resource : types)
+                Require(resourceDefinitions.contains(resource), at + ": unknown resource " + resource);
+        }
         for (auto const& linked : card["AllowedManifestations"])
         {
             manifestationLinks.emplace_back(id, PositiveId(linked, at + ": manifestation"));
@@ -272,6 +447,7 @@ YakouPrototype YakouPrototype::Validate(Json const& cards,
                     deckIds.insert(deck["Id"].get<std::string>()).second &&
                     deck.contains("Cards") && deck["Cards"].is_array() &&
                     deck["Cards"].size() == 30, "invalid deck/size");
+        (void)YakouDeckResourceTypes(cards, config, deck["Cards"].get<std::vector<int>>());
         std::map<int, int> copies;
         for (auto const& card : deck["Cards"])
         {

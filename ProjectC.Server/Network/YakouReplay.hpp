@@ -51,6 +51,7 @@ struct YakouReplayCommand
     std::vector<int> Cards;
     std::vector<std::pair<int, int>> Blockers;
     int MaxEffects = 64; // Budget for ResolveAutomaticTriggers only.
+    int SecondaryTargetId = 0; // Additional authored activation target, if required.
 };
 
 struct YakouReplayStep
@@ -74,5 +75,6 @@ struct YakouReplayResult
     YakouPrototype const& catalog,
     int firstPlayer,
     std::array<std::vector<int>, 2> const& initialDecks,
-    std::vector<YakouReplayCommand> const& commands);
+    std::vector<YakouReplayCommand> const& commands,
+    std::uint64_t randomSeed = 0);
 } // namespace ProjectC::Network

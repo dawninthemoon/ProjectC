@@ -74,6 +74,234 @@ int main()
     {
         auto proto = YakouPrototype::Load(
             std::filesystem::path(DefaultDataDirectory()) / "YakouPrototype");
+
+        {
+            auto alpha = proto;
+            alpha.Config["deck.maxSpecialResourceTypes"] = 2;
+            alpha.Config["alpha02.experimentalRuntime"] = true;
+            alpha.Config["resource.definitions"] = {
+                {"Ki", {{"InitialValue", 3}, {"MaxValue", 3}, {"RegenPerOwnTurn", 0}}},
+                {"Spirit", {{"InitialValue", 0}, {"MaxValue", 8}, {"RegenPerOwnTurn", 0}}},
+                {"Blood", {{"InitialValue", 0}, {"MaxValue", 6}, {"RegenPerOwnTurn", 0}}}};
+            for (auto& card : alpha.Cards["Cards"])
+            {
+                if (card["Id"] == 2009)
+                {
+                    card["SummonCostJson"]["Activation"] = {{"Costs", Json::array()}};
+                    card["Effects"][0]["Actions"] = Json::array({
+                        {{"Operation", "ModifyResource"}, {"Target", "FriendlyPlayer"},
+                         {"ResourceId", "Spirit"}, {"Delta", 2}}});
+                }
+                if (card["Id"] == 2001)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource", {{"Costs", Json::array({
+                        {{"Type", "Resource"}, {"ResourceId", "Spirit"}, {"Amount", 2}}})}}}};
+                }
+            }
+            auto const deck = Deck(alpha, {2009, 2001});
+            auto const types = YakouDeckResourceTypes(alpha.Cards, alpha.Config, deck);
+            Check(types == std::set<std::string>{"Ki", "Spirit"},
+                  "Reachable manifestations must count toward the two-resource limit");
+            YakouMatch match(alpha, 1, {deck, deck});
+            Check(match.Player(1).Resources.size() == 2 &&
+                      match.Player(1).Resources.at("Spirit").Current == 0,
+                  "Only deck-selected resources are initialized");
+            match.StartTurn(1);
+            int const spell = match.Player(1).Hand[0];
+            int const unit = match.Player(1).Hand[1];
+            auto const before = match.ServerStateHash();
+            Reject([&] { match.Summon(1, unit, "Resource", {}, 0); });
+            Check(match.ServerStateHash() == before &&
+                      match.SummonChoices(1, unit).empty(),
+                  "Unavailable resource cannot be spent or offered");
+            match.BeginSpellResponse(1, spell);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Player(1).Resources.at("Spirit").Current == 2 &&
+                      match.Player(2).Resources.at("Spirit").Current == 0,
+                  "Resource gain belongs only to its controller");
+            auto const choices = match.SummonChoices(1, unit);
+            Check(choices.size() == 1 && choices[0].ResourceCosts.at("Spirit") == 2,
+                  "Server summon option must expose authored resource amount");
+            (void)match.SummonAndRunAutomaticTriggers(1, unit, "Resource", {}, 0);
+            Check(match.Player(1).Resources.at("Spirit").Current == 0 &&
+                      match.Player(1).NormalSummons == 0 && match.Player(1).Field[0] &&
+                      match.ViewerSnapshot(2).at("Players")[0].at("Resources").at("Spirit").at("Current") == 0,
+                  "Resource summon spends authored amount without normal-summon allowance");
+            // A resource-producing card alone does not activate a third special cost.
+            for (auto& card : alpha.Cards["Cards"])
+                if (card["Id"] == 2002)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource", {{"Costs", Json::array({
+                        {{"Type", "Resource"}, {"ResourceId", "Blood"}, {"Amount", 1}}})}}}};
+                }
+            bool rejected = false;
+            try { (void)YakouDeckResourceTypes(alpha.Cards, alpha.Config, deck); }
+            catch (std::runtime_error const&) { rejected = true; }
+            Check(rejected, "Third distinct special resource must reject deck");
+        }
+
+        {
+            auto alpha = proto;
+            alpha.Config["deck.maxSpecialResourceTypes"] = 2;
+            alpha.Config["alpha02.experimentalRuntime"] = true;
+            alpha.Config["resource.definitions"] = {
+                {"Ki", {{"InitialValue",3},{"MaxValue",3},{"RegenPerOwnTurn",0}}},
+                {"Blood", {{"InitialValue",0},{"MaxValue",6},{"RegenPerOwnTurn",0}}}};
+            for (auto& card : alpha.Cards["Cards"])
+            {
+                if (card["Id"] == 2001)
+                {
+                    card["Effects"] = Json::array({
+                        {{"Id",1},{"Type","Triggered"},{"Trigger","OnDamaged"},
+                         {"Condition",{{"PositiveDamage",true},{"Survived",true}}},
+                         {"PerTurnLimit",1},{"LimitScope","CardName"},
+                         {"Actions",Json::array({{{"Operation","ModifyResource"},{"Target","FriendlyPlayer"},
+                             {"ResourceId","Blood"},{"Delta",1}}})}}});
+                }
+                if (card["Id"] == 2009)
+                {
+                    card["SummonCostJson"]["Activation"] = {{"Costs",Json::array()}};
+                    card["Effects"][0]["Actions"] = Json::array({
+                        {{"Operation","DealDamage"},{"Target","FriendlyMonster"},{"Amount",1},{"DamageType","Effect"}},
+                        {{"Operation","ModifyCountdown"},{"Target","SameTarget"},{"Delta",-1},{"Minimum",0},
+                         {"Condition",{{"TargetSurvived",true}}}}});
+                }
+                if (card["Id"] == 2002)
+                {
+                    card["SummonMethods"] = Json::array({"Resource"});
+                    card["SummonCostJson"] = {{"Resource",{{"Costs",Json::array({
+                        {{"Type","Resource"},{"ResourceId","Blood"},{"Amount",1}}})}}}};
+                    card["Effects"] = Json::array();
+                }
+            }
+            auto deck = Deck(alpha,{2001,2009,2002});
+            YakouMatch match(alpha,1,{deck,deck});
+            match.StartTurn(1);
+            int const unit = match.Player(1).Hand[0], spell = match.Player(1).Hand[1];
+            int const consumer = match.Player(1).Hand[2];
+            (void)match.SummonAndRunAutomaticTriggers(1,unit,"Normal",{},0);
+            match.BeginSpellResponse(1,spell,unit);
+            match.PassSpellResponse(2);
+            match.PassSpellResponse(1);
+            Check(match.Player(1).Field[0]->Damage == 1 &&
+                  match.Player(1).Field[0]->Countdown == 1 &&
+                  match.Player(1).Resources.at("Blood").Current == 1,
+                  "Blood damage + countdown sequence must produce surviving damage resource");
+            (void)match.SummonAndRunAutomaticTriggers(1,consumer,"Resource",{},1);
+            Check(match.Player(1).Resources.at("Blood").Current == 0,
+                  "Blood resource is spendable after damage");
+        }
+
+        {
+            auto alpha = YakouPrototype::LoadAuthoringSnapshot(
+                std::filesystem::path(DefaultDataDirectory()) / "Alpha02" / "AuthoringSnapshot.json",true);
+            Check(alpha.Cards.at("Cards").size() == 91 && alpha.Decks.at("Decks").size() == 6,
+                  "Actual Alpha02 catalog must contain 91 definitions and six decks");
+            auto const onmyo = SampleDeck(alpha,4,{5101,5111,5105,5115,5112});
+            auto const blood = SampleDeck(alpha,5,{5201,5212,5211,5205,5204});
+            auto const guard = SampleDeck(alpha,3,{3009,3014});
+            Check(YakouDeckResourceTypes(alpha.Cards,alpha.Config,onmyo) == std::set<std::string>{"Spirit"} &&
+                  YakouDeckResourceTypes(alpha.Cards,alpha.Config,blood) == std::set<std::string>{"Blood"} &&
+                  YakouDeckResourceTypes(alpha.Cards,alpha.Config,guard).empty(),
+                  "Actual decks activate only required special resources");
+            auto cast = [](YakouMatch& m,int player,int instance,int target=0)
+            {
+                m.BeginSpellResponse(player,instance,target);
+                m.PassSpellResponse(3-player);
+                m.PassSpellResponse(player);
+            };
+            YakouMatch spirit(alpha,1,{onmyo,blood});
+            spirit.StartTurn(1);
+            auto const hand = spirit.Player(1).Hand;
+            (void)spirit.SummonAndRunAutomaticTriggers(1,hand[0],"Normal",{},0);
+            cast(spirit,1,hand[1]);
+            Check(spirit.Player(1).Resources.at("Spirit").Current == 2,
+                  "Actual apprentice + purification must yield two spirit");
+            (void)spirit.SummonAndRunAutomaticTriggers(1,hand[2],"Resource",{},1);
+            auto const choice = spirit.PendingEffectChoices(1);
+            Check(choice.Candidates == std::vector<int>{hand[0]},
+                  "Paper crane must choose another friendly monster");
+            (void)spirit.ResolveSelectedEffectAndRunAutomaticTriggers(1,hand[0]);
+            Check(spirit.Player(1).Resources.at("Spirit").Current == 0 &&
+                  spirit.Player(1).Field[0]->Countdown == 1,
+                  "Actual resource summon and countdown combo failed");
+            YakouMatch wound(alpha,1,{blood,onmyo});
+            wound.StartTurn(1);
+            auto const bloodHand = wound.Player(1).Hand;
+            (void)wound.SummonAndRunAutomaticTriggers(1,bloodHand[0],"Normal",{},0);
+            cast(wound,1,bloodHand[1],bloodHand[0]);
+            cast(wound,1,bloodHand[2]);
+            Check(wound.Player(1).Resources.at("Blood").Current == 3 &&
+                  wound.Player(1).Life == 18 && wound.Player(1).Field[0]->Damage == 1,
+                  "Actual wounded Ronin and blood contract must yield three blood");
+            (void)wound.SummonAndRunAutomaticTriggers(1,bloodHand[3],"Resource",{},1);
+            Check(wound.Player(1).Resources.at("Blood").Current == 1 &&
+                  wound.Player(1).Field[1]->Countdown == 1,
+                  "Actual wounded ally must accelerate blood pursuer");
+            auto mixed = onmyo;
+            mixed[3] = 5205;
+            mixed[4] = 2003;
+            bool rejected = false;
+            try { (void)YakouDeckResourceTypes(alpha.Cards,alpha.Config,mixed); }
+            catch (std::runtime_error const&) { rejected = true; }
+            Check(rejected,"Actual three-resource deck must be rejected");
+            for (bool protectedBySpell : {false,true})
+            {
+                auto defender = guard;
+                if (protectedBySpell) defender[2] = 3017;
+                YakouMatch m(alpha,1,{onmyo,defender});
+                m.StartTurn(1);
+                auto const opening = m.Player(1).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(1,opening[0],"Normal",{},0);
+                cast(m,1,opening[1]);
+                m.BeginRaid(1);
+                m.StartTurn(2);
+                auto const opposing = m.Player(2).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(2,opposing[0],"Normal",{},0);
+                cast(m,2,opposing[1],opposing[0]);
+                m.BeginRaid(2);
+                m.StartTurn(1);
+                m.BeginSpellResponse(1,opening[4],opposing[0]);
+                if (protectedBySpell)
+                {
+                    m.RespondWithEffectProtection(2,opposing[2],opposing[0],opposing[1]);
+                    m.PassSpellResponse(1);
+                    m.PassSpellResponse(2);
+                }
+                else
+                {
+                    m.PassSpellResponse(2);
+                    m.PassSpellResponse(1);
+                }
+                Check(m.Player(2).Field[0]->Damage == (protectedBySpell ? 0 : 1),
+                      "Existing 3009 and 3017 must mitigate actual Alpha02 effect damage");
+                Check(m.ViewerSnapshot(1).at("CatalogVersion") == "projectc-alpha02-v1",
+                      "Client must receive actual Alpha02 catalog identity");
+            }
+            auto searchDeck = SampleDeck(alpha,4,{5101,5111,5117});
+            auto runSearch = [&]() {
+                YakouMatch m(alpha,1,{searchDeck,blood});
+                m.StartTurn(1);
+                auto const opening = m.Player(1).Hand;
+                (void)m.SummonAndRunAutomaticTriggers(1,opening[0],"Normal",{},0);
+                cast(m,1,opening[1]);
+                cast(m,1,opening[2]);
+                auto const choice = m.PendingEffectChoices(1);
+                Check(choice.SourceZone == "FriendlyDeckSearch" &&
+                      !choice.Candidates.empty() &&
+                      !m.ViewerSnapshot(2).contains("PendingSelection"),
+                      "Deck search is private and uses definition choices");
+                int const chosen = choice.Candidates.front();
+                (void)m.ResolveSelectedEffectAndRunAutomaticTriggers(1,chosen);
+                Check(m.ViewerSnapshot(2).at("LastDeckSearchReveal").at("DefinitionId") == chosen,
+                      "Selected definition becomes public, not hidden deck order");
+                return m.ServerStateHash();
+            };
+            Check(runSearch() == runSearch(),"Deck search shuffle must replay deterministically");
+        }
         for (auto const& [deckIndex, defenderId, reduction] :
              std::vector<std::tuple<std::size_t, int, int>>{{0, 2006, 1}, {3, 4016, 2}})
         {

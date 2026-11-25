@@ -16,7 +16,8 @@ class YakouSession
 {
 public:
     YakouSession(YakouPrototype const& catalog, int firstPlayer,
-                 std::array<std::vector<int>, 2> const& deckDefinitions);
+                 std::array<std::vector<int>, 2> const& deckDefinitions,
+                 std::uint64_t randomSeed = 0);
 
     void Bind(int trustedSeat, std::string const& connectionKey);
     void Unbind(std::string const& connectionKey);
@@ -36,8 +37,11 @@ public:
         bool Accepted = false;
         std::uint64_t BeforeHash = 0;
         std::uint64_t AfterHash = 0;
+        Json Command; // server-private accepted and rejected command input
     };
     [[nodiscard]] std::vector<Attempt> const& Audit() const { return audit_; }
+    // Server-only deterministic audit verification. This is not a public replay endpoint.
+    [[nodiscard]] bool VerifyReplay() const;
 
 private:
     struct CachedRequest
@@ -52,6 +56,10 @@ private:
     };
     [[nodiscard]] int SeatFor(std::string const& connectionKey) const;
 
+    YakouPrototype const* catalog_;
+    int firstPlayer_;
+    std::array<std::vector<int>, 2> initialDecks_;
+    std::uint64_t randomSeed_;
     YakouCommandGateway gateway_;
     std::array<Seat, 2> seats_;
     std::uint64_t sequence_ = 0;

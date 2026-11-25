@@ -113,6 +113,22 @@ namespace ProjectC.Client
             return LoadYakou(cards.text, shared.text, localized.text);
         }
 
+        public static JObject LoadAlpha02Snapshot()
+        {
+            var asset = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CardData/Alpha02AuthoringSnapshot");
+            if (asset == null) throw new InvalidOperationException("Alpha02 catalog Resources are missing.");
+            return ParseObject(asset.text);
+        }
+
+        public static CardLibrary LoadAlpha02Resources()
+        {
+            var snapshot = LoadAlpha02Snapshot();
+            var shared = UnityEngine.Resources.Load<UnityEngine.TextAsset>("ProjectC_Data - Localize");
+            if (shared == null) throw new InvalidOperationException("Shared localization Resources are missing.");
+            return LoadYakou(snapshot["Cards"].ToString(Formatting.None), shared.text,
+                             snapshot["Localize"].ToString(Formatting.None));
+        }
+
         public static CardLibrary LoadYakou(string cards, string sharedLocalization, string cardLocalization)
         {
             var shared = LocalizationService.Load(sharedLocalization);

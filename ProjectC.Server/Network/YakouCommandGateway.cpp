@@ -68,10 +68,12 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "ActivateMainSpell")
     {
-        Fields(request, {"Type", "CardId", "Costs"});
+        Fields(request, {"Type", "CardId", "Costs", "TargetId", "SecondaryTargetId"});
         // Preserve the wire command, but never let it bypass opponent priority.
-        match.BeginSpellResponse(seat, Id(request, "CardId"), 0,
-                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
+        match.BeginSpellResponse(seat, Id(request, "CardId"),
+                                 request.contains("TargetId") ? Id(request, "TargetId") : 0,
+                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{},
+                                 request.contains("SecondaryTargetId") ? Id(request, "SecondaryTargetId") : 0);
     }
     else if (type == "ChooseEffect")
     {
@@ -159,10 +161,11 @@ void Apply(YakouMatch& match, int seat, Json const& request)
     }
     else if (type == "BeginSpellResponse")
     {
-        Fields(request, {"Type", "CardId", "TargetId", "Costs"});
+        Fields(request, {"Type", "CardId", "TargetId", "Costs", "SecondaryTargetId"});
         match.BeginSpellResponse(seat, Id(request, "CardId"),
                                  request.contains("TargetId") ? Id(request, "TargetId") : 0,
-                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{});
+                                 request.contains("Costs") ? Ids(request, "Costs") : std::vector<int>{},
+                                 request.contains("SecondaryTargetId") ? Id(request, "SecondaryTargetId") : 0);
     }
     else if (type == "RespondWithNegation")
     {
@@ -183,8 +186,9 @@ void Apply(YakouMatch& match, int seat, Json const& request)
 
 YakouCommandGateway::YakouCommandGateway(
     YakouPrototype const& catalog, int firstPlayer,
-    std::array<std::vector<int>, 2> const& deckDefinitions)
-    : match_(catalog, firstPlayer, deckDefinitions)
+    std::array<std::vector<int>, 2> const& deckDefinitions,
+    std::uint64_t randomSeed)
+    : match_(catalog, firstPlayer, deckDefinitions, randomSeed)
 {
 }
 

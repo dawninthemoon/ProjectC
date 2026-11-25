@@ -43,6 +43,9 @@ add_test(NAME YakouPrototypeTests COMMAND ProjectCYakouPrototypeTests)
 add_executable(ProjectCYakouMatchTests Tests/YakouMatchTests.cpp)
 target_link_libraries(ProjectCYakouMatchTests PRIVATE ProjectCNetwork)
 add_test(NAME YakouMatchTests COMMAND ProjectCYakouMatchTests)
+add_executable(ProjectCAlpha02CardTests Tests/Alpha02CardTests.cpp)
+target_link_libraries(ProjectCAlpha02CardTests PRIVATE ProjectCNetwork)
+add_test(NAME Alpha02CardTests COMMAND ProjectCAlpha02CardTests)
 add_executable(ProjectCYakouCommandGatewayTests Tests/YakouCommandGatewayTests.cpp)
 target_link_libraries(ProjectCYakouCommandGatewayTests PRIVATE ProjectCNetwork)
 add_test(NAME YakouCommandGatewayTests COMMAND ProjectCYakouCommandGatewayTests)
@@ -55,6 +58,8 @@ add_test(NAME YakouChainTests COMMAND ProjectCYakouChainTests)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME YakouClientDataSyncCheck COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/SyncYakouClientData.py --check)
+add_test(NAME Alpha02ClientDataSyncCheck COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/SyncYakouClientData.py --alpha02 --check)
 add_test(NAME CardDataExportCheck COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ExportCardData.py --check)
 add_test(NAME WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
@@ -64,6 +69,9 @@ add_test(NAME ContentWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
 add_test(NAME YakouWebSocketIntegration COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/YakouWebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
 set_tests_properties(YakouWebSocketIntegration PROPERTIES TIMEOUT 90)
+add_test(NAME Alpha02WebSocketIntegration COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/Alpha02WebSocketIntegration.py $<TARGET_FILE:ProjectCNetworkServer>)
+set_tests_properties(Alpha02WebSocketIntegration PROPERTIES TIMEOUT 180)
 set_tests_properties(NetworkTests WebSocketIntegration ContentWebSocketIntegration PROPERTIES TIMEOUT 45)
 
 add_test(NAME PersonalDeckWebSocketIntegration COMMAND ${Python3_EXECUTABLE}

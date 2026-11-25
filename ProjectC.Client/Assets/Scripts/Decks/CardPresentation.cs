@@ -8,12 +8,15 @@ namespace ProjectC.Client
     {
         static CardLibrary _fallback;
         static CardLibrary _yakou;
+        static CardLibrary _alpha02;
         public static CardLibrary Library => ClientApp.Instance?.Library ?? (_fallback ??= CardLibrary.LoadResources());
         public static CardLibrary YakouLibrary
         {
             get
             {
-                var library = _yakou ??= CardLibrary.LoadYakouResources();
+                bool alpha02 = (string)ClientApp.Instance?.Network?.Yakou?.State?["CatalogVersion"] == "projectc-alpha02-v1";
+                var library = alpha02 ? (_alpha02 ??= CardLibrary.LoadAlpha02Resources())
+                    : (_yakou ??= CardLibrary.LoadYakouResources());
                 library.Localization.Language = Library.Localization.Language;
                 return library;
             }
@@ -26,6 +29,7 @@ namespace ProjectC.Client
         {
             _fallback = null;
             _yakou = null;
+            _alpha02 = null;
         }
 
         public static string Name(CardView card, string fallback = "") => card == null

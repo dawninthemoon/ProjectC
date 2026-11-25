@@ -73,6 +73,13 @@ int main(int argc, char** argv)
                 config.DataDirectory = std::string(text);
                 continue;
             }
+            if (option == "--alpha02")
+            {
+                if (text != "on" && text != "off")
+                    throw std::runtime_error("Use on/off for --alpha02");
+                config.EnableAlpha02 = text == "on";
+                continue;
+            }
             if (option == "--yakou-prototype")
             {
                 if (text != "on" && text != "off")
@@ -152,7 +159,7 @@ int main(int argc, char** argv)
                   << "Usage: ProjectCNetworkServer [--port 7777] [--max-matches 64] [--data Data]\n"
                   << "  [--waiting-timeout 900] [--playing-timeout 1800] [--finished-timeout 300]\n"
                   << "  [--mulligan on|off] [--mulligan-timeout 60] [--mulligan-auto-keep on|off]\n"
-                  << "  [--turn-duration 180] [--yakou-prototype on|off]\n"
+                  << "  [--turn-duration 180] [--yakou-prototype on|off] [--alpha02 on|off]\n"
                   << "  [--max-replays 128] [--replay-retention 3600]\n";
         return 1;
     }
