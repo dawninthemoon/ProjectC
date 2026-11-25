@@ -415,11 +415,11 @@ int main()
             summonHealer.Cards = {cost};
             summonHealer.Slot = 2;
             commands.push_back(summonHealer);
+            auto const healCandidates = match.PendingEffectChoices(1).Candidates;
             Check(match.Player(1).Exile.back() == cost &&
-                      match.PendingEffectChoices(1).Candidates.size() == 2 &&
-                      std::find(match.PendingEffectChoices(1).Candidates.begin(),
-                                match.PendingEffectChoices(1).Candidates.end(), hand[1]) !=
-                          match.PendingEffectChoices(1).Candidates.end(),
+                      healCandidates.size() == 2 &&
+                      std::find(healCandidates.begin(), healCandidates.end(), hand[1]) !=
+                          healCandidates.end(),
                   "3006 must exile one own cost and offer the wounded other monster");
             auto const beforeBadTarget = match.ServerStateHash();
             Reject([&] { (void)match.ResolveSelectedEffectAndRunAutomaticTriggers(1, hand[2]); });
