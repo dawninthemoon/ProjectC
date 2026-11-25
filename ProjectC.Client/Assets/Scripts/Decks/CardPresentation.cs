@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace ProjectC.Client
@@ -48,6 +50,21 @@ namespace ProjectC.Client
 
         public static string Costs(LibraryCard card) => card == null ? "" : string.Join(" / ",
             card.ActivationYokaiCosts.Distinct().Select(cost => BattleText.Get("ui.card.yokai_cost", cost)));
+
+        public static string TypedCosts(LibraryCard card)
+        {
+            if (!(card?.Data?["SummonCostJson"] is JObject blocks)) return "";
+            var methods = new List<string>();
+            foreach (var block in blocks.Properties())
+            {
+                if (!(block.Value["Costs"] is JArray costs) || costs.Count == 0) continue;
+                var parts = costs.Select(cost => (string)cost["Type"] == "Resource"
+                    ? YakouUiText.ResourceName((string)cost["ResourceId"]) + " " + (int)cost["Amount"]
+                    : YakouUiText.Method((string)cost["Type"]) + " " + (int)cost["Count"]);
+                methods.Add(string.Join(" + ", parts));
+            }
+            return string.Join(" / ", methods);
+        }
 
         public static string Rules(CardView card) => card == null ? "" : Description(card).PlainText;
 

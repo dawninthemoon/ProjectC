@@ -85,8 +85,9 @@ namespace ProjectC.Client
             }
             _type.text = BattleText.Get(card.CardType == 1 ? "ui.card.spell" : "ui.card.monster");
             var library = CardPresentation.LibraryFor(card);
-            string costs = card.Yakou || (ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem))
-                ? "" : CardPresentation.Costs(library.Find(card.DefinitionId));
+            string costs = card.Yakou ? CardPresentation.TypedCosts(library.Find(card.DefinitionId))
+                : (ClientApp.Instance != null && !string.IsNullOrEmpty(ClientApp.Instance.Network.CatalogProblem))
+                    ? "" : CardPresentation.Costs(library.Find(card.DefinitionId));
             if (!string.IsNullOrEmpty(costs))
             {
                 _type.text += " / " + costs;

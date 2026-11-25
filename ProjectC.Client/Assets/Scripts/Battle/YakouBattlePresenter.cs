@@ -289,8 +289,8 @@ namespace ProjectC.Client
             PresentFieldChanges();
             _ownPlayer.Render(new PlayerView { Life = (int)own["Life"] }, true, false);
             _enemyPlayer.Render(new PlayerView { Life = (int)enemy["Life"] }, false, false);
-            _ownPlayer.RenderResources(own["Resources"] as JObject);
-            _enemyPlayer.RenderResources(enemy["Resources"] as JObject);
+            _ownPlayer.RenderResources(PlayerResources(own));
+            _enemyPlayer.RenderResources(PlayerResources(enemy));
             _ownDeckCount.text = (string)own["DeckCount"];
             _enemyDeckCount.text = (string)enemy["DeckCount"];
             _ownGraveCount.text = ((JArray)own["Graveyard"]).Count.ToString();
@@ -301,14 +301,9 @@ namespace ProjectC.Client
             _turnNumberBadge.text = _screen.TurnLabel.text;
             string phase = (string)_state["Phase"];
             _screen.PhaseLabel.text = YakouUiText.Phase(phase);
-            _statusLine = YakouUiText.Get("ui.yakou.hud.status", _screen.PhaseLabel.text,
-                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat),
-                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat),
-                (int)own["Ki"], (int)enemy["Ki"]);
-            if (own["Resources"] is JObject)
-                _statusLine = _screen.PhaseLabel.text + " · " +
-                    YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
-                    YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
+            _statusLine = _screen.PhaseLabel.text + " · " +
+                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
+                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
             var stack = _state["ResponseStack"] as JArray;
             _screen.EndTurn.interactable = _session.Bound && !_session.Busy;
             _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.menu");
@@ -863,6 +858,13 @@ namespace ProjectC.Client
 
         private static KeyValuePair<string, Action> Option(string name, Action action) =>
             new KeyValuePair<string, Action>(name, action);
+
+        private static JObject PlayerResources(JToken player)
+        {
+            if (player["Resources"] is JObject resources) return resources;
+            // Alpha01 still has its fixed three-point Ki pool.
+            return new JObject { ["Ki"] = new JObject { ["Current"] = (int?)player["Ki"] ?? 0, ["Max"] = 3 } };
+        }
 
         private static string CostSuffix(JObject costs)
         {
