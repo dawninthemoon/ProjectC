@@ -451,6 +451,7 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                 char const* type = nullptr;
                 if (phase_ == YakouPhase::RaidResponse && viewer == ActivePlayer() &&
                     definition == 3017 && !chainTargetedByEnemySpell_.empty() &&
+                    !Player(viewer).Graveyard.empty() &&
                     response_.StackSize() < MaximumRaidResponseLinks)
                 {
                     type = "RespondWithEffectProtection";
