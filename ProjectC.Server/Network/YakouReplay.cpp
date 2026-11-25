@@ -119,9 +119,10 @@ void Apply(YakouMatch& match, YakouReplayCommand const& command)
 YakouReplayResult ReplayYakou(YakouPrototype const& catalog,
                                int firstPlayer,
                                std::array<std::vector<int>, 2> const& initialDecks,
-                               std::vector<YakouReplayCommand> const& commands)
+                               std::vector<YakouReplayCommand> const& commands,
+                               std::uint64_t randomSeed)
 {
-    YakouMatch match(catalog, firstPlayer, initialDecks);
+    YakouMatch match(catalog, firstPlayer, initialDecks, randomSeed);
     std::vector<YakouReplayStep> steps;
     steps.reserve(commands.size());
     for (auto const& command : commands)

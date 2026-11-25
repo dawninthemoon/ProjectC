@@ -75,5 +75,6 @@ struct YakouReplayResult
     YakouPrototype const& catalog,
     int firstPlayer,
     std::array<std::vector<int>, 2> const& initialDecks,
-    std::vector<YakouReplayCommand> const& commands);
+    std::vector<YakouReplayCommand> const& commands,
+    std::uint64_t randomSeed = 0);
 } // namespace ProjectC::Network

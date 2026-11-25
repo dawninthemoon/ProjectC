@@ -2,6 +2,7 @@
 #include "YakouPrototype.hpp"
 #include "YakouChain.hpp"
 
+#include <random>
 #include <array>
 #include <cstdint>
 #include <map>
@@ -110,7 +111,8 @@ public:
     // No random generator or network state is implicitly consulted.
     YakouMatch(YakouPrototype const& catalog,
                int firstPlayer,
-               std::array<std::vector<int>, 2> deckDefinitions);
+               std::array<std::vector<int>, 2> deckDefinitions,
+               std::uint64_t randomSeed = 0);
 
     [[nodiscard]] YakouPhase Phase() const { return phase_; }
     [[nodiscard]] int ActivePlayer() const { return players_[active_].Id; }
@@ -223,6 +225,7 @@ private:
     YakouUnit& FieldUnit(YakouPlayer& player, int instanceId);
     void RequireMain(int player) const;
     void TurnOver();
+    void ShuffleDeck(std::vector<int>& deck);
     void Enqueue(int player, int instanceId, int definitionId, std::string const& trigger,
                  int relatedCard = 0, std::vector<int> paidCostCards = {});
     void DeferPendingCostTriggers(std::size_t firstNewEffect);
@@ -273,6 +276,9 @@ private:
     std::array<int, 2> spellResolvedTurn_{};
     // Private cost identities remain available when a main spell resolves after priority.
     std::vector<int> spellResponsePaidCosts_;
+    std::uint64_t randomSeed_ = 0;
+    std::uint64_t randomDraws_ = 0;
+    std::mt19937_64 random_;
     int lastRevealedDefinition_ = 0;
     int lastRevealPlayer_ = 0;
     std::vector<std::string> journal_;

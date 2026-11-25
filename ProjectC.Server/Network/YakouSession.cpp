@@ -22,8 +22,9 @@ void ValidKey(std::string const& value, std::size_t maxLength)
 
 YakouSession::YakouSession(
     YakouPrototype const& catalog, int firstPlayer,
-    std::array<std::vector<int>, 2> const& deckDefinitions)
-    : gateway_(catalog, firstPlayer, deckDefinitions)
+    std::array<std::vector<int>, 2> const& deckDefinitions, std::uint64_t randomSeed)
+    : catalog_(&catalog), firstPlayer_(firstPlayer), initialDecks_(deckDefinitions),
+      randomSeed_(randomSeed), gateway_(catalog, firstPlayer, deckDefinitions, randomSeed)
 {
 }
 
@@ -96,7 +97,21 @@ Json YakouSession::Dispatch(std::string const& connectionKey,
         ++sequence_;
     result["Sequence"] = sequence_;
     cache.emplace(requestId, CachedRequest{command, result});
-    audit_.push_back({player, requestId, accepted, before, after});
+    audit_.push_back({player, requestId, accepted, before, after, command});
     return result;
+}
+bool YakouSession::VerifyReplay() const
+{
+    YakouCommandGateway replay(*catalog_,firstPlayer_,initialDecks_,randomSeed_);
+    std::uint64_t accepted = 0;
+    for (auto const& attempt : audit_)
+    {
+        if (replay.Match().ServerStateHash() != attempt.BeforeHash) return false;
+        auto const result = replay.Execute(attempt.Seat,attempt.Command);
+        if (result.at("Accepted").get<bool>() != attempt.Accepted ||
+            replay.Match().ServerStateHash() != attempt.AfterHash) return false;
+        if (attempt.Accepted) ++accepted;
+    }
+    return accepted == sequence_ && replay.Match().ServerStateHash() == Match().ServerStateHash();
 }
 } // namespace ProjectC::Network

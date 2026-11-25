@@ -13,7 +13,8 @@ class YakouCommandGateway
 {
 public:
     YakouCommandGateway(YakouPrototype const& catalog, int firstPlayer,
-                        std::array<std::vector<int>, 2> const& deckDefinitions);
+                        std::array<std::vector<int>, 2> const& deckDefinitions,
+                        std::uint64_t randomSeed = 0);
 
     // A rejected command never mutates the authoritative match. The returned
     // snapshot is always projected for the authenticated seat only.

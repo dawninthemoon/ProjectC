@@ -186,8 +186,9 @@ void Apply(YakouMatch& match, int seat, Json const& request)
 
 YakouCommandGateway::YakouCommandGateway(
     YakouPrototype const& catalog, int firstPlayer,
-    std::array<std::vector<int>, 2> const& deckDefinitions)
-    : match_(catalog, firstPlayer, deckDefinitions)
+    std::array<std::vector<int>, 2> const& deckDefinitions,
+    std::uint64_t randomSeed)
+    : match_(catalog, firstPlayer, deckDefinitions, randomSeed)
 {
 }
 

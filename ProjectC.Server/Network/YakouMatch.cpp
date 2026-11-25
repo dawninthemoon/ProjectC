@@ -332,8 +332,9 @@ int PrintedMaxBlocks(Json const& card)
 
 YakouMatch::YakouMatch(YakouPrototype const& catalog,
                        int firstPlayer,
-                       std::array<std::vector<int>, 2> deckDefinitions)
-    : catalog_(&catalog)
+                       std::array<std::vector<int>, 2> deckDefinitions,
+                       std::uint64_t randomSeed)
+    : catalog_(&catalog), randomSeed_(randomSeed), random_(randomSeed)
 {
     Check(firstPlayer == 1 || firstPlayer == 2, "Invalid first player");
     Check(catalog.Config.at("ki.start") == 3 &&
@@ -1008,6 +1009,10 @@ Json YakouMatch::ServerCanonicalState() const
         state["SpellResolvedTurn"] = spellResolvedTurn_;
         state["SpellResponsePaidCosts"] = spellResponsePaidCosts_;
         state["LastDeckSearchReveal"] = {lastRevealPlayer_,lastRevealedDefinition_};
+        // Private canonical state only. The replay seed and consumed draw count
+        // describe the exact PRNG stream; neither is projected to viewers.
+        state["RandomSeed"] = randomSeed_;
+        state["RandomDraws"] = randomDraws_;
     }
     if (!deferredCosts.empty())
         state["DeferredCostEffects"] = std::move(deferredCosts);
@@ -1279,19 +1284,7 @@ void YakouMatch::ResolveExtendedEffect(YakouPendingEffect const& queued, Json co
         owner.Deck.erase(selected);
         lastRevealedDefinition_ = definition;
         lastRevealPlayer_ = queued.Player;
-        // Replayable Fisher-Yates driven by the private, pre-shuffled match state.
-        // No std::shuffle implementation-specific ordering or public RNG seed.
-        // Prototype only: replace this seed derivation with recorded server RNG
-        // state before adversarial/production play.
-        std::mt19937_64 rng(ServerStateHash());
-        for (std::size_t n = owner.Deck.size(); n > 1; --n)
-        {
-            auto const bound = static_cast<std::uint64_t>(n);
-            auto const threshold = (std::uint64_t{0} - bound) % bound;
-            std::uint64_t value;
-            do { value = rng(); } while (value < threshold);
-            std::swap(owner.Deck[n-1],owner.Deck[static_cast<std::size_t>(value % bound)]);
-        }
+        ShuffleDeck(owner.Deck);
         journal_.push_back("DeckSearchReveal:" + std::to_string(queued.Player) + ":" +
                            std::to_string(definition));
         return;
@@ -3808,6 +3801,20 @@ void YakouMatch::ResolveRaidImpl(int defendingPlayer)
         }
     }
     TurnOver();
+}
+
+void YakouMatch::ShuffleDeck(std::vector<int>& deck)
+{
+    // A continuous, independent private PRNG stream; transactional match
+    // copies include it, so rejected actions cannot consume randomness.
+    for (std::size_t n = deck.size(); n > 1; --n)
+    {
+        auto const bound = static_cast<std::uint64_t>(n);
+        auto const threshold = (std::uint64_t{0} - bound) % bound;
+        std::uint64_t value;
+        do { value = random_(); ++randomDraws_; } while (value < threshold);
+        std::swap(deck[n-1],deck[static_cast<std::size_t>(value % bound)]);
+    }
 }
 
 void YakouMatch::TurnOver()
