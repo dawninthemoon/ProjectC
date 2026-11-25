@@ -20,10 +20,13 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="verify the Unity copies (default)")
     mode.add_argument("--write", action="store_true", help="update the Unity copies")
+    parser.add_argument("--alpha02", action="store_true", help="sync the separate experimental snapshot")
     args = parser.parse_args()
     mismatches = []
-    for source_name, target_name in FILES.items():
-        source = SOURCE / source_name
+    files = {"AuthoringSnapshot.json": "Alpha02AuthoringSnapshot.json"} if args.alpha02 else FILES
+    source_dir = SOURCE.parent / "Alpha02" if args.alpha02 else SOURCE
+    for source_name, target_name in files.items():
+        source = source_dir / source_name
         target = TARGET / target_name
         content = source.read_bytes()
         if args.write:

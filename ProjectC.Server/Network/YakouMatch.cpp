@@ -2418,7 +2418,8 @@ std::vector<YakouSummonChoice> YakouMatch::SummonChoices(int player,
     // Never expose costs or candidates for cards that are not in the
     // requesting player's own hand.
     Check(Contains(owner.Hand, handInstance), "Card is not in own hand");
-    if (phase_ != YakouPhase::Main || player != ActivePlayer())
+    if (phase_ != YakouPhase::Main || player != ActivePlayer() ||
+        (Alpha02() && !pendingEffects_.empty()))
     {
         return {};
     }

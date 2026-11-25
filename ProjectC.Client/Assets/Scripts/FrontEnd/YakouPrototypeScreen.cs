@@ -17,6 +17,8 @@ namespace ProjectC.Client
         private readonly HashSet<int> _costs = new HashSet<int>();
         private readonly Dictionary<int, int> _blockers = new Dictionary<int, int>();
         private bool _open;
+        private bool _alpha02Catalog;
+        private string _secondaryTarget = "0";
         private string _room = "";
         private string _card = "0";
         private string _target = "0";
@@ -56,7 +58,7 @@ namespace ProjectC.Client
                     _session = app.Network.Yakou;
                     try
                     {
-                        _library = CardLibrary.LoadYakouResources();
+                        _library = _alpha02Catalog ? CardLibrary.LoadAlpha02Resources() : CardLibrary.LoadYakouResources();
                         LoadDeckChoices();
                         _open = true;
                         HideCanvases();
@@ -94,6 +96,14 @@ namespace ProjectC.Client
             }
             else if (string.IsNullOrEmpty(_session.MatchId))
             {
+                bool nextCatalog = GUILayout.Toggle(_alpha02Catalog, "Alpha 02 (experimental; server --alpha02 on)");
+                if (nextCatalog != _alpha02Catalog && !_session.Busy)
+                {
+                    _alpha02Catalog = nextCatalog;
+                    _library = _alpha02Catalog ? CardLibrary.LoadAlpha02Resources() : CardLibrary.LoadYakouResources();
+                    _selectedDeckId = null;
+                    LoadDeckChoices();
+                }
                 DrawDeckChoices();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(YakouUiText.Get("ui.yakou.dev.create_room"), GUILayout.Height(LineHeight)))
@@ -136,7 +146,7 @@ namespace ProjectC.Client
             var selected = _deckChoices.FirstOrDefault(deck => deck.Id == _session.SelectedDeckId);
             if (!string.IsNullOrEmpty(selected.NameKey))
             {
-                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", YakouUiText.Get(selected.NameKey)));
+                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", _library.Localization.GetText(selected.NameKey)));
             }
             if (_renderedMatch != _session.MatchId)
             {
@@ -214,12 +224,15 @@ namespace ProjectC.Client
 
         private void LoadDeckChoices()
         {
-            var resource = Resources.Load<TextAsset>("CardData/YakouPrototypeDecks");
-            if (resource == null)
+            JObject catalog;
+            if (_alpha02Catalog) catalog = (JObject)CardLibrary.LoadAlpha02Snapshot()["Decks"];
+            else
             {
-                throw new InvalidOperationException("Yakou deck resource is missing.");
+                var resource = Resources.Load<TextAsset>("CardData/YakouPrototypeDecks");
+                if (resource == null)
+                    throw new InvalidOperationException("Yakou deck resource is missing.");
+                catalog = JObject.Parse(resource.text);
             }
-            var catalog = JObject.Parse(resource.text);
             if ((string)catalog["CatalogVersion"] != _library.CatalogVersion)
             {
                 throw new InvalidOperationException("Yakou deck and card versions differ.");
@@ -241,10 +254,8 @@ namespace ProjectC.Client
                 }
                 _deckChoices.Add((id, nameKey, descriptionKey));
             }
-            if (_deckChoices.Count != 3)
-            {
-                throw new InvalidOperationException("Yakou Alpha 01 requires three selectable decks.");
-            }
+            if (_deckChoices.Count != (_alpha02Catalog ? 5 : 3))
+                throw new InvalidOperationException("Unexpected selectable deck count.");
         }
 
         private void DrawDeckChoices()
@@ -253,17 +264,17 @@ namespace ProjectC.Client
             foreach (var deck in _deckChoices)
             {
                 GUILayout.BeginVertical("box");
-                if (GUILayout.Button(YakouUiText.Get(deck.NameKey), GUILayout.Height(LineHeight)))
+                if (GUILayout.Button(_library.Localization.GetText(deck.NameKey), GUILayout.Height(LineHeight)))
                 {
                     _selectedDeckId = deck.Id;
                 }
-                GUILayout.Label(YakouUiText.Get(deck.DescriptionKey));
+                GUILayout.Label(_library.Localization.GetText(deck.DescriptionKey));
                 GUILayout.EndVertical();
             }
             if (!string.IsNullOrEmpty(_selectedDeckId))
             {
                 var selected = _deckChoices.First(deck => deck.Id == _selectedDeckId);
-                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", YakouUiText.Get(selected.NameKey)));
+                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", _library.Localization.GetText(selected.NameKey)));
             }
         }
 
@@ -280,6 +291,8 @@ namespace ProjectC.Client
             int id = (int)player["PlayerId"];
             GUILayout.Label(YakouUiText.Get("ui.yakou.dev.player_status", YakouUiText.Player(id, _session.Seat),
                 (int)player["Life"], (int)player["Ki"], (int)player["DeckCount"], (int)player["HandCount"]));
+            if (player["Resources"] is JObject resources)
+                GUILayout.Label(YakouUiText.ResourceBalances(resources));
             DrawCards("ui_battle_hand", player["Hand"] as JArray);
             DrawCards("ui_battle_field", player["FieldSlots"] as JArray);
             DrawCards("ui_battle_graveyard", player["Graveyard"] as JArray);
@@ -390,6 +403,7 @@ namespace ProjectC.Client
             GUILayout.Label(YakouUiText.Get("ui.yakou.dev.id_hint"));
             _card = Field(YakouUiText.Get("ui.yakou.dev.source_card"), _card);
             _target = Field(YakouUiText.Get("ui.yakou.dev.target_attacker"), _target);
+            if (_alpha02Catalog) _secondaryTarget = Field("Secondary target", _secondaryTarget);
             _replacement = Field(YakouUiText.Get("ui.yakou.dev.replacement_blocker"), _replacement);
             _definition = Field(YakouUiText.Get("ui.yakou.dev.manifest_definition"), _definition);
             _slot = Field(YakouUiText.Get("ui.yakou.dev.summon_slot"), _slot);
@@ -430,9 +444,19 @@ namespace ProjectC.Client
             ActionButton(YakouUiText.Get("ui.yakou.action.resolve_raid"), "ResolveRaid");
             ActionButton(YakouUiText.Get("ui.yakou.action.pass_spell_response"), "PassSpellResponse");
             Button(YakouUiText.Get("ui.yakou.dev.activate_main_spell"), () => Send("ActivateMainSpell", new JObject { ["CardId"] = Number(_card) }));
-            Button(YakouUiText.Get("ui.yakou.dev.open_spell_response"), () => Send("BeginSpellResponse", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
+            Button(YakouUiText.Get("ui.yakou.dev.open_spell_response"), () => Send("BeginSpellResponse", new JObject
+            {
+                ["CardId"] = Number(_card), ["TargetId"] = Number(_target),
+                ["SecondaryTargetId"] = Number(_secondaryTarget), ["Costs"] = CostArray(),
+            }));
             Button(YakouUiText.Get("ui.yakou.action.response_negate"), () => Send("RespondWithNegation", new JObject { ["CardId"] = Number(_card), ["Costs"] = CostArray() }));
             Button(YakouUiText.Get("ui.yakou.action.response_shield"), () => Send("RespondWithRaidShield", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target) }));
+            if (_alpha02Catalog)
+                Button("Effect protection", () => Send("RespondWithEffectProtection", new JObject
+                {
+                    ["CardId"] = Number(_card), ["TargetId"] = Number(_target),
+                    ["CostId"] = _costs.Count == 1 ? _costs.First() : 0,
+                }));
             Button(YakouUiText.Get("ui.yakou.action.response_tactic"), () => Send("RespondWithRaidTactic", new JObject { ["CardId"] = Number(_card), ["TargetId"] = Number(_target), ["ReplacementBlocker"] = Number(_replacement), ["Costs"] = CostArray() }));
             Button(YakouUiText.Get("ui.yakou.dev.manifest_selected"), () => Send("Manifest", new JObject { ["CardId"] = Number(_card), ["DefinitionId"] = Number(_definition) }));
             Button(YakouUiText.Get("ui.yakou.action.postpone"), () => Send("Postpone", new JObject { ["CardId"] = Number(_card) }));
