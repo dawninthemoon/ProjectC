@@ -12,7 +12,7 @@
 | 2002 | OnNecromancySummoned:Salvage | ✓ | YakouMatchTests: 강령 소환 후 묘지 회수 후보·잘못된 대상 거부 (부분) | — | — | — | Partially Verified |
 | 2003 | OnSummoned:ModifyCountdown | ✓ | YakouMatchTests: 강령 비용 2·다른 아군 카운터 감소·비용/대상 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2004 | OnSummoned:Salvage | ✓ | YakouMatchTests: 묘지 조건 충족/미충족·선택 회수 (부분) | — | — | — | Partially Verified |
-| 2005 | OnDiscarded:Mill, OnBanishedForNecromancyCost:ModifyCountdown | ✓ | YakouMatchTests: 폐기 비용 이동·밀링 1·잘못된 비용 거부·리플레이; 강령 제외 트리거 미검증 (부분) | △ | — | — | Partially Verified |
+| 2005 | OnDiscarded:Mill, OnBanishedForNecromancyCost:ModifyCountdown | ✓ | YakouMatchTests: 폐기 비용 이동·밀링 1·잘못된 비용 거부·리플레이; 4020의 강령 비용으로 제외 후 응전 종료 시 선택형 카운터 감소·잘못된 대상 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2006 | OnAssignedAsBlocker:ReduceDamage | ✓ | YakouMatchTests: 실전 방어 배정·전투 피해 1 감소·권한 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2007 | OnRaid:ModifyAttack | ✓ | YakouMatchTests: 강령 비용·묘지 조건 습격 공격력 +1·중복 비용 거부·리플레이 (부분) | △ | — | — | Partially Verified |
 | 2008 | OnDevourSummoned:Mill | ✓ | YakouMatchTests: 포식 소환·잘못된 재료 거부·밀링 1·리플레이 (부분) | △ | — | — | Partially Verified |
@@ -96,3 +96,9 @@
 - 3006은 샘플 덱에 없어 복사한 테스트 카탈로그의 합법 덱 슬롯에만 넣었다. 실제 카드 정의는 유지하고, 전투에서 부상한 아군의 강령 소환 후 회복, 비용·대상 거부, 리플레이를 검증했다. 기존 3002의 전투 회복 테스트와 2010의 게이트웨이 특수 소환·리플레이 테스트도 카드별 부분 근거로 재확인했다.
 
 - 2003/2007/3013/3014도 신규 서버 실행 fixture에서 고유 효과, 의미 있는 거부 사례, 최종 리플레이 해시를 확인했다. 이로써 카드별 실행 근거가 없는 `Untested`는 0이지만, 모든 카드의 모든 예외·WebSocket·Unity 경로가 검증된 것은 아니므로 Verified 승격과 Alpha 완료 판정은 보류한다.
+
+## 응전 비용 트리거와 선택지 후속 검증
+
+- 2005를 주문 응전 카드 4020의 강령 비용으로 제외했을 때, 비용 이벤트가 즉시 해결되지 않고 주문 체인이 종료된 뒤 아군 몬스터의 카운터를 선택해 감소시킨다. 테스트는 유효하지 않은 대상의 원자적 거부 및 결정론적 리플레이 일치를 확인한다.
+- 체인 바깥에서 이미 대기 중이던 일반 효과와 체인 내 비용으로 새로 발생한 유발 효과를 구별한다. 방어자 교체(3018/4017)의 UI 후보는 기존 방어자, 배정되지 않은 습격, 방어 가능 횟수를 초과한 몬스터를 제외하도록 보완했다.
+- 응전 비용으로 발생하는 다른 모든 복합 트리거와 독립 Unity 실행 빌드 2개를 이용한 완결 경기는 여전히 미검증이다. 현재 카드 판정은 **Verified 0 / Partially Verified 55 / Unsupported 판정 0 / Untested 0**을 유지한다.
