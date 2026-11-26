@@ -32,7 +32,13 @@ namespace ProjectC.Client.Editor
             Capture(true);
         }
 
-        private static void Capture(bool resourceCrests)
+        [MenuItem("ProjectC/Capture Response Flow Preview")]
+        public static void CaptureResponseFlow()
+        {
+            Capture(false, true);
+        }
+
+        private static void Capture(bool resourceCrests, bool responseFlow = false)
         {
             var scene = EditorSceneManager.NewPreviewScene();
             var root = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab"));
@@ -81,7 +87,7 @@ namespace ProjectC.Client.Editor
                 p.EnemyHand.Render(null, 5, true, 0, false, null, null, null);
                 p.OwnPlayer.Render(new PlayerView { Life = 18, PlayerId = 1 }, true, true);
                 p.EnemyPlayer.Render(new PlayerView { Life = 20, PlayerId = 2 }, false, false);
-                if (resourceCrests)
+                if (resourceCrests || responseFlow)
                 {
                     p.OwnPlayer.RenderResources(JObject.Parse("{\"Ki\":{\"Current\":0,\"Max\":5},\"Spirit\":{\"Current\":12,\"Max\":20}}"));
                     p.EnemyPlayer.RenderResources(JObject.Parse("{\"Blood\":{\"Current\":3,\"Max\":10},\"Spirit\":{\"Current\":9,\"Max\":20}}"));
@@ -108,6 +114,11 @@ namespace ProjectC.Client.Editor
                 foreach (var zone in p.Zones)
                 {
                     zone.Layout?.Snap();
+                }
+                if (responseFlow)
+                {
+                    CaptureResponseStates(root, p, camera, target);
+                    return;
                 }
                 if (resourceCrests)
                 {
@@ -143,6 +154,74 @@ namespace ProjectC.Client.Editor
                 Object.DestroyImmediate(cameraObject);
                 EditorSceneManager.ClosePreviewScene(scene);
             }
+        }
+
+        private static CardView YakouCard(int id, int definitionId)
+        {
+            var definition = CardLibrary.LoadAlpha02Resources().Find(definitionId);
+            return new CardView
+            {
+                Yakou = true, Id = id, DefinitionId = definitionId,
+                CardType = definition.Type == "Spell" ? 1 : 0,
+                Attack = definition.Attack, Hp = definition.MaxHp, MaxHp = definition.MaxHp,
+            };
+        }
+
+        private static void CaptureResponseStates(GameObject root, BattlePresenter presenter,
+            Camera camera, RenderTexture target)
+        {
+            var detail = presenter.Detail;
+            var gallery = root.GetComponentInChildren<CardGalleryView>(true);
+            gallery.InitializeYakou(presenter.Hand.CardPrefab, detail, card => detail.Show(card), null, null);
+            detail.Show(YakouCard(20, 2009));
+            presenter.EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.selection.pass");
+            var first = YakouCard(21, 3020);
+            var second = YakouCard(22, 4020);
+            var request = new CardSelectionRequest
+            {
+                RequestId = "response-preview",
+                TitleKey = "ui.selection.response",
+                Items = new[]
+                {
+                    new CardSelectionItem { Key = "21:RespondWithNegation", Card = first,
+                        SourceKey = "ui.selection.hand_source" },
+                    new CardSelectionItem { Key = "22:RespondWithNegation", Card = second,
+                        SourceKey = "ui.selection.hand_source" },
+                },
+                MinCount = 1, MaxCount = 1, AllowCancel = false,
+            };
+            gallery.ShowYakouSelection(request, null, null, null);
+            presenter.EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.selection.pass");
+            presenter.Hand.gameObject.SetActive(false);
+            gallery.SelectionBar.SetSelected(new[] { "21:RespondWithNegation" });
+            Save(root, camera, target, "ResponseSelection");
+            gallery.SelectionBar.ToggleVisibility();
+            presenter.Hand.gameObject.SetActive(true);
+            Save(root, camera, target, "ResponseHidden");
+            presenter.Hand.gameObject.SetActive(false);
+            gallery.ShowYakouPublicZones(BattleText.Get("ui.gallery.grave"),
+                new[] { YakouCard(30, 2001), YakouCard(31, 3004) });
+            Save(root, camera, target, "ResponseBrowse");
+            gallery.Close();
+            gallery.ShowYakouSelection(request, null, null, null);
+            presenter.Hand.gameObject.SetActive(false);
+            gallery.SelectionBar.SetSelected(new[] { "21:RespondWithNegation" });
+            Save(root, camera, target, "ResponseReturn");
+            gallery.Close();
+            presenter.Hand.gameObject.SetActive(true);
+            var chain = root.GetComponentInChildren<YakouChainResolutionView>(true);
+            chain.gameObject.SetActive(true);
+            var chainCards = new[] { YakouCard(20, 2009), first, second };
+            for (int index = 0; index < chainCards.Length; ++index)
+            {
+                var slot = chain.transform.Find("ChainSlot" + (index + 1));
+                slot.gameObject.SetActive(true);
+                ((RectTransform)slot).anchoredPosition = new Vector2((index - 1) * 174, 0);
+                slot.GetComponentInChildren<CardWidget>(true).Bind(chainCards[index], false, false, false, false);
+                slot.GetComponentsInChildren<TMP_Text>(true)
+                    .First(text => text.name == "ChainNumber" + (index + 1)).text = (index + 1).ToString();
+            }
+            Save(root, camera, target, "ChainResolution");
         }
 
         private static CardView Card(int id, int definition)

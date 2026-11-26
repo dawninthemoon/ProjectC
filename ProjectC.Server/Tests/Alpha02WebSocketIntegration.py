@@ -240,6 +240,13 @@ def duel(port, first, second, reconnect=False):
             assert result["Sequence"]==seq
             states=[expect(p,"YakouSnapshot")["Payload"] for p in peers]
             verify()
+            if phase=="SpellResponse" and state["ResponseStack"] and \
+                    states[0]["State"]["Phase"]!="SpellResponse":
+                expected=state["ResponseStack"]
+                results=states[0]["State"].get("ChainResolution",[])
+                assert len(results)==len(expected), (expected,results)
+                assert [event["Card"]["Id"] for event in results]==[link["Card"]["Id"] for link in reversed(expected)]
+                assert results==states[1]["State"]["ChainResolution"]
 
         final=states[0]["State"]
         assert final["Phase"]=="Finished" and final["WinnerPlayerId"] in (1,2), final["Phase"]

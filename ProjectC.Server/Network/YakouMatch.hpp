@@ -282,5 +282,7 @@ private:
     int lastRevealedDefinition_ = 0;
     int lastRevealPlayer_ = 0;
     std::vector<std::string> journal_;
+    // Public, replay-derived result of the most recently closed response chain.
+    Json lastChainResolution_ = Json::array();
 };
 } // namespace ProjectC::Network

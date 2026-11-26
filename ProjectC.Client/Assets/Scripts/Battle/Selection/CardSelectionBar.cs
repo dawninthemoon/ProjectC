@@ -16,6 +16,7 @@ namespace ProjectC.Client
         private const float ScrollPadding = 12;
         private RectTransform _content;
         private RectTransform _viewport;
+        private RectTransform _slotTemplate;
         private GameObject _panel;
         private GameObject _guide;
         private TMP_Text _title;
@@ -29,7 +30,6 @@ namespace ProjectC.Client
         private readonly List<TMP_Text> _sources = new List<TMP_Text>();
         private readonly CardSelectionDraft _draft = new CardSelectionDraft();
         private CardSelectionRequest _request;
-        private CardWidget _cardPrefab;
         private Action<string> _pick;
         private Action<CardView> _inspect;
         private bool _submitting;
@@ -55,7 +55,8 @@ namespace ProjectC.Client
             if (!this.Bind("SelectionContent", out _content) || !this.Bind("SelectionViewport", out _viewport)
                 || !this.Bind("SelectionTitle", out _title) || !this.Bind("SelectionCount", out _count)
                 || !this.Bind("SelectionConfirm", out _confirm) || !this.Bind("SelectionCancel", out _cancel)
-                || !this.Bind("SelectionEye", out _eye) || !this.Bind("SelectionScroll", out _scroll))
+                || !this.Bind("SelectionEye", out _eye) || !this.Bind("SelectionScroll", out _scroll)
+                || !this.Bind("SelectionSlotTemplate", out _slotTemplate))
             {
                 throw new InvalidOperationException("CardSelectionBar is missing an authored UI binding.");
             }
@@ -84,7 +85,10 @@ namespace ProjectC.Client
             }
             _request = request;
             _selectedCount = _draft.Selected.Count;
-            _cardPrefab = cardPrefab != null ? cardPrefab : throw new ArgumentNullException(nameof(cardPrefab));
+            if (cardPrefab == null)
+            {
+                throw new ArgumentNullException(nameof(cardPrefab));
+            }
             _pick = pick;
             _inspect = inspect;
             _submitting = false;
@@ -147,52 +151,18 @@ namespace ProjectC.Client
         {
             if (index == _cards.Count)
             {
-                var slot = new GameObject("SelectionSlot", typeof(RectTransform));
-                var rect = (RectTransform)slot.transform;
-                rect.SetParent(_content, false);
-                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, .5f);
-                rect.sizeDelta = new Vector2(CardWidth, CardHeight);
-                var widget = Instantiate(_cardPrefab, rect);
-                var face = (RectTransform)widget.transform;
-                face.anchorMin = face.anchorMax = face.pivot = new Vector2(.5f, .5f);
-                face.anchoredPosition = Vector2.zero;
-                face.localRotation = Quaternion.identity;
-                float scale = Mathf.Min(CardWidth / face.rect.width, CardHeight / face.rect.height);
-                face.localScale = Vector3.one * scale;
+                var rect = Instantiate(_slotTemplate, _content);
+                rect.name = "SelectionSlot" + index;
+                rect.gameObject.SetActive(true);
+                if (!rect.Bind("SelectionCard", out CardWidget widget) ||
+                    !rect.Bind("SelectionCheck", out RectTransform check) ||
+                    !rect.Bind("SelectionSource", out TMP_Text source))
+                {
+                    throw new InvalidOperationException("Card selection slot template is incomplete.");
+                }
                 _cards.Add(widget);
-                var badge = new GameObject("SelectionCheck", typeof(RectTransform), typeof(CanvasRenderer), typeof(SelectionFrameGraphic));
-                var badgeRect = (RectTransform)badge.transform;
-                badgeRect.SetParent(rect, false);
-                badgeRect.anchorMin = badgeRect.anchorMax = new Vector2(1, 1);
-                badgeRect.anchoredPosition = new Vector2(-23, -52);
-                badgeRect.sizeDelta = new Vector2(38, 38);
-                var graphic = badge.GetComponent<SelectionFrameGraphic>();
-                graphic.Shape = SelectionFrameGraphic.FrameShape.Check;
-                graphic.color = new Color(.68f, .16f, .16f);
-                graphic.Border = new Color(1, .86f, .63f);
-                graphic.raycastTarget = false;
-                _checks.Add(badge);
-                var plate = new GameObject("SelectionSourcePlate", typeof(RectTransform), typeof(CanvasRenderer), typeof(SelectionFrameGraphic));
-                var plateRect = (RectTransform)plate.transform;
-                plateRect.SetParent(rect, false);
-                plateRect.anchorMin = plateRect.anchorMax = plateRect.pivot = new Vector2(0, 1);
-                plateRect.anchoredPosition = new Vector2(10, -40);
-                plateRect.sizeDelta = new Vector2(90, 22);
-                var plateGraphic = plate.GetComponent<SelectionFrameGraphic>();
-                plateGraphic.color = new Color(.15f, .13f, .16f, .94f);
-                plateGraphic.BorderWidth = 1;
-                plateGraphic.raycastTarget = false;
-                var source = new GameObject("SelectionSource", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-                var label = source.GetComponent<TMP_Text>();
-                label.rectTransform.SetParent(plateRect, false);
-                label.rectTransform.anchorMin = Vector2.zero;
-                label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
-                label.fontSize = 16;
-                label.alignment = TextAlignmentOptions.Center;
-                label.raycastTarget = false;
-                BattleText.StyleHud(label);
-                _sources.Add(label);
+                _checks.Add(check.gameObject);
+                _sources.Add(source);
             }
             CardWidget card = _cards[index];
             card.transform.parent.gameObject.SetActive(true);
