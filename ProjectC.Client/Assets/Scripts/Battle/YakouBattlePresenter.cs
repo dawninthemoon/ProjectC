@@ -98,8 +98,7 @@ namespace ProjectC.Client
             {
                 _screen.ResultLeave.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.return_lobby");
             }
-            // GameCore's resource bar expects a maximum absent from the Yakou
-            // snapshot. The server-supplied current Ki is shown in status text.
+            // GameCore's resource bar expects a maximum absent from Yakou snapshots.
             if (this.Bind("SpecialCosts", out BattleSpecialCostsView legacyCosts))
             {
                 legacyCosts.gameObject.SetActive(false);
@@ -289,8 +288,10 @@ namespace ProjectC.Client
             PresentFieldChanges();
             _ownPlayer.Render(new PlayerView { Life = (int)own["Life"] }, true, false);
             _enemyPlayer.Render(new PlayerView { Life = (int)enemy["Life"] }, false, false);
-            _ownPlayer.RenderResources(own["Resources"] as JObject);
-            _enemyPlayer.RenderResources(enemy["Resources"] as JObject);
+            _ownPlayer.RenderResources(own["Resources"] as JObject,
+                own["Resources"] is JObject ? null : (int?)own["Ki"]);
+            _enemyPlayer.RenderResources(enemy["Resources"] as JObject,
+                enemy["Resources"] is JObject ? null : (int?)enemy["Ki"]);
             _ownDeckCount.text = (string)own["DeckCount"];
             _enemyDeckCount.text = (string)enemy["DeckCount"];
             _ownGraveCount.text = ((JArray)own["Graveyard"]).Count.ToString();
@@ -301,14 +302,9 @@ namespace ProjectC.Client
             _turnNumberBadge.text = _screen.TurnLabel.text;
             string phase = (string)_state["Phase"];
             _screen.PhaseLabel.text = YakouUiText.Phase(phase);
-            _statusLine = YakouUiText.Get("ui.yakou.hud.status", _screen.PhaseLabel.text,
-                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat),
-                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat),
-                (int)own["Ki"], (int)enemy["Ki"]);
-            if (own["Resources"] is JObject)
-                _statusLine = _screen.PhaseLabel.text + " · " +
-                    YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
-                    YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
+            _statusLine = _screen.PhaseLabel.text + " · " +
+                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
+                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
             var stack = _state["ResponseStack"] as JArray;
             _screen.EndTurn.interactable = _session.Bound && !_session.Busy;
             _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.menu");

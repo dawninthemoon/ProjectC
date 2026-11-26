@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -21,6 +22,17 @@ namespace ProjectC.Client.Editor
 
         [MenuItem("ProjectC/Capture Integrated Battle Preview")]
         public static void Capture()
+        {
+            Capture(false);
+        }
+
+        [MenuItem("ProjectC/Capture Resource Crest Preview")]
+        public static void CaptureResourceCrests()
+        {
+            Capture(true);
+        }
+
+        private static void Capture(bool resourceCrests)
         {
             var scene = EditorSceneManager.NewPreviewScene();
             var root = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab"));
@@ -57,8 +69,11 @@ namespace ProjectC.Client.Editor
                 {
                     group.alpha = 0;
                 }
-                var dim = root.GetComponentsInChildren<Transform>(true).First(t => t.name == "TurnDim");
-                dim.GetComponent<CanvasGroup>().alpha = 0;
+                var dim = root.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "TurnDim");
+                if (dim != null)
+                {
+                    dim.GetComponent<CanvasGroup>().alpha = 0;
+                }
                 var hand = new[] { Card(1, 3006), Card(2, 4005), Card(3, 1001), Card(4, 1002), Card(5, 1003) };
                 p.Hand.Render(hand, 0, false, 0, false, null, null, null);
                 p.OwnField.Render(new[] { Card(6, 3001), Card(7, 3004), Card(8, 4002) }, 5, false, 0, false, null, null, null);
@@ -66,6 +81,11 @@ namespace ProjectC.Client.Editor
                 p.EnemyHand.Render(null, 5, true, 0, false, null, null, null);
                 p.OwnPlayer.Render(new PlayerView { Life = 18, PlayerId = 1 }, true, true);
                 p.EnemyPlayer.Render(new PlayerView { Life = 20, PlayerId = 2 }, false, false);
+                if (resourceCrests)
+                {
+                    p.OwnPlayer.RenderResources(JObject.Parse("{\"Ki\":{\"Current\":0,\"Max\":5},\"Spirit\":{\"Current\":12,\"Max\":20}}"));
+                    p.EnemyPlayer.RenderResources(JObject.Parse("{\"Blood\":{\"Current\":3,\"Max\":10},\"Spirit\":{\"Current\":9,\"Max\":20}}"));
+                }
                 p.TurnLabel.text = "내 턴 · 3";
                 p.PhaseLabel.text = "메인 1";
                 p.EndTurn.GetComponentInChildren<TMP_Text>().text = "다음 페이즈";
@@ -88,6 +108,11 @@ namespace ProjectC.Client.Editor
                 foreach (var zone in p.Zones)
                 {
                     zone.Layout?.Snap();
+                }
+                if (resourceCrests)
+                {
+                    Save(root, camera, target, "ResourceCrests");
+                    return;
                 }
                 Save(root, camera, target, "Compact");
                 p.Hand.Layout.SetExpanded(true);

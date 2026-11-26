@@ -1,18 +1,36 @@
 using System;
+using System.Collections.Generic;
 using Game.Utils;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Newtonsoft.Json.Linq;
 
 namespace ProjectC.Client
 {
     public sealed class PlayerPanelView : MonoBehaviour
     {
+        [Serializable]
+        private struct ResourceCrest
+        {
+            public string ResourceId;
+            public Sprite Sprite;
+        }
+
+        [Serializable]
+        private struct ResourceSlot
+        {
+            public GameObject Root;
+            public Image Icon;
+            public TMP_Text Amount;
+        }
+
         public TMP_Text Life;
+
+        [SerializeField] private ResourceCrest[] _resourceCrests;
+        [SerializeField] private ResourceSlot[] _resourceSlots;
         private bool _bound;
-        private RectTransform _resourceContainer;
-        private TMP_Text _resourceText;
+        private readonly HashSet<string> _warnedResourceIds = new HashSet<string>();
 
         public void Render(PlayerView player, bool own, bool active, int maxYokai = 0)
         {
@@ -28,45 +46,94 @@ namespace ProjectC.Client
             Life.text = player.Life.ToString();
         }
 
-        // Runtime fallback for the experimental catalog. The final themed art
-        // and portrait anchors can replace this view without changing snapshots.
-        public void RenderResources(JObject resources)
+        public void RenderResources(JObject resources, int? legacyKi = null)
         {
-            if (resources == null || !resources.HasValues)
+            if (_resourceSlots == null || _resourceSlots.Length != 2)
             {
-                if (_resourceContainer != null) _resourceContainer.gameObject.SetActive(false);
-                return;
+                throw new InvalidOperationException("Player panel requires two authored resource crest slots.");
             }
-            if (_resourceContainer == null)
+            var values = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (resources != null)
             {
-                var container = new GameObject("ResourceContainer", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                _resourceContainer = (RectTransform)container.transform;
-                _resourceContainer.SetParent(transform, false);
-                _resourceContainer.anchorMin = _resourceContainer.anchorMax = new Vector2(.5f, 0f);
-                _resourceContainer.pivot = new Vector2(.5f, 1f);
-                _resourceContainer.anchoredPosition = new Vector2(0f, -6f);
-                var background = container.GetComponent<Image>();
-                background.color = new Color(.12f, .10f, .13f, .9f);
-                background.raycastTarget = false;
-                var label = new GameObject("ResourceAmounts", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-                label.transform.SetParent(_resourceContainer, false);
-                _resourceText = label.GetComponent<TextMeshProUGUI>();
-                _resourceText.font = Life.font;
-                _resourceText.fontSize = 18f;
-                _resourceText.enableAutoSizing = true;
-                _resourceText.fontSizeMin = 12f;
-                _resourceText.fontSizeMax = 20f;
-                _resourceText.alignment = TextAlignmentOptions.Center;
-                _resourceText.color = new Color(.95f, .84f, .65f, 1f);
-                _resourceText.raycastTarget = false;
-                _resourceText.rectTransform.anchorMin = Vector2.zero;
-                _resourceText.rectTransform.anchorMax = Vector2.one;
-                _resourceText.rectTransform.offsetMin = new Vector2(4f, 2f);
-                _resourceText.rectTransform.offsetMax = new Vector2(-4f, -2f);
+                foreach (var property in resources.Properties())
+                {
+                    values.Add(property.Name, (int)property.Value["Current"]);
+                }
             }
-            _resourceContainer.sizeDelta = new Vector2(150f, resources.Count * 23f + 8f);
-            _resourceContainer.gameObject.SetActive(true);
-            _resourceText.text = YakouUiText.ResourceBalances(resources);
+            else if (legacyKi.HasValue)
+            {
+                values.Add("Ki", legacyKi.Value);
+            }
+            var orderedIds = new List<string>();
+            if (_resourceCrests != null)
+            {
+                foreach (var crest in _resourceCrests)
+                {
+                    if (values.ContainsKey(crest.ResourceId) && !orderedIds.Contains(crest.ResourceId))
+                    {
+                        orderedIds.Add(crest.ResourceId);
+                    }
+                }
+            }
+            var unknownIds = new List<string>();
+            foreach (var resourceId in values.Keys)
+            {
+                if (!orderedIds.Contains(resourceId))
+                {
+                    unknownIds.Add(resourceId);
+                }
+            }
+            unknownIds.Sort(StringComparer.Ordinal);
+            orderedIds.AddRange(unknownIds);
+            if (orderedIds.Count > _resourceSlots.Length)
+            {
+                Debug.LogWarning($"Player panel has {orderedIds.Count} resources but only two crest slots.", this);
+            }
+            for (int index = 0; index < _resourceSlots.Length; index++)
+            {
+                var slot = _resourceSlots[index];
+                if (slot.Root == null || slot.Icon == null || slot.Amount == null)
+                {
+                    throw new InvalidOperationException("Player panel resource crest slot has a missing prefab reference.");
+                }
+                if (index >= orderedIds.Count)
+                {
+                    slot.Root.SetActive(false);
+                    continue;
+                }
+                string resourceId = orderedIds[index];
+                Sprite sprite = FindCrest(resourceId);
+                if (sprite == null && _warnedResourceIds.Add(resourceId))
+                {
+                    Debug.LogWarning($"No resource crest sprite is mapped for '{resourceId}'.", this);
+                }
+                slot.Icon.enabled = sprite != null;
+                if (slot.Icon.sprite != sprite)
+                {
+                    slot.Icon.sprite = sprite;
+                }
+                string amount = values[resourceId].ToString();
+                if (slot.Amount.text != amount)
+                {
+                    slot.Amount.text = amount;
+                }
+                slot.Root.SetActive(true);
+            }
+        }
+
+        private Sprite FindCrest(string resourceId)
+        {
+            if (_resourceCrests != null)
+            {
+                foreach (var crest in _resourceCrests)
+                {
+                    if (string.Equals(crest.ResourceId, resourceId, StringComparison.Ordinal))
+                    {
+                        return crest.Sprite;
+                    }
+                }
+            }
+            return null;
         }
     }
 }
