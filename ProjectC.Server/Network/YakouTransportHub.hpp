@@ -31,6 +31,7 @@ private:
         std::array<std::weak_ptr<ClientSession>, 2> Clients;
         std::array<std::string, 2> Tokens;
         std::array<std::string, 2> DeckIds;
+        std::array<std::vector<int>, 2> PersonalDecks;
         std::array<std::uint64_t, 2> DeckSeeds{};
         std::uint64_t MatchSeed = 0;
         std::array<std::string, 2> PreviousTokens;

@@ -17,6 +17,14 @@ namespace ProjectC.Client
         private CardZoneView _hand, _ownField, _enemyField, _enemyHand, _ownGrave, _enemyGrave;
         private PlayerPanelView _ownPlayer, _enemyPlayer;
         private CardDetailView _detail;
+        private CardGalleryView _gallery;
+        private CardSelectionBar _responseBar;
+        private YakouChainResolutionView _chainResolution;
+        private readonly Dictionary<string, JObject> _responseChoices = new Dictionary<string, JObject>();
+        private string _responseRequestId;
+        private string[] _browseSelection = Array.Empty<string>();
+        private float _browseScroll;
+        private bool _browsingResponse;
         private ContextActionView _actions;
         private BattlePresenter _screen;
         private BattleLogView _log;
@@ -66,6 +74,8 @@ namespace ProjectC.Client
                 || !this.Bind("YourGraveyardImage", out _ownGrave) || !this.Bind("OpponentGraveyardImage", out _enemyGrave)
                 || !this.Bind("OwnPlayerImage", out _ownPlayer) || !this.Bind("EnemyPlayerImage", out _enemyPlayer)
                 || !this.Bind("CardInspectorImage", out _detail) || !this.Bind("ContextActionImage", out _actions)
+                || !this.Bind("CardGalleryImage", out _gallery)
+                || !this.Bind("YakouChainResolution", out _chainResolution)
                 || !this.Bind("RejectionReasonText", out _feedback)
                 || !this.Bind("TimerText", out _turnNumberBadge)
                 || !this.Bind("OwnDeckCountText", out _ownDeckCount) || !this.Bind("EnemyDeckCountText", out _enemyDeckCount)
@@ -76,6 +86,9 @@ namespace ProjectC.Client
                 throw new InvalidOperationException("Yakou battle requires the existing battle card, player and action views.");
             }
             _actions.gameObject.SetActive(false);
+            _gallery.InitializeYakou(_hand.CardPrefab, _detail, card => _detail.Show(card),
+                RestoreResponseSelection, ResponseVisibilityChanged);
+            _responseBar = _gallery.SelectionBar;
             _feedback.enableAutoSizing = true;
             _feedback.fontSizeMin = 14;
             _feedback.fontSizeMax = 19;
@@ -98,8 +111,7 @@ namespace ProjectC.Client
             {
                 _screen.ResultLeave.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.return_lobby");
             }
-            // GameCore's resource bar expects a maximum absent from the Yakou
-            // snapshot. The server-supplied current Ki is shown in status text.
+            // GameCore's resource bar expects a maximum absent from Yakou snapshots.
             if (this.Bind("SpecialCosts", out BattleSpecialCostsView legacyCosts))
             {
                 legacyCosts.gameObject.SetActive(false);
@@ -128,6 +140,14 @@ namespace ProjectC.Client
             if (this.Bind("EnemyExileBrowseButton", out Button enemyExile))
             {
                 enemyExile.onClick.AddListener(() => ShowExile(false, enemyExile.transform.position));
+            }
+            if (this.Bind("OwnGraveBrowseButton", out Button ownGrave))
+            {
+                ownGrave.onClick.AddListener(() => BrowseResponseZone(true, false));
+            }
+            if (this.Bind("EnemyGraveBrowseButton", out Button enemyGrave))
+            {
+                enemyGrave.onClick.AddListener(() => BrowseResponseZone(false, false));
             }
             if (_screen.ResultLeave != null)
             {
@@ -224,6 +244,7 @@ namespace ProjectC.Client
             }
             if (_session.Sequence != _sequence)
             {
+                _chainResolution.Stop();
                 _sequence = _session.Sequence;
                 _summonChoice = null;
                 _materials.Clear();
@@ -237,6 +258,9 @@ namespace ProjectC.Client
                 _pendingTargets.Clear();
                 _feedbackMessage = null;
                 _actions.gameObject.SetActive(false);
+                _responseRequestId = null;
+                _browsingResponse = false;
+                _gallery.Close();
             }
             _state = _session.State;
             if (_state == null)
@@ -252,6 +276,9 @@ namespace ProjectC.Client
                 _pendingTarget = 0;
                 _pendingTargets.Clear();
                 _actions.gameObject.SetActive(false);
+                _responseRequestId = null;
+                _browsingResponse = false;
+                _gallery.Close();
                 foreach (var zone in new[] { _hand, _ownField, _enemyField, _enemyHand, _ownGrave, _enemyGrave })
                 {
                     zone.Render(null, 0, false, 0, false, null, null, null);
@@ -289,8 +316,10 @@ namespace ProjectC.Client
             PresentFieldChanges();
             _ownPlayer.Render(new PlayerView { Life = (int)own["Life"] }, true, false);
             _enemyPlayer.Render(new PlayerView { Life = (int)enemy["Life"] }, false, false);
-            _ownPlayer.RenderResources(own["Resources"] as JObject);
-            _enemyPlayer.RenderResources(enemy["Resources"] as JObject);
+            _ownPlayer.RenderResources(own["Resources"] as JObject,
+                own["Resources"] is JObject ? null : (int?)own["Ki"]);
+            _enemyPlayer.RenderResources(enemy["Resources"] as JObject,
+                enemy["Resources"] is JObject ? null : (int?)enemy["Ki"]);
             _ownDeckCount.text = (string)own["DeckCount"];
             _enemyDeckCount.text = (string)enemy["DeckCount"];
             _ownGraveCount.text = ((JArray)own["Graveyard"]).Count.ToString();
@@ -301,14 +330,9 @@ namespace ProjectC.Client
             _turnNumberBadge.text = _screen.TurnLabel.text;
             string phase = (string)_state["Phase"];
             _screen.PhaseLabel.text = YakouUiText.Phase(phase);
-            _statusLine = YakouUiText.Get("ui.yakou.hud.status", _screen.PhaseLabel.text,
-                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat),
-                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat),
-                (int)own["Ki"], (int)enemy["Ki"]);
-            if (own["Resources"] is JObject)
-                _statusLine = _screen.PhaseLabel.text + " · " +
-                    YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
-                    YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
+            _statusLine = _screen.PhaseLabel.text + " · " +
+                YakouUiText.Player((int)_state["ActivePlayerId"], _session.Seat) + " · " +
+                YakouUiText.Player((int)_state["PriorityPlayerId"], _session.Seat);
             var stack = _state["ResponseStack"] as JArray;
             _screen.EndTurn.interactable = _session.Bound && !_session.Busy;
             _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = YakouUiText.Get("ui.yakou.action.menu");
@@ -350,6 +374,7 @@ namespace ProjectC.Client
             }
             RenderFeedback();
             UpdateHints();
+            RenderResponseSelection(stack);
         }
 
         private void ShowFeedback(string message)
@@ -365,6 +390,165 @@ namespace ProjectC.Client
         }
 
         private void Hover(CardWidget widget) => _detail.Show(widget.Card);
+
+        private bool CanBrowseResponse() => _state != null &&
+            ((string)_state["Phase"] == "SpellResponse" || (string)_state["Phase"] == "RaidResponse") &&
+            _state["PendingSelection"] == null;
+
+        private Dictionary<int, CardView> VisibleCards()
+        {
+            var result = new Dictionary<int, CardView>();
+            foreach (var player in (JArray)_state["Players"])
+            {
+                bool own = (int)player["PlayerId"] == _session.Seat;
+                foreach (string zone in own
+                    ? new[] { "Hand", "FieldSlots", "Graveyard", "Exile" }
+                    : new[] { "FieldSlots", "Graveyard", "Exile" })
+                {
+                    foreach (var card in Cards(player[zone]))
+                    {
+                        result[card.Id] = card;
+                    }
+                }
+            }
+            return result;
+        }
+
+        private void RenderResponseSelection(JArray stack)
+        {
+            if (!CanBrowseResponse() || (int)_state["PriorityPlayerId"] != _session.Seat)
+            {
+                if (_gallery.gameObject.activeSelf && !_browsingResponse)
+                {
+                    _gallery.Close();
+                }
+                _responseRequestId = null;
+                _hand.gameObject.SetActive(true);
+                return;
+            }
+            if (stack != null && stack.Count > 0 && _responseType == null &&
+                (int)stack.Last["Controller"] != _session.Seat)
+            {
+                _detail.Show(Card(stack.Last["Card"]));
+            }
+            if (_responseType != null || _browsingResponse)
+            {
+                return;
+            }
+            string requestId = _session.Sequence + ":" + (string)_state["Phase"];
+            if (_responseRequestId != requestId)
+            {
+                _responseChoices.Clear();
+                var cards = VisibleCards();
+                var own = ((JArray)_state["Players"]).First(player =>
+                    (int)player["PlayerId"] == _session.Seat);
+                var hand = new HashSet<int>(Cards(own["Hand"]).Select(card => card.Id));
+                var items = new List<CardSelectionItem>();
+                foreach (var token in _state["ResponseOptions"] as JArray ?? new JArray())
+                {
+                    var option = (JObject)token;
+                    int id = (int)option["CardId"];
+                    if (!cards.TryGetValue(id, out var card))
+                    {
+                        continue;
+                    }
+                    string type = (string)option["Type"];
+                    string key = id + ":" + type;
+                    _responseChoices.Add(key, option);
+                    items.Add(new CardSelectionItem
+                    {
+                        Key = key,
+                        Card = card,
+                        SourceLabel = BattleText.Get(hand.Contains(id)
+                            ? "ui.selection.hand_source" : "ui.selection.field_source") +
+                            " · " + ResponseLabel(type),
+                    });
+                }
+                _gallery.ShowYakouSelection(new CardSelectionRequest
+                {
+                    RequestId = requestId,
+                    TitleKey = "ui.selection.response",
+                    Items = items.ToArray(),
+                    MinCount = 1,
+                    MaxCount = 1,
+                    AllowCancel = false,
+                }, key =>
+                {
+                    _responseBar.Draft.Toggle(key);
+                    _responseBar.SetSelected(_responseBar.Draft.Selected);
+                }, () =>
+                {
+                    string key = _responseBar.Draft.Selected.Single();
+                    BeginOfferedResponse(_responseChoices[key]);
+                }, null);
+                _responseRequestId = requestId;
+            }
+            _hand.gameObject.SetActive(_responseBar.Hidden);
+            _responseBar.SetSubmitting(_session.Busy);
+            _screen.EndTurn.GetComponentInChildren<TMP_Text>().text = BattleText.Get("ui.selection.pass");
+        }
+
+        private static string ResponseLabel(string type) => YakouUiText.Get(
+            type == "RespondWithRaidShield" ? "ui.yakou.action.response_shield" :
+            type == "RespondWithRaidTactic" ? "ui.yakou.action.response_tactic" :
+            type == "RespondWithNegation" ? "ui.yakou.action.response_negate" :
+            "ui.yakou.action.play_response");
+
+        private void ResponseVisibilityChanged(bool hidden)
+        {
+            _hand.gameObject.SetActive(hidden);
+            if (!hidden && _responseType == null && _state?["ResponseStack"] is JArray stack &&
+                stack.Count > 0)
+            {
+                _detail.Show(Card(stack.Last["Card"]));
+            }
+        }
+
+        private void BrowseResponseZone(bool own, bool exile)
+        {
+            if (!CanBrowseResponse() || !_responseBar.gameObject.activeInHierarchy ||
+                !_responseBar.Hidden || _session.Busy)
+            {
+                return;
+            }
+            var player = ((JArray)_state["Players"]).First(item =>
+                ((int)item["PlayerId"] == _session.Seat) == own);
+            _browseSelection = _responseBar.Draft.Selected.ToArray();
+            _browseScroll = _responseBar.Scroll.horizontalNormalizedPosition;
+            _browsingResponse = true;
+            _hand.gameObject.SetActive(false);
+            _gallery.ShowYakouPublicZones(BattleText.Get(exile ? "ui.gallery.exile" : "ui.gallery.grave"),
+                Cards(player[exile ? "Exile" : "Graveyard"]));
+        }
+
+        private void RestoreResponseSelection()
+        {
+            if (!_browsingResponse)
+            {
+                return;
+            }
+            _browsingResponse = false;
+            _responseRequestId = null;
+            _hand.gameObject.SetActive(true);
+            if (_state != null && !_session.Busy &&
+                (int)_state["PriorityPlayerId"] == _session.Seat)
+            {
+                if (_responseType != null)
+                {
+                    ShowResponsePart();
+                }
+                else
+                {
+                    RenderResponseSelection(_state["ResponseStack"] as JArray);
+                }
+                _responseBar.SetSelected(_browseSelection);
+                _responseBar.Scroll.horizontalNormalizedPosition = _browseScroll;
+                if (!_responseBar.Hidden)
+                {
+                    _responseBar.ToggleVisibility();
+                }
+            }
+        }
 
         private void LogPublicChanges(JObject before, JObject after)
         {
@@ -421,6 +605,18 @@ namespace ProjectC.Client
             else if (oldStack.Count > 0 && newStack.Count == 0)
             {
                 _log.Add(YakouUiText.Get("ui.yakou.log.response_resolved"));
+                if (after["PendingSelection"] == null && after["ChainResolution"] is JArray resolution)
+                {
+                    _chainResolution.Play(resolution);
+                }
+            }
+            else if (before["PendingSelection"] != null && after["PendingSelection"] == null &&
+                before["ChainResolution"] is JArray previousResolution &&
+                previousResolution.Any(item => (string)item["Result"] == "PendingSelection") &&
+                after["ChainResolution"] is JArray completedResolution &&
+                completedResolution.All(item => (string)item["Result"] != "PendingSelection"))
+            {
+                _chainResolution.Play(completedResolution);
             }
         }
 
@@ -450,6 +646,11 @@ namespace ProjectC.Client
         {
             if (_state == null)
             {
+                return;
+            }
+            if (CanBrowseResponse())
+            {
+                BrowseResponseZone(own, true);
                 return;
             }
             var player = ((JArray)_state["Players"]).First(item => ((int)item["PlayerId"] == _session.Seat) == own);
@@ -490,6 +691,10 @@ namespace ProjectC.Client
             int id = card.Id;
             _selected = id;
             _detail.Show(card);
+            if (CanBrowseResponse())
+            {
+                return;
+            }
             foreach (var zone in new[] { _hand, _ownField, _enemyField, _ownGrave, _enemyGrave })
             {
                 foreach (var visible in zone.Widgets)
@@ -733,6 +938,22 @@ namespace ProjectC.Client
             {
                 return;
             }
+            if (_browsingResponse)
+            {
+                return;
+            }
+            if (_responseType != null && _responseOption != null)
+            {
+                return;
+            }
+            if (_responseType == null && CanBrowseResponse() &&
+                (int)_state["PriorityPlayerId"] == _session.Seat)
+            {
+                string pass = (string)_state["Phase"] == "SpellResponse"
+                    ? "PassSpellResponse" : "PassRaidResponse";
+                Send(pass, new JObject());
+                return;
+            }
             var options = new List<KeyValuePair<string, Action>>();
             if (_responseType != null)
             {
@@ -892,6 +1113,112 @@ namespace ProjectC.Client
             ShowFeedback(YakouUiText.Get("ui.yakou.feedback.begin_response") +
                 CostSuffix(offered["ResourceCosts"] as JObject));
             UpdateHints();
+            AdvanceResponsePart();
+        }
+
+        private void AdvanceResponsePart()
+        {
+            if (_responseOption == null)
+            {
+                return;
+            }
+            if ((_responseOption["TargetCandidates"] as JArray ?? new JArray()).Count > 0 && _responseTarget == 0)
+            {
+                _responseSelection = "target";
+            }
+            else if ((_responseOption["SecondaryTargetCandidates"] as JArray ?? new JArray()).Count > 0 &&
+                _responseSecondary == 0)
+            {
+                _responseSelection = "secondary";
+            }
+            else if ((_responseOption["ReplacementCandidates"] as JArray ?? new JArray()).Count > 0 &&
+                _responseReplacement == 0)
+            {
+                _responseSelection = "replacement";
+            }
+            else if (_responseCosts.Count < ((int?)_responseOption["CostCount"] ?? 0))
+            {
+                _responseSelection = "cost";
+            }
+            else
+            {
+                SubmitResponse();
+                return;
+            }
+            ShowResponsePart();
+        }
+
+        private void ShowResponsePart()
+        {
+            if (_responseOption == null)
+            {
+                return;
+            }
+            string field = _responseSelection == "cost" ? "CostCandidates" :
+                _responseSelection == "secondary" ? "SecondaryTargetCandidates" :
+                _responseSelection == "replacement" ? "ReplacementCandidates" : "TargetCandidates";
+            var cards = VisibleCards();
+            var candidates = _responseOption[field] as JArray ?? new JArray();
+            var items = candidates.Values<int>().Where(cards.ContainsKey).Select(id => new CardSelectionItem
+            {
+                Key = id.ToString(),
+                Card = cards[id],
+            }).ToArray();
+            int required = _responseSelection == "cost" ? (int?)_responseOption["CostCount"] ?? 0 : 1;
+            var request = new CardSelectionRequest
+            {
+                RequestId = _session.Sequence + ":" + _responseCard + ":" + _responseSelection,
+                TitleKey = _responseSelection == "cost" ? "ui.selection.cost_exact" : "ui.selection.targets_exact",
+                TitleArguments = new object[] { required },
+                Items = items,
+                MinCount = required,
+                MaxCount = required,
+                AllowCancel = true,
+            };
+            _gallery.ShowYakouSelection(request, key =>
+            {
+                _responseBar.Draft.Toggle(key);
+                _responseBar.SetSelected(_responseBar.Draft.Selected);
+            }, () =>
+            {
+                var selected = _responseBar.Draft.Selected.Select(int.Parse).ToArray();
+                if (_responseSelection == "cost")
+                {
+                    _responseCosts.Clear();
+                    foreach (int id in selected)
+                    {
+                        _responseCosts.Add(id);
+                    }
+                }
+                else if (_responseSelection == "target")
+                {
+                    _responseTarget = selected.Single();
+                }
+                else if (_responseSelection == "secondary")
+                {
+                    _responseSecondary = selected.Single();
+                }
+                else
+                {
+                    _responseReplacement = selected.Single();
+                }
+                AdvanceResponsePart();
+            }, () =>
+            {
+                _responseType = null;
+                _responseOption = null;
+                _responseSelection = null;
+                _responseCosts.Clear();
+                _responseRequestId = null;
+                _screen.EndTurn.interactable = true;
+                RenderResponseSelection(_state["ResponseStack"] as JArray);
+            });
+            IEnumerable<string> previous = _responseSelection == "cost" ? _responseCosts.Select(id => id.ToString()) :
+                new[] { (_responseSelection == "secondary" ? _responseSecondary :
+                    _responseSelection == "replacement" ? _responseReplacement : _responseTarget).ToString() };
+            _responseBar.SetSelected(previous);
+            _hand.gameObject.SetActive(_responseBar.Hidden);
+            _screen.EndTurn.interactable = false;
         }
 
         private void UpdateHints()
@@ -940,6 +1267,10 @@ namespace ProjectC.Client
             _responseSelection = part;
             _actions.gameObject.SetActive(false);
             UpdateHints();
+            if (_responseOption != null)
+            {
+                ShowResponsePart();
+            }
         }
 
         private void SubmitResponse()

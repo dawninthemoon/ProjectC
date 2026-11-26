@@ -259,6 +259,13 @@ int main()
             g.match.RespondWithNegation(1,g.Id(1,5118),{});
             g.match.PassSpellResponse(2);
             g.match.PassSpellResponse(1);
+            auto const resolution = g.match.ViewerSnapshot(1).at("ChainResolution");
+            Check(resolution.size() == 2 &&
+                  resolution[0].at("Card").at("DefinitionId") == 5118 &&
+                  resolution[0].at("Result") == "Resolved" &&
+                  resolution[1].at("Card").at("DefinitionId") == 5211 &&
+                  resolution[1].at("Result") == "Negated",
+                  "Public chain results must follow actual LIFO negation without private targets");
             Check(g.match.Player(2).Life==20&&g.Resource(2,"Blood")==0&&
                   g.Resource(1,"Spirit")==2,"5118 negate and 5109 refund");
         }

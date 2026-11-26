@@ -627,6 +627,17 @@ Json YakouMatch::ViewerSnapshot(int viewer) const
                    {"TurnNumber", turn_}, {"PriorityPlayerId", PriorityPlayer()},
                    {"WinnerPlayerId", winner_}, {"Players", std::move(players)},
                    {"Attacks", std::move(attacks)}};
+    if (!lastChainResolution_.empty())
+    {
+        Json resolution = Json::array();
+        for (auto const& event : lastChainResolution_)
+        {
+            resolution.push_back({{"Controller", event.at("Controller")},
+                                  {"Card", visibleCard(event.at("SourceInstance").get<int>())},
+                                  {"Result", event.at("Result")}});
+        }
+        result["ChainResolution"] = std::move(resolution);
+    }
     // The next public action must not advance a raid past unresolved cost triggers.
     if (Alpha02()) result["CatalogVersion"] = catalog_->Cards.at("CatalogVersion");
     if (Alpha02() && lastRevealedDefinition_ > 0)
@@ -1004,6 +1015,10 @@ Json YakouMatch::ServerCanonicalState() const
             {"Chain", {{"Open", chain.Open}, {"Priority", chain.Priority}, {"Passes", chain.ConsecutivePasses},
                        {"Stack", links(chain.Stack)}, {"Resolution", links(chain.Resolution)},
                        {"Deferred", links(chain.Deferred)}}}};
+    if (!lastChainResolution_.empty())
+    {
+        state["LastChainResolution"] = lastChainResolution_;
+    }
     if (Alpha02())
     {
         state["SpellResolvedTurn"] = spellResolvedTurn_;
@@ -1664,6 +1679,12 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
         if (limit > 0 && !(choice.MinCount == 0 && choice.MaxCount == 1 && selectedTargets.empty()))
             ++next.effectUses_[std::make_tuple(turn_,player,card.at("NameKey").get<std::string>(),queued.EffectId)];
         next.pendingEffects_.erase(next.pendingEffects_.begin());
+        if (queued.Trigger == "OnResolve" && !next.lastChainResolution_.empty() &&
+            next.lastChainResolution_.back().at("SourceInstance") == queued.SourceCard &&
+            next.lastChainResolution_.back().at("Result") == "PendingSelection")
+        {
+            next.lastChainResolution_.back()["Result"] = "Resolved";
+        }
         if (queued.Trigger == "OnResolve" && next.phase_ != YakouPhase::Finished)
             next.NotifySpellResolved(player,false);
         if (next.phase_ == YakouPhase::Finished) next.pendingEffects_.clear();
@@ -1925,6 +1946,12 @@ void YakouMatch::ResolvePendingEffect(int player, std::vector<int> const& select
         ++next.effectUses_[usage];
     }
     next.pendingEffects_.erase(next.pendingEffects_.begin());
+    if (queued.Trigger == "OnResolve" && !next.lastChainResolution_.empty() &&
+        next.lastChainResolution_.back().at("SourceInstance") == queued.SourceCard &&
+        next.lastChainResolution_.back().at("Result") == "PendingSelection")
+    {
+        next.lastChainResolution_.back()["Result"] = "Resolved";
+    }
     if (queued.Trigger == "OnResolve") next.NotifySpellResolved(player,false);
     *this = std::move(next);
 }
@@ -2312,6 +2339,7 @@ void YakouMatch::PassSpellResponseImpl(int player)
     Check(!resolution.empty() && resolution.size() <= MaximumSpellResponseLinks,
           "Unsupported resolved spell chain length");
     bool negated = false;
+    lastChainResolution_ = Json::array();
     std::vector<int> successfulResponses;
     for (std::size_t index = 0; index < resolution.size(); ++index)
     {
@@ -2323,6 +2351,9 @@ void YakouMatch::PassSpellResponseImpl(int player)
                   "Unexpected chain counterspell");
             if (Alpha02() && OriginalId(link.SourceInstance) == 3017)
             {
+                lastChainResolution_.push_back({{"Controller", link.Controller},
+                    {"SourceInstance", link.SourceInstance},
+                    {"Result", negated ? "Negated" : "Resolved"}});
                 if (!negated)
                 {
                     Check(link.Targets.size() == 1 &&
@@ -2341,6 +2372,9 @@ void YakouMatch::PassSpellResponseImpl(int player)
                                    std::to_string(resolution[index + 1].SourceInstance));
                 successfulResponses.push_back(link.Controller);
             }
+            lastChainResolution_.push_back({{"Controller", link.Controller},
+                {"SourceInstance", link.SourceInstance},
+                {"Result", negated ? "Negated" : "Resolved"}});
             negated = !negated;
             continue;
         }
@@ -2349,6 +2383,8 @@ void YakouMatch::PassSpellResponseImpl(int player)
               "Unexpected original spell link");
         if (negated)
         {
+            lastChainResolution_.push_back({{"Controller", link.Controller},
+                {"SourceInstance", link.SourceInstance}, {"Result", "Negated"}});
             // Negated effects still consume their authored per-turn allowance.
             auto const card = CardDefinition(OriginalId(link.SourceInstance));
             auto const key = std::make_tuple(turn_, link.Controller,
@@ -2382,6 +2418,9 @@ void YakouMatch::PassSpellResponseImpl(int player)
             {
                 ResolvePendingEffect(link.Controller);
             }
+            lastChainResolution_.push_back({{"Controller", link.Controller},
+                {"SourceInstance", link.SourceInstance},
+                {"Result", pendingEffects_.empty() ? "Resolved" : "PendingSelection"}});
         }
     }
     if (phase_ != YakouPhase::Finished)
@@ -3337,9 +3376,12 @@ void YakouMatch::PassRaidResponseImpl(int player)
         // entire closing pass and leaves the live response window open.
         auto const links = response_.TakeResolution();
         Check(links.size() <= static_cast<std::size_t>(MaximumRaidResponseLinks), "Unsupported raid chain length");
+        lastChainResolution_ = Json::array();
         std::vector<int> successfulResponses;
         for (auto const& link : links)
         {
+            lastChainResolution_.push_back({{"Controller", link.Controller},
+                {"SourceInstance", link.SourceInstance}, {"Result", "Resolved"}});
             int const definitionId = OriginalId(link.SourceInstance);
             if (Alpha02() && (definitionId == 5113 || definitionId == 5214 ||
                              definitionId == 5215 || definitionId == 5218))
@@ -3350,7 +3392,11 @@ void YakouMatch::PassRaidResponseImpl(int player)
                 Check(link.Trigger == "OnResolve" && link.EffectId == effect.at("Id").get<int>() &&
                       link.Targets.size() == 1,"Malformed typed raid link");
                 int const target = link.Targets[0];
-                if (!Contains(Alpha02RaidTargets(link.Controller,action),target)) continue;
+                if (!Contains(Alpha02RaidTargets(link.Controller,action),target))
+                {
+                    lastChainResolution_.back()["Result"] = "Fizzled";
+                    continue;
+                }
                 auto const op = action.at("Operation").get<std::string>();
                 if (op == "ModifyAttack")
                 {

@@ -29,6 +29,8 @@ def run(port):
     try:
         a.send("ListDecks")
         assert expect(a, "DeckCatalog")["Payload"]  # existing game not removed
+        a.send("YakouCreate", Cards=[2001] * 30)
+        assert expect(a, "YakouRejected")["Payload"]["Reason"] == "PersonalDeckUnavailable"
         a.send("YakouCreate")
         created = expect(a, "YakouCreated")
         match = created["MatchId"]

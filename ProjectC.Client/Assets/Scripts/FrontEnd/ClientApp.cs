@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -272,6 +274,36 @@ namespace ProjectC.Client
         public bool Navigating { get; private set; }
         public PersonalDeck Starter { get; private set; }
         public System.Collections.Generic.IReadOnlyList<PersonalDeck> Samples { get; private set; } = Array.Empty<PersonalDeck>();
+        public CardLibrary Alpha02Library { get; private set; }
+        public DeckRepository Alpha02Decks { get; private set; }
+        public System.Collections.Generic.IReadOnlyList<PersonalDeck> Alpha02Samples { get; private set; } = Array.Empty<PersonalDeck>();
+        public bool EditingAlpha02 { get; private set; }
+        public CardLibrary DeckEditorLibrary => EditingAlpha02 ? Alpha02Library : Library;
+        public DeckRepository DeckEditorDecks => EditingAlpha02 ? Alpha02Decks : Decks;
+        public System.Collections.Generic.IReadOnlyList<PersonalDeck> DeckEditorSamples => EditingAlpha02 ? Alpha02Samples : Samples;
+
+        public void PrepareAlpha02Decks()
+        {
+            if (Alpha02Library == null)
+            {
+                Alpha02Library = CardLibrary.LoadAlpha02Resources();
+                var snapshot = CardLibrary.LoadAlpha02Snapshot();
+                Alpha02Samples = CardLibrary.Samples(((JObject)snapshot["Decks"]).ToString(), Alpha02Library);
+                Alpha02Decks = new DeckRepository(Path.Combine(
+                    StorageOverride ?? Application.persistentDataPath, "Alpha02"));
+                Alpha02Decks.Load();
+            }
+        }
+
+        public void OpenDeckEditor(bool alpha02)
+        {
+            if (alpha02)
+            {
+                PrepareAlpha02Decks();
+            }
+            EditingAlpha02 = alpha02;
+            Navigate("DeckEditorScene");
+        }
 
         void Awake()
         {

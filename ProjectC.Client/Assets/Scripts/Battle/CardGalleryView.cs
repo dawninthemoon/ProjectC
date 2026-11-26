@@ -11,9 +11,13 @@ namespace ProjectC.Client
     // This gallery only receives public cards or the requesting player's authorized choice DTOs.
     public sealed class CardGalleryView : MonoBehaviour
     {
-        private const float CardScale = .77f;
         private BattlePresenter _presenter;
+        private CardWidget _yakouCardPrefab;
+        private CardDetailView _yakouDetail;
+        private Action<CardView> _yakouInspect;
+        private Action _yakouBrowseClosed;
         private RectTransform _content;
+        private RectTransform _slotTemplate;
         private TMP_Text _title;
         private CardSelectionBar _selectionBar;
         [SerializeField] private bool _showFieldMirrors = true;
@@ -41,7 +45,8 @@ namespace ProjectC.Client
             _presenter = presenter;
             if (!this.Bind("GalleryContent", out _content)
                 || !this.Bind("GalleryTitleText", out _title)
-                || !this.Bind("GalleryCloseButton", out _close))
+                || !this.Bind("GalleryCloseButton", out _close)
+                || !this.Bind("GallerySlotTemplate", out _slotTemplate))
             {
                 throw new InvalidOperationException("CardGallery requires content, title and close bindings.");
             }
@@ -57,13 +62,59 @@ namespace ProjectC.Client
             presenter.Client.ViewInvalidated += InvalidateBrowse;
         }
 
+        public void InitializeYakou(CardWidget cardPrefab, CardDetailView detail, Action<CardView> inspect,
+            Action browseClosed, Action<bool> visibilityChanged)
+        {
+            _yakouCardPrefab = cardPrefab != null ? cardPrefab
+                : throw new ArgumentNullException(nameof(cardPrefab));
+            _yakouDetail = detail != null ? detail
+                : throw new ArgumentNullException(nameof(detail));
+            _yakouInspect = inspect;
+            _yakouBrowseClosed = browseClosed;
+            if (!this.Bind("GalleryContent", out _content)
+                || !this.Bind("GalleryTitleText", out _title)
+                || !this.Bind("GalleryCloseButton", out _close)
+                || !this.Bind("CardSelectionBar", out _selectionBar)
+                || !this.Bind("GallerySlotTemplate", out _slotTemplate))
+            {
+                throw new InvalidOperationException("Yakou gallery requires its authored controls.");
+            }
+            _close.onClick.AddListener(Close);
+            _selectionBar.VisibilityChanged += visibilityChanged;
+        }
+
+        public void ShowYakouSelection(CardSelectionRequest request, Action<string> pick,
+            Action confirm, Action cancel)
+        {
+            Begin(string.Empty, true);
+            transform.SetAsLastSibling();
+            _selectionBar.Show(request, _yakouCardPrefab, pick, confirm, cancel, _yakouInspect);
+        }
+
+        public void ShowYakouPublicZones(string title, IEnumerable<CardView> cards)
+        {
+            Begin(title, false);
+            transform.SetAsLastSibling();
+            int index = 0;
+            foreach (var card in cards)
+            {
+                var widget = Add(card, index++);
+                widget.Clicked = selected => _yakouInspect?.Invoke(selected.Card);
+            }
+        }
+
         public void Close()
         {
+            bool notifyYakou = _presenter == null && gameObject.activeSelf && !Choosing;
             ReleaseBrowse();
             SetGraveyardFocus(false);
             RestoreBrowseLayout();
             gameObject.SetActive(false);
             Choosing = false;
+            if (notifyYakou)
+            {
+                _yakouBrowseClosed?.Invoke();
+            }
         }
 
         private void Begin(string title, bool choosing)
@@ -92,23 +143,30 @@ namespace ProjectC.Client
         {
             if (index == _cards.Count)
             {
-                var slot = new GameObject("GallerySlot", typeof(RectTransform), typeof(LayoutElement));
-                slot.transform.SetParent(_content, false);
-                var size = slot.GetComponent<LayoutElement>();
-                size.preferredWidth = 140;
-                size.preferredHeight = 190;
-                var card = Instantiate(_presenter.Hand.CardPrefab, slot.transform);
-                var rect = (RectTransform)card.transform;
-                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
-                rect.anchoredPosition = Vector2.zero;
-                rect.localScale = Vector3.one * CardScale;
+                var slot = Instantiate(_slotTemplate, _content);
+                slot.name = "GallerySlot" + index;
+                slot.gameObject.SetActive(true);
+                if (!slot.Bind("GalleryCard", out CardWidget card))
+                {
+                    throw new InvalidOperationException("Gallery slot template requires GalleryCard.");
+                }
                 _cards.Add(card);
             }
             var widget = _cards[index];
             widget.gameObject.SetActive(true);
             widget.transform.parent.gameObject.SetActive(true);
             widget.Bind(value, false, false, false, false);
-            widget.Hovered = card => _presenter.InspectCard(card.Card, Choosing);
+            widget.Hovered = card =>
+            {
+                if (_presenter != null)
+                {
+                    _presenter.InspectCard(card.Card, Choosing);
+                }
+                else
+                {
+                    _yakouInspect?.Invoke(card.Card);
+                }
+            };
             widget.HoverLeft = null;
             widget.DragStarted = null;
             widget.DragMoved = null;
@@ -334,14 +392,19 @@ namespace ProjectC.Client
 
         private void HideChoiceDetails(bool hidden)
         {
+            var detail = _presenter != null ? _presenter.Detail : _yakouDetail;
+            if (detail == null)
+            {
+                return;
+            }
             if (hidden)
             {
-                _detailWasVisible = _presenter.Detail.gameObject.activeSelf;
-                _presenter.Detail.gameObject.SetActive(false);
+                _detailWasVisible = detail.gameObject.activeSelf;
+                detail.gameObject.SetActive(false);
             }
             else if (_detailWasVisible)
             {
-                _presenter.Detail.gameObject.SetActive(true);
+                detail.gameObject.SetActive(true);
                 _detailWasVisible = false;
             }
         }

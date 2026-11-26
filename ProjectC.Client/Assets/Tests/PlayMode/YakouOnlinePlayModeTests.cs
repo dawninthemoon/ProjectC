@@ -260,6 +260,69 @@ namespace ProjectC.Tests
         }
 
         [UnityTest]
+        public IEnumerator Alpha02LocalServerShowsTwoPrivateBattleScreens()
+        {
+            string executable = null;
+            var args = Environment.GetCommandLineArgs();
+            for (int index = 0; index + 1 < args.Length; ++index)
+            {
+                if (args[index] == "-projectcServerPath")
+                {
+                    executable = args[index + 1];
+                }
+            }
+            Assert.IsTrue(File.Exists(executable), "Pass -projectcServerPath");
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            string data = Path.GetFullPath(Path.Combine(Application.dataPath, "../../ProjectC.Server/Data"));
+            _server = Process.Start(new ProcessStartInfo(executable,
+                "--port " + port + " --yakou-prototype on --alpha02 on --data \"" + data + "\"")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+            });
+            var startup = _server.StandardOutput.ReadLineAsync();
+            yield return Until(() => startup.IsCompleted);
+            StringAssert.Contains("listening", startup.Result);
+            _first = new GameObject("Alpha 02 first client", typeof(MultiplayerDebugScreen));
+            var app = _first.AddComponent<ClientApp>();
+            typeof(ClientApp).GetProperty("Environment").GetSetMethod(true)
+                .Invoke(app, new object[] { ServerEnvironment.Local });
+            app.enabled = false;
+            _second = new GameObject("Alpha 02 second client", typeof(MultiplayerDebugScreen));
+            var a = _first.GetComponent<MultiplayerDebugScreen>();
+            var b = _second.GetComponent<MultiplayerDebugScreen>();
+            string address = "ws://127.0.0.1:" + port;
+            a.ConnectTo(address);
+            b.ConnectTo(address);
+            yield return Until(() => a.ConnectionReady && b.ConnectionReady);
+            a.Yakou.Create("Alpha02Onmyoryo");
+            yield return Until(() => a.Yakou.State != null);
+            b.Yakou.Join(a.Yakou.MatchId, "Alpha02BloodOni");
+            yield return Until(() => b.Yakou.State != null);
+            Assert.AreEqual("projectc-alpha02-v1", (string)a.Yakou.State["CatalogVersion"]);
+            Assert.AreEqual("projectc-alpha02-v1", (string)b.Yakou.State["CatalogVersion"]);
+            Assert.IsNotNull(a.Yakou.State["Players"][0]["Resources"]["Spirit"]);
+            Assert.IsNotNull(b.Yakou.State["Players"][1]["Resources"]["Blood"]);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Battle/BattleScreen.prefab");
+            _battle = Object.Instantiate(prefab);
+            yield return null;
+            Assert.IsTrue(_battle.GetComponent<YakouBattlePresenter>().Bind("OpponentHandImage", out CardZoneView enemyHand));
+            Assert.IsTrue(enemyHand.Widgets.All(widget => widget.Hidden && widget.Card == null));
+            yield return Capture("alpha02-local-first-screen");
+            typeof(ClientApp).GetProperty("Network").GetSetMethod(true).Invoke(app, new object[] { b });
+            _battle.SetActive(false);
+            _opponentBattle = Object.Instantiate(prefab);
+            yield return null;
+            Assert.IsTrue(_opponentBattle.GetComponent<YakouBattlePresenter>().Bind("OpponentHandImage", out enemyHand));
+            Assert.IsTrue(enemyHand.Widgets.All(widget => widget.Hidden && widget.Card == null));
+            yield return Capture("alpha02-local-second-screen");
+        }
+
+        [UnityTest]
         public IEnumerator AlphaMultiTargetSpellUsesBattleScreenClicks()
         {
             string executable = null;
@@ -345,9 +408,11 @@ namespace ProjectC.Tests
             yield return null;
             hand.Widgets.Find(widget => widget.Card.Id == spell).OnPointerClick(null);
             ActionButton(YakouUiText.Get("ui.yakou.action.paid_spell_cost")).onClick.Invoke();
-            hand.Widgets.Find(widget => widget.Card.Id == cost).OnPointerClick(null);
-            _battle.GetComponent<BattlePresenter>().EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui_battle_confirm_selection")).onClick.Invoke();
+            Assert.IsTrue(presenter.Bind("CardSelectionBar", out CardSelectionBar spellCostBar));
+            spellCostBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == cost)
+                .OnPointerClick(null);
+            spellCostBar.ConfirmButton.onClick.Invoke();
             yield return Until(() => !a.Yakou.Busy && (string)a.Yakou.State?["Phase"] == "SpellResponse");
             Assert.IsNull(a.Yakou.State["PendingSelection"]);
             yield return Send(b, new JObject { ["Type"] = "PassSpellResponse" });
@@ -568,11 +633,28 @@ namespace ProjectC.Tests
             yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State["Phase"] == "RaidResponse");
             Assert.AreEqual(blocker, (int)b.Yakou.State["Attacks"][0]["BlockerId"]);
             int shield = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 3016)["Id"];
-            opponentHand.Widgets.Find(widget => widget.Card.Id == shield).OnPointerClick(null);
-            ActionButton(YakouUiText.Get("ui.yakou.action.response_shield"), _opponentBattle).onClick.Invoke();
-            opponentOwnField.Widgets.Find(widget => widget.Card.Id == blocker).OnPointerClick(null);
-            opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.play_response"), _opponentBattle).onClick.Invoke();
+            Assert.IsTrue(opponentUi.Bind("CardSelectionBar", out CardSelectionBar responseBar));
+            responseBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == shield)
+                .OnPointerClick(null);
+            Assert.AreEqual(1, responseBar.Draft.Selected.Count);
+            long browseSequence = b.Yakou.Sequence;
+            responseBar.ToggleVisibility();
+            Assert.IsTrue(responseBar.Hidden);
+            Assert.IsTrue(opponentUi.Bind("OwnGraveBrowseButton", out Button browseGrave));
+            browseGrave.onClick.Invoke();
+            Assert.IsTrue(opponentUi.Bind("CardGalleryImage", out CardGalleryView responseGallery));
+            Assert.IsTrue(responseGallery.gameObject.activeSelf && !responseGallery.Choosing);
+            responseGallery.Close();
+            Assert.IsTrue(responseBar.Hidden);
+            responseBar.ToggleVisibility();
+            Assert.AreEqual(1, responseBar.Draft.Selected.Count);
+            Assert.AreEqual(browseSequence, b.Yakou.Sequence);
+            responseBar.ConfirmButton.onClick.Invoke();
+            responseBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == blocker)
+                .OnPointerClick(null);
+            responseBar.ConfirmButton.onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 1);
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             a.DisconnectNetwork();
@@ -584,10 +666,9 @@ namespace ProjectC.Tests
             yakou.SendMessage("Refresh");
             Assert.AreEqual(YakouUiText.Phase("RaidResponse"), screen.PhaseLabel.text);
             Assert.AreEqual(BattleText.Get("ui.turn.yours"), turnOwner.text);
-            StringAssert.Contains(YakouUiText.Get("ui.yakou.hud.status", YakouUiText.Phase("RaidResponse"),
-                YakouUiText.Player((int)a.Yakou.State["ActivePlayerId"], a.Yakou.Seat),
-                YakouUiText.Player((int)a.Yakou.State["PriorityPlayerId"], a.Yakou.Seat),
-                (int)a.Yakou.State["Players"][0]["Ki"], (int)a.Yakou.State["Players"][1]["Ki"]), battleStatus.text);
+            StringAssert.Contains(YakouUiText.Phase("RaidResponse") + " · " +
+                YakouUiText.Player((int)a.Yakou.State["ActivePlayerId"], a.Yakou.Seat) + " · " +
+                YakouUiText.Player((int)a.Yakou.State["PriorityPlayerId"], a.Yakou.Seat), battleStatus.text);
             _opponentBattle.SetActive(false);
             yield return Capture("04-response-english");
             _opponentBattle.SetActive(true);
@@ -595,19 +676,22 @@ namespace ProjectC.Tests
             yakou.SendMessage("Refresh");
             long beforePass = a.Yakou.Sequence;
             screen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.pass_raid_response")).onClick.Invoke();
             yield return Until(() => !a.Yakou.Busy && a.Yakou.Sequence == beforePass + 1);
             yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
             int tactic = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 2011)["Id"];
             int cost = (int)b.Yakou.State["Players"][1]["Hand"].First(item => (int)item["DefinitionId"] == 3018)["Id"];
-            opponentHand.Widgets.Find(widget => widget.Card.Id == tactic).OnPointerClick(null);
-            ActionButton(YakouUiText.Get("ui.yakou.action.response_tactic"), _opponentBattle).onClick.Invoke();
-            opponentEnemyField.Widgets.Find(widget => widget.Card.Id == card).OnPointerClick(null);
-            opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.response_cost", 0, 1), _opponentBattle).onClick.Invoke();
-            opponentHand.Widgets.Find(widget => widget.Card.Id == cost).OnPointerClick(null);
-            opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.play_response"), _opponentBattle).onClick.Invoke();
+            responseBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == tactic)
+                .OnPointerClick(null);
+            responseBar.ConfirmButton.onClick.Invoke();
+            responseBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == card)
+                .OnPointerClick(null);
+            responseBar.ConfirmButton.onClick.Invoke();
+            responseBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == cost)
+                .OnPointerClick(null);
+            responseBar.ConfirmButton.onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && ((JArray)b.Yakou.State["ResponseStack"]).Count == 2);
             Assert.IsTrue(opponentUi.Bind("RejectionReasonText", out TMP_Text responseStatus));
             StringAssert.Contains(CardLibrary.LoadYakouResources().Find(2011).Name, responseStatus.text);
@@ -623,11 +707,9 @@ namespace ProjectC.Tests
             yield return Until(() => a.Yakou.Sequence == b.Yakou.Sequence);
             beforePass = a.Yakou.Sequence;
             screen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.pass_raid_response")).onClick.Invoke();
             yield return Until(() => !a.Yakou.Busy && a.Yakou.Sequence == beforePass + 1);
             yield return Until(() => b.Yakou.Sequence == a.Yakou.Sequence);
             opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui.yakou.action.pass_raid_response"), _opponentBattle).onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && (int)b.Yakou.State["PriorityPlayerId"] == 0);
             opponentScreen.EndTurn.onClick.Invoke();
             ActionButton(YakouUiText.Get("ui.yakou.action.resolve_raid"), _opponentBattle).onClick.Invoke();
@@ -643,9 +725,11 @@ namespace ProjectC.Tests
                 (int)item["DefinitionId"] != 2002)["Id"];
             opponentHand.Widgets.Find(widget => widget.Card.Id == map).OnPointerClick(null);
             ActionButton(YakouUiText.Get("ui.yakou.action.paid_spell_cost"), _opponentBattle).onClick.Invoke();
-            opponentHand.Widgets.Find(widget => widget.Card.Id == discard).OnPointerClick(null);
-            opponentScreen.EndTurn.onClick.Invoke();
-            ActionButton(YakouUiText.Get("ui_battle_confirm_selection"), _opponentBattle).onClick.Invoke();
+            Assert.IsTrue(opponentUi.Bind("CardSelectionBar", out CardSelectionBar mapCostBar));
+            mapCostBar.GetComponentsInChildren<CardWidget>(true)
+                .First(widget => widget.gameObject.activeInHierarchy && widget.Card?.Id == discard)
+                .OnPointerClick(null);
+            mapCostBar.ConfirmButton.onClick.Invoke();
             yield return Until(() => !b.Yakou.Busy && (string)b.Yakou.State?["Phase"] == "SpellResponse");
             yield return Send(a, new JObject { ["Type"] = "PassSpellResponse" });
             yield return Send(b, new JObject { ["Type"] = "PassSpellResponse" });

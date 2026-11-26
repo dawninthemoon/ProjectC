@@ -13,6 +13,10 @@ namespace ProjectC.Client
             GetComponent<Button>().onClick.AddListener(() =>
             {
                 var presenter = GetComponentInParent<BattlePresenter>();
+                if (presenter == null || !presenter.enabled || presenter.Client == null)
+                {
+                    return;
+                }
                 if (!presenter.Client.Input.CanExecute(GameplayInputAction.OpenPublicZone)
                     || presenter.Client.Busy || presenter.Client.PendingChoice != null
                     || presenter.Interaction.State == BattleInputState.SelectingEffectTarget)

@@ -21,6 +21,9 @@ namespace ProjectC.Client
         public Transform LibraryContent { get; private set; }
         private DeckTileView _detailCard;
         ClientApp app;
+        CardLibrary library;
+        DeckRepository decks;
+        IReadOnlyList<PersonalDeck> samples;
         TMP_Text count,
             status,
             detailName,
@@ -41,6 +44,13 @@ namespace ProjectC.Client
         void Start()
         {
             app = ClientApp.Instance;
+            library = app.DeckEditorLibrary;
+            decks = app.DeckEditorDecks;
+            samples = app.DeckEditorSamples;
+            if (library == null || decks == null)
+            {
+                throw new InvalidOperationException("Deck editor catalog or repository is missing.");
+            }
             this.Bind("ConfirmOverlay", out ConfirmationDialog dialog);
             Dialog = dialog;
             this.Bind("DeckName", out TMP_InputField name);
@@ -51,8 +61,8 @@ namespace ProjectC.Client
             DeckList = list;
             this.Bind("DeckCards", out Transform deck);
             DeckContent = deck;
-            this.Bind("LibraryCards", out Transform library);
-            LibraryContent = library;
+            this.Bind("LibraryCards", out Transform libraryRoot);
+            LibraryContent = libraryRoot;
             this.Bind("DeckCount", out count);
             this.Bind("Feedback", out status);
             this.Bind("DetailName", out detailName);
@@ -79,14 +89,14 @@ namespace ProjectC.Client
             Bind("CopyDeck", () => Guard(Duplicate));
             Bind("DeleteDeck", Delete);
             Bind("ImportStarter", () => Guard(ImportStarter));
-            if (!this.Bind("SampleDeckList", out TMP_Dropdown samples))
+            if (!this.Bind("SampleDeckList", out TMP_Dropdown sampleDropdown))
             {
                 throw new InvalidOperationException("Deck editor requires SampleDeckList.");
             }
-            SampleList = samples;
+            SampleList = sampleDropdown;
             SampleList.ClearOptions();
-            SampleList.AddOptions(app.Samples.Select(deck => deck.Name).ToList());
-            SampleList.interactable = app.Samples.Count > 0;
+            SampleList.AddOptions(samples.Select(deck => deck.Name).ToList());
+            SampleList.interactable = samples.Count > 0;
             this.BindButton(
                 "TypeFilter",
                 out typeFilter,
@@ -104,7 +114,7 @@ namespace ProjectC.Client
                 out archetypeFilter,
                 () =>
                 {
-                    archetype = Cycle(archetype, app.Library.Cards.SelectMany(c => c.Archetypes));
+                    archetype = Cycle(archetype, library.Cards.SelectMany(c => c.Archetypes));
                     RenderLibrary();
                 }
             );
@@ -113,7 +123,7 @@ namespace ProjectC.Client
                 out rarityFilter,
                 () =>
                 {
-                    rarity = Cycle(rarity, app.Library.Cards.Select(c => c.Rarity));
+                    rarity = Cycle(rarity, library.Cards.Select(c => c.Rarity));
                     RenderLibrary();
                 }
             );
@@ -135,9 +145,9 @@ namespace ProjectC.Client
                 string id = listed[index].DeckId;
                 Guard(() => Select(id));
             });
-            Session.Begin(app.Decks.Selected);
+            Session.Begin(decks.Selected);
             Refresh();
-            status.text = app.Error + app.Decks.Warning;
+            status.text = app.Error + decks.Warning;
             Application.wantsToQuit += WantsQuit;
         }
 
@@ -209,34 +219,36 @@ namespace ProjectC.Client
                 status.text = "덱을 먼저 만드세요.";
                 return false;
             }
-            if (!app.Decks.Save(Session.Draft, out var error))
+            if (!decks.Save(Session.Draft, out var error))
             {
                 status.text = error;
                 return false;
             }
-            Session.Begin(app.Decks.Selected);
+            Session.Begin(decks.Selected);
             Refresh();
-            status.text = "개인 덱을 저장했습니다. 온라인 서버에는 전송하지 않습니다.";
+            status.text = app.EditingAlpha02
+                ? "Alpha 02 덱을 저장했습니다. 방을 만들거나 참가할 때 카드 ID를 제출합니다."
+                : "개인 덱을 저장했습니다. 온라인 서버에는 전송하지 않습니다.";
             return true;
         }
 
         void Select(string id)
         {
-            if (!app.Decks.Select(id, out var error))
+            if (!decks.Select(id, out var error))
             {
                 status.text = error;
                 return;
             }
-            Session.Begin(app.Decks.Selected);
+            Session.Begin(decks.Selected);
             Refresh();
         }
 
         void Create()
         {
             var deck = new PersonalDeck();
-            if (app.Decks.Save(deck, out var error))
+            if (decks.Save(deck, out var error))
             {
-                Session.Begin(app.Decks.Selected);
+                Session.Begin(decks.Selected);
                 Refresh();
             }
             else
@@ -254,9 +266,9 @@ namespace ProjectC.Client
             var copy = Session.Draft.Copy();
             copy.DeckId = Guid.NewGuid().ToString("N");
             copy.Name = (copy.Name.Length > 55 ? copy.Name.Substring(0, 55) : copy.Name) + " 사본";
-            if (app.Decks.Save(copy, out var error))
+            if (decks.Save(copy, out var error))
             {
-                Session.Begin(app.Decks.Selected);
+                Session.Begin(decks.Selected);
                 Refresh();
             }
             else
@@ -267,16 +279,16 @@ namespace ProjectC.Client
 
         void ImportStarter()
         {
-            if (app.Starter == null)
+            if (samples.Count == 0)
             {
                 status.text = app.Error;
                 return;
             }
-            var deck = app.Samples[SampleList.value].Copy();
+            var deck = samples[SampleList.value].Copy();
             deck.DeckId = Guid.NewGuid().ToString("N");
-            if (app.Decks.Save(deck, out var error))
+            if (decks.Save(deck, out var error))
             {
-                Session.Begin(app.Decks.Selected);
+                Session.Begin(decks.Selected);
                 Refresh();
             }
             else
@@ -298,9 +310,9 @@ namespace ProjectC.Client
                 "삭제",
                 () =>
                 {
-                    if (app.Decks.Delete(id, out var error))
+                    if (decks.Delete(id, out var error))
                     {
-                        Session.Begin(app.Decks.Selected);
+                        Session.Begin(decks.Selected);
                         Refresh();
                     }
                     else
@@ -318,7 +330,7 @@ namespace ProjectC.Client
                 status.text = "새 덱을 만들거나 기본 덱을 복사하세요.";
                 return;
             }
-            string reason = DeckValidator.CannotAdd(Session.Draft, app.Library, id);
+            string reason = CannotAdd(Session.Draft, id);
             if (reason != null)
             {
                 status.text = reason;
@@ -340,7 +352,7 @@ namespace ProjectC.Client
 
         void Refresh()
         {
-            listed = app.Decks.Decks.ToList();
+            listed = decks.Decks.ToList();
             DeckList.ClearOptions();
             DeckList.AddOptions(
                 listed.Count == 0
@@ -367,11 +379,12 @@ namespace ProjectC.Client
                     int id = group.Key;
                     tile.Render(
                         id,
-                        app.Library.Find(id),
+                        library.Find(id),
                         group.Count(),
                         false,
                         () => Remove(id),
-                        () => Details(id)
+                        () => Details(id),
+                        yakouArt: app.EditingAlpha02
                     );
                 }
             }
@@ -404,7 +417,7 @@ namespace ProjectC.Client
             rarityFilter.GetComponentInChildren<TMP_Text>().text =
                 rarity == "" ? "희귀도: 전체" : rarity;
             int i = 0;
-            foreach (var card in app.Library.Filter(Search.text.Trim(), type, archetype, rarity))
+            foreach (var card in library.Filter(Search.text.Trim(), type, archetype, rarity))
             {
                 var tile = Tile(libraryTiles, LibraryContent, i++);
                 int id = card.Id;
@@ -414,7 +427,8 @@ namespace ProjectC.Client
                     Session.Draft?.Cards.Count(c => c == id) ?? 0,
                     true,
                     () => Add(id),
-                    () => Details(id)
+                    () => Details(id),
+                    yakouArt: app.EditingAlpha02
                 );
             }
             for (; i < libraryTiles.Count; ++i)
@@ -434,14 +448,32 @@ namespace ProjectC.Client
                             + (Session.Dirty ? " · 미저장" : " · 저장됨")
                 )
                 + "\n"
-                + DeckValidator.Validate(Session.Draft, app.Library).Summary;
+                + Validate(Session.Draft).Summary;
+            if (app.EditingAlpha02 && Session.Draft != null)
+            {
+                var resources = Alpha02DeckValidator.ResourceIds(Session.Draft, library);
+                count.text += "\n특수 자원: " + (resources.Length == 0 ? "없음" :
+                    string.Join(" / ", resources.Select(resource =>
+                    {
+                        string key = "resource_" + resource.ToLowerInvariant();
+                        return library.Localization.ContainsKey(key)
+                            ? library.Localization.GetText(key) : resource;
+                    })));
+            }
         }
+
+        private DeckValidation Validate(PersonalDeck deck) => app.EditingAlpha02
+            ? Alpha02DeckValidator.Validate(deck, library) : DeckValidator.Validate(deck, library);
+
+        private string CannotAdd(PersonalDeck deck, int id) => app.EditingAlpha02
+            ? Alpha02DeckValidator.CannotAdd(deck, library, id)
+            : DeckValidator.CannotAdd(deck, library, id);
 
         void Details(int id)
         {
-            var card = app.Library.Find(id);
+            var card = library.Find(id);
             _detailCard.gameObject.SetActive(true);
-            _detailCard.Render(id, card, 0, false, null, null, false);
+            _detailCard.Render(id, card, 0, false, null, null, false, app.EditingAlpha02);
             detailName.gameObject.SetActive(false);
             detailCrest.gameObject.SetActive(false);
             detailName.text = card?.Name ?? "누락 카드 #" + id;
@@ -461,7 +493,7 @@ namespace ProjectC.Client
                         );
             KeywordLinkView.Render(detailRules,
                 card?.DescriptionText ?? new FormattedCardText(new[] { new TextSegment("중앙 목록에서 클릭하면 제거할 수 있습니다.") }),
-                app.Library.Localization, keyword => status.text = keyword.Name + "\n" + keyword.Description);
+                library.Localization, keyword => status.text = keyword.Name + "\n" + keyword.Description);
         }
     }
 }
