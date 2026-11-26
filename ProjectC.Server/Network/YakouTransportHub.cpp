@@ -3,7 +3,10 @@
 #include "Protocol.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
+#include <limits>
+#include <map>
 #include <random>
 #include <stdexcept>
 #include <utility>
@@ -16,6 +19,9 @@ constexpr auto ResumeRetryWindow = std::chrono::seconds(30);
 constexpr std::size_t ResumeRetryRequestIdLength = 32;
 constexpr std::size_t MaximumYakouDeckIdLength = 64;
 constexpr char DefaultYakouDeckId[] = "HyakkiSampleV02";
+constexpr char PersonalYakouDeckId[] = "Personal";
+constexpr std::size_t PersonalYakouDeckSize = 30;
+constexpr int MaximumPersonalYakouCopies = 3;
 bool IsResumeRetryId(std::string const& id)
 {
     return id.size() == ResumeRetryRequestIdLength &&
@@ -42,17 +48,24 @@ std::uint64_t PrivateSeed()
 }
 std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog,
                                       std::array<std::string, 2> const& ids,
-                                      std::array<std::uint64_t,2> const* seeds = nullptr)
+                                      std::array<std::uint64_t,2> const* seeds = nullptr,
+                                      std::array<std::vector<int>, 2> const* personal = nullptr)
 {
     std::array<std::vector<int>, 2> result;
     for (int seat = 0; seat < 2; ++seat)
     {
-        auto const* deck = FindDeck(catalog, ids[seat]);
-        if (deck == nullptr)
+        if (ids[seat] == PersonalYakouDeckId && personal != nullptr)
+        {
+            result[seat] = (*personal)[seat];
+        }
+        else if (auto const* deck = FindDeck(catalog, ids[seat]); deck != nullptr)
+        {
+            result[seat] = deck->at("Cards").get<std::vector<int>>();
+        }
+        else
         {
             throw std::invalid_argument("Unknown Yakou deck ID");
         }
-        result[seat] = deck->at("Cards").get<std::vector<int>>();
         if (seeds)
         {
             std::mt19937_64 rng((*seeds)[seat]);
@@ -68,6 +81,57 @@ std::array<std::vector<int>, 2> Decks(YakouPrototype const& catalog,
         }
     }
     return result;
+}
+std::string PersonalDeckError(YakouPrototype const& catalog, Json const& value,
+                              std::vector<int>& result)
+{
+    if (!catalog.Config.contains("resource.definitions"))
+    {
+        return "PersonalDeckUnavailable";
+    }
+    if (!value.is_array() || value.size() != PersonalYakouDeckSize)
+    {
+        return "DeckCardCount";
+    }
+    std::map<int, int> counts;
+    for (auto const& entry : value)
+    {
+        if (!entry.is_number_integer() ||
+            (entry.is_number_unsigned() && (entry.get<std::uint64_t>() == 0 ||
+                entry.get<std::uint64_t>() >
+                    static_cast<std::uint64_t>(std::numeric_limits<int>::max()))) ||
+            (!entry.is_number_unsigned() && (entry.get<std::int64_t>() <= 0 ||
+                entry.get<std::int64_t>() > std::numeric_limits<int>::max())))
+        {
+            return "DeckUnknownCard";
+        }
+        int const id = entry.get<int>();
+        auto const definition = std::find_if(catalog.Cards.at("Cards").begin(),
+            catalog.Cards.at("Cards").end(),
+            [id](Json const& card) { return card.at("Id") == id; });
+        if (definition == catalog.Cards.at("Cards").end())
+        {
+            return "DeckUnknownCard";
+        }
+        if (!definition->value("MainDeckEligible", true))
+        {
+            return "DeckIneligibleCard";
+        }
+        if (++counts[id] > MaximumPersonalYakouCopies)
+        {
+            return "DeckCopyLimit";
+        }
+        result.push_back(id);
+    }
+    try
+    {
+        (void)YakouDeckResourceTypes(catalog.Cards, catalog.Config, result);
+    }
+    catch (std::exception const&)
+    {
+        return "DeckResourceLimit";
+    }
+    return {};
 }
 bool IsYakouType(std::string const& name)
 {
@@ -144,7 +208,7 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
     }
     if (type == "YakouCreate")
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId", "DeckId"});
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "DeckId", "Cards"});
         if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
             client->ApiPending)
         {
@@ -156,9 +220,25 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
             reject("MatchLimit");
             return;
         }
-        std::string const deckId = input.contains("DeckId")
+        bool const personal = input.contains("Cards");
+        if (personal && input.contains("DeckId"))
+        {
+            reject("AmbiguousDeck");
+            return;
+        }
+        std::vector<int> personalCards;
+        if (personal)
+        {
+            auto const error = PersonalDeckError(catalog_, input.at("Cards"), personalCards);
+            if (!error.empty())
+            {
+                reject(error);
+                return;
+            }
+        }
+        std::string const deckId = personal ? PersonalYakouDeckId : input.contains("DeckId")
             ? String(input, "DeckId", MaximumYakouDeckIdLength) : DefaultYakouDeckId;
-        if (FindDeck(catalog_, deckId) == nullptr)
+        if (!personal && FindDeck(catalog_, deckId) == nullptr)
         {
             reject("InvalidDeckId");
             return;
@@ -166,6 +246,7 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         std::string const id = "Y" + Token().substr(0, 24);
         Room room;
         room.DeckIds = {deckId, DefaultYakouDeckId};
+        room.PersonalDecks[0] = std::move(personalCards);
         bool const alpha02 = catalog_.Config.contains("resource.definitions");
         if (alpha02)
         {
@@ -173,7 +254,8 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
             room.MatchSeed = PrivateSeed();
         }
         room.Session = std::make_unique<YakouSession>(catalog_, 1,
-            Decks(catalog_,room.DeckIds,alpha02 ? &room.DeckSeeds : nullptr),room.MatchSeed);
+            Decks(catalog_,room.DeckIds,alpha02 ? &room.DeckSeeds : nullptr,
+                  &room.PersonalDecks),room.MatchSeed);
         room.Tokens[0] = Token();
         client->YakouMatchId = id;
         client->YakouConnectionKey = Token();
@@ -189,7 +271,7 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
     }
     if (type == "YakouJoin")
     {
-        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "DeckId"});
+        Fields(input, {"Type", "ProtocolVersion", "RequestId", "MatchId", "DeckId", "Cards"});
         if (!client->MatchId.empty() || !client->YakouMatchId.empty() ||
             client->ApiPending)
         {
@@ -201,24 +283,47 @@ void YakouTransportHub::Receive(std::shared_ptr<ClientSession> const& client,
         if (found == rooms_.end()) { reject("MatchNotFound"); return; }
         auto& room = found->second;
         if (room.Joined) { reject("MatchFull"); return; }
-        std::string const deckId = input.contains("DeckId")
+        bool const personal = input.contains("Cards");
+        if (personal && input.contains("DeckId"))
+        {
+            reject("AmbiguousDeck");
+            return;
+        }
+        std::vector<int> personalCards;
+        if (personal)
+        {
+            auto const error = PersonalDeckError(catalog_, input.at("Cards"), personalCards);
+            if (!error.empty())
+            {
+                reject(error);
+                return;
+            }
+        }
+        std::string const deckId = personal ? PersonalYakouDeckId : input.contains("DeckId")
             ? String(input, "DeckId", MaximumYakouDeckIdLength) : DefaultYakouDeckId;
-        if (FindDeck(catalog_, deckId) == nullptr)
+        if (!personal && FindDeck(catalog_, deckId) == nullptr)
         {
             reject("InvalidDeckId");
             return;
         }
-        room.DeckIds[1] = deckId;
         // Before the second seat joins, gameplay commands are rejected. Rebuild
         // the unopened match with both authoritative decks, then restore seat 1.
         // Seat one's seed and therefore opening hand remain unchanged on join.
         bool const alpha02 = catalog_.Config.contains("resource.definitions");
-        room.Session = std::make_unique<YakouSession>(catalog_, 1,
-            Decks(catalog_,room.DeckIds,alpha02 ? &room.DeckSeeds : nullptr),room.MatchSeed);
+        auto deckIds = room.DeckIds;
+        auto personalDecks = room.PersonalDecks;
+        deckIds[1] = deckId;
+        personalDecks[1] = std::move(personalCards);
+        auto nextSession = std::make_unique<YakouSession>(catalog_, 1,
+            Decks(catalog_,deckIds,alpha02 ? &room.DeckSeeds : nullptr,
+                  &personalDecks),room.MatchSeed);
         if (auto first = room.Clients[0].lock(); first && !first->YakouConnectionKey.empty())
         {
-            room.Session->Bind(1, first->YakouConnectionKey);
+            nextSession->Bind(1, first->YakouConnectionKey);
         }
+        room.DeckIds = std::move(deckIds);
+        room.PersonalDecks = std::move(personalDecks);
+        room.Session = std::move(nextSession);
         room.Tokens[1] = Token();
         client->YakouMatchId = id;
         client->YakouConnectionKey = Token();

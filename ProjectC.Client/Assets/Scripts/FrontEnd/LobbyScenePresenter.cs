@@ -45,13 +45,14 @@ namespace ProjectC.Client
             {
                 if (app.UseWebsite)
                 {
-                    app.ShowPopup("개인 덱 관리", new PopupAction("덱 편집", () => app.Navigate("DeckEditorScene")),
+                    app.ShowPopup("개인 덱 관리", new PopupAction("덱 편집", () => app.OpenDeckEditor(false)),
                         new PopupAction("선택한 로컬 덱 업로드", app.UploadSelectedDeck),
                         new PopupAction("온라인 목록 새로고침", app.RefreshWebsiteData));
                 }
                 else
                 {
-                    app.Navigate("DeckEditorScene");
+                    app.ShowPopup("덱 편집", new PopupAction("기존 덱", () => app.OpenDeckEditor(false)),
+                        new PopupAction("Alpha 02 덱", () => app.OpenDeckEditor(true)));
                 }
             });
             this.BindButton(

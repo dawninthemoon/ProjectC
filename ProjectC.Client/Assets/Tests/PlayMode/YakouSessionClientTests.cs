@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using ProjectC.Client;
@@ -23,6 +24,35 @@ namespace ProjectC.Tests
         private static JObject Snapshot(long sequence)
         {
             return new JObject { ["Sequence"] = sequence, ["State"] = new JObject { ["TurnNumber"] = sequence } };
+        }
+
+        [Test]
+        public void PersonalDeckBindingsSendOnlyCardIds()
+        {
+            var sent = new List<string>();
+            var cards = new List<int>();
+            for (int index = 0; index < 30; index++)
+            {
+                cards.Add(5101);
+            }
+            var first = new YakouSessionClient(sent.Add);
+            first.CreatePersonal(cards);
+            var create = JObject.Parse(sent[0]);
+            Assert.IsNull(create["DeckId"]);
+            Assert.AreEqual(30, ((JArray)create["Cards"]).Count);
+            Assert.IsTrue(((JArray)create["Cards"]).All(value => value.Type == JTokenType.Integer));
+            first.ApplyMessage(Message("YakouCreated", "Y1", new JObject
+            {
+                ["Seat"] = 1, ["DeckId"] = "Personal", ["ResumeToken"] = "secret",
+            }, (string)create["RequestId"]));
+            Assert.AreEqual("Personal", first.SelectedDeckId);
+
+            var second = new YakouSessionClient(sent.Add);
+            second.JoinPersonal("Y1", cards);
+            var join = JObject.Parse(sent[1]);
+            Assert.AreEqual("Y1", (string)join["MatchId"]);
+            Assert.IsNull(join["DeckId"]);
+            Assert.AreEqual(30, ((JArray)join["Cards"]).Count);
         }
 
         [Test]

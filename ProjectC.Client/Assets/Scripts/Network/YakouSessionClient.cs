@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -61,6 +62,14 @@ namespace ProjectC.Client
             SendBinding(request, "YakouCreated");
         }
 
+        public void CreatePersonal(IReadOnlyList<int> cards)
+        {
+            RequireUnbound();
+            var request = Request("YakouCreate");
+            request["Cards"] = PersonalCards(cards);
+            SendBinding(request, "YakouCreated");
+        }
+
         public void Join(string matchId, string deckId = null)
         {
             RequireUnbound();
@@ -75,6 +84,33 @@ namespace ProjectC.Client
                 request["DeckId"] = deckId;
             }
             SendBinding(request, "YakouJoined");
+        }
+
+        public void JoinPersonal(string matchId, IReadOnlyList<int> cards)
+        {
+            RequireUnbound();
+            if (string.IsNullOrWhiteSpace(matchId))
+            {
+                throw new ArgumentException("Match ID is required.", nameof(matchId));
+            }
+            var request = Request("YakouJoin");
+            request["MatchId"] = matchId;
+            request["Cards"] = PersonalCards(cards);
+            SendBinding(request, "YakouJoined");
+        }
+
+        private static JArray PersonalCards(IReadOnlyList<int> cards)
+        {
+            if (cards == null)
+            {
+                throw new ArgumentNullException(nameof(cards));
+            }
+            var result = new JArray();
+            foreach (int card in cards)
+            {
+                result.Add(card);
+            }
+            return result;
         }
 
         public void Resume()

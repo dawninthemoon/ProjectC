@@ -22,7 +22,8 @@ namespace ProjectC.Client
             bool library,
             Action clicked,
             Action selected,
-            bool showCount = true
+            bool showCount = true,
+            bool yakouArt = false
         )
         {
             CardId = id;
@@ -38,7 +39,14 @@ namespace ProjectC.Client
             {
                 throw new InvalidOperationException("Deck tile requires ArtworkImage, AttackBadge and HealthBadge.");
             }
-            CardArtProvider.Apply(artwork, id);
+            if (yakouArt)
+            {
+                CardArtProvider.ApplyYakou(artwork, id);
+            }
+            else
+            {
+                CardArtProvider.Apply(artwork, id);
+            }
             bool hasStats = card != null && card.Type == "Monster";
             attack.transform.parent.gameObject.SetActive(hasStats);
             health.transform.parent.gameObject.SetActive(hasStats);

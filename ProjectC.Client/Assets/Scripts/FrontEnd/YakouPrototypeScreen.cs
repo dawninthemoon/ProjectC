@@ -100,6 +100,10 @@ namespace ProjectC.Client
                 if (nextCatalog != _alpha02Catalog && !_session.Busy)
                 {
                     _alpha02Catalog = nextCatalog;
+                    if (_alpha02Catalog)
+                    {
+                        app.PrepareAlpha02Decks();
+                    }
                     _library = _alpha02Catalog ? CardLibrary.LoadAlpha02Resources() : CardLibrary.LoadYakouResources();
                     _selectedDeckId = null;
                     LoadDeckChoices();
@@ -111,7 +115,14 @@ namespace ProjectC.Client
                     Try(() =>
                     {
                         RequireDeckChoice();
-                        _session.Create(_selectedDeckId);
+                        if (PersonalSelection())
+                        {
+                            _session.CreatePersonal(SelectedPersonalDeck().Cards);
+                        }
+                        else
+                        {
+                            _session.Create(_selectedDeckId);
+                        }
                     });
                 }
                 _room = GUILayout.TextField(_room, 64, GUILayout.Height(LineHeight));
@@ -120,7 +131,14 @@ namespace ProjectC.Client
                     Try(() =>
                     {
                         RequireDeckChoice();
-                        _session.Join(_room.Trim(), _selectedDeckId);
+                        if (PersonalSelection())
+                        {
+                            _session.JoinPersonal(_room.Trim(), SelectedPersonalDeck().Cards);
+                        }
+                        else
+                        {
+                            _session.Join(_room.Trim(), _selectedDeckId);
+                        }
                     });
                 }
                 GUILayout.EndHorizontal();
@@ -271,11 +289,55 @@ namespace ProjectC.Client
                 GUILayout.Label(_library.Localization.GetText(deck.DescriptionKey));
                 GUILayout.EndVertical();
             }
+            if (_alpha02Catalog)
+            {
+                var app = ClientApp.Instance;
+                app.PrepareAlpha02Decks();
+                foreach (var personal in app.Alpha02Decks.Decks)
+                {
+                    GUILayout.BeginVertical("box");
+                    if (GUILayout.Button(personal.Name, GUILayout.Height(LineHeight)))
+                    {
+                        _selectedDeckId = "personal:" + personal.DeckId;
+                    }
+                    GUILayout.Label(personal.Cards.Count + " / 30 · " +
+                        Alpha02DeckValidator.Validate(personal, _library).Summary);
+                    GUILayout.EndVertical();
+                }
+                if (GUILayout.Button("Alpha 02 개인 덱 편집", GUILayout.Height(LineHeight)))
+                {
+                    _open = false;
+                    RestoreCanvases();
+                    app.OpenDeckEditor(true);
+                }
+            }
             if (!string.IsNullOrEmpty(_selectedDeckId))
             {
-                var selected = _deckChoices.First(deck => deck.Id == _selectedDeckId);
-                GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", _library.Localization.GetText(selected.NameKey)));
+                if (PersonalSelection())
+                {
+                    var personal = SelectedPersonalDeck();
+                    GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", personal.Name));
+                }
+                else
+                {
+                    var selected = _deckChoices.First(deck => deck.Id == _selectedDeckId);
+                    GUILayout.Label(YakouUiText.Get("ui.yakou.deck.selected", _library.Localization.GetText(selected.NameKey)));
+                }
             }
+        }
+
+        private bool PersonalSelection() => _alpha02Catalog &&
+            _selectedDeckId != null && _selectedDeckId.StartsWith("personal:", StringComparison.Ordinal);
+
+        private PersonalDeck SelectedPersonalDeck()
+        {
+            var id = _selectedDeckId.Substring("personal:".Length);
+            var deck = ClientApp.Instance.Alpha02Decks.Find(id);
+            if (deck == null || !Alpha02DeckValidator.Validate(deck, _library).CanPlay)
+            {
+                throw new InvalidOperationException("Alpha 02 개인 덱을 확인하거나 편집하세요.");
+            }
+            return deck;
         }
 
         private void RequireDeckChoice()

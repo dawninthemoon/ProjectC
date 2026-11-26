@@ -20,6 +20,63 @@ ONMYO, BLOOD = "Alpha02Onmyoryo", "Alpha02BloodOni"
 RESOURCE_BY_DECK = {ONMYO: "Spirit", BLOOD: "Blood"}
 
 
+def personal_decks(port):
+    first = list(DECKS[ONMYO])
+    first[-1] = 5205  # Spirit plus Blood, with no archetype restriction.
+    second = list(DECKS[BLOOD])
+    peers = [Peer(port), Peer(port)]
+    try:
+        a, b = peers
+        bad = [
+            (first[:-1], "DeckCardCount"),
+            ([5101] * 4 + first[4:], "DeckCopyLimit"),
+            (first[:-1] + [999999], "DeckUnknownCard"),
+            (first[:-1] + [0], "DeckUnknownCard"),
+            (first[:-1] + [2 ** 63], "DeckUnknownCard"),
+            (first[:-1] + [2101], "DeckIneligibleCard"),
+            (first[:-2] + [2003, 5205], "DeckResourceLimit"),
+            (first[:-1] + [{"Id": 5205, "Attack": 999}], "DeckUnknownCard"),
+        ]
+        for cards, reason in bad:
+            a.send("YakouCreate", Cards=cards)
+            rejected = expect(a, "YakouRejected")
+            assert rejected["Payload"]["Reason"] == reason, (reason, rejected)
+        a.send("YakouCreate", Cards=first)
+        created = expect(a, "YakouCreated")
+        room = created["MatchId"]
+        token = created["Payload"]["ResumeToken"]
+        assert created["Payload"]["DeckId"] == "Personal"
+        opening = expect(a, "YakouSnapshot")["Payload"]
+        assert opening["State"]["Players"][0]["Resources"].keys() == {"Spirit", "Blood"}
+        assert not (collections.Counter(c["DefinitionId"] for c in opening["State"]["Players"][0]["Hand"])
+                    - collections.Counter(first))
+        b.send("YakouJoin", MatchId=room, Cards=first[:-2] + [2003, 5205])
+        assert expect(b, "YakouRejected")["Payload"]["Reason"] == "DeckResourceLimit"
+        b.send("YakouJoin", MatchId=room, Cards=second)
+        joined = expect(b, "YakouJoined")
+        assert joined["Payload"]["DeckId"] == "Personal"
+        snapshot_a = expect(a, "YakouSnapshot")["Payload"]
+        snapshot_b = expect(b, "YakouSnapshot")["Payload"]
+        assert snapshot_a["State"]["Players"][0]["Hand"] == opening["State"]["Players"][0]["Hand"]
+        assert snapshot_b["State"]["Players"][1]["Resources"].keys() == {"Blood"}
+        assert not snapshot_b["State"]["Players"][0]["Hand"]
+        a.close()
+        peers[0] = Peer(port)
+        a = peers[0]
+        a.send("YakouResume", MatchId=room, ResumeToken=token)
+        resumed = expect(a, "YakouResumed")
+        assert resumed["Payload"]["DeckId"] == "Personal"
+        restored = expect(a, "YakouSnapshot")["Payload"]
+        assert restored["State"]["Players"][0]["Hand"] == opening["State"]["Players"][0]["Hand"]
+        assert restored["State"]["Players"][0]["Resources"].keys() == {"Spirit", "Blood"}
+        b.send("YakouLeave", MatchId=room)
+        expect(a, "YakouClosed")
+        expect(b, "YakouClosed")
+    finally:
+        for peer in peers:
+            peer.close()
+
+
 def duel(port, first, second, reconnect=False):
     peers = [Peer(port), Peer(port)]
     resume_tokens = []
@@ -218,6 +275,7 @@ if __name__=="__main__":
                     time.sleep(.05)
             tokens.extend(duel(port,ONMYO,BLOOD,True))
             tokens.extend(duel(port,BLOOD,ONMYO))
+            personal_decks(port)
         finally:
             proc.terminate()
             try:
